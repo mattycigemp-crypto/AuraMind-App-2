@@ -1,0 +1,48 @@
+Z
+
+
+
+
+
+
+
+
+
+
+
+
+
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="72" y1="64" x2="448" y2="448" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0A1024"/>
+      <stop offset="0.55" stop-color="#1E1B4B"/>
+      <stop offset="1" stop-color="#312E81"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="128" y1="116" x2="389" y2="396" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#38BDF8"/>
+      <stop offset="0.42" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#F472B6"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 256) rotate(90) scale(210)">
+      <stop stop-color="#C4B5FD" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#C4B5FD" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="32" y="32" width="448" height="448" rx="122" fill="url(#bg)"/>
+  <rect x="32" y="32" width="448" height="448" rx="122" fill="url(#glow)"/>
+
+  <path d="M170 282C170 230.085 212.085 188 264 188C315.915 188 358 230.085 358 282V292C358 339.496 319.496 378 272 378H244C203.131 378 170 344.869 170 304V282Z" stroke="url(#accent)" stroke-width="24" stroke-linecap="round"/>
+  <path d="M193 261H247" stroke="#E9D5FF" stroke-width="18" stroke-linecap="round"/>
+  <path d="M224 227V291" stroke="#E9D5FF" stroke-width="18" stroke-linecap="round"/>
+  <path d="M287 249H327" stroke="#E9D5FF" stroke-width="16" stroke-linecap="round"/>
+  <path d="M287 285H339" stroke="#E9D5FF" stroke-width="16" stroke-linecap="round"/>
+  <path d="M287 320H318" stroke="#E9D5FF" stroke-width="16" stroke-linecap="round"/>
+
+  <circle cx="224" cy="206" r="11" fill="#F5D0FE"/>
+  <circle cx="247" cy="261" r="11" fill="#F5D0FE"/>
+  <circle cx="287" cy="249" r="10" fill="#C4B5FD"/>
+  <circle cx="339" cy="285" r="10" fill="#C4B5FD"/>
+  <circle cx="318" cy="320" r="10" fill="#C4B5FD"/>
+</svg>

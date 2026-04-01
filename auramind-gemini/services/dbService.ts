@@ -1,0 +1,149 @@
+import { supabase } from './supabase';
+import { Card, Deck } from '../types';
+
+export const dbService = {
+    // --- DECKS ---
+    async fetchDecks(userId: string): Promise<Deck[]> {
+        const { data, error } = await supabase
+            .from('decks')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return (data ?? []).map(d => ({
+            id: d.id,
+            title: d.title,
+            description: d.description,
+            createdAt: new Date(d.created_at).getTime(),
+            cardCount: d.card_count
+        }));
+    },
+
+    async createDeck(userId: string, title: string, description: string): Promise<Deck> {
+        const { data, error } = await supabase
+            .from('decks')
+            .insert([
+                {
+                    user_id: userId,
+                    title,
+                    description,
+                    card_count: 0
+                }
+            ])
+            .select()
+            .single();
+
+        if (error) throw error;
+        return {
+            id: data.id,
+            title: data.title,
+            description: data.description,
+            createdAt: new Date(data.created_at).getTime(),
+            cardCount: data.card_count
+        };
+    },
+
+    async updateDeck(id: string, updates: Partial<Deck>): Promise<void> {
+        const dbUpdates: any = {};
+        if (updates.title !== undefined) dbUpdates.title = updates.title;
+        if (updates.description !== undefined) dbUpdates.description = updates.description;
+        if (updates.cardCount !== undefined) dbUpdates.card_count = updates.cardCount;
+
+        const { error } = await supabase
+            .from('decks')
+            .update(dbUpdates)
+            .eq('id', id);
+
+        if (error) throw error;
+    },
+
+    async deleteDeck(id: string): Promise<void> {
+        const { error } = await supabase
+            .from('decks')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+    },
+
+    // --- CARDS ---
+    async fetchCards(userId: string): Promise<Card[]> {
+        const { data, error } = await supabase
+            .from('cards')
+            .select('*')
+            .eq('user_id', userId);
+
+        if (error) throw error;
+        return (data ?? []).map(c => ({
+            id: c.id,
+            question: c.question,
+            answer: c.answer,
+            deckId: c.deck_id,
+            nextReview: new Date(c.next_review).getTime(),
+            interval: c.interval,
+            easeFactor: c.ease_factor,
+            repetition: c.repetition,
+            lastReviewed: c.last_reviewed ? new Date(c.last_reviewed).getTime() : undefined
+        }));
+    },
+
+    async saveCards(userId: string, cards: Omit<Card, 'id'>[]): Promise<Card[]> {
+        const dbCards = cards.map(c => ({
+            user_id: userId,
+            question: c.question,
+            answer: c.answer,
+            deck_id: c.deckId,
+            next_review: new Date(c.nextReview).toISOString(),
+            interval: c.interval,
+            ease_factor: c.easeFactor,
+            repetition: c.repetition,
+            last_reviewed: c.lastReviewed ? new Date(c.lastReviewed).toISOString() : null
+        }));
+
+        const { data, error } = await supabase
+            .from('cards')
+            .insert(dbCards)
+            .select();
+
+        if (error) throw error;
+        return (data ?? []).map(c => ({
+            id: c.id,
+            question: c.question,
+            answer: c.answer,
+            deckId: c.deck_id,
+            nextReview: new Date(c.next_review).getTime(),
+            interval: c.interval,
+            easeFactor: c.ease_factor,
+            repetition: c.repetition,
+            lastReviewed: c.last_reviewed ? new Date(c.last_reviewed).getTime() : undefined
+        }));
+    },
+
+    async updateCard(id: string, updates: Partial<Card>): Promise<void> {
+        const dbUpdates: any = {};
+        if (updates.question !== undefined) dbUpdates.question = updates.question;
+        if (updates.answer !== undefined) dbUpdates.answer = updates.answer;
+        if (updates.nextReview !== undefined) dbUpdates.next_review = new Date(updates.nextReview).toISOString();
+        if (updates.interval !== undefined) dbUpdates.interval = updates.interval;
+        if (updates.easeFactor !== undefined) dbUpdates.ease_factor = updates.easeFactor;
+        if (updates.repetition !== undefined) dbUpdates.repetition = updates.repetition;
+        if (updates.lastReviewed !== undefined) dbUpdates.last_reviewed = new Date(updates.lastReviewed).toISOString();
+
+        const { error } = await supabase
+            .from('cards')
+            .update(dbUpdates)
+            .eq('id', id);
+
+        if (error) throw error;
+    },
+
+    async deleteCard(id: string): Promise<void> {
+        const { error } = await supabase
+            .from('cards')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+    }
+};

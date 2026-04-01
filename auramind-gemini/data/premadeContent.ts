@@ -1,0 +1,153 @@
+import { Deck, Card } from '../types';
+
+export const PREMADE_DECKS: Deck[] = [
+    {
+        id: 'deck-IntroPsych',
+        title: 'Introduction to Psychology',
+        description: 'Core concepts, historical figures, and fundamental theories of human behavior.',
+        createdAt: Date.now(),
+        cardCount: 5,
+    },
+    {
+        id: 'deck-EffectiveStudy',
+        title: 'Science of Learning',
+        description: 'Evidence-based strategies to improve memory retention and study efficiency.',
+        createdAt: Date.now(),
+        cardCount: 4,
+    },
+    {
+        id: 'deck-WorldCapitals',
+        title: 'Global Geography',
+        description: 'Capitals, major landmarks, and key geographical facts from around the world.',
+        createdAt: Date.now(),
+        cardCount: 3,
+    }
+];
+
+export const PREMADE_CARDS: Card[] = [
+    // Psychology Cards
+    {
+        id: 'card-psych-1',
+        deckId: 'deck-IntroPsych',
+        question: 'What is the "Nature vs. Nurture" debate?',
+        answer: 'The scientific debate about whether human behavior is determined more by biological/genetic factors (nature) or by environment and experience (nurture). Modern psychology generally accepts that both interact to shape development.',
+        nextReview: Date.now(),
+        interval: 0,
+        easeFactor: 2.5,
+        repetition: 0,
+    },
+    {
+        id: 'card-psych-2',
+        deckId: 'deck-IntroPsych',
+        question: 'Define "Operant Conditioning".',
+        answer: 'A learning process through which the strength of a behavior is modified by reinforcement or punishment. It was most famously studied by B.F. Skinner.',
+        nextReview: Date.now(),
+        interval: 0,
+        easeFactor: 2.5,
+        repetition: 0,
+    },
+    {
+        id: 'card-psych-3',
+        deckId: 'deck-IntroPsych',
+        question: 'Who is considered the father of Psychoanalysis?',
+        answer: 'Sigmund Freud. He is known for his theories on the unconscious mind, dreams, and the id, ego, and superego.',
+        nextReview: Date.now(),
+        interval: 0,
+        easeFactor: 2.5,
+        repetition: 0,
+    },
+    {
+        id: 'card-psych-4',
+        deckId: 'deck-IntroPsych',
+        question: 'What is the "Placebo Effect"?',
+        answer: 'A beneficial effect produced by a placebo drug or treatment, which cannot be attributed to the properties of the placebo itself, and must therefore be due to the patient\'s belief in that treatment.',
+        nextReview: Date.now(),
+        interval: 0,
+        easeFactor: 2.5,
+        repetition: 0,
+    },
+    {
+        id: 'card-psych-5',
+        deckId: 'deck-IntroPsych',
+        question: 'Explain Maslow\'s Hierarchy of Needs.',
+        answer: 'A motivational theory in psychology comprising a five-tier model of human needs: physiological, safety, love/belonging, esteem, and self-actualization. Needs lower down in the hierarchy must be satisfied before individuals can attend to needs higher up.',
+        nextReview: Date.now(),
+        interval: 0,
+        easeFactor: 2.5,
+        repetition: 0,
+    },
+
+    // Study Science Cards
+    {
+        id: 'card-study-1',
+        deckId: 'deck-EffectiveStudy',
+        question: 'What is Active Recall?',
+        answer: 'Active recall is a principle of efficient learning which claims the need to actively stimulate memory during the learning process. It contrasts with passive review, where the learning material is processed passively (e.g., by reading, watching, etc.).',
+        nextReview: Date.now(),
+        interval: 0,
+        easeFactor: 2.5,
+        repetition: 0,
+    },
+    {
+        id: 'card-study-2',
+        deckId: 'deck-EffectiveStudy',
+        question: 'Explain Spaced Repetition.',
+        answer: 'Spaced repetition is an evidence-based learning technique that is usually performed with flashcards. Newly introduced and more difficult flashcards are shown more frequently, while older and less difficult flashcards are shown less frequently in order to exploit the psychological spacing effect.',
+        nextReview: Date.now(),
+        interval: 0,
+        easeFactor: 2.5,
+        repetition: 0,
+    },
+    {
+        id: 'card-study-3',
+        deckId: 'deck-EffectiveStudy',
+        question: 'What is the Pomodoro Technique?',
+        answer: 'A time management method developed by Francesco Cirillo in the late 1980s. It uses a timer to break down work into intervals, traditionally 25 minutes in length, separated by short breaks.',
+        nextReview: Date.now(),
+        interval: 0,
+        easeFactor: 2.5,
+        repetition: 0,
+    },
+    {
+        id: 'card-study-4',
+        deckId: 'deck-EffectiveStudy',
+        question: 'Why is "cramming" generally ineffective for long-term retention?',
+        answer: 'Cramming (massed practice) leads to poor long-term retention because it doesn\'t allow for memory consolidation, which happens during sleep and over time. Spaced practice is far superior for long-term memory.',
+        nextReview: Date.now(),
+        interval: 0,
+        easeFactor: 2.5,
+        repetition: 0,
+    },
+
+    // Geography Cards
+    {
+        id: 'card-geo-1',
+        deckId: 'deck-WorldCapitals',
+        question: 'What is the capital of Japan?',
+        answer: 'Tokyo',
+        nextReview: Date.now(),
+        interval: 0,
+        easeFactor: 2.5,
+        repetition: 0,
+    },
+    {
+        id: 'card-geo-2',
+        deckId: 'deck-WorldCapitals',
+        question: 'Which is the longest river in the world?',
+        answer: 'The Nile River (in Africa) is generally considered the longest, although some studies suggest the Amazon River might be slightly longer.',
+        nextReview: Date.now(),
+        interval: 0,
+        easeFactor: 2.5,
+        repetition: 0,
+    },
+    {
+        id: 'card-geo-3',
+        deckId: 'deck-WorldCapitals',
+        question: 'What is the smallest country in the world by land area?',
+        answer: 'Vatican City',
+        nextReview: Date.now(),
+        interval: 0,
+        easeFactor: 2.5,
+        repetition: 0,
+    }
+];

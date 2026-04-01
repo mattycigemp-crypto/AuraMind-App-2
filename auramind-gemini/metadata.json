@@ -1,0 +1,7 @@
+{
+  "name": "AuraMind",
+  "description": "An AI-driven learning platform for smart flashcards and adaptive study sessions using spaced repetition and audio playback.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

@@ -1,0 +1,45 @@
+import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { 
+  LayoutGrid, 
+  Layers, 
+  Zap, 
+  Settings, 
+  Plus
+} from 'lucide-react';
+
+const MobileNav: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const navItems = [
+    { title: 'Dashboard', path: '/dashboard', icon: LayoutGrid },
+    { title: 'Study Plan', path: '/dashboard/planner', icon: Layers },
+    { title: 'Operator', path: '/chat', icon: Zap },
+    { title: 'Generate', path: '/generate', icon: Plus },
+    { title: 'Settings', path: '/settings', icon: Settings },
+  ];
+
+  return (
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-t border-arch-border z-[100] flex items-center justify-around px-2">
+      {navItems.map((item) => {
+        const isActive = location.pathname === item.path;
+        return (
+          <button
+            key={item.path}
+            onClick={() => navigate(item.path)}
+            className={`flex flex-col items-center gap-1 p-2 transition-all ${isActive ? 'text-black dark:text-white' : 'text-arch-muted'}`}
+          >
+            <item.icon size={20} />
+            <span className="text-[8px] font-black uppercase tracking-widest">{item.title}</span>
+            {isActive && (
+              <div className="w-1 h-1 bg-black dark:bg-white rounded-full mt-0.5" />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+export default MobileNav;

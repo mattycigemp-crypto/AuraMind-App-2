@@ -1,0 +1,206 @@
+/* ========================================================
+   ARCHITECTURAL DESIGN SYSTEM — AuraMind Neural Interface
+   ======================================================== */
+
+/* --- CSS Custom Properties (runtime tokens) --- */
+:root {
+  --color-arch-bg: #ffffff;
+  --color-arch-fg: #000000;
+  --color-arch-border: rgba(0, 0, 0, 0.10);
+  --color-arch-border-bold: rgba(0, 0, 0, 0.65);
+  --color-arch-muted: rgba(0, 0, 0, 0.45);
+  --color-arch-accent: #000000;
+}
+
+.dark {
+  --color-arch-bg: #000000;
+  --color-arch-fg: #ffffff;
+  --color-arch-border: rgba(255, 255, 255, 0.12);
+  --color-arch-border-bold: rgba(255, 255, 255, 0.70);
+  --color-arch-muted: rgba(255, 255, 255, 0.55);
+  --color-arch-accent: #ffffff;
+}
+
+/* --- Tailwind v4 theme extension (for utility class generation) --- */
+@theme {
+  --font-architect: "Outfit", "Inter", sans-serif;
+  --color-arch-bg: var(--color-arch-bg);
+  --color-arch-fg: var(--color-arch-fg);
+  --color-arch-border: var(--color-arch-border);
+  --color-arch-border-bold: var(--color-arch-border-bold);
+  --color-arch-muted: var(--color-arch-muted);
+  --color-arch-accent: var(--color-arch-accent);
+}
+
+/* --------------------------------------------------------
+   COMPONENTS
+   -------------------------------------------------------- */
+@layer components {
+
+  /* Architectural Panel — core layout surface */
+  .architectural-panel {
+    background-color: var(--color-arch-bg);
+    border: 1px solid var(--color-arch-border);
+    position: relative;
+    transition: border-color 300ms ease, background-color 300ms ease;
+  }
+  .architectural-panel:hover {
+    border-color: var(--color-arch-border-bold);
+  }
+
+  /* Grid overlay background texture */
+  .arch-grid-overlay {
+    background-image:
+      linear-gradient(to right, rgba(128,128,128,0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(128,128,128,0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  /* ---- TYPOGRAPHY ---- */
+
+  .text-arch-eyebrow {
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-arch-muted);
+    line-height: 1.4;
+  }
+
+  .text-arch-impact {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.03em;
+    font-style: italic;
+    line-height: 0.9;
+    color: var(--color-arch-fg);
+  }
+
+  .text-arch-metric {
+    font-size: clamp(3rem, 8vw, 5rem);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    font-style: italic;
+    font-variant-numeric: lining-nums;
+    color: var(--color-arch-fg);
+  }
+
+  /* Color helpers (work via CSS custom properties so dark mode applies) */
+  .text-arch-fg  { color: var(--color-arch-fg); }
+  .text-arch-muted { color: var(--color-arch-muted); }
+  .text-arch-bg  { color: var(--color-arch-bg); }
+  .bg-arch-bg    { background-color: var(--color-arch-bg); }
+  .bg-arch-fg    { background-color: var(--color-arch-fg); }
+  .border-arch-border      { border-color: var(--color-arch-border); }
+  .border-arch-border-bold { border-color: var(--color-arch-border-bold); }
+
+  /* Status Pill */
+  .arch-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid var(--color-arch-border-bold);
+    padding: 0.375rem 0.75rem;
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--color-arch-fg);
+    white-space: nowrap;
+  }
+
+  .arch-pill-glow {
+    position: relative;
+    overflow: hidden;
+  }
+  .arch-pill-glow::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(128,128,128,0.06);
+    animation: pulse 2s cubic-bezier(0.4,0,0.6,1) infinite;
+    pointer-events: none;
+  }
+
+  /* Scan line animation */
+  .arch-scan-line {
+    position: relative;
+    overflow: hidden;
+  }
+  .arch-scan-line::after {
+    content: "";
+    position: absolute;
+    top: -100%;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, transparent 0%, rgba(128,128,128,0.04) 50%, transparent 100%);
+    animation: arch-scan 7s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes arch-scan {
+    from { top: -100%; }
+    to   { top:  100%; }
+  }
+
+  /* ---- BUTTONS ---- */
+
+  /* Primary — high-contrast flip on dark/light */
+  .btn-arch {
+    background-color: var(--color-arch-fg);
+    color: var(--color-arch-bg);
+    padding: 0.875rem 1.75rem;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  .btn-arch:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  }
+  .btn-arch:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Outline variant */
+  .btn-arch-outline {
+    background-color: transparent;
+    color: var(--color-arch-fg);
+    border: 1px solid var(--color-arch-border-bold);
+    padding: 0.875rem 1.75rem;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    transition: background-color 150ms ease, color 150ms ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  .btn-arch-outline:hover {
+    background-color: var(--color-arch-fg);
+    color: var(--color-arch-bg);
+  }
+  .btn-arch-outline:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}

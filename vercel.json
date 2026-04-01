@@ -1,0 +1,17 @@
+{
+  "buildCommand": "npm run build --prefix auramind-gemini",
+  "installCommand": "npm install --prefix auramind-gemini",
+  "outputDirectory": "auramind-gemini/dist",
+  "framework": "vite",
+  "devCommand": "npm run dev --prefix auramind-gemini",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/((?!api/|assets/|_next/|static/).*)",
+      "destination": "/"
+    }
+  ]
+}

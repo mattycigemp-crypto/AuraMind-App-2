@@ -1,0 +1,377 @@
+import React, { useState, useRef, useEffect } from 'react';
+import {
+    Music, Volume2, VolumeX, SkipForward, SkipBack, Play, Pause,
+    Minimize2, List, Shuffle, Plus, X
+} from 'lucide-react';
+
+interface Track {
+    id: string;
+    title: string;
+    url: string;
+    type: string;
+    duration?: string;
+}
+
+const audioModules = import.meta.glob('../assets/audio/*.{mp3,wav,ogg,m4a}', {
+    eager: true,
+    import: 'default',
+}) as Record<string, string>;
+
+const AURAMIND_TRACK_METADATA: Record<string, { title: string; type: string }> = {
+    'nursery lo-fi.mp3': { title: 'Aura Drift', type: 'Lo-Fi Focus' },
+    'save your soul.mp3': { title: 'Soul Sync', type: 'Ambient Focus' },
+    'that look.mp3': { title: 'Mind Gaze', type: 'Study Groove' },
+    'untitled.mp3': { title: 'Neural Bloom', type: 'Deep Focus' },
+    'sample-3s.mp3': { title: 'Focus Pulse', type: 'Focus' },
+    'sample-6s.mp3': { title: 'Aura Flow', type: 'Ambient' },
+    'sample-9s.mp3': { title: 'Memory Loop', type: 'Lo-Fi' },
+    'sample-12s.mp3': { title: 'Recall Wave', type: 'Instrumental' },
+    'sample-15s.mp3': { title: 'Study Current', type: 'Focus' },
+};
+
+const formatTrackName = (fileName: string) => fileName
+    .replace(/\.[^.]+$/, '')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const inferTrackType = (fileName: string) => {
+    const normalized = fileName.toLowerCase();
+    if (normalized.includes('lofi') || normalized.includes('lo-fi')) return 'Lo-Fi';
+    if (normalized.includes('rain') || normalized.includes('ocean') || normalized.includes('forest')) return 'Nature';
+    if (normalized.includes('piano')) return 'Piano';
+    if (normalized.includes('focus')) return 'Focus';
+    return 'Uploaded';
+};
+
+const DEFAULT_TRACKS: Track[] = Object.entries(audioModules)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([path, url], index) => {
+        const fileName = path.split('/').pop() || `track-${index + 1}`;
+        const metadata = AURAMIND_TRACK_METADATA[fileName.toLowerCase()];
+        return {
+            id: `${index + 1}`,
+            title: metadata?.title || formatTrackName(fileName),
+            url,
+            type: metadata?.type || inferTrackType(fileName),
+        };
+    });
+
+const AmbientPlayer: React.FC = () => {
+    const [playlist, setPlaylist] = useState<Track[]>(DEFAULT_TRACKS);
+    const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [volume, setVolume] = useState(0.5);
+    const [isMinimized, setIsMinimized] = useState(true);
+    const [showPlaylist, setShowPlaylist] = useState(false);
+    const [isShuffle, setIsShuffle] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [customUrl, setCustomUrl] = useState('');
+    const [showUrlInput, setShowUrlInput] = useState(false);
+    const [trackErrorIds, setTrackErrorIds] = useState<string[]>([]);
+
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.volume = volume;
+        }
+    }, [volume]);
+
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        if (isPlaying) {
+            audio.play().catch(e => {
+                console.error("Audio play failed", e);
+                setIsPlaying(false);
+            });
+        } else {
+            audio.pause();
+        }
+    }, [isPlaying, currentTrackIndex]);
+
+    const togglePlay = () => setIsPlaying(!isPlaying);
+
+    const nextTrack = () => {
+        if (playlist.length <= 1) return;
+        if (isShuffle) {
+            const nextIndex = Math.floor(Math.random() * playlist.length);
+            setCurrentTrackIndex(nextIndex);
+        } else {
+            setCurrentTrackIndex((prev) => (prev + 1) % playlist.length);
+        }
+    };
+
+    const prevTrack = () => {
+        if (playlist.length <= 1) return;
+        setCurrentTrackIndex((prev) => (prev - 1 + playlist.length) % playlist.length);
+    };
+
+    const handleTrackError = () => {
+        const failedTrack = playlist[currentTrackIndex];
+        if (!failedTrack) return;
+
+        setTrackErrorIds((prev) => {
+            if (prev.includes(failedTrack.id)) return prev;
+            return [...prev, failedTrack.id];
+        });
+
+        if (playlist.length <= 1) {
+            setIsPlaying(false);
+            return;
+        }
+
+        const nextIndex = playlist.findIndex((track, idx) => idx !== currentTrackIndex && track.id !== failedTrack.id && !trackErrorIds.includes(track.id));
+        if (nextIndex >= 0) {
+            setCurrentTrackIndex(nextIndex);
+            setIsPlaying(true);
+            return;
+        }
+
+        setIsPlaying(false);
+    };
+
+    const handleTimeUpdate = () => {
+        if (audioRef.current) {
+            setProgress(audioRef.current.currentTime);
+            setDuration(audioRef.current.duration || 0);
+        }
+    };
+
+    const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const time = parseFloat(e.target.value);
+        if (audioRef.current) {
+            audioRef.current.currentTime = time;
+            setProgress(time);
+        }
+    };
+
+    const formatTime = (time: number) => {
+        if (isNaN(time)) return "0:00";
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    const addCustomTrack = () => {
+        if (!customUrl.trim()) return;
+
+        const newTrack: Track = {
+            id: Date.now().toString(),
+            title: "Custom Track",
+            url: customUrl,
+            type: "Custom"
+        };
+
+        setPlaylist([...playlist, newTrack]);
+        setCustomUrl('');
+        setShowUrlInput(false);
+
+        // Automatically switch to new track
+        setCurrentTrackIndex(playlist.length);
+        setIsPlaying(true);
+    };
+
+    const currentTrack = playlist[currentTrackIndex];
+    const hasTrackError = currentTrack ? trackErrorIds.includes(currentTrack.id) : false;
+
+    if (!currentTrack) {
+        return null;
+    }
+
+    return (
+        <div className={`fixed bottom-6 right-6 z-50 transition-all duration-300 ${isMinimized ? 'w-auto' : 'w-80'}`}>
+            <audio
+                ref={audioRef}
+                src={currentTrack.url}
+                loop={false}
+                onEnded={nextTrack}
+                onTimeUpdate={handleTimeUpdate}
+                onError={handleTrackError}
+            />
+
+            <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden accent-gradient-border ring-1 ring-white/5">
+
+                {/* Minimized View */}
+                {isMinimized ? (
+                    <button
+                        onClick={() => setIsMinimized(false)}
+                        className="flex items-center gap-4 p-3 pr-6 hover:bg-white/5 transition-colors group"
+                    >
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPlaying ? 'accent-gradient shadow-[0_0_15px_rgba(168,85,247,0.4)] animate-spin-slow' : 'bg-white/10'}`}>
+                            <Music size={18} className="text-white" />
+                        </div>
+
+                        {isPlaying && (
+                            <div className="flex flex-col items-start mr-2">
+                                <span className="text-xs font-bold text-white max-w-[100px] truncate">{currentTrack.title}</span>
+                                <span className="text-[10px] text-purple-300">{currentTrack.type}</span>
+                            </div>
+                        )}
+
+                        {!isPlaying && <span className="text-sm font-medium text-white/70 group-hover:text-white">Music</span>}
+                    </button>
+                ) : (
+                    /* Maximized View */
+                    <div className="flex flex-col h-[450px]">
+                        {/* Header */}
+                        <div className="p-5 flex justify-between items-center bg-gradient-to-b from-white/5 to-transparent">
+                            <button
+                                onClick={() => setShowPlaylist(!showPlaylist)}
+                                className={`p-2 rounded-full transition-colors ${showPlaylist ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white'}`}
+                            >
+                                <List size={18} />
+                            </button>
+                            <span className="text-xs font-bold tracking-[0.2em] uppercase text-white/40">Now Playing</span>
+                            <button
+                                onClick={() => setIsMinimized(true)}
+                                className="p-2 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                            >
+                                <Minimize2 size={18} />
+                            </button>
+                        </div>
+
+                        {/* Playlist View or Player View */}
+                        {showPlaylist ? (
+                            <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                                <button
+                                    onClick={() => setShowUrlInput(!showUrlInput)}
+                                    className="w-full py-3 px-4 rounded-xl border border-dashed border-white/20 text-white/50 hover:text-white hover:border-white/40 hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-sm font-medium mb-4"
+                                >
+                                    <Plus size={16} /> Add Custom URL
+                                </button>
+
+                                {showUrlInput && (
+                                    <div className="mb-4 bg-white/5 p-3 rounded-xl space-y-2">
+                                        <input
+                                            type="text"
+                                            value={customUrl}
+                                            onChange={(e) => setCustomUrl(e.target.value)}
+                                            placeholder="Paste MP3 URL..."
+                                            className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500 transition-colors"
+                                        />
+                                        <div className="flex gap-2">
+                                            <button onClick={addCustomTrack} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold py-2 rounded-lg transition-colors">Add</button>
+                                            <button onClick={() => setShowUrlInput(false)} className="px-3 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition-colors"><X size={14} /></button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {playlist.map((track, idx) => (
+                                    <div
+                                        key={track.id}
+                                        onClick={() => { setCurrentTrackIndex(idx); setIsPlaying(true); }}
+                                        className={`p-3 rounded-xl flex items-center gap-3 cursor-pointer transition-all group ${currentTrackIndex === idx ? 'bg-white/10 shadow-lg' : 'hover:bg-white/5'}`}
+                                    >
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${currentTrackIndex === idx ? 'accent-gradient text-white' : 'bg-white/5 text-neutral-500 group-hover:text-white'}`}>
+                                            {currentTrackIndex === idx && isPlaying ? (
+                                                <div className="flex gap-[2px] items-end h-3">
+                                                    <div className="w-[2px] bg-white animate-music-bar h-full"></div>
+                                                    <div className="w-[2px] bg-white animate-music-bar h-2/3" style={{ animationDelay: '0.1s' }}></div>
+                                                    <div className="w-[2px] bg-white animate-music-bar h-1/2" style={{ animationDelay: '0.2s' }}></div>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs font-bold">{idx + 1}</span>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className={`text-sm font-bold truncate ${currentTrackIndex === idx ? 'text-white' : 'text-neutral-400 group-hover:text-neutral-200'}`}>
+                                                {track.title}
+                                            </h4>
+                                            <p className="text-[10px] text-neutral-600 uppercase tracking-wider">{track.type}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            // Player View
+                            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                                <div className={`w-32 h-32 rounded-full mb-6 relative flex items-center justify-center shadow-[0_0_40px_rgba(124,58,237,0.2)] transition-all duration-700 ${isPlaying ? 'scale-100' : 'scale-90 opacity-80'}`}>
+                                    <div className={`absolute inset-0 rounded-full accent-gradient opacity-20 ${isPlaying ? 'animate-pulse' : ''}`}></div>
+                                    <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-900 to-black border border-white/10 flex items-center justify-center overflow-hidden">
+                                        <Music size={40} className={`text-white/20 ${isPlaying ? 'animate-bounce-subtle' : ''}`} />
+                                    </div>
+                                    {/* Rotating Border */}
+                                    {isPlaying && (
+                                        <div className="absolute inset-[-4px] rounded-full border-t border-purple-500/50 animate-spin-slow pointer-events-none"></div>
+                                    )}
+                                </div>
+
+                                <div className="space-y-1 mb-8 w-full">
+                                    <h3 className="text-xl font-bold text-white truncate px-4">{currentTrack.title}</h3>
+                                    <p className="text-sm text-purple-300 font-medium">{currentTrack.type}</p>
+                                    {hasTrackError && (
+                                        <p className="text-xs text-red-300">This track could not be loaded. Skipping to the next available track.</p>
+                                    )}
+                                </div>
+
+                                {/* Progress Bar */}
+                                <div className="w-full space-y-2 mb-6 group">
+                                    <div className="relative h-1 bg-white/10 rounded-full overflow-hidden cursor-pointer">
+                                        <div
+                                            className="absolute top-0 left-0 h-full accent-gradient"
+                                            style={{ width: `${(progress / duration) * 100}%` }}
+                                        />
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max={duration || 100}
+                                            value={progress}
+                                            onChange={handleSeek}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        />
+                                    </div>
+                                    <div className="flex justify-between text-[10px] font-medium text-white/30 px-1">
+                                        <span>{formatTime(progress)}</span>
+                                        <span>{formatTime(duration)}</span>
+                                    </div>
+                                </div>
+
+                                {/* Main Controls */}
+                                <div className="flex items-center justify-center gap-6 w-full">
+                                    <button
+                                        onClick={() => setIsShuffle(!isShuffle)}
+                                        className={`text-white/40 hover:text-white transition-colors ${isShuffle ? 'text-purple-400' : ''}`}
+                                    >
+                                        <Shuffle size={18} />
+                                    </button>
+
+                                    <button onClick={prevTrack} className="text-white hover:text-purple-300 transition-colors">
+                                        <SkipBack size={24} />
+                                    </button>
+
+                                    <button
+                                        onClick={togglePlay}
+                                        className="w-14 h-14 flex items-center justify-center rounded-full accent-gradient text-white shadow-lg hover:brightness-110 active:scale-95 transition-all"
+                                    >
+                                        {isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" className="ml-1" />}
+                                    </button>
+
+                                    <button onClick={nextTrack} className="text-white hover:text-purple-300 transition-colors">
+                                        <SkipForward size={24} />
+                                    </button>
+
+                                    <button
+                                        className="text-white/40 hover:text-white transition-colors relative group/vol"
+                                        onClick={() => setVolume(v => v === 0 ? 0.5 : 0)}
+                                    >
+                                        {volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Volume Footer (only in playlist view or extra control) */}
+                        <div className="px-6 pb-6 pt-2">
+                            {/* Could add mini volume slider here if needed, but the button toggle above might be cleaner for now to save space */}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default AmbientPlayer;
