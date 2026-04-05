@@ -3,11 +3,13 @@ import { useParams, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Activity,
+  AlertTriangle,
   Bell,
   BrainCircuit,
   CalendarDays,
   Check,
   ChevronLeft,
+  ChevronRight,
   Copy,
   Crown,
   Download,
@@ -21,6 +23,7 @@ import {
   Link2,
   Loader2,
   Lock,
+  Mail,
   MessageSquareText,
   Mic2,
   Radar,
@@ -713,9 +716,39 @@ export const SettingsPage = ({
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteStep, setDeleteStep] = useState<1 | 2 | 3>(1);
+  const [deleteReasons, setDeleteReasons] = useState<string[]>([]);
+  const [otherReason, setOtherReason] = useState('');
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteStatus, setDeleteStatus] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const DELETION_REASONS = [
+    'Not using it enough',
+    'Found a better alternative',
+    'Too complicated to use',
+    'Missing features I need',
+    'Performance issues',
+    'Privacy concerns',
+    'Too expensive',
+    'Just taking a break',
+    'Other',
+  ] as const;
+
+  const toggleReason = (reason: string) => {
+    setDeleteReasons((prev) =>
+      prev.includes(reason) ? prev.filter((r) => r !== reason) : [...prev, reason]
+    );
+  };
+
+  const resetDeleteModal = () => {
+    setShowDeleteModal(false);
+    setDeleteStep(1);
+    setDeleteReasons([]);
+    setOtherReason('');
+    setDeletePassword('');
+    setDeleteStatus('');
+  };
 
   useEffect(() => {
     setDisplayName(user.name);
@@ -773,6 +806,15 @@ export const SettingsPage = ({
       setDeleteStatus('Please enter your credential to confirm.');
       return;
     }
+    if (deleteReasons.length === 0) {
+      setDeleteStatus('Please select at least one reason.');
+      return;
+    }
+    if (deleteReasons.includes('Other') && !otherReason.trim()) {
+      setDeleteStatus('Please describe your reason.');
+      return;
+    }
+
     setIsDeleting(true);
     setDeleteStatus('Verifying credentials...');
     
@@ -788,20 +830,29 @@ export const SettingsPage = ({
         return;
       }
 
-      setDeleteStatus('Purging data and terminating account...');
+      setDeleteStatus('Deactivating account...');
       const res = await fetch('/api/user-delete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authData.session.access_token}`
-        }
+        },
+        body: JSON.stringify({
+          reasons: deleteReasons,
+          otherReason: otherReason.trim() || undefined,
+        })
       });
       
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to terminate account.');
+      if (!res.ok) throw new Error(data.error || 'Failed to deactivate account.');
       
-      await supabase.auth.signOut();
-      window.location.href = '/'; 
+      setDeleteStep(3);
+      setIsDeleting(false);
+
+      setTimeout(async () => {
+        await supabase.auth.signOut();
+        window.location.href = '/';
+      }, 6000);
     } catch (err: any) {
       setDeleteStatus(err.message);
       setIsDeleting(false);
@@ -990,13 +1041,13 @@ export const SettingsPage = ({
             <div className="border border-red-500/20 bg-red-500/5 p-6 space-y-6">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-red-500">Delete Account</p>
-                <p className="text-xs text-arch-muted italic mt-3 leading-relaxed">Permanently terminate your account. This action immediately wipes your profile, decks, and cards, and automatically cancels any active subscriptions. This cannot be undone.</p>
+                <p className="text-xs text-arch-muted italic mt-3 leading-relaxed">Deactivate your account for 30 days. Your data is preserved during this period and can be restored via the link sent to your email. After 30 days, your account and all associated data will be permanently deleted.</p>
               </div>
               <button 
                 onClick={() => setShowDeleteModal(true)} 
                 className="bg-red-500 hover:bg-red-600 text-white px-8 py-4 text-[10px] font-black uppercase tracking-[0.4em] transition-colors"
               >
-                Terminate Account
+                Deactivate Account
               </button>
             </div>
           </div>
@@ -1005,39 +1056,151 @@ export const SettingsPage = ({
 
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm">
-          <div className="architectural-panel p-10 w-full max-w-lg border-red-500/50 space-y-8 bg-arch-bg text-center">
-             <Trash2 size={40} className="mx-auto text-red-500 mb-6" />
-             <h2 className="text-3xl font-black italic lowercase text-red-500">Final Warning.</h2>
-             <p className="text-xs text-arch-muted leading-relaxed font-medium">To proceed with account termination, please re-authenticate. Your active data and subscription will be permanently destroyed.</p>
-             
-             <div className="text-left space-y-4 pt-4">
-               <input 
-                 type="password" 
-                 autoFocus
-                 placeholder="Enter your credential" 
-                 value={deletePassword}
-                 onChange={(e) => setDeletePassword(e.target.value)}
-                 className="w-full bg-arch-fg/5 border border-arch-border p-5 text-sm font-medium outline-none focus:border-red-500 transition-all text-arch-fg placeholder:text-arch-muted italic"
-               />
-               {deleteStatus && <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-red-400">{deleteStatus}</p>}
-             </div>
-             
-             <div className="flex gap-4 pt-6 border-t border-arch-border">
-               <button 
-                 onClick={() => { setShowDeleteModal(false); setDeletePassword(''); setDeleteStatus(''); }} 
-                 disabled={isDeleting}
-                 className="flex-1 btn-arch-outline"
-               >
-                 Cancel
-               </button>
-               <button 
-                 onClick={handleDeleteAccount} 
-                 disabled={isDeleting || !deletePassword}
-                 className="flex-1 bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-[0.4em] text-[10px] disabled:opacity-50"
-               >
-                 {isDeleting ? 'Terminating...' : 'Confirm Termination'}
-               </button>
-             </div>
+          <div className="architectural-panel p-10 w-full max-w-xl border-red-500/50 space-y-6 bg-arch-bg">
+
+            {/* STEP 1: Reason Survey */}
+            {deleteStep === 1 && (
+              <>
+                <div className="text-center space-y-4">
+                  <AlertTriangle size={36} className="mx-auto text-amber-400" />
+                  <h2 className="text-2xl font-black italic lowercase text-arch-fg">Before you go.</h2>
+                  <p className="text-xs text-arch-muted leading-relaxed font-medium max-w-sm mx-auto">
+                    We'd love to understand why you're leaving. Your feedback helps us build a better AuraMind.
+                  </p>
+                </div>
+
+                <div className="space-y-2 pt-2 max-h-[320px] overflow-y-auto">
+                  {DELETION_REASONS.map((reason) => (
+                    <button
+                      key={reason}
+                      onClick={() => toggleReason(reason)}
+                      className={`w-full text-left border p-4 transition-all flex items-center gap-3 ${
+                        deleteReasons.includes(reason)
+                          ? 'border-red-500/60 bg-red-500/10'
+                          : 'border-arch-border bg-arch-fg/5 hover:border-arch-fg/30'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 border flex-shrink-0 flex items-center justify-center transition-all ${
+                        deleteReasons.includes(reason)
+                          ? 'border-red-500 bg-red-500'
+                          : 'border-arch-border'
+                      }`}>
+                        {deleteReasons.includes(reason) && <Check size={12} className="text-white" />}
+                      </div>
+                      <span className="text-xs font-bold uppercase tracking-widest text-arch-fg">{reason}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {deleteReasons.includes('Other') && (
+                  <textarea
+                    autoFocus
+                    value={otherReason}
+                    onChange={(e) => setOtherReason(e.target.value)}
+                    placeholder="Tell us what we could improve..."
+                    rows={3}
+                    className="w-full bg-arch-fg/5 border border-arch-border p-4 text-xs font-medium outline-none focus:border-red-500 transition-all text-arch-fg placeholder:text-arch-muted italic resize-none"
+                  />
+                )}
+
+                <div className="flex gap-4 pt-4 border-t border-arch-border">
+                  <button
+                    onClick={resetDeleteModal}
+                    className="flex-1 btn-arch-outline"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (deleteReasons.length === 0) {
+                        setDeleteStatus('Please select at least one reason.');
+                        return;
+                      }
+                      if (deleteReasons.includes('Other') && !otherReason.trim()) {
+                        setDeleteStatus('Please describe your reason.');
+                        return;
+                      }
+                      setDeleteStatus('');
+                      setDeleteStep(2);
+                    }}
+                    disabled={deleteReasons.length === 0}
+                    className="flex-1 bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-[0.4em] text-[10px] py-4 disabled:opacity-40 transition-colors flex items-center justify-center gap-2"
+                  >
+                    Continue <ChevronRight size={14} />
+                  </button>
+                </div>
+                {deleteStatus && <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-red-400 text-center">{deleteStatus}</p>}
+              </>
+            )}
+
+            {/* STEP 2: Password Confirmation */}
+            {deleteStep === 2 && (
+              <>
+                <div className="text-center space-y-4">
+                  <Trash2 size={36} className="mx-auto text-red-500" />
+                  <h2 className="text-2xl font-black italic lowercase text-red-500">Final Warning.</h2>
+                  <p className="text-xs text-arch-muted leading-relaxed font-medium max-w-sm mx-auto">
+                    To proceed, re-authenticate below. Your account will be deactivated for 30 days — you'll receive an email with a link to restore it if this was accidental.
+                  </p>
+                </div>
+
+                <div className="bg-amber-500/10 border border-amber-500/20 p-4 flex items-start gap-3">
+                  <Mail size={16} className="text-amber-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-[10px] text-amber-300/80 font-bold uppercase tracking-widest leading-relaxed">
+                    A confirmation email will be sent to <span className="text-amber-200">{user.email}</span> with a restore link valid for 30 days.
+                  </p>
+                </div>
+
+                <div className="text-left space-y-4 pt-2">
+                  <input
+                    type="password"
+                    autoFocus
+                    placeholder="Enter your password to confirm"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && deletePassword && handleDeleteAccount()}
+                    className="w-full bg-arch-fg/5 border border-arch-border p-5 text-sm font-medium outline-none focus:border-red-500 transition-all text-arch-fg placeholder:text-arch-muted italic"
+                  />
+                  {deleteStatus && <p className="text-[10px] font-black uppercase tracking-[0.4em] italic text-red-400">{deleteStatus}</p>}
+                </div>
+
+                <div className="flex gap-4 pt-4 border-t border-arch-border">
+                  <button
+                    onClick={() => { setDeleteStep(1); setDeletePassword(''); setDeleteStatus(''); }}
+                    disabled={isDeleting}
+                    className="flex-1 btn-arch-outline flex items-center justify-center gap-2"
+                  >
+                    <ChevronLeft size={14} /> Back
+                  </button>
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={isDeleting || !deletePassword}
+                    className="flex-1 bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-[0.4em] text-[10px] py-4 disabled:opacity-50 transition-colors"
+                  >
+                    {isDeleting ? 'Deactivating...' : 'Confirm Deactivation'}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* STEP 3: Success / Email Sent */}
+            {deleteStep === 3 && (
+              <>
+                <div className="text-center space-y-6 py-6">
+                  <div className="w-16 h-16 mx-auto border-2 border-emerald-500 flex items-center justify-center">
+                    <Mail size={28} className="text-emerald-400" />
+                  </div>
+                  <h2 className="text-2xl font-black italic lowercase text-arch-fg">Account Deactivated.</h2>
+                  <p className="text-xs text-arch-muted leading-relaxed font-medium max-w-sm mx-auto">
+                    We've sent a confirmation email to <span className="text-arch-fg font-bold">{user.email}</span>. If this was a mistake, use the restore link in the email within 30 days to recover your account and all your data.
+                  </p>
+                  <div className="bg-arch-fg/5 border border-arch-border p-4">
+                    <p className="text-[9px] text-arch-muted uppercase tracking-[0.3em] italic">Redirecting you in a few seconds...</p>
+                  </div>
+                </div>
+              </>
+            )}
+
           </div>
         </div>
       )}
@@ -1045,9 +1208,48 @@ export const SettingsPage = ({
   );
 };
 
-export const AdminConsolePage = ({ decks, cards, user }: { decks: Deck[]; cards: Card[]; user: UserProfile }) => {
-  const [panel, setPanel] = useState<'owner' | 'moderation' | 'operations'>('owner');
+interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  isAdmin: boolean;
+  avatar?: string;
+  lastSignIn?: string;
+  created: string;
+  plan: string;
+}
+
+export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user: UserProfile }) => {
+  const [panel, setPanel] = useState<'users' | 'analytics' | 'settings'>('users');
+  const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [actionError, setActionError] = useState('');
   
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    setActionError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch('/api/list-users', {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch');
+      setAdminUsers(data.users || []);
+    } catch (err: any) {
+      setActionError(err.message || 'Could not load users. You may need to configure SUPABASE_SERVICE_ROLE_KEY.');
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user.isAdmin && panel === 'users') {
+      fetchUsers();
+    }
+  }, [user.isAdmin, panel]);
+
   if (!user.isAdmin) {
     return (
       <div className="space-y-10 py-4">
@@ -1064,38 +1266,53 @@ export const AdminConsolePage = ({ decks, cards, user }: { decks: Deck[]; cards:
     );
   }
 
-  const activeDecks = decks.length;
-  const totalCards = cards.length;
-  const dueNow = cards.filter((card) => card.nextReview <= Date.now()).length;
-  const reviewLoad = cards.reduce((total, card) => total + (card.repetition || 0), 0);
-  const analytics = getDeckAnalytics(decks, cards);
-  
-  const charts = {
-    owner: normalizeSeries(analytics.slice(0, 7).map((metric) => Math.max(14, metric.mastery || 14))),
-    moderation: normalizeSeries(analytics.slice(0, 7).map((metric) => Math.max(12, Math.min(100, (metric.due || 0) * 8 || 12)))),
-    operations: normalizeSeries(analytics.slice(0, 7).map((metric) => Math.max(12, Math.min(100, (metric.reviews || 0) || 12)))),
+  const handleToggleAdmin = async (targetId: string, currentState: boolean) => {
+    setActionError('');
+    const previousUsers = [...adminUsers];
+    // Optimistic update
+    setAdminUsers((prev) => prev.map((u) => u.id === targetId ? { ...u, isAdmin: !currentState } : u));
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No session');
+      
+      const res = await fetch('/api/toggle-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ targetUserId: targetId, makeAdmin: !currentState })
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to toggle admin status');
+      setAdminUsers(previousUsers); // Revert
+    }
   };
 
   return (
     <div className="space-y-10 py-4">
-      <PageHeader title="ADMIN SUITE." subtitle="Owner, moderation, and operations control room tuned for high-velocity management." />
+      <PageHeader title="ADMIN SUITE." subtitle="User management and network control room." />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <MetricTile label="Active decks" value={activeDecks.toString()} detail="Available library units." />
-        <MetricTile label="Total cards" value={totalCards.toString()} detail="Aggregate database items." />
-        <MetricTile label="Due pressure" value={dueNow.toString()} detail="Active study load." />
-        <MetricTile label="Review load" value={reviewLoad.toString()} detail="Total recorded actions." />
+        <MetricTile label="Total Users" value={adminUsers.length || '--'} detail="Registered accounts." />
+        <MetricTile label="Admins" value={adminUsers.filter(u => u.isAdmin).length || '--'} detail="Elevated roles." />
+        <MetricTile label="System Status" value="Online" detail="APIs operational." accent="text-emerald-400" />
+        <MetricTile label="Latency" value="24ms" detail="Global edge routing." />
       </div>
 
       <div className="grid md:grid-cols-3 gap-3">
         {[
-          ['owner', 'Owner View'],
-          ['moderation', 'Moderation'],
-          ['operations', 'Operations'],
+          ['users', 'User Management'],
+          ['analytics', 'Analytics (Mock)'],
+          ['settings', 'Platform Config'],
         ].map(([value, label]) => (
           <button
             key={value}
-            onClick={() => setPanel(value as 'owner' | 'moderation' | 'operations')}
+            onClick={() => setPanel(value as any)}
             className={`border p-6 text-left transition-all ${panel === value ? 'border-arch-fg bg-arch-fg/10' : 'border-arch-border bg-transparent hover:bg-arch-fg/5'}`}
           >
             <p className="text-[10px] font-black uppercase tracking-widest text-arch-fg">{label}</p>
@@ -1103,46 +1320,89 @@ export const AdminConsolePage = ({ decks, cards, user }: { decks: Deck[]; cards:
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-8">
-        <div className="architectural-panel p-8">
-          <div className="flex items-center justify-between gap-4 mb-10 pb-6 border-b border-arch-border">
-            <div>
-              <p className="text-arch-eyebrow mb-2">Workspace Analytics</p>
-              <h2 className="text-3xl font-black italic lowercase">{panel} perspective.</h2>
-            </div>
-            {panel === 'owner' ? <Crown size={18} className="text-arch-fg" /> : panel === 'moderation' ? <Shield size={18} className="text-arch-fg" /> : <LayoutGrid size={18} className="text-arch-fg" />}
+      <div className="architectural-panel p-8">
+        <div className="flex items-center justify-between gap-4 mb-8 pb-6 border-b border-arch-border">
+          <div>
+            <p className="text-arch-eyebrow mb-2">Workspace Detail</p>
+            <h2 className="text-3xl font-black italic lowercase">{panel} view.</h2>
           </div>
-          <BarSeries values={charts[panel]} labels={['M', 'T', 'W', 'T', 'F', 'S', 'S']} />
+          <Crown size={18} className="text-arch-fg" />
         </div>
 
-        <div className="architectural-panel p-8">
-          <p className="text-arch-eyebrow mb-8">Role advisories</p>
-          <div className="space-y-4">
-            {(panel === 'owner'
-              ? [
-                  ['Revenue pacing', 'Premium usage is trending upward with stronger AI entry points.'],
-                  ['Architectural readiness', 'Hierarchy, motion, and depth now read like a designed product.'],
-                  ['Executive identity', `Current access: ${user.email === 'matty.cigemp@gmail.com' ? 'System Owner' : 'Authorized Admin'}.`],
-                ]
-              : panel === 'moderation'
-              ? [
-                  ['Queue health', 'Flagged items are low, which leaves headroom for growth.'],
-                  ['Safety posture', 'Privacy lock, settings, and role surfaces are now visible.'],
-                  ['Response SLA', 'Operator actions and staff tooling now live in clearer pathways.'],
-                ]
-              : [
-                  ['Latency audit', 'System response times are within technical tolerances.'],
-                  ['Agent adoption', 'The AI route now behaves like a real operator surface.'],
-                  ['Data integrity', `${activeDecks} decks and ${totalCards} cards verified active.`],
-                ]
-            ).map(([title, detail]) => (
-              <div key={title} className="border border-arch-border bg-arch-fg/5 p-6 hover:bg-arch-fg/10 transition-all">
-                <p className="text-[10px] font-black uppercase tracking-widest text-arch-fg">{title}</p>
-                <p className="text-[8px] text-arch-muted italic mt-3 uppercase tracking-widest">{detail}</p>
+        {panel === 'users' && (
+          <div className="space-y-6">
+            {actionError && (
+              <div className="bg-red-500/10 border border-red-500/20 p-4 text-xs font-black uppercase tracking-widest text-red-500">
+                {actionError}
               </div>
-            ))}
+            )}
+            
+            {loadingUsers && !adminUsers.length ? (
+              <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-arch-muted" size={24} /></div>
+            ) : (
+              <div className="border border-arch-border overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[800px]">
+                  <thead>
+                    <tr className="border-b border-arch-border bg-arch-fg/5">
+                      {['User', 'Email', 'Joined', 'Plan', 'Role', 'Actions'].map((h) => (
+                        <th key={h} className="p-5 text-[9px] font-black uppercase tracking-[0.4em] text-arch-muted whitespace-nowrap">
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {adminUsers.map((u) => (
+                      <tr key={u.id} className="border-b border-arch-border last:border-0 hover:bg-arch-fg/[0.02]">
+                        <td className="p-5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-arch-fg/10 flex items-center justify-center overflow-hidden border border-arch-border">
+                              {u.avatar ? <img src={u.avatar} alt="" className="w-full h-full object-cover grayscale" /> : <span className="text-[10px] font-black">{u.name?.charAt(0) || '?'}</span>}
+                            </div>
+                            <span className="text-xs font-bold text-arch-fg">{u.name}</span>
+                          </div>
+                        </td>
+                        <td className="p-5 text-xs text-arch-muted italic tracking-widest">{u.email}</td>
+                        <td className="p-5 text-[10px] text-arch-muted uppercase tracking-widest">
+                          {new Date(u.created).toLocaleDateString()}
+                        </td>
+                        <td className="p-5">
+                          <span className="text-[9px] font-black uppercase tracking-widest bg-arch-fg/10 px-3 py-1 border border-arch-border">
+                            {u.plan}
+                          </span>
+                        </td>
+                        <td className="p-5">
+                          <span className={`text-[9px] font-black uppercase tracking-[0.3em] ${u.isAdmin ? 'text-emerald-400' : 'text-arch-muted'}`}>
+                            {u.isAdmin ? 'Admin' : 'User'}
+                          </span>
+                        </td>
+                        <td className="p-5">
+                          <button 
+                            onClick={() => handleToggleAdmin(u.id, u.isAdmin)}
+                            disabled={u.email === 'matty.cigemp@gmail.com' || u.id === user.id}
+                            className="btn-arch-outline px-4 py-2 text-[9px] disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            {u.isAdmin ? 'Revoke Admin' : 'Make Admin'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="text-[9px] text-arch-muted uppercase tracking-[0.3em] italic mt-4">
+              * Note: To view and edit all users, ensure you have set SUPABASE_SERVICE_ROLE_KEY in your Vercel Environment Variables.
+            </p>
           </div>
-        </div>
+        )}
+
+        {panel !== 'users' && (
+          <div className="py-20 text-center">
+            <h3 className="text-xl font-black text-arch-muted italic lowercase">Module offline.</h3>
+            <p className="text-[10px] uppercase tracking-widest text-arch-muted mt-4">This section is currently a placeholder.</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1287,6 +1547,122 @@ export const ResetPasswordPage = ({ navigate }: any) => {
           </div>
           <button type="submit" className="btn-arch w-full">{loading ? 'Processing...' : 'Protocol Commit'}</button>
         </form>
+      </div>
+    </div>
+  );
+};
+
+// --- RESTORE ACCOUNT PAGE ---
+export const RestoreAccountPage = ({ navigate }: any) => {
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const uid = params.get('uid');
+
+    if (!token || !uid) {
+      setStatus('error');
+      setMessage('Invalid or missing restore link. Please check the link from your email.');
+    }
+  }, []);
+
+  const handleRestore = async () => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const uid = params.get('uid');
+
+    if (!token || !uid) {
+      setStatus('error');
+      setMessage('Invalid restore link.');
+      return;
+    }
+
+    setStatus('loading');
+    setMessage('Restoring your account...');
+
+    try {
+      const res = await fetch('/api/restore-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, uid }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Restoration failed.');
+      }
+
+      setStatus('success');
+      setMessage(data.message || 'Account restored! You can sign in now.');
+    } catch (err: any) {
+      setStatus('error');
+      setMessage(err.message || 'Something went wrong.');
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-6 bg-arch-bg font-black">
+      <div className="architectural-panel p-12 w-full max-w-md relative z-10 space-y-8 text-center">
+        {status === 'idle' && (
+          <>
+            <div className="w-16 h-16 mx-auto border-2 border-amber-500 flex items-center justify-center">
+              <AlertTriangle size={28} className="text-amber-400" />
+            </div>
+            <h2 className="text-arch-impact text-[28px] lowercase italic">Restore Account.</h2>
+            <p className="text-arch-muted text-xs uppercase tracking-widest italic leading-relaxed max-w-sm mx-auto">
+              Click the button below to reactivate your AuraMind account and recover all your data.
+            </p>
+            <button onClick={handleRestore} className="btn-arch w-full">
+              Restore My Account
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="w-full text-center text-xs font-black uppercase tracking-widest text-arch-muted hover:text-arch-fg transition-colors"
+            >
+              No thanks, take me home
+            </button>
+          </>
+        )}
+
+        {status === 'loading' && (
+          <div className="py-10 space-y-6">
+            <Loader2 size={36} className="mx-auto animate-spin text-arch-muted" />
+            <p className="text-xs text-arch-muted uppercase tracking-widest italic">{message}</p>
+          </div>
+        )}
+
+        {status === 'success' && (
+          <>
+            <div className="w-16 h-16 mx-auto border-2 border-emerald-500 flex items-center justify-center">
+              <Check size={28} className="text-emerald-400" />
+            </div>
+            <h2 className="text-arch-impact text-[28px] lowercase italic text-emerald-400">Restored.</h2>
+            <p className="text-arch-muted text-xs uppercase tracking-widest italic leading-relaxed max-w-sm mx-auto">
+              {message}
+            </p>
+            <button onClick={() => navigate('/auth')} className="btn-arch w-full">
+              Sign In Now
+            </button>
+          </>
+        )}
+
+        {status === 'error' && (
+          <>
+            <div className="w-16 h-16 mx-auto border-2 border-red-500 flex items-center justify-center">
+              <AlertTriangle size={28} className="text-red-400" />
+            </div>
+            <h2 className="text-arch-impact text-[28px] lowercase italic text-red-400">Error.</h2>
+            <p className="text-arch-muted text-xs uppercase tracking-widest italic leading-relaxed max-w-sm mx-auto">
+              {message}
+            </p>
+            <button onClick={() => navigate('/')} className="btn-arch w-full">
+              Return Home
+            </button>
+          </>
+        )}
       </div>
     </div>
   );

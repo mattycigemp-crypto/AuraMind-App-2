@@ -24,8 +24,11 @@ import {
   PrivacyPolicyPage,
   TermsOfServicePage,
   ResetPasswordPage,
+  RestoreAccountPage,
   NotFoundPage
 } from './components/Pages';
+
+import PaymentPage from './components/PaymentPage';
 
 // Icons
 import {
@@ -197,6 +200,25 @@ const AuthPage: React.FC<{ onBack: () => void; onContinue: () => void }> = ({ on
     }
   };
 
+  const handleForgot = async () => {
+    if (!email) {
+      alert("Please enter your email address first.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      alert("Password reset email sent! Check your inbox.");
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-arch-bg font-black relative overflow-hidden">
@@ -243,6 +265,17 @@ const AuthPage: React.FC<{ onBack: () => void; onContinue: () => void }> = ({ on
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
+          {mode === 'login' && (
+            <div className="flex justify-end mt-1">
+              <button
+                type="button"
+                onClick={handleForgot}
+                className="text-[10px] uppercase font-black tracking-widest text-arch-muted hover:text-arch-fg transition-colors"
+              >
+                Forgot Password?
+              </button>
+            </div>
+          )}
           <button type="submit" disabled={loading} className="btn-arch w-full">
             {loading ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Create Account'}
           </button>
@@ -273,6 +306,22 @@ const AppContent = () => {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<'active' | 'trialing' | 'canceled' | 'past_due' | 'none' | 'loading'>('loading');
+
+  const checkSubscription = async (userId: string, email: string) => {
+    try {
+      const response = await fetch('/api/check-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, email })
+      });
+      const data = await response.json();
+      setSubscriptionStatus(data.status || 'none');
+    } catch (err) {
+      console.error('Subscription check failed:', err);
+      setSubscriptionStatus('none');
+    }
+  };
 
   const mapAuthUserToProfile = (authUser: any): UserProfile => {
     const metadata = authUser.user_metadata || {};
@@ -301,6 +350,9 @@ const AppContent = () => {
 
       const profile = mapAuthUserToProfile(session.user);
       setUser(profile);
+      
+      // Check subscription status
+      await checkSubscription(session.user.id, session.user.email || '');
 
       const [fetchedDecks, fetchedCards] = await Promise.all([
         dbService.fetchDecks(session.user.id),
@@ -430,8 +482,17 @@ const AppContent = () => {
         <Routes location={location}>
           <Route path="/" element={<PageTransition><AuraLandingPage onGetStarted={(e) => navigate('/auth', { state: { email: e } })} /></PageTransition>} />
           <Route path="/auth" element={<PageTransition><AuthPage onBack={() => navigate('/')} onContinue={() => navigate('/dashboard')} /></PageTransition>} />
+          <Route path="/subscribe" element={<PageTransition><PaymentPage user={currentUser as any} onBack={() => navigate('/dashboard')} /></PageTransition>} />
           
-          <Route element={<AppLayout user={currentUser} onLogout={onLogout} />}>
+          <Route element={
+            <AppLayout user={currentUser} onLogout={onLogout}>
+              {(subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && subscriptionStatus !== 'loading') ? (
+                <Navigate to="/subscribe" replace />
+              ) : (
+                null
+              )}
+            </AppLayout>
+          }>
             <Route path="/dashboard" element={<PageTransition><BentoDashboard decks={decks} cards={cards} onCreateDeck={createDeck} onSelectDeck={(id)=>navigate(`/deck/${id}`)} onDeleteDeck={deleteDeck} onGenerateDeck={createGeneratedDeck} onNavigate={(v)=>navigate(v === 'AURA_CHAT' ? '/chat' : '/generate')} user={currentUser} /></PageTransition>} />
             <Route path="/dashboard/insights" element={<PageTransition><DashboardInsightsPage decks={decks} cards={cards} /></PageTransition>} />
             <Route path="/dashboard/planner" element={<PageTransition><DashboardPlannerPage decks={decks} cards={cards} navigate={navigate} /></PageTransition>} />
@@ -445,8 +506,13 @@ const AppContent = () => {
             <Route path="/terms" element={<PageTransition><TermsOfServicePage /></PageTransition>} />
           </Route>
 
-          <Route path="/study/:deckId" element={<PageTransition><StudyModeRoute decks={decks} cards={cards} navigate={navigate} setActiveDeckId={setActiveDeckId} rateCard={rateCard} /></PageTransition>} />
+          <Route path="/study/:deckId" element={
+            subscriptionStatus === 'active' || subscriptionStatus === 'trialing' || subscriptionStatus === 'loading'
+              ? <PageTransition><StudyModeRoute decks={decks} cards={cards} navigate={navigate} setActiveDeckId={setActiveDeckId} rateCard={rateCard} /></PageTransition>
+              : <Navigate to="/subscribe" replace />
+          } />
           <Route path="/reset-password" element={<PageTransition><ResetPasswordPage navigate={navigate} /></PageTransition>} />
+          <Route path="/restore-account" element={<PageTransition><RestoreAccountPage navigate={navigate} /></PageTransition>} />
           <Route path="*" element={<PageTransition><NotFoundPage navigate={navigate} /></PageTransition>} />
         </Routes>
       </AnimatePresence>

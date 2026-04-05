@@ -10,8 +10,8 @@
       "destination": "/api/$1"
     },
     {
-      "source": "/((?!api/|assets/|_next/|static/).*)",
-      "destination": "/"
+      "source": "/((?!api/|assets/|@|src/|node_modules/|.*\\.).*)",
+      "destination": "/index.html"
     }
   ]
 }
