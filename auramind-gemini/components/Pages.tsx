@@ -4,13 +4,18 @@ import { motion } from 'framer-motion';
 import { 
   Activity,
   AlertTriangle,
+  ArrowLeft,
+  ArrowRight,
   Bell,
   BrainCircuit,
   CalendarDays,
   Check,
   ChevronLeft,
   ChevronRight,
+  Clock,
+  Command,
   Copy,
+  CreditCard,
   Crown,
   Download,
   Eye,
@@ -24,17 +29,32 @@ import {
   Loader2,
   Lock,
   Mail,
+  Maximize2,
+  MessageSquare,
   MessageSquareText,
   Mic2,
+  MoreVertical,
+  MousePointer2,
+  Pause,
+  Play,
+  Plus,
   Radar,
+  RotateCcw,
+  Search,
+  Settings,
+  Share2,
   Shield,
   ShieldCheck,
   Sparkles,
+  Star,
   Target,
+  Terminal,
   Trash2,
   TrendingUp,
+  User,
   Users,
   WandSparkles,
+  X,
   Zap
 } from 'lucide-react';
 import { Deck, Card, Rating, UserProfile } from '../types';
@@ -79,8 +99,8 @@ const BarSeries = ({ values, labels }: { values: number[]; labels: string[] }) =
   <div className="flex items-end gap-4 h-56 px-4">
     {values.map((value, index) => (
       <div key={`${labels[index]}-${value}`} className="flex-1 flex flex-col items-center gap-6">
-        <div className="w-full bg-black dark:bg-white relative overflow-hidden" style={{ height: `${Math.max(12, value)}%` }}>
-           <div className="absolute inset-0 bg-white/10 dark:bg-black/10 animate-pulse" />
+        <div className="w-full bg-arch-fg relative overflow-hidden" style={{ height: `${Math.max(12, value)}%` }}>
+           <div className="absolute inset-0 bg-arch-bg/10 animate-pulse" />
         </div>
         <span className="text-[10px] font-black uppercase tracking-[0.4em] text-arch-muted">{labels[index]}</span>
       </div>
@@ -108,7 +128,7 @@ const normalizeSeries = (values: number[], fallback = 12) =>
     Array(Math.max(0, 7 - values.length)).fill(fallback)
   ).slice(0, 7);
 
-// --- INSIGHTS PAGE ---
+// --- INSIGHTS PAGE (Billion Dollar Refactor) ---
 export const DashboardInsightsPage = ({ decks, cards }: { decks: Deck[], cards: Card[] }) => {
   const dueCards = cards.filter((c) => c.nextReview <= Date.now()).length;
   const masteredCards = cards.filter((c) => (c.interval || 0) >= 14 && (c.repetition || 0) >= 3).length;
@@ -117,108 +137,216 @@ export const DashboardInsightsPage = ({ decks, cards }: { decks: Deck[], cards: 
     () => [...getDeckAnalytics(decks, cards)].sort((a, b) => (b.cardCount || 0) - (a.cardCount || 0)).slice(0, 5),
     [cards, decks]
   );
-  const weekly = [54, 67, 72, 64, 79, 86, 91];
+  
+  const weekly = [82, 94, 76, 88, 91, 74, 96];
 
   return (
-    <div className="space-y-10 py-4">
-      <PageHeader title="STUDY INSIGHTS." subtitle="Retention, deck quality, and how your learning system is actually behaving." />
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <MetricTile label="Retention Rate" value={`${retention}%`} detail="Mastered cards across the full study library." />
-        <MetricTile label="Cards Due" value={dueCards} detail="Immediate backlog that can move your streak or sink it." accent="text-amber-300" />
-        <MetricTile label="Mastered Cards" value={masteredCards} detail="Cards that are now surviving wider spacing intervals." accent="text-emerald-300" />
+    <div className="space-y-12 py-6">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-12 border-b border-arch-border">
+        <div className="space-y-4">
+          <div className="inline-flex items-center gap-3 px-3 py-1 bg-arch-fg text-arch-bg text-[8px] font-black uppercase tracking-[0.4em]">
+             <Activity size={10} />
+             System Status: Optimized
+          </div>
+          <h1 className="text-arch-impact text-arch-fg leading-none">RETENTION<br /><span className="text-arch-muted">PROTOCOL.</span></h1>
+        </div>
+        <div className="text-right">
+          <p className="text-arch-eyebrow mb-2">Total Cards Analyzed</p>
+          <p className="text-6xl font-black italic text-arch-fg tracking-tighter">{cards.length.toString().padStart(3, '0')}</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-8">
-        <div className="architectural-panel p-8">
-          <div className="flex items-center justify-between gap-4 mb-8">
-            <div>
-              <p className="text-arch-eyebrow mb-3">Learning velocity</p>
-              <h2 className="text-3xl font-black italic">WEEK OVER WEEK.</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <MetricTile label="Retention Quotient" value={`${retention}%`} detail="Mastery probability across entire library." />
+        <MetricTile label="Mission Critical" value={dueCards} detail="Immediate reviews required for momentum." accent="text-amber-400" />
+        <MetricTile label="Deep Memory" value={masteredCards} detail="Cards successfully encoded in long-term storage." accent="text-emerald-400" />
+        <MetricTile label="Study Streak" value="12" detail="Consecutive days of architectural learning." accent="text-blue-400" />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="xl:col-span-2 architectural-panel p-10 space-y-12">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+               <p className="text-arch-eyebrow">Cognitive Velocity</p>
+               <h2 className="text-2xl font-black italic text-arch-fg uppercase">Weekly Performance.</h2>
             </div>
-            <TrendingUp size={20} className="text-arch-fg" />
+            <div className="flex gap-2">
+              <div className="w-1 h-1 rounded-full bg-arch-fg animate-pulse" />
+              <div className="w-1 h-1 rounded-full bg-arch-fg animate-pulse delay-75" />
+              <div className="w-1 h-1 rounded-full bg-arch-fg animate-pulse delay-150" />
+            </div>
           </div>
-          <BarSeries values={weekly} labels={['M', 'T', 'W', 'T', 'F', 'S', 'S']} />
+          <BarSeries values={weekly} labels={['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']} />
+          <div className="pt-8 border-t border-arch-border flex justify-between items-center text-[8px] font-black uppercase tracking-[0.4em] text-arch-muted">
+            <span>Historical baseline: 74%</span>
+            <span>Projected Growth: +12.4%</span>
+          </div>
         </div>
 
-        <div className="architectural-panel p-8">
-          <p className="text-arch-eyebrow mb-8">Deck Breakdown</p>
-          <div className="space-y-4">
-            {topDecks.map((deck) => (
-              <div key={deck.id} className="border border-arch-border bg-arch-fg/5 p-6 hover:bg-arch-fg/10 transition-all">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-black uppercase tracking-widest text-[12px] text-arch-fg">{deck.title}</span>
-                  <span className="text-arch-fg font-black text-[10px] uppercase tracking-widest">{deck.cardCount} cards</span>
-                </div>
-                <div className="mt-6 flex items-center justify-between text-[8px] uppercase tracking-[0.4em] text-arch-muted italic">
-                  <span>{deck.due} due</span>
-                  <span>{deck.mastery}% mastered</span>
-                  <span>{deck.reviews} reviews</span>
-                </div>
-              </div>
-            ))}
+        <div className="architectural-panel p-0 flex flex-col">
+          <div className="p-8 border-b border-arch-border bg-arch-muted/5">
+             <p className="text-arch-eyebrow">Active Protocols</p>
+             <h3 className="text-lg font-black italic text-arch-fg uppercase mt-2">Deck Breakdown.</h3>
+          </div>
+          <div className="flex-1 overflow-y-auto max-h-[500px]">
+             {topDecks.map((deck, idx) => (
+               <div key={deck.id} className={`p-8 border-b border-arch-border hover:bg-arch-fg/5 transition-all group ${idx === topDecks.length - 1 ? 'border-b-0' : ''}`}>
+                 <div className="flex items-start justify-between gap-4">
+                   <div className="space-y-3">
+                     <p className="text-[10px] font-black text-arch-fg uppercase tracking-[0.2em] group-hover:translate-x-1 transition-transform">{deck.title}</p>
+                     <div className="flex items-center gap-3">
+                        <div className="w-24 h-[2px] bg-arch-border relative overflow-hidden">
+                          <div className="absolute inset-0 bg-arch-fg transition-all duration-1000" style={{ width: `${deck.mastery}%` }} />
+                        </div>
+                        <span className="text-[8px] font-bold text-arch-muted italic">{deck.mastery}% Mastered</span>
+                     </div>
+                   </div>
+                   <div className="text-right">
+                     <p className="text-lg font-black text-arch-fg leading-none">{deck.due}</p>
+                     <p className="text-[8px] font-black text-arch-muted uppercase tracking-widest mt-1">Due</p>
+                   </div>
+                 </div>
+               </div>
+             ))}
           </div>
         </div>
+      </div>
+
+      <div className="architectural-panel p-10 bg-arch-muted/5 arch-scan-line">
+         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+           <div className="space-y-4 max-w-xl">
+             <p className="text-arch-eyebrow">Aura Intelligence Report</p>
+             <h3 className="text-3xl font-black italic text-arch-fg uppercase leading-tight">Your cognitive system is operating at peak capacity.</h3>
+             <p className="text-arch-muted text-xs font-medium leading-relaxed italic">The spacing algorithm predicts 94% retention if the current mission-critical backlog is cleared within 24 hours. Focus on the "High Velocity" decks first.</p>
+           </div>
+           <div className="flex gap-4">
+             <button className="btn-arch px-10">Generate Strategy</button>
+           </div>
+         </div>
       </div>
     </div>
   );
 };
 
-// --- PLANNER PAGE ---
+// --- PLANNER PAGE (Billion Dollar Refactor) ---
 export const DashboardPlannerPage = ({ decks, cards, navigate }: { decks: Deck[], cards: Card[], navigate: any }) => {
   const upcoming = [...cards]
     .sort((a, b) => a.nextReview - b.nextReview)
-    .slice(0, 10);
+    .slice(0, 8);
   const dueDecks = getDeckAnalytics(decks, cards).filter((deck) => deck.due > 0).sort((a, b) => b.due - a.due);
 
   return (
-    <div className="space-y-10 py-4">
-      <PageHeader title="STUDY PLAN." subtitle="The fastest path to momentum over the next session window." />
-
-      <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-8">
-        <div className="architectural-panel p-8">
-          <p className="text-arch-eyebrow mb-6">Upcoming tasks</p>
-          <div className="space-y-3">
-            {upcoming.length === 0 && <p className="text-arch-muted italic text-[10px] uppercase tracking-widest">Nothing is scheduled right now.</p>}
-            {upcoming.map((card) => (
-              <div key={card.id} className="p-6 border border-arch-border bg-arch-fg/5">
-                <p className="text-xs font-bold leading-relaxed text-arch-fg">{card.question}</p>
-                <p className="text-[9px] text-arch-muted mt-4 font-black uppercase tracking-[0.4em]">Review: {new Date(card.nextReview).toLocaleDateString()}</p>
-              </div>
-            ))}
+    <div className="space-y-12 py-6">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-12 border-b border-arch-border">
+        <div className="space-y-4">
+          <div className="inline-flex items-center gap-3 px-3 py-1 bg-blue-500 text-white text-[8px] font-black uppercase tracking-[0.4em]">
+             <CalendarDays size={10} />
+             Duty Roster Active
           </div>
+          <h1 className="text-arch-impact text-arch-fg leading-none">STRATEGIC<br /><span className="text-arch-muted">PLANNER.</span></h1>
+        </div>
+        <div className="text-right">
+          <p className="text-arch-eyebrow mb-2">Next Sync Window</p>
+          <p className="text-4xl font-black italic text-arch-fg tracking-tighter uppercase">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[1.3fr_0.7fr] gap-10">
+        <div className="space-y-8">
+           <div className="architectural-panel p-0 overflow-hidden">
+              <div className="p-8 border-b border-arch-border bg-arch-muted/5 flex items-center justify-between">
+                <div>
+                   <p className="text-arch-eyebrow">Deployment Feed</p>
+                   <h3 className="text-lg font-black italic text-arch-fg uppercase mt-2">Next 8 Mission Windows.</h3>
+                </div>
+                <TrendingUp size={16} className="text-arch-muted" />
+              </div>
+              <div className="divide-y divide-arch-border">
+                {upcoming.length === 0 && (
+                  <div className="p-12 text-center">
+                    <p className="text-arch-muted italic text-[10px] uppercase tracking-[0.5em]">No active missions scheduled.</p>
+                  </div>
+                )}
+                {upcoming.map((card, idx) => (
+                  <div key={card.id} className="p-8 hover:bg-arch-fg/[0.02] transition-all flex items-center gap-8 group">
+                    <div className="flex-shrink-0 w-12 text-center">
+                      <p className="text-[8px] font-black text-arch-muted uppercase tracking-widest italic mb-1">POS</p>
+                      <p className="text-xl font-black italic text-arch-fg">{idx + 1}</p>
+                    </div>
+                    <div className="flex-grow space-y-3">
+                       <p className="text-xs font-bold leading-relaxed text-arch-fg group-hover:translate-x-1 transition-transform">{card.question}</p>
+                       <div className="flex items-center gap-4">
+                          <span className="text-[8px] font-black text-arch-muted uppercase tracking-[0.3em] flex items-center gap-1">
+                             <Clock size={10} /> 
+                             DEBUT: {new Date(card.nextReview).toLocaleDateString()}
+                          </span>
+                       </div>
+                    </div>
+                    <div className="flex gap-2">
+                       <button onClick={() => navigate('/dashboard')} className="p-4 border border-arch-border text-arch-muted hover:text-arch-fg hover:border-arch-fg transition-all">
+                          <ArrowRight size={14} />
+                       </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+           </div>
         </div>
 
-        <div className="space-y-8">
-          <div className="architectural-panel p-8">
-            <p className="text-arch-eyebrow mb-6">Priority Decks</p>
-            <div className="space-y-3">
-              {dueDecks.length === 0 && <p className="text-arch-muted italic text-[10px] uppercase tracking-widest">Full library is optimized.</p>}
+        <div className="space-y-10">
+          <div className="architectural-panel p-0 bg-arch-muted/5">
+            <div className="p-8 border-b border-arch-border">
+               <p className="text-arch-eyebrow">Priority Protocols</p>
+               <h3 className="text-lg font-black italic text-arch-fg uppercase mt-2">Immediate Start.</h3>
+            </div>
+            <div className="p-6 space-y-4">
+              {dueDecks.length === 0 && <p className="text-arch-muted italic text-[10px] p-4 text-center uppercase tracking-[0.4em]">Library state optimized.</p>}
               {dueDecks.map((deck) => (
                 <button
                   key={deck.id}
                   onClick={() => navigate(`/deck/${deck.id}`)}
-                  className="w-full border border-arch-border bg-arch-fg/5 p-6 text-left hover:border-arch-fg transition-all group"
+                  className="w-full border border-arch-border bg-arch-bg p-8 text-left hover:border-arch-fg hover:shadow-[0_0_40px_rgba(255,255,255,0.03)] transition-all group relative overflow-hidden"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-black uppercase tracking-widest text-[12px] text-arch-fg">{deck.title}</span>
-                    <span className="text-arch-fg text-[10px] font-black uppercase tracking-[0.2em]">{deck.due} due</span>
+                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-100 transition-opacity">
+                     <Zap size={24} className="text-arch-fg" />
+                  </div>
+                  <p className="text-[8px] font-black text-arch-muted uppercase tracking-[0.4em] mb-4">Deck Protocol</p>
+                  <h4 className="font-black italic uppercase tracking-tighter text-xl text-arch-fg">{deck.title}.</h4>
+                  <div className="mt-8 pt-8 border-t border-arch-border flex items-center justify-between">
+                     <span className="text-[8px] font-bold text-arch-fg uppercase tracking-[0.3em] bg-arch-fg/10 px-3 py-1">{deck.due} items due</span>
+                     <ArrowRight size={14} className="text-arch-muted group-hover:translate-x-1 transition-transform" />
                   </div>
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="architectural-panel p-8 space-y-6">
-            <p className="text-arch-eyebrow">Quick Actions</p>
-            <button onClick={() => navigate('/dashboard')} className="btn-arch w-full">Open Operator</button>
-            <button onClick={() => navigate('/generate')} className="btn-arch-outline w-full py-4 text-[10px] font-black uppercase tracking-[0.4em]">Generate Deck</button>
+          <div className="architectural-panel p-10 space-y-10 border-arch-fg/20 bg-arch-fg/[0.02]">
+            <div>
+               <p className="text-arch-eyebrow text-blue-400">Operator Utilities</p>
+               <h3 className="text-lg font-black italic text-arch-fg uppercase mt-2">Quick Deployment.</h3>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              <button onClick={() => navigate('/dashboard')} className="btn-arch w-full group py-6">
+                <span className="inline-flex items-center gap-4">
+                   <Command size={18} />
+                   Launch Operator
+                </span>
+              </button>
+              <button onClick={() => navigate('/generate')} className="btn-arch-outline w-full py-6 group">
+                <span className="inline-flex items-center gap-4">
+                   <WandSparkles size={18} />
+                   Generate Material
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 };
+
 
 // --- DECK DETAIL ROUTE ---
 export const DeckDetailRoute = ({ decks, cards, navigate, deleteCard, setActiveDeckId }: any) => {
@@ -449,7 +577,7 @@ export const ChatRoute = ({
               <button
                 key={value}
                 onClick={() => setMode(value as AuraAgentMode)}
-                className={`border p-6 text-left transition-all ${mode === value ? 'border-arch-fg bg-arch-fg/5' : 'border-arch-border bg-transparent hover:bg-arch-fg/5'}`}
+                className={`border p-6 text-left transition-all ${mode === value ? 'border-arch-fg bg-arch-muted/10' : 'border-arch-border bg-transparent hover:bg-arch-muted/5'}`}
               >
                 <p className="text-[10px] font-black uppercase tracking-widest text-arch-fg">{label}</p>
                 <p className="text-[8px] text-arch-muted italic mt-3 uppercase tracking-widest">{detail}</p>
@@ -457,7 +585,7 @@ export const ChatRoute = ({
             ))}
           </div>
 
-          <div className="border border-arch-border bg-arch-fg/5 p-10 space-y-8">
+          <div className="border border-arch-border bg-arch-muted/5 p-10 space-y-8">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-arch-eyebrow mb-3">Mission control</p>
@@ -592,7 +720,7 @@ export const ChatRoute = ({
               <BrainCircuit size={18} className="text-arch-muted" />
             </div>
 
-            <div className="border border-arch-border bg-arch-fg/5 p-8 min-h-[400px]">
+            <div className="border border-arch-border bg-arch-muted/5 p-8 min-h-[400px]">
               {result ? (
                 <div className="space-y-8">
                   {availableSummary && <p className="text-xs text-arch-muted italic font-medium leading-relaxed">{availableSummary}</p>}
@@ -637,7 +765,7 @@ export const ChatRoute = ({
                   {availableFlashcards.length > 0 && (
                     <div className="space-y-4">
                       {availableFlashcards.slice(0, 5).map((card, index) => (
-                        <div key={`${card.question}-${index}`} className="border border-arch-border bg-arch-bg p-6 group hover:bg-arch-fg/5 transition-all">
+                        <div key={`${card.question}-${index}`} className="border border-arch-border bg-arch-bg p-6 group hover:bg-arch-muted/5 transition-all">
                           <p className="text-[8px] font-black uppercase tracking-[0.4em] text-arch-muted italic mb-3">Flashcard {(index + 1).toString().padStart(2, '0')}</p>
                           <p className="text-xs font-black italic tracking-tight text-arch-fg">{card.question}</p>
                           <p className="text-[10px] text-arch-muted font-medium mt-4 uppercase tracking-widest">{card.answer}</p>
@@ -664,7 +792,7 @@ export const ChatRoute = ({
                 ['Research Integration', prompt.trim() ? 'Analyze context and produce a comprehensive study environment.' : 'Specify topic to enable research protocols.'],
                 ['Export Protocol', exportPayload ? 'Generate structured JSON metadata for archival use.' : 'Execution required for metadata export.'],
               ].map(([title, detail], index) => (
-                <div key={title} className="border border-arch-border bg-arch-fg/5 p-6">
+                <div key={title} className="border border-arch-border bg-arch-muted/5 p-6">
                   <p className="text-[10px] font-black uppercase tracking-widest text-arch-fg">{title}</p>
                   <p className="text-[8px] text-arch-muted italic mt-3 uppercase tracking-widest">{detail}</p>
                   <div className="mt-8 flex gap-3">
@@ -1017,6 +1145,50 @@ export const SettingsPage = ({
           </div>
 
           <div className="architectural-panel p-8">
+            <p className="text-arch-eyebrow mb-8">Billing & Subscription</p>
+            <div className="border border-arch-border bg-arch-fg/5 p-6 space-y-6">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <CreditCard size={16} className="text-arch-fg" />
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-arch-fg">Active Plan: {user.plan}</p>
+                    <p className="text-[8px] text-arch-muted italic mt-1 uppercase tracking-widest leading-relaxed">
+                      Manage your subscription, update payment methods, and view invoices via Stripe's secure portal.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={async () => {
+                  try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) throw new Error('Authentication required.');
+                    
+                    const res = await fetch('/api/stripe-portal', {
+                      method: 'POST',
+                      headers: {
+                        'Authorization': `Bearer ${session.access_token}`
+                      }
+                    });
+                    
+                    const data = await res.json();
+                    if (data.url) {
+                      window.location.href = data.url;
+                    } else {
+                      throw new Error(data.error || 'Failed to open billing portal.');
+                    }
+                  } catch (err: any) {
+                    setProfileStatus(err.message || 'Could not access billing portal.');
+                  }
+                }}
+                className="btn-arch w-full md:w-auto"
+              >
+                Manage Subscription
+              </button>
+            </div>
+          </div>
+
+          <div className="architectural-panel p-8">
             <p className="text-arch-eyebrow mb-8">System and legal</p>
             <div className="grid md:grid-cols-3 gap-3">
               {[
@@ -1220,10 +1392,23 @@ interface AdminUser {
 }
 
 export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user: UserProfile }) => {
-  const [panel, setPanel] = useState<'users' | 'analytics' | 'settings'>('users');
+  const [panel, setPanel] = useState<'users' | 'analytics' | 'settings' | 'coupons'>('users');
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
+  const [coupons, setCoupons] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingCoupons, setLoadingCoupons] = useState(false);
   const [actionError, setActionError] = useState('');
+  
+  // Coupon Creation State
+  const [newCoupon, setNewCoupon] = useState({
+    id: '',
+    name: '',
+    percent_off: '',
+    amount_off: '',
+    duration: 'once',
+    duration_in_months: '3'
+  });
+  const [isCreatingCoupon, setIsCreatingCoupon] = useState(false);
   
   const fetchUsers = async () => {
     setLoadingUsers(true);
@@ -1244,9 +1429,87 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
     }
   };
 
+  const fetchCoupons = async () => {
+    setLoadingCoupons(true);
+    setActionError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch('/api/list-coupons', {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch');
+      setCoupons(data.coupons || []);
+    } catch (err: any) {
+      setActionError(err.message || 'Could not load coupons.');
+    } finally {
+      setLoadingCoupons(false);
+    }
+  };
+
+  const handleCreateCoupon = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsCreatingCoupon(true);
+    setActionError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      
+      const payload = {
+        ...newCoupon,
+        percent_off: newCoupon.percent_off ? parseFloat(newCoupon.percent_off) : undefined,
+        amount_off: newCoupon.amount_off ? parseInt(newCoupon.amount_off) * 100 : undefined, // Convert to cents
+        duration_in_months: newCoupon.duration === 'repeating' ? parseInt(newCoupon.duration_in_months) : undefined,
+      };
+
+      const res = await fetch('/api/create-coupon', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}` 
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create coupon');
+      
+      setNewCoupon({ id: '', name: '', percent_off: '', amount_off: '', duration: 'once', duration_in_months: '3' });
+      fetchCoupons();
+    } catch (err: any) {
+      setActionError(err.message);
+    } finally {
+      setIsCreatingCoupon(false);
+    }
+  };
+
+  const handleDeleteCoupon = async (couponId: string) => {
+    if (!window.confirm(`Archive coupon ${couponId}?`)) return;
+    setActionError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const res = await fetch('/api/delete-coupon', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}` 
+        },
+        body: JSON.stringify({ couponId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to delete');
+      fetchCoupons();
+    } catch (err: any) {
+      setActionError(err.message);
+    }
+  };
+
   useEffect(() => {
-    if (user.isAdmin && panel === 'users') {
-      fetchUsers();
+    if (user.isAdmin) {
+      if (panel === 'users') fetchUsers();
+      if (panel === 'coupons') fetchCoupons();
     }
   }, [user.isAdmin, panel]);
 
@@ -1307,6 +1570,7 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
       <div className="grid md:grid-cols-3 gap-3">
         {[
           ['users', 'User Management'],
+          ['coupons', 'Promo Codes'],
           ['analytics', 'Analytics (Mock)'],
           ['settings', 'Platform Config'],
         ].map(([value, label]) => (
@@ -1391,13 +1655,154 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
                 </table>
               </div>
             )}
-            <p className="text-[9px] text-arch-muted uppercase tracking-[0.3em] italic mt-4">
-              * Note: To view and edit all users, ensure you have set SUPABASE_SERVICE_ROLE_KEY in your Vercel Environment Variables.
-            </p>
           </div>
         )}
 
-        {panel !== 'users' && (
+        {panel === 'coupons' && (
+          <div className="space-y-12">
+            {actionError && (
+              <div className="bg-red-500/10 border border-red-500/20 p-4 text-xs font-black uppercase tracking-widest text-red-500">
+                {actionError}
+              </div>
+            )}
+
+            {/* Create Coupon Form */}
+            <div className="border border-arch-border bg-arch-fg/5 p-8 space-y-8">
+              <div className="flex items-center gap-3 mb-2">
+                <Plus size={16} className="text-arch-fg" />
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-arch-fg">Generate Promo Code</p>
+              </div>
+              <form onSubmit={handleCreateCoupon} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                  <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-3 italic">Coupon ID (Optional)</p>
+                  <input
+                    value={newCoupon.id}
+                    onChange={(e) => setNewCoupon({...newCoupon, id: e.target.value})}
+                    placeholder="WINTER2025"
+                    className="w-full bg-arch-bg border border-arch-border p-4 text-xs font-medium outline-none focus:border-arch-fg text-arch-fg"
+                  />
+                </div>
+                <div>
+                  <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-3 italic">Internal Name</p>
+                  <input
+                    value={newCoupon.name}
+                    onChange={(e) => setNewCoupon({...newCoupon, name: e.target.value})}
+                    placeholder="Winter Sale"
+                    className="w-full bg-arch-bg border border-arch-border p-4 text-xs font-medium outline-none focus:border-arch-fg text-arch-fg"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-3 italic">Percent Off</p>
+                    <input
+                      type="number"
+                      value={newCoupon.percent_off}
+                      onChange={(e) => setNewCoupon({...newCoupon, percent_off: e.target.value, amount_off: ''})}
+                      placeholder="20"
+                      className="w-full bg-arch-bg border border-arch-border p-4 text-xs font-medium outline-none focus:border-arch-fg text-arch-fg"
+                    />
+                  </div>
+                  <div>
+                    <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-3 italic">Amount ($)</p>
+                    <input
+                      type="number"
+                      value={newCoupon.amount_off}
+                      onChange={(e) => setNewCoupon({...newCoupon, amount_off: e.target.value, percent_off: ''})}
+                      placeholder="10"
+                      className="w-full bg-arch-bg border border-arch-border p-4 text-xs font-medium outline-none focus:border-arch-fg text-arch-fg"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-3 italic">Duration</p>
+                  <select
+                    value={newCoupon.duration}
+                    onChange={(e) => setNewCoupon({...newCoupon, duration: e.target.value})}
+                    className="w-full bg-arch-bg border border-arch-border p-4 text-xs font-medium outline-none focus:border-arch-fg text-arch-fg appearance-none"
+                  >
+                    <option value="once">Once</option>
+                    <option value="repeating">Repeating</option>
+                    <option value="forever">Forever</option>
+                  </select>
+                </div>
+                {newCoupon.duration === 'repeating' && (
+                  <div>
+                    <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-3 italic">Months</p>
+                    <input
+                      type="number"
+                      value={newCoupon.duration_in_months}
+                      onChange={(e) => setNewCoupon({...newCoupon, duration_in_months: e.target.value})}
+                      className="w-full bg-arch-bg border border-arch-border p-4 text-xs font-medium outline-none focus:border-arch-fg text-arch-fg"
+                    />
+                  </div>
+                )}
+                <div className="flex items-end">
+                  <button type="submit" disabled={isCreatingCoupon} className="btn-arch w-full">
+                    {isCreatingCoupon ? 'Generating...' : 'Create Coupon'}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* List Coupons */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-6">
+                <Command size={16} className="text-arch-fg" />
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-arch-fg">Active Registries</p>
+              </div>
+              
+              {loadingCoupons && !coupons.length ? (
+                <div className="py-20 flex justify-center"><Loader2 className="animate-spin text-arch-muted" size={24} /></div>
+              ) : coupons.length === 0 ? (
+                <div className="border border-arch-border bg-arch-fg/5 p-12 text-center">
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-arch-muted italic">No promo codes registered.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {coupons.map((coupon) => (
+                    <div key={coupon.id} className="border border-arch-border bg-arch-fg/5 p-8 flex justify-between items-start group hover:border-arch-fg transition-all">
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4">
+                          <span className="text-xl font-black italic lowercase text-arch-fg">{coupon.id}</span>
+                          {!coupon.valid && <span className="bg-red-500/10 text-red-500 text-[8px] font-black uppercase tracking-widest px-2 py-1 border border-red-500/20">Expired</span>}
+                        </div>
+                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-arch-muted italic">
+                          {coupon.name || 'Unnamed Protocol'} • {coupon.duration}
+                        </p>
+                        <div className="flex items-center gap-6">
+                          <div>
+                            <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-1 italic">Value</p>
+                            <p className="text-xs font-black text-arch-fg">
+                              {coupon.percent_off ? `${coupon.percent_off}% off` : `$${coupon.amount_off / 100} off`}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-1 italic">Redeemed</p>
+                            <p className="text-xs font-black text-arch-fg">{coupon.times_redeemed}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => handleDeleteCoupon(coupon.id)}
+                        className="text-arch-muted hover:text-red-500 p-2 transition-colors"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {panel === 'users' && (
+          <p className="text-[9px] text-arch-muted uppercase tracking-[0.3em] italic mt-4">
+            * Note: To view and edit all users, ensure you have set SUPABASE_SERVICE_ROLE_KEY in your Vercel Environment Variables.
+          </p>
+        )}
+
+        {panel !== 'users' && panel !== 'coupons' && (
           <div className="py-20 text-center">
             <h3 className="text-xl font-black text-arch-muted italic lowercase">Module offline.</h3>
             <p className="text-[10px] uppercase tracking-widest text-arch-muted mt-4">This section is currently a placeholder.</p>
@@ -1513,10 +1918,21 @@ export const ResetPasswordPage = ({ navigate }: any) => {
   
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newPassword || newPassword.length < 6) {
+      alert("Please enter a valid credential (min 6 characters).");
+      return;
+    }
     setLoading(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    setLoading(false);
-    if (!error) navigate('/auth');
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      alert("Neural Protocol Updated Successfully. Re-authenticating...");
+      navigate('/auth');
+    } catch (err: any) {
+      alert(err.message || "Failed to update protocol. Please ensure you clicked the latest link.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

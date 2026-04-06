@@ -18,9 +18,9 @@ interface ThemeProviderProps {
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('auramind-theme') as Theme) || 'dark'
+      return (localStorage.getItem('auramind-theme') as Theme) || 'system'
     }
-    return 'dark'
+    return 'system'
   })
 
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light')

@@ -534,7 +534,7 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
         <FAQSection />
 
         {/* FINAL CTA */}
-        <section className="landing-section bg-primary relative z-10 overflow-hidden">
+        <section className="landing-section bg-background relative z-10 overflow-hidden">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute inset-0" style={{
               backgroundImage: 'radial-gradient(circle at 2px 2px, hsl(var(--primary-foreground)) 1px, transparent 0)',

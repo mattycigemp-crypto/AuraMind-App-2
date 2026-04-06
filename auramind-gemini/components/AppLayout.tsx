@@ -11,11 +11,11 @@ interface AppLayoutProps {
 
 const AppLayout: React.FC<AppLayoutProps> = ({ user, onLogout }) => {
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-arch-fg selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black antialiased relative overflow-hidden">
+    <div className="min-h-screen bg-arch-bg text-arch-fg selection:bg-arch-fg selection:text-arch-bg antialiased relative overflow-hidden transition-colors duration-500">
       {/* ARCHITECTURAL BACKGROUND EFFECTS */}
-      <div className="fixed inset-0 arch-grid-overlay opacity-20 pointer-events-none" />
-      <div className="fixed top-[-20%] left-[-10%] w-[60vw] h-[60vh] bg-neutral-100 dark:bg-neutral-900/40 blur-[200px] rounded-full pointer-events-none opacity-50" />
-      <div className="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vh] bg-neutral-100 dark:bg-neutral-900/40 blur-[180px] rounded-full pointer-events-none opacity-50" />
+      <div className="fixed inset-0 arch-grid-overlay opacity-10 pointer-events-none" />
+      <div className="fixed top-[-20%] left-[-10%] w-[60vw] h-[60vh] bg-arch-muted/5 blur-[200px] rounded-full pointer-events-none" />
+      <div className="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vh] bg-arch-muted/5 blur-[180px] rounded-full pointer-events-none" />
 
       {/* PERSISTENT SIDEBAR */}
       <CosmicSidebar onLogout={onLogout} user={user} isAdmin={user.isAdmin} />

@@ -4,21 +4,21 @@
 
 /* --- CSS Custom Properties (runtime tokens) --- */
 :root {
-  --color-arch-bg: #ffffff;
-  --color-arch-fg: #000000;
-  --color-arch-border: rgba(0, 0, 0, 0.10);
-  --color-arch-border-bold: rgba(0, 0, 0, 0.65);
-  --color-arch-muted: rgba(0, 0, 0, 0.45);
-  --color-arch-accent: #000000;
+  --color-arch-bg: hsl(var(--bg-core));
+  --color-arch-fg: hsl(var(--foreground));
+  --color-arch-border: hsla(var(--foreground) / 0.1);
+  --color-arch-border-bold: hsla(var(--foreground) / 0.65);
+  --color-arch-muted: hsla(var(--foreground) / 0.45);
+  --color-arch-accent: var(--accent-hex);
 }
 
 .dark {
-  --color-arch-bg: #000000;
-  --color-arch-fg: #ffffff;
-  --color-arch-border: rgba(255, 255, 255, 0.12);
-  --color-arch-border-bold: rgba(255, 255, 255, 0.70);
-  --color-arch-muted: rgba(255, 255, 255, 0.55);
-  --color-arch-accent: #ffffff;
+  --color-arch-bg: hsl(var(--bg-core));
+  --color-arch-fg: hsl(var(--foreground));
+  --color-arch-border: hsla(var(--foreground) / 0.12);
+  --color-arch-border-bold: hsla(var(--foreground) / 0.70);
+  --color-arch-muted: hsla(var(--foreground) / 0.55);
+  --color-arch-accent: var(--accent-hex);
 }
 
 /* --- Tailwind v4 theme extension (for utility class generation) --- */

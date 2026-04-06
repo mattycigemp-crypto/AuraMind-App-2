@@ -102,4 +102,7 @@ export interface UserProfile {
   streak: number;
   joinedDate: number;
   isAdmin?: boolean;
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
+  phone?: string;
 }

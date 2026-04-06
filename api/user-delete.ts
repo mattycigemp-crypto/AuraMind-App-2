@@ -145,7 +145,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       `;
 
       try {
-        await fetch('https://api.resend.com/emails', {
+        const emailResponse = await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${apiKey}`,
@@ -158,8 +158,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             html: userHtml,
           }),
         });
+
+        if (!emailResponse.ok) {
+          const errorData = await emailResponse.json();
+          console.warn('Resend API error:', {
+            status: emailResponse.status,
+            error: errorData
+          });
+        } else {
+          console.log('User deactivation email sent successfully to:', userEmail);
+        }
       } catch (e) {
-        console.warn('User deletion email failed:', e);
+        console.warn('User deletion email fetch failed:', e);
       }
 
       // Send admin notification

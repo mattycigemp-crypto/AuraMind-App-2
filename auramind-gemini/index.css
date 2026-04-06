@@ -124,44 +124,45 @@
   }
 
   .light {
-    --accent-hue: 222;
-    --accent-sat: 90%;
-    --accent-lit: 56%;
+    --accent-hue: 270;
+    --accent-sat: 85%;
+    --accent-lit: 60%;
     --accent: var(--accent-hue) var(--accent-sat) var(--accent-lit);
-    --accent-hex: #2563eb;
-    --accent-tint-hex: #1d4ed8;
-    --accent-low: rgba(37, 99, 235, 0.1);
-    --accent-glow: rgba(37, 99, 235, 0.18);
-    --bg-core: 210 33% 98%;
+    --accent-hex: #a855f7;
+    --grid-color: rgba(168, 85, 247, 0.04);
+    --accent-tint-hex: #9333ea;
+    --accent-low: rgba(168, 85, 247, 0.06);
+    --accent-glow: rgba(168, 85, 247, 0.12);
+    --bg-core: 210 40% 98.5%;
     --bg-card: 0 0% 100%;
-    --border-subtle: 220 18% 84%;
-    --border-bright: 220 28% 70%;
-    --text-muted-val: 220 16% 42%;
+    --border-subtle: 270 10% 91%;
+    --border-bright: 270 10% 86%;
+    --text-muted-val: 270 5% 45%;
     --background: var(--bg-core);
-    --foreground: 222 47% 11%;
+    --foreground: 270 20% 10%;
     --card: var(--bg-card);
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 270 20% 10%;
     --popover: var(--bg-card);
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 270 20% 10%;
     --primary: var(--accent);
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 30% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 25% 94%;
+    --secondary: 270 15% 96%;
+    --secondary-foreground: 270 20% 10%;
+    --muted: 270 10% 95%;
     --muted-foreground: var(--text-muted-val);
-    --accent-shadcn: 210 30% 96%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --accent-shadcn: 270 15% 96%;
+    --accent-foreground: 270 20% 10%;
+    --destructive: 0 84.2% 60%;
+    --destructive-foreground: 0 0% 98%;
     --border: var(--border-subtle);
     --input: var(--border-subtle);
     --ring: var(--accent);
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
+    --sidebar-foreground: 270 20% 10%;
     --sidebar-primary: var(--accent);
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 30% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-accent: 270 15% 96%;
+    --sidebar-accent-foreground: 270 20% 10%;
     --sidebar-border: var(--border-subtle);
     --sidebar-ring: var(--accent);
   }
@@ -175,6 +176,7 @@
     --accent-tint-hex: #9333ea;
     --accent-low: rgba(168, 85, 247, 0.1);
     --accent-glow: rgba(168, 85, 247, 0.25);
+    --grid-color: rgba(255, 255, 255, 0.015);
     --bg-core: 260 20% 3%;
     --bg-card: 260 15% 6%;
     --border-subtle: 260 30% 100% / 0.08;
@@ -309,8 +311,8 @@ a {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+    linear-gradient(to right, var(--grid-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-color) 1px, transparent 1px);
   background-size: 60px 60px;
   pointer-events: none;
   z-index: 1;
@@ -472,7 +474,7 @@ a {
   align-items: center;
   gap: 1rem;
   background: var(--accent-hex);
-  color: #000;
+  color: hsl(var(--primary-foreground));
   padding: 1rem 2rem;
   font-size: 0.7rem;
   font-weight: 900;
@@ -494,7 +496,7 @@ a {
   gap: 1rem;
   background: transparent;
   border: 1px solid hsl(var(--border-bright));
-  color: #fff;
+  color: var(--foreground);
   padding: 1rem 2rem;
   font-size: 0.7rem;
   font-weight: 900;

@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Routes, Route, Navigate, useNavigate, useParams, useLocation, Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Deck, Card, Rating, UserProfile } from './types';
 import { calculateSRS, getInitialCardState } from './services/srs';
-import { generateFlashcards, generateSpeech, generateSummaryFromTopic, transcribeAudio, generateDeckFromTopic, GeneratedCard } from './services/geminiService';
+import { generateDeckFromTopic, GeneratedCard } from './services/geminiService';
 import { dbService } from './services/dbService';
 import AuraLandingPage from './components/AuraLandingPage';
 import BentoDashboard from './components/BentoDashboard';
@@ -29,32 +29,54 @@ import {
 } from './components/Pages';
 
 import PaymentPage from './components/PaymentPage';
+import AuthPage from './components/AuthPage';
 
 // Icons
 import {
-  BookOpen, Plus, BrainCircuit, ChevronLeft, Trash2,
-  Volume2, Loader2, CheckCircle, Globe, Mic, Type,
-  Sparkles, GraduationCap, Zap, ArrowRight, Sun, Moon,
-  Layout, Layers, Command, Bot, ArrowDown, Check,
-  ChevronDown, Clock, Infinity, ShieldCheck, ClipboardList,
-  Gem, FlaskConical, LineChart, CalendarDays, Activity,
-  Eye, EyeOff, Search, Settings, MoreVertical, LayoutGrid,
-  CreditCard, User, LogOut, MessageCircle, Menu, X, Award
+  Loader2, ArrowDown, BrainCircuit, Activity
 } from 'lucide-react';
 
-// --- SHARED COMPONENTS ---
+// --- PREMIUM COMPONENTS ---
 
-const SkeletonCard = () => (
-  <div className="p-10 border border-arch-border architectural-panel animate-pulse bg-arch-fg/5 space-y-10 min-h-[320px]">
-    <div className="flex justify-between">
-      <div className="h-2 bg-arch-bg border border-arch-border w-1/4"></div>
+const LoadingOverlay = () => (
+  <motion.div 
+    initial={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 z-[9999] bg-arch-bg flex flex-col items-center justify-center p-6 text-center"
+  >
+    {/* Background Depth */}
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white/[0.02] blur-[100px] rounded-full animate-pulse" />
     </div>
-    <div className="space-y-6">
-      <div className="h-10 bg-arch-bg border border-arch-border w-3/4"></div>
-      <div className="h-4 bg-arch-bg border border-arch-border w-full"></div>
-      <div className="h-4 bg-arch-bg border border-arch-border w-1/2"></div>
+
+    <div className="relative flex flex-col items-center gap-10">
+      <div className="w-24 h-24 rounded-[32px] bg-white/[0.02] border border-white/5 flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.02)] relative group">
+        <div className="absolute inset-0 bg-white/5 rounded-full blur-2xl opacity-50 animate-pulse" />
+        <BrainCircuit size={40} className="text-white relative z-10" />
+      </div>
+      
+      <div className="space-y-4">
+        <h2 className="text-sm font-black uppercase tracking-[0.6em] text-white/40 italic">AuraMind Neural Link</h2>
+        <div className="flex items-center justify-center gap-1">
+          {[0, 1, 2].map(i => (
+            <motion.div 
+              key={i}
+              animate={{ 
+                height: [4, 12, 4],
+                opacity: [0.1, 1, 0.1]
+              }}
+              transition={{ 
+                duration: 1, 
+                repeat: Infinity, 
+                delay: i * 0.2 
+              }}
+              className="w-[3px] bg-white rounded-full"
+            />
+          ))}
+        </div>
+      </div>
     </div>
-  </div>
+  </motion.div>
 );
 
 const ScrollTopButton = () => {
@@ -69,10 +91,10 @@ const ScrollTopButton = () => {
       {visible && (
         <motion.button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-10 right-10 w-14 h-14 border border-arch-fg bg-arch-bg text-arch-fg flex items-center justify-center hover:bg-arch-fg hover:text-arch-bg transition-all z-50 group"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
+          className="fixed bottom-10 right-10 w-16 h-16 border border-white/10 bg-white/[0.02] text-white/40 flex items-center justify-center hover:bg-white hover:text-black hover:border-white transition-all z-50 group backdrop-blur-xl rounded-[20px] shadow-2xl"
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.8, y: 20 }}
         >
           <ArrowDown size={20} className="rotate-180 group-hover:-translate-y-1 transition-transform" />
         </motion.button>
@@ -81,220 +103,45 @@ const ScrollTopButton = () => {
   );
 };
 
-const DashboardWebGLBackground = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { resolvedTheme } = useTheme();
+// --- PROTECTED ROUTE COMPONENT ---
+const ProtectedRoute = ({ 
+  user, 
+  status, 
+  onLogout 
+}: { 
+  user: UserProfile | null; 
+  status: 'active' | 'trialing' | 'canceled' | 'past_due' | 'none' | 'loading';
+  onLogout: () => void;
+}) => {
+  if (status === 'loading') {
+    return <LoadingOverlay />;
+  }
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const gl = canvas.getContext('webgl', { alpha: true });
-    if (!gl) return;
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
-    const vs = `attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }`;
-    const fs = `
-      precision mediump float;
-      uniform vec2 r; uniform float t; uniform float l;
-      void main() {
-        vec2 uv = (gl_FragCoord.xy * 2.0 - r) / min(r.x, r.y);
-        float s = 0.0;
-        for(float i=0.0; i<3.0; i++) {
-          vec2 p = uv + vec2(sin(t+i)*0.2, cos(t*0.8+i)*0.2);
-          s += 0.1 / length(p);
-        }
-        vec3 col = l > 0.5 ? vec3(0.96) : vec3(0.0);
-        col += l > 0.5 ? vec3(0.1, 0.3, 0.6) * s * 0.1 : vec3(0.2, 0.5, 0.9) * s * 0.3;
-        gl_FragColor = vec4(col, 1.0);
-      }
-    `;
+  // 1. Force verification if not confirmed
+  if (!user.isEmailVerified && !user.isPhoneVerified) {
+    return <Navigate to="/auth" replace />;
+  }
 
-    const compile = (type: number, src: string) => {
-      const s = gl.createShader(type)!;
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      return s;
-    };
-    const program = gl.createProgram()!;
-    gl.attachShader(program, compile(gl.VERTEX_SHADER, vs));
-    gl.attachShader(program, compile(gl.FRAGMENT_SHADER, fs));
-    gl.linkProgram(program);
-    gl.useProgram(program);
+  // 2. Force payment if not active/trialing (Admins already set to 'active')
+  if (status !== 'active' && status !== 'trialing') {
+    return <Navigate to="/subscribe" replace />;
+  }
 
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
-    const pLoc = gl.getAttribLocation(program, 'p');
-    gl.enableVertexAttribArray(pLoc);
-    gl.vertexAttribPointer(pLoc, 2, gl.FLOAT, false, 0, 0);
-
-    const rLoc = gl.getUniformLocation(program, 'r');
-    const tLoc = gl.getUniformLocation(program, 't');
-    const lLoc = gl.getUniformLocation(program, 'l');
-
-    let raf: number;
-    const render = (time: number) => {
-      canvas.width = canvas.clientWidth;
-      canvas.height = canvas.clientHeight;
-      gl.viewport(0, 0, canvas.width, canvas.height);
-      gl.uniform2f(rLoc, canvas.width, canvas.height);
-      gl.uniform1f(tLoc, time * 0.001);
-      gl.uniform1f(lLoc, resolvedTheme === 'light' ? 1.0 : 0.0);
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-      raf = requestAnimationFrame(render);
-    };
-    raf = requestAnimationFrame(render);
-    return () => cancelAnimationFrame(raf);
-  }, [resolvedTheme]);
-
-  return <canvas ref={canvasRef} className="fixed inset-0 w-full h-full -z-10 opacity-40 pointer-events-none" />;
+  return <AppLayout user={user} onLogout={onLogout} />;
 };
-
-// --- AUTH PAGE ---
-const AuthPage: React.FC<{ onBack: () => void; onContinue: () => void }> = ({ onBack, onContinue }) => {
-  const location = useLocation();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
-
-  useEffect(() => {
-    const prefills = location.state as { email?: string } | null;
-    if (prefills?.email) {
-      setEmail(prefills.email);
-    }
-  }, [location.state]);
-
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      if (mode === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        
-        // Manual Welcome Email Trigger (Bypass Supabase SMTP limits)
-        if (data?.user) {
-          try {
-            fetch('/api/welcome', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                email: data.user.email, 
-                name: email.split('@')[0] 
-              })
-            });
-          } catch (e) {
-            console.warn('Welcome API failed but signup succeeded:', e);
-          }
-        }
-      }
-      onContinue();
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleForgot = async () => {
-    if (!email) {
-      alert("Please enter your email address first.");
-      return;
-    }
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      if (error) throw error;
-      alert("Password reset email sent! Check your inbox.");
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-  return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-arch-bg font-black relative overflow-hidden">
-      <div className="fixed inset-0 arch-grid-overlay opacity-30 pointer-events-none" />
-      <div className="architectural-panel p-10 w-full max-w-lg relative z-10 space-y-8">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-arch-muted transition-colors hover:text-arch-fg"
-        >
-          <ChevronLeft size={14} />
-          Back
-        </button>
-        <div className="text-center space-y-3">
-          <h2 className="text-3xl font-black uppercase tracking-tight italic text-arch-fg">
-            {mode === 'login' ? 'Sign In' : 'Create Account'}
-          </h2>
-          <p className="text-sm text-arch-muted font-medium">
-            {mode === 'login' ? 'Sign in to continue to AuraMind.' : 'Create your account to get started.'}
-          </p>
-        </div>
-        <form onSubmit={handleAuth} className="space-y-4">
-          <input 
-            type="email" 
-            placeholder="Email Address" 
-            value={email} 
-            onChange={(e)=>setEmail(e.target.value)} 
-            className="w-full bg-arch-fg/5 border border-arch-border p-4 text-sm font-medium outline-none focus:border-arch-border-bold transition-all text-arch-fg placeholder:text-arch-muted" 
-          />
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Password"
-              value={password}
-              onChange={(e)=>setPassword(e.target.value)}
-              className="w-full bg-arch-fg/5 border border-arch-border p-4 pr-14 text-sm font-medium outline-none focus:border-arch-border-bold transition-all text-arch-fg placeholder:text-arch-muted"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className="absolute inset-y-0 right-0 flex items-center justify-center px-4 text-arch-muted transition-colors hover:text-arch-fg"
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-          {mode === 'login' && (
-            <div className="flex justify-end mt-1">
-              <button
-                type="button"
-                onClick={handleForgot}
-                className="text-[10px] uppercase font-black tracking-widest text-arch-muted hover:text-arch-fg transition-colors"
-              >
-                Forgot Password?
-              </button>
-            </div>
-          )}
-          <button type="submit" disabled={loading} className="btn-arch w-full">
-            {loading ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Create Account'}
-          </button>
-        </form>
-        <button
-          onClick={()=>setMode(mode === 'login' ? 'signup' : 'login')}
-          className="w-full text-center text-xs font-black uppercase tracking-widest text-arch-muted hover:text-arch-fg transition-colors"
-        >
-          {mode === 'login' ? 'Need an account? Sign up' : 'Already have an account? Sign in'}
-        </button>
-      </div>
-    </div>
-  );
-};
-
-// --- MAIN APP COMPONENT ---
 
 const PageTransition = ({ children }: { children: React.ReactNode }) => (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+  <motion.div 
+    initial={{ opacity: 0, y: 10 }} 
+    animate={{ opacity: 1, y: 0 }} 
+    exit={{ opacity: 0, y: -10 }} 
+    transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+    className="min-h-screen"
+  >
     {children}
   </motion.div>
 );
@@ -325,7 +172,6 @@ const AppContent = () => {
 
   const mapAuthUserToProfile = (authUser: any): UserProfile => {
     const metadata = authUser.user_metadata || {};
-
     return {
       id: authUser.id,
       name: metadata.full_name || authUser.email?.split('@')[0] || 'User',
@@ -334,7 +180,10 @@ const AppContent = () => {
       plan: metadata.plan || 'Starter',
       streak: typeof metadata.streak === 'number' ? metadata.streak : 0,
       joinedDate: metadata.joined_date ? Number(metadata.joined_date) : Date.now(),
-      isAdmin: metadata.is_admin ?? authUser.email === 'matty.cigemp@gmail.com'
+      isAdmin: metadata.is_admin ?? authUser.email === 'matty.cigemp@gmail.com',
+      isEmailVerified: !!authUser.email_confirmed_at,
+      isPhoneVerified: !!authUser.phone_confirmed_at,
+      phone: authUser.phone || ''
     };
   };
 
@@ -345,14 +194,18 @@ const AppContent = () => {
         setDecks([]);
         setCards([]);
         setActiveDeckId(null);
+        setSubscriptionStatus('none');
         return;
       }
 
       const profile = mapAuthUserToProfile(session.user);
       setUser(profile);
       
-      // Check subscription status
-      await checkSubscription(session.user.id, session.user.email || '');
+      if (profile.isAdmin || profile.email === 'matty.cigemp@gmail.com') {
+        setSubscriptionStatus('active');
+      } else {
+        await checkSubscription(session.user.id, session.user.email || '');
+      }
 
       const [fetchedDecks, fetchedCards] = await Promise.all([
         dbService.fetchDecks(session.user.id),
@@ -363,16 +216,21 @@ const AppContent = () => {
       setCards(fetchedCards);
     };
 
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        navigate('/reset-password');
+      }
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'INITIAL_SESSION') {
+        syncSession(session);
+      }
+    });
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       syncSession(session);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      syncSession(session);
-    });
-
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const createDeck = async (t: string, d: string) => {
     if (!user) return null;
@@ -415,13 +273,8 @@ const AppContent = () => {
     const saved = await dbService.saveCards(user.id, s);
     setCards(prev => [...prev, ...saved]);
     setDecks(prev => prev.map((deck) => (
-      deck.id === activeDeckId
-        ? { ...deck, cardCount: deck.cardCount + saved.length }
-        : deck
+      deck.id === activeDeckId ? { ...deck, cardCount: deck.cardCount + saved.length } : deck
     )));
-    await dbService.updateDeck(activeDeckId, {
-      cardCount: cards.filter((card) => card.deckId === activeDeckId).length + saved.length
-    });
   };
 
   const createGeneratedDeck = async (topic: string) => {
@@ -439,12 +292,10 @@ const AppContent = () => {
 
   const createDeckFromCards = async (title: string, description: string, generatedCards: GeneratedCard[]) => {
     if (!user) return null;
-
     const deck = await dbService.createDeck(user.id, title, description);
     const seededCards = generatedCards.map((card) => getInitialCardState(deck.id, card.question, card.answer));
     const savedCards = await dbService.saveCards(user.id, seededCards);
     await dbService.updateDeck(deck.id, { cardCount: savedCards.length });
-
     const hydratedDeck = { ...deck, cardCount: savedCards.length };
     setDecks((prev) => [...prev, hydratedDeck]);
     setCards((prev) => [...prev, ...savedCards]);
@@ -453,7 +304,6 @@ const AppContent = () => {
 
   const updateUserProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return;
-
     const nextProfile = { ...user, ...updates };
     const { data, error } = await supabase.auth.updateUser({
       data: {
@@ -465,34 +315,26 @@ const AppContent = () => {
         is_admin: nextProfile.isAdmin ?? false
       }
     });
-
-    if (error) {
-      throw error;
-    }
-
+    if (error) throw error;
     setUser(mapAuthUserToProfile(data.user ?? { ...user, user_metadata: {} }));
   };
 
-  const currentUser = user || { id: 'guest', name: 'Guest', email: '', plan: 'Starter', streak: 0, joinedDate: Date.now(), isAdmin: false };
+  const currentUser = user || { id: 'guest', name: 'Guest', email: '', plan: 'Starter', streak: 0, joinedDate: Date.now(), isAdmin: false, isEmailVerified: false };
   const onLogout = () => { supabase.auth.signOut(); navigate('/auth'); };
 
   return (
-    <div className="min-h-screen bg-arch-bg text-arch-fg font-sans selection:bg-accent-low">
+    <div className="min-h-screen bg-arch-bg text-white font-body selection:bg-white selection:text-black">
       <AnimatePresence mode="wait">
-        <Routes location={location}>
+        <Routes location={location} key={location.pathname}>
           <Route path="/" element={<PageTransition><AuraLandingPage onGetStarted={(e) => navigate('/auth', { state: { email: e } })} /></PageTransition>} />
           <Route path="/auth" element={<PageTransition><AuthPage onBack={() => navigate('/')} onContinue={() => navigate('/dashboard')} /></PageTransition>} />
-          <Route path="/subscribe" element={<PageTransition><PaymentPage user={currentUser as any} onBack={() => navigate('/dashboard')} /></PageTransition>} />
+          <Route path="/subscribe" element={
+            user && (subscriptionStatus === 'active' || subscriptionStatus === 'trialing')
+              ? <Navigate to="/dashboard" replace />
+              : <PageTransition><PaymentPage user={currentUser as any} onBack={() => navigate('/')} /></PageTransition>
+          } />
           
-          <Route element={
-            <AppLayout user={currentUser} onLogout={onLogout}>
-              {(subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && subscriptionStatus !== 'loading') ? (
-                <Navigate to="/subscribe" replace />
-              ) : (
-                null
-              )}
-            </AppLayout>
-          }>
+          <Route element={<ProtectedRoute user={user} status={subscriptionStatus} onLogout={onLogout} />}>
             <Route path="/dashboard" element={<PageTransition><BentoDashboard decks={decks} cards={cards} onCreateDeck={createDeck} onSelectDeck={(id)=>navigate(`/deck/${id}`)} onDeleteDeck={deleteDeck} onGenerateDeck={createGeneratedDeck} onNavigate={(v)=>navigate(v === 'AURA_CHAT' ? '/chat' : '/generate')} user={currentUser} /></PageTransition>} />
             <Route path="/dashboard/insights" element={<PageTransition><DashboardInsightsPage decks={decks} cards={cards} /></PageTransition>} />
             <Route path="/dashboard/planner" element={<PageTransition><DashboardPlannerPage decks={decks} cards={cards} navigate={navigate} /></PageTransition>} />
@@ -500,7 +342,7 @@ const AppContent = () => {
             <Route path="/generate" element={<PageTransition><GenerateCardsRoute activeDeckId={activeDeckId} navigate={navigate} user={currentUser} saveGeneratedCards={saveGeneratedCards} /></PageTransition>} />
             <Route path="/chat" element={<PageTransition><ChatRoute navigate={navigate} createGeneratedDeck={createGeneratedDeck} createDeckFromCards={createDeckFromCards} user={currentUser} /></PageTransition>} />
             <Route path="/settings" element={<PageTransition><SettingsPage user={currentUser} onUpdateUser={updateUserProfile} /></PageTransition>} />
-            <Route path="/admin/vault" element={<PageTransition><AdminConsolePage decks={decks} cards={cards} user={currentUser} /></PageTransition>} />
+            <Route path="/admin/vault" element={user?.isAdmin ? <PageTransition><AdminConsolePage decks={decks} cards={cards} user={currentUser} /></PageTransition> : <Navigate to="/dashboard" replace />} />
             <Route path="/docs" element={<PageTransition><DocsPage /></PageTransition>} />
             <Route path="/privacy" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
             <Route path="/terms" element={<PageTransition><TermsOfServicePage /></PageTransition>} />

@@ -47,8 +47,8 @@ const CosmicSidebar: React.FC<CosmicSidebarProps> = ({ onLogout, user, isAdmin }
       <div className="absolute inset-0 pointer-events-none arch-scan-line opacity-10" />
 
       <div className="p-8 flex items-center gap-6 border-b border-arch-border">
-        <div className="w-10 h-10 bg-black dark:bg-white flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" onClick={() => navigate('/')}>
-          <BrainCircuit size={24} className="text-white dark:text-black" />
+        <div className="w-10 h-10 bg-arch-fg flex items-center justify-center cursor-pointer hover:scale-110 transition-transform" onClick={() => navigate('/')}>
+          <BrainCircuit size={24} className="text-arch-bg" />
         </div>
         <div className="hidden xl:block opacity-100 transition-opacity">
           <span className="font-black tracking-[0.3em] text-[10px] block uppercase text-arch-fg">AURAMIND</span>
@@ -64,14 +64,14 @@ const CosmicSidebar: React.FC<CosmicSidebarProps> = ({ onLogout, user, isAdmin }
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-6 p-8 border-b border-arch-border transition-all group/nav ${isActive ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-arch-fg hover:bg-neutral-50 dark:hover:bg-neutral-900'}`}
+                className={`w-full flex items-center gap-6 p-8 border-b border-arch-border transition-all group/nav ${isActive ? 'bg-arch-fg text-arch-bg' : 'text-arch-fg hover:bg-arch-muted/5'}`}
               >
                 <item.icon size={20} className={isActive ? 'text-inherit' : 'text-arch-muted group-hover/nav:text-arch-fg'} />
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] hidden xl:block whitespace-nowrap">
                   {item.title}
                 </span>
                 {isActive && (
-                   <div className="ml-auto h-2 w-2 bg-white dark:bg-black hidden xl:block animate-pulse" />
+                   <div className="ml-auto h-2 w-2 bg-arch-bg hidden xl:block animate-pulse" />
                 )}
               </button>
             );
@@ -82,7 +82,7 @@ const CosmicSidebar: React.FC<CosmicSidebarProps> = ({ onLogout, user, isAdmin }
           <div className="border-t border-arch-border">
             <button
               onClick={() => navigate('/admin/vault')}
-              className={`w-full flex items-center gap-6 p-8 border-b border-arch-border transition-all group/nav ${location.pathname === '/admin/vault' ? 'bg-black text-white dark:bg-white dark:text-black' : 'text-arch-fg hover:bg-neutral-50 dark:hover:bg-neutral-900'}`}
+              className={`w-full flex items-center gap-6 p-8 border-b border-arch-border transition-all group/nav ${location.pathname === '/admin/vault' ? 'bg-arch-fg text-arch-bg' : 'text-arch-fg hover:bg-arch-muted/5'}`}
             >
               <Crown size={20} className={location.pathname === '/admin/vault' ? 'text-inherit' : 'text-arch-muted'} />
               <span className="text-[10px] font-black uppercase tracking-[0.4em] hidden xl:block whitespace-nowrap">
@@ -94,7 +94,7 @@ const CosmicSidebar: React.FC<CosmicSidebarProps> = ({ onLogout, user, isAdmin }
       </nav>
 
       <div className="p-3 border-t border-white/5 space-y-2">
-        <div className="hidden xl:flex items-center gap-4 p-8 bg-neutral-50 dark:bg-neutral-900 border-t border-arch-border">
+        <div className="hidden xl:flex items-center gap-4 p-8 bg-arch-muted/5 border-t border-arch-border">
           {user.avatar ? (
             <img src={user.avatar} alt={user.name} className="w-10 h-10 grayscale object-cover border border-arch-border" />
           ) : (
@@ -110,7 +110,7 @@ const CosmicSidebar: React.FC<CosmicSidebarProps> = ({ onLogout, user, isAdmin }
 
         <button
           onClick={toggleTheme}
-          className="w-full flex items-center gap-6 p-8 border-t border-arch-border hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-all text-arch-fg"
+          className="w-full flex items-center gap-6 p-8 border-t border-arch-border hover:bg-arch-muted/5 transition-all text-arch-fg"
         >
           {resolvedTheme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
           <span className="text-[10px] font-black uppercase tracking-[0.4em] hidden xl:block">
