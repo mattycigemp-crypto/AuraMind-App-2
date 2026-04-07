@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { Card, Deck } from '../types';
+import { enrichCardsWithStoredMetadata } from './roadmapService';
 
 export const dbService = {
     // --- DECKS ---
@@ -75,7 +76,7 @@ export const dbService = {
             .eq('user_id', userId);
 
         if (error) throw error;
-        return (data ?? []).map(c => ({
+        return enrichCardsWithStoredMetadata((data ?? []).map(c => ({
             id: c.id,
             question: c.question,
             answer: c.answer,
@@ -85,7 +86,7 @@ export const dbService = {
             easeFactor: c.ease_factor,
             repetition: c.repetition,
             lastReviewed: c.last_reviewed ? new Date(c.last_reviewed).getTime() : undefined
-        }));
+        })));
     },
 
     async saveCards(userId: string, cards: Omit<Card, 'id'>[]): Promise<Card[]> {

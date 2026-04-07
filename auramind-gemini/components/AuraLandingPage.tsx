@@ -13,7 +13,13 @@ import {
   Bot,
   Sparkles,
   Sun,
-  Moon
+  Moon,
+  CheckCircle2,
+  FileText,
+  ScanSearch,
+  Mic2,
+  LockKeyhole,
+  GraduationCap
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 import AuraLogo from './AuraLogo';
@@ -32,26 +38,53 @@ import heroNeuralBg from '@/assets/hero-neural-bg.jpg';
 type StudyMode = 'Foundation' | 'Exam' | 'Deep Work';
 
 const protocolV = "V4.8.2";
-const heroSignals = ['AI Study Coach', 'Active Recall', 'Spaced Repetition', 'Smart Review Timing'];
+const heroSignals = ['Built for med, law, and certification exams', 'Source-anchored flashcards', 'Weak-spot detection', 'Adaptive review flow'];
+const proofCards = [
+  {
+    title: 'Flashcard Builder',
+    eyebrow: 'Source to deck',
+    detail: 'Turn lecture notes, outlines, and PDFs into clean active-recall cards in seconds.',
+    icon: FileText,
+  },
+  {
+    title: 'Weak-Spot Analysis',
+    eyebrow: 'Find the misses',
+    detail: 'See which topics are decaying fastest before they become exam-day failures.',
+    icon: ScanSearch,
+  },
+  {
+    title: 'Review Flow',
+    eyebrow: 'Daily execution',
+    detail: 'Work through due cards, hear answers aloud, and move into the next review block automatically.',
+    icon: Mic2,
+  },
+];
+
+const trustSignals = [
+  'Private study workspace. We do not sell your data.',
+  'Export or delete decks whenever you want.',
+  'Built for serious exam prep, not meditation or journaling.',
+  'Transparent review logic with visible source context.',
+];
 
 const features = [
   {
     icon: Cpu,
     tag: 'SYSTEM-01',
-    title: 'AI Flashcards',
-    description: 'Create flashcards from notes, slides, and transcripts in seconds.'
+    title: 'Source-Anchored Flashcards',
+    description: 'Generate cards from lecture notes, outlines, transcripts, and pasted study guides with visible source context.'
   },
   {
     icon: Activity,
     tag: 'SYSTEM-02',
-    title: 'Progress Insights',
-    description: 'See what you know well, what needs work, and what to review next.'
+    title: 'Weak-Spot Analysis',
+    description: 'See which concepts are slipping, which decks are strongest, and which review blocks matter most today.'
   },
   {
     icon: Dna,
     tag: 'SYSTEM-03',
-    title: 'Smart Review',
-    description: 'Get review timing that adjusts to your pace without overwhelming you.'
+    title: 'Adaptive Review Flow',
+    description: 'Study in a guided flow that adjusts timing and pressure for board exams, bar prep, and high-stakes certifications.'
   }
 ];
 
@@ -236,23 +269,36 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
                 <div className="hero-kicker-row mb-10">
                   <span className="signal-pill rounded-full">
                     <span className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />
-                    READY TO STUDY
+                    HIGH-STAKES EXAM PREP
                   </span>
                   <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-primary">
-                    <Bot size={12} />
-                    AI POWERED
+                    <GraduationCap size={12} />
+                    MED / LAW / CERTS
                   </span>
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{protocolV}</span>
                 </div>
 
                 <h1 className="text-impact-hero text-foreground mb-8">
-                  REDESIGNING<br />
-                  <span className="text-primary/70">HUMAN RECALL.</span>
+                  STUDY THE MATERIAL<br />
+                  <span className="text-primary/70">YOU ARE ACTUALLY FORGETTING.</span>
                 </h1>
 
                 <p className="max-w-xl text-base md:text-lg text-muted-foreground mb-12 font-medium leading-relaxed">
-                  An AI-powered study system for technical minds. Generate flashcards, surface weak spots, and adapt review timing with machine-guided precision.
+                  AuraMind is an exam-prep study app for medical students, law students, and certification candidates who need faster recall under pressure. Build source-backed flashcards, spot weak topics early, and follow a review flow designed for retention, not busywork.
                 </p>
+
+                <div className="mb-10 grid gap-3 sm:grid-cols-3">
+                  {[
+                    { label: 'Outcome', value: 'Reach first review in under 5 minutes' },
+                    { label: 'Trust', value: 'See citations attached to each card' },
+                    { label: 'Focus', value: 'Know exactly what to review next' },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-sm border border-border bg-card/60 p-4">
+                      <p className="text-[9px] font-black uppercase tracking-[0.3em] text-primary">{item.label}</p>
+                      <p className="mt-2 text-sm font-medium leading-relaxed text-foreground">{item.value}</p>
+                    </div>
+                  ))}
+                </div>
 
                 <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 max-w-lg mb-12">
                   <div className="flex-1 relative bg-card border border-border rounded-sm overflow-hidden">
@@ -268,10 +314,16 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
                     </div>
                   </div>
                   <button type="submit" className="btn-protocol px-8 py-4 rounded-sm">
-                    GET STARTED
+                    START STUDYING FREE
                     <ArrowRight size={16} />
                   </button>
                 </form>
+
+                <div className="flex flex-wrap items-center gap-4 mb-12 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                  <span className="inline-flex items-center gap-2"><LockKeyhole size={14} className="text-primary" /> Private workspace</span>
+                  <span className="inline-flex items-center gap-2"><ShieldCheck size={14} className="text-primary" /> No data sold</span>
+                  <span className="inline-flex items-center gap-2"><CheckCircle2 size={14} className="text-primary" /> Built for exam prep, not wellness</span>
+                </div>
 
                 <div className="flex flex-wrap gap-3">
                   {heroSignals.map((signal, i) => (
@@ -293,37 +345,42 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 1, delay: 2.5 }}
-                className="hero-sidecard hidden lg:block relative"
+                className="hero-sidecard relative"
               >
-                <div className="glass-card-protocol p-8 scan-line border-t-2 border-t-primary rounded-sm">
-                  <div className="flex items-center justify-between mb-10">
-                    <p className="text-[10px] font-black tracking-[.3em] text-primary uppercase">Study Snapshot</p>
+                <div className="glass-card-protocol p-8 scan-line border-t-2 border-t-primary rounded-sm space-y-6">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black tracking-[.3em] text-primary uppercase">Live Product Preview</p>
                     <Cpu size={18} className="text-muted-foreground/20" />
                   </div>
 
-                  <div className="space-y-6">
-                    {[
-                      { label: 'Memory Score', val: '98.4%' },
-                      { label: 'Latency', val: '0.12ms' },
-                      { label: 'Review Status', val: 'Active' }
-                    ].map((item) => (
-                      <div key={item.label} className="flex justify-between items-center border-b border-border/50 pb-4">
-                        <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">{item.label}</span>
-                        <span className="text-lg font-black italic text-foreground">{item.val}</span>
-                      </div>
-                    ))}
+                  <div className="rounded-sm border border-border bg-background/40 p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[9px] font-black uppercase tracking-[0.28em] text-primary">Card</p>
+                      <span className="text-[9px] uppercase tracking-[0.22em] text-muted-foreground">Weak spot: Civil Procedure</span>
+                    </div>
+                    <p className="text-sm font-black text-foreground leading-relaxed">What standard does a court apply when deciding a Rule 12(b)(6) motion?</p>
+                    <div className="mt-4 rounded-sm border border-primary/20 bg-primary/5 p-3">
+                      <p className="text-[9px] font-black uppercase tracking-[0.22em] text-primary">Citation</p>
+                      <p className="mt-2 text-xs text-muted-foreground">Federal Rules of Civil Procedure, Rule 12(b)(6) and Twombly / Iqbal pleading standard.</p>
+                    </div>
                   </div>
 
-                  <div className="mt-10 p-4 bg-background/30 border border-border/50 rounded-sm">
-                    <div className="h-10 w-full relative overflow-hidden rounded-sm">
-                      <motion.div
-                        animate={{ x: ['-100%', '100%'] }}
-                        transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
-                        className="absolute inset-y-0 w-20 bg-primary/10 skew-x-12"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center text-[9px] font-black tracking-[.4em] text-primary/30">
-                        ANALYZING PROGRESS
+                  <div className="grid gap-3">
+                    <div className="rounded-sm border border-border bg-background/30 p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">Weak-spot analysis</span>
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-primary">72% decay risk</span>
                       </div>
+                      <div className="mt-3 h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full w-[72%] bg-primary" />
+                      </div>
+                    </div>
+                    <div className="rounded-sm border border-border bg-background/30 p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">Next review flow</span>
+                        <span className="text-[9px] uppercase tracking-[0.2em] text-foreground">12 cards due</span>
+                      </div>
+                      <p className="mt-3 text-xs text-muted-foreground">Priority deck, reveal answer, rate recall, and move directly into the next high-risk concept.</p>
                     </div>
                   </div>
                 </div>
@@ -334,6 +391,34 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
 
         {/* MARQUEE */}
         <MarqueeSection />
+
+        <ParallaxSection id="protocols" className="landing-section relative z-10 border-y border-border bg-card/20" speed={0.07}>
+          <div className="mx-auto max-w-7xl">
+            <motion.div {...textReveal} className="mb-16">
+              <p className="text-eyebrow mb-6">Who It Is For</p>
+              <h2 className="text-impact-lg text-foreground">
+                BUILT FOR STUDENTS WITH<br />
+                <span className="text-primary">TOO MUCH TO REMEMBER.</span>
+              </h2>
+              <p className="mt-8 max-w-3xl text-base md:text-lg text-muted-foreground leading-relaxed font-medium">
+                AuraMind is for people studying for medical school exams, law school exams, and demanding professional certifications. If your material is dense, your deadlines are real, and forgetting details is expensive, this is the workflow we built for.
+              </p>
+            </motion.div>
+
+            <div className="grid gap-6 lg:grid-cols-3">
+              {proofCards.map((card) => (
+                <div key={card.title} className="glass-card-protocol rounded-sm p-8">
+                  <div className="mb-5 flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-[0.32em] text-primary">{card.eyebrow}</span>
+                    <card.icon size={18} className="text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-black italic uppercase text-foreground">{card.title}</h3>
+                  <p className="mt-4 text-sm text-muted-foreground leading-relaxed font-medium">{card.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </ParallaxSection>
 
         {/* SCIENCE SECTION */}
         <ParallaxSection id="science" className="landing-section relative z-10 border-y border-border bg-card/30" speed={0.1}>
@@ -371,11 +456,11 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
                   How AI Helps
                 </div>
                 <h2 className="text-impact-lg text-foreground mb-6">
-                  BUILT TO FEEL LIKE A<br />
-                  <span className="text-primary">PERSONAL STUDY ASSISTANT.</span>
+                  AI THAT HELPS YOU<br />
+                  <span className="text-primary">STUDY FOR THE TEST IN FRONT OF YOU.</span>
                 </h2>
                 <p className="max-w-3xl text-base md:text-lg text-muted-foreground leading-relaxed font-medium">
-                  AuraMind uses AI to turn source material into study decks, identify what you are likely to forget next, and help you stay in motion without manual setup.
+                  AuraMind uses AI to compress messy source material into usable cards, prioritize what you are forgetting, and keep review moving. It is not a generic “mindfulness” or “brain wellness” app. It is a focused study workflow for high-pressure recall.
                 </p>
               </div>
 
@@ -383,7 +468,7 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
                 {[
                   'Generate cards from messy notes, lectures, and PDFs.',
                   'Get adaptive study guidance based on retention patterns.',
-                  'Reduce setup time so users reach the first review faster.'
+                  'Use visible citations so learners can trust what they review.'
                 ].map((item) => (
                   <div key={item} className="glass-card-protocol rounded-sm p-6">
                     <div className="mb-3 flex items-center gap-3 text-primary">
@@ -436,41 +521,24 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
         {/* SIMULATION LAB */}
         <ParallaxSection id="lab" className="landing-section bg-background relative z-10 border-t border-border" speed={0.06}>
           <div className="mx-auto max-w-7xl">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="grid lg:grid-cols-2 gap-16 items-start">
               <motion.div {...textReveal}>
-                <p className="text-eyebrow mb-6">Interactive Demo</p>
-                <h2 className="text-impact-lg text-foreground mb-10">STUDY PREVIEW.</h2>
+                <p className="text-eyebrow mb-6">Product Demo</p>
+                <h2 className="text-impact-lg text-foreground mb-10">SEE THE REVIEW FLOW.</h2>
                 <p className="text-muted-foreground text-base md:text-lg mb-12 leading-relaxed">
-                  Adjust your study intensity and see how your review schedule and memory score change over time.
+                  The live preview below shows the three moments that matter most: card creation, weak-spot detection, and the actual review loop that keeps recall moving forward.
                 </p>
 
-                <div className="flex flex-wrap gap-3 mb-12">
-                  {(Object.keys(modeConfig) as StudyMode[]).map((m) => (
-                    <button
-                      key={m}
-                      onClick={() => setMode(m)}
-                      className={`px-6 py-3 text-[10px] font-black uppercase tracking-[.2em] rounded-sm transition-all duration-300 ${mode === m ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'bg-card border border-border text-muted-foreground hover:border-primary hover:text-primary'}`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="bg-card border border-border p-8 signal-border rounded-sm">
-                  <div className="flex justify-between items-end mb-8">
-                    <div>
-                      <label className="text-[10px] font-black text-primary tracking-[.3em] uppercase">Intensity</label>
-                      <p className="text-4xl font-black italic text-foreground mt-2">{intensity}%</p>
+                <div className="grid gap-4">
+                  {[
+                    '1. Paste your notes or upload a lecture PDF.',
+                    '2. AuraMind creates source-backed flashcards and tags weak spots.',
+                    '3. Review only what is due, rate recall, and let the schedule update automatically.',
+                  ].map((step) => (
+                    <div key={step} className="rounded-sm border border-border bg-card p-5 text-sm font-medium text-muted-foreground">
+                      {step}
                     </div>
-                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{curve.load}</span>
-                  </div>
-                  <input
-                    type="range" min="30" max="100" value={intensity}
-                    onChange={(e) => setIntensity(Number(e.target.value))}
-                    className="w-full h-1 bg-muted cursor-pointer appearance-none rounded-full"
-                    style={{ accentColor: 'hsl(var(--primary))' }}
-                  />
-                  <p className="mt-6 text-sm text-muted-foreground font-medium italic">{curve.label}</p>
+                  ))}
                 </div>
               </motion.div>
 
@@ -479,17 +547,22 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
                 whileInView={{ opacity: 1, x: 0 }}
                 className="glass-card-protocol p-4 md:p-8 overflow-hidden rounded-sm"
               >
-                <div className="bg-background/50 p-6 border border-border rounded-sm">
-                  <div className="flex justify-between items-start mb-10">
+                <div className="bg-background/50 p-6 border border-border rounded-sm space-y-6">
+                  <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[.3em]">Memory Curve</p>
-                      <h4 className="text-xl font-black italic text-primary mt-2">Retention: {curve.retention}%</h4>
+                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[.3em]">Review Intelligence</p>
+                      <h4 className="text-xl font-black italic text-primary mt-2">Exam Mode Live</h4>
                     </div>
                     <div className="signal-pill rounded-full text-[8px]">LIVE</div>
                   </div>
 
-                  <div className="relative h-[300px] w-full bg-background/20 border border-border/50 p-6 mb-10 rounded-sm">
-                    <svg viewBox="0 0 600 300" className="w-full h-full overflow-visible">
+                  <div className="rounded-sm border border-border/50 bg-background/20 p-5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] uppercase tracking-[0.2em] text-muted-foreground">Weak-spot analysis</span>
+                      <span className="text-[9px] uppercase tracking-[0.2em] text-primary">Contracts: 68% risk</span>
+                    </div>
+                    <div className="relative mt-5 h-[170px] w-full">
+                      <svg viewBox="0 0 600 300" className="w-full h-full overflow-visible">
                       {[0, 1, 2, 3].map(i => (
                         <line key={i} x1="0" y1={i * 80 + 30} x2="600" y2={i * 80 + 30} stroke="rgba(255,255,255,0.04)" strokeDasharray="4 6" />
                       ))}
@@ -507,19 +580,26 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
                         <circle key={i} cx={(i / 6) * 600} cy={280 - ((p - 10) / 90) * 260} r="4" fill="hsl(var(--primary))" />
                       ))}
                     </svg>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { icon: Clock3, label: 'Next Review', val: `${curve.intervalHours}h` },
-                      { icon: Zap, label: 'Cards', val: curve.cards },
-                      { icon: ShieldCheck, label: 'Retention', val: `${curve.retention}%` }
-                    ].map((stat) => (
-                      <div key={stat.label} className="bg-card p-4 border border-border rounded-sm">
-                        <p className="text-[8px] font-black text-muted-foreground/40 uppercase tracking-widest mb-2">{stat.label}</p>
-                        <p className="text-lg font-black italic text-foreground">{String(stat.val)}</p>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-sm border border-border bg-card p-5">
+                      <p className="text-[8px] font-black text-muted-foreground/40 uppercase tracking-widest mb-3">Flashcard screenshot</p>
+                      <p className="text-sm font-black text-foreground">What is consideration in contract law?</p>
+                      <div className="mt-4 rounded-sm border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
+                        Source: Lecture 4 outline, section 2.2
                       </div>
-                    ))}
+                    </div>
+                    <div className="rounded-sm border border-border bg-card p-5">
+                      <p className="text-[8px] font-black text-muted-foreground/40 uppercase tracking-widest mb-3">Review flow screenshot</p>
+                      <p className="text-sm text-muted-foreground">12 cards due now, 4 cards high risk, next session in {curve.intervalHours} hours.</p>
+                      <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[9px] uppercase tracking-[0.18em]">
+                        {['Again', 'Good', 'Easy'].map((label) => (
+                          <div key={label} className="border border-border px-2 py-3">{label}</div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -529,6 +609,47 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
 
         {/* TESTIMONIALS */}
         <TestimonialsSection />
+
+        <ParallaxSection className="landing-section relative z-10 border-t border-border bg-card/20" speed={0.05}>
+          <div className="mx-auto max-w-7xl">
+            <motion.div {...textReveal} className="mb-14">
+              <p className="text-eyebrow mb-6">Trust and Privacy</p>
+              <h2 className="text-impact-lg text-foreground">
+                CLEARER REASONS TO<br />
+                <span className="text-primary">TRUST THE WORKFLOW.</span>
+              </h2>
+            </motion.div>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className="glass-card-protocol rounded-sm p-8">
+                <div className="mb-4 inline-flex items-center gap-3 text-primary">
+                  <ShieldCheck size={18} />
+                  <span className="text-[10px] font-black uppercase tracking-[0.28em]">Privacy posture</span>
+                </div>
+                <div className="space-y-4">
+                  {trustSignals.map((item) => (
+                    <div key={item} className="flex items-start gap-3">
+                      <CheckCircle2 size={18} className="mt-0.5 text-primary shrink-0" />
+                      <p className="text-sm text-muted-foreground leading-relaxed font-medium">{item}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="glass-card-protocol rounded-sm p-8">
+                <div className="mb-4 inline-flex items-center gap-3 text-primary">
+                  <Fingerprint size={18} />
+                  <span className="text-[10px] font-black uppercase tracking-[0.28em]">Brand clarity</span>
+                </div>
+                <p className="text-base text-muted-foreground leading-relaxed font-medium">
+                  AuraMind is the study-focused product in this category. We are not a meditation app, mood tracker, or general “mindfulness” tool. The product is designed around recall, review scheduling, flashcards, citations, and exam preparation.
+                </p>
+                <div className="mt-6 rounded-sm border border-border bg-background/40 p-5">
+                  <p className="text-[9px] font-black uppercase tracking-[0.24em] text-primary">Best fit</p>
+                  <p className="mt-3 text-sm text-foreground font-medium">Medical students, law students, and certification candidates who need to retain dense material fast.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ParallaxSection>
 
         {/* FAQ */}
         <FAQSection />
@@ -545,16 +666,24 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
             <motion.div {...textReveal}>
               <p className="text-[10px] font-black text-primary-foreground/60 tracking-[.5em] uppercase mb-10">Ready to begin?</p>
               <h2 className="text-impact-xl text-primary-foreground mb-14 leading-[.85]">
-                MASTER YOUR<br />
-                MEMORY.
+                START WITH YOUR NEXT<br />
+                REVIEW BLOCK.
               </h2>
+              <p className="mx-auto mb-10 max-w-2xl text-base md:text-lg text-primary-foreground/75 leading-relaxed font-medium">
+                Create your first source-backed deck, see your weak spots, and start reviewing in minutes.
+              </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <button className="bg-foreground text-background px-10 py-5 text-sm font-black uppercase tracking-[.3em] hover:scale-[1.03] transition-transform rounded-sm shadow-xl">
-                  START FREE
+                <button onClick={() => onGetStarted?.()} className="bg-foreground text-background px-10 py-5 text-sm font-black uppercase tracking-[.3em] hover:scale-[1.03] transition-transform rounded-sm shadow-xl">
+                  START FREE STUDY SESSION
                 </button>
-                <button className="border-2 border-primary-foreground/30 text-primary-foreground px-10 py-5 text-sm font-black uppercase tracking-[.3em] hover:border-primary-foreground hover:bg-primary-foreground/5 transition-all rounded-sm">
-                  READ DOCS
-                </button>
+                <a href="#lab" className="border-2 border-primary-foreground/30 text-primary-foreground px-10 py-5 text-sm font-black uppercase tracking-[.3em] hover:border-primary-foreground hover:bg-primary-foreground/5 transition-all rounded-sm">
+                  VIEW DEMO FLOW
+                </a>
+              </div>
+              <div className="mt-8 flex flex-wrap justify-center gap-6 text-[10px] font-bold uppercase tracking-[0.16em] text-primary-foreground/60">
+                <span>Privacy-first study data</span>
+                <span>Built for exam recall</span>
+                <span>Source-backed flashcards</span>
               </div>
             </motion.div>
           </div>

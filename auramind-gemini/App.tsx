@@ -5,6 +5,8 @@ import { Deck, Card, Rating, UserProfile } from './types';
 import { calculateSRS, getInitialCardState } from './services/srs';
 import { generateDeckFromTopic, GeneratedCard } from './services/geminiService';
 import { dbService } from './services/dbService';
+import { PREMADE_CARDS, PREMADE_DECKS } from './data/premadeContent';
+import { createMetadataTemplates, mergeCardMetadata, persistCardMetadata } from './services/roadmapService';
 import AuraLandingPage from './components/AuraLandingPage';
 import BentoDashboard from './components/BentoDashboard';
 import AppLayout from './components/AppLayout';
@@ -14,6 +16,7 @@ import { supabase } from './services/supabase';
 import {
   DashboardInsightsPage,
   DashboardPlannerPage,
+  ProfessorDashboardPage,
   DeckDetailRoute,
   GenerateCardsRoute,
   StudyModeRoute,
@@ -183,7 +186,8 @@ const AppContent = () => {
       isAdmin: metadata.is_admin ?? authUser.email === 'matty.cigemp@gmail.com',
       isEmailVerified: !!authUser.email_confirmed_at,
       isPhoneVerified: !!authUser.phone_confirmed_at,
-      phone: authUser.phone || ''
+      phone: authUser.phone || '',
+      lastStudyDate: metadata.last_study_date,
     };
   };
 
@@ -239,6 +243,26 @@ const AppContent = () => {
     return deck;
   };
 
+  const saveDeckWithCards = async (
+    title: string,
+    description: string,
+    cardsToSave: GeneratedCard[],
+    sourceLabel: string,
+    sourceType: Card['sourceType'] = 'manual'
+  ) => {
+    if (!user) return null;
+    const deck = await dbService.createDeck(user.id, title, description);
+    const seededCards = cardsToSave.map((card) => getInitialCardState(deck.id, card.question, card.answer));
+    const templates = createMetadataTemplates(cardsToSave, sourceLabel, sourceType);
+    const savedCards = mergeCardMetadata(await dbService.saveCards(user.id, seededCards), templates);
+    persistCardMetadata(savedCards);
+    await dbService.updateDeck(deck.id, { cardCount: savedCards.length });
+    const hydratedDeck = { ...deck, cardCount: savedCards.length, sourceLabel };
+    setDecks((prev) => [...prev, hydratedDeck]);
+    setCards((prev) => [...prev, ...savedCards]);
+    return { deckId: hydratedDeck.id, deckTitle: hydratedDeck.title, cardCount: savedCards.length };
+  };
+
   const deleteDeck = async (id: string) => {
     await dbService.deleteDeck(id);
     setDecks(prev => prev.filter(d => d.id !== id));
@@ -265,12 +289,25 @@ const AppContent = () => {
     const updates = { ...res, nextReview: Date.now() + res.interval * 86400000 };
     await dbService.updateCard(id, updates);
     setCards(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+
+    if (user) {
+      const today = new Date().toISOString().slice(0, 10);
+      if (user.lastStudyDate !== today) {
+        const previous = user.lastStudyDate ? new Date(`${user.lastStudyDate}T00:00:00`) : null;
+        const current = new Date(`${today}T00:00:00`);
+        const diffDays = previous ? Math.round((current.getTime() - previous.getTime()) / 86400000) : 0;
+        const nextStreak = diffDays === 1 ? (user.streak || 0) + 1 : 1;
+        await updateUserProfile({ streak: nextStreak, lastStudyDate: today });
+      }
+    }
   };
 
   const saveGeneratedCards = async (newOnes: any[]) => {
     if (!activeDeckId || !user) return;
     const s = newOnes.map(c => getInitialCardState(activeDeckId, c.question, c.answer));
-    const saved = await dbService.saveCards(user.id, s);
+    const templates = createMetadataTemplates(newOnes, 'Aura Operator session', 'ai');
+    const saved = mergeCardMetadata(await dbService.saveCards(user.id, s), templates);
+    persistCardMetadata(saved);
     setCards(prev => [...prev, ...saved]);
     setDecks(prev => prev.map((deck) => (
       deck.id === activeDeckId ? { ...deck, cardCount: deck.cardCount + saved.length } : deck
@@ -278,28 +315,51 @@ const AppContent = () => {
   };
 
   const createGeneratedDeck = async (topic: string) => {
-    if (!user) return null;
     const generated = await generateDeckFromTopic(topic);
-    const deck = await dbService.createDeck(user.id, generated.title, generated.description);
-    const seededCards = generated.cards.map((card) => getInitialCardState(deck.id, card.question, card.answer));
-    const savedCards = await dbService.saveCards(user.id, seededCards);
-    await dbService.updateDeck(deck.id, { cardCount: savedCards.length });
-    const hydratedDeck = { ...deck, cardCount: savedCards.length };
-    setDecks((prev) => [...prev, hydratedDeck]);
-    setCards((prev) => [...prev, ...savedCards]);
-    return { deckTitle: hydratedDeck.title, cardCount: savedCards.length };
+    const created = await saveDeckWithCards(
+      generated.title,
+      generated.description,
+      generated.cards,
+      `AuraMind AI research • ${topic}`,
+      'research'
+    );
+    return created ? { deckTitle: created.deckTitle, cardCount: created.cardCount } : null;
   };
 
   const createDeckFromCards = async (title: string, description: string, generatedCards: GeneratedCard[]) => {
-    if (!user) return null;
-    const deck = await dbService.createDeck(user.id, title, description);
-    const seededCards = generatedCards.map((card) => getInitialCardState(deck.id, card.question, card.answer));
-    const savedCards = await dbService.saveCards(user.id, seededCards);
-    await dbService.updateDeck(deck.id, { cardCount: savedCards.length });
-    const hydratedDeck = { ...deck, cardCount: savedCards.length };
-    setDecks((prev) => [...prev, hydratedDeck]);
-    setCards((prev) => [...prev, ...savedCards]);
-    return { deckId: hydratedDeck.id, deckTitle: hydratedDeck.title, cardCount: savedCards.length };
+    return saveDeckWithCards(title, description, generatedCards, title, 'ai');
+  };
+
+  const importDeckFromCards = async (title: string, description: string, importedCards: GeneratedCard[]) => {
+    return saveDeckWithCards(title, description, importedCards, title, 'import');
+  };
+
+  const loadSampleDecks = async () => {
+    if (!user) return;
+
+    const existingTitles = new Set(decks.map((deck) => deck.title.toLowerCase()));
+    const templateGroups = PREMADE_DECKS
+      .filter((deck) => !existingTitles.has(deck.title.toLowerCase()))
+      .map((deck) => ({
+        deck,
+        cards: PREMADE_CARDS.filter((card) => card.deckId === deck.id),
+      }));
+
+    for (const template of templateGroups) {
+      await saveDeckWithCards(
+        template.deck.title,
+        template.deck.description,
+        template.cards.map((card) => ({
+          question: card.question,
+          answer: card.answer,
+          citations: card.citations,
+          sourceLabel: card.sourceLabel,
+          sourceType: card.sourceType,
+        })),
+        template.deck.sourceLabel || template.deck.title,
+        'sample'
+      );
+    }
   };
 
   const updateUserProfile = async (updates: Partial<UserProfile>) => {
@@ -312,20 +372,21 @@ const AppContent = () => {
         plan: nextProfile.plan,
         streak: nextProfile.streak,
         joined_date: nextProfile.joinedDate,
-        is_admin: nextProfile.isAdmin ?? false
+        is_admin: nextProfile.isAdmin ?? false,
+        last_study_date: nextProfile.lastStudyDate,
       }
     });
     if (error) throw error;
     setUser(mapAuthUserToProfile(data.user ?? { ...user, user_metadata: {} }));
   };
 
-  const currentUser = user || { id: 'guest', name: 'Guest', email: '', plan: 'Starter', streak: 0, joinedDate: Date.now(), isAdmin: false, isEmailVerified: false };
+  const currentUser = user || { id: 'guest', name: 'Guest', email: '', plan: 'Starter', streak: 0, joinedDate: Date.now(), isAdmin: false, isEmailVerified: false, isPhoneVerified: false, lastStudyDate: undefined };
   const onLogout = () => { supabase.auth.signOut(); navigate('/auth'); };
 
   return (
     <div className="min-h-screen bg-arch-bg text-white font-body selection:bg-white selection:text-black">
       <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
+        <Routes location={location}>
           <Route path="/" element={<PageTransition><AuraLandingPage onGetStarted={(e) => navigate('/auth', { state: { email: e } })} /></PageTransition>} />
           <Route path="/auth" element={<PageTransition><AuthPage onBack={() => navigate('/')} onContinue={() => navigate('/dashboard')} /></PageTransition>} />
           <Route path="/subscribe" element={
@@ -335,9 +396,10 @@ const AppContent = () => {
           } />
           
           <Route element={<ProtectedRoute user={user} status={subscriptionStatus} onLogout={onLogout} />}>
-            <Route path="/dashboard" element={<PageTransition><BentoDashboard decks={decks} cards={cards} onCreateDeck={createDeck} onSelectDeck={(id)=>navigate(`/deck/${id}`)} onDeleteDeck={deleteDeck} onGenerateDeck={createGeneratedDeck} onNavigate={(v)=>navigate(v === 'AURA_CHAT' ? '/chat' : '/generate')} user={currentUser} /></PageTransition>} />
+            <Route path="/dashboard" element={<PageTransition><BentoDashboard decks={decks} cards={cards} onCreateDeck={createDeck} onSelectDeck={(id)=>navigate(`/deck/${id}`)} onDeleteDeck={deleteDeck} onGenerateDeck={createGeneratedDeck} onImportDeck={importDeckFromCards} onLoadDemoData={loadSampleDecks} onNavigate={(v)=>navigate(v === 'AURA_CHAT' ? '/chat' : '/generate')} user={currentUser} /></PageTransition>} />
             <Route path="/dashboard/insights" element={<PageTransition><DashboardInsightsPage decks={decks} cards={cards} /></PageTransition>} />
             <Route path="/dashboard/planner" element={<PageTransition><DashboardPlannerPage decks={decks} cards={cards} navigate={navigate} /></PageTransition>} />
+            <Route path="/dashboard/professor" element={<PageTransition><ProfessorDashboardPage decks={decks} cards={cards} user={currentUser} /></PageTransition>} />
             <Route path="/deck/:id" element={<PageTransition><DeckDetailRoute decks={decks} cards={cards} navigate={navigate} deleteCard={deleteCard} setActiveDeckId={setActiveDeckId} /></PageTransition>} />
             <Route path="/generate" element={<PageTransition><GenerateCardsRoute activeDeckId={activeDeckId} navigate={navigate} user={currentUser} saveGeneratedCards={saveGeneratedCards} /></PageTransition>} />
             <Route path="/chat" element={<PageTransition><ChatRoute navigate={navigate} createGeneratedDeck={createGeneratedDeck} createDeckFromCards={createDeckFromCards} user={currentUser} /></PageTransition>} />
@@ -358,7 +420,7 @@ const AppContent = () => {
           <Route path="*" element={<PageTransition><NotFoundPage navigate={navigate} /></PageTransition>} />
         </Routes>
       </AnimatePresence>
-      <AmbientPlayer />
+      {location.pathname.startsWith('/dashboard') && <AmbientPlayer />}
       <ScrollTopButton />
     </div>
   );

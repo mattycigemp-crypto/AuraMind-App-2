@@ -9,21 +9,21 @@ const testimonials = [
     name: 'Sarah Kim',
     role: 'Med Student, Johns Hopkins',
     avatar: avatarSarah,
-    quote: 'I went from barely passing pharmacology to scoring in the top 10%. The spaced repetition actually adapts — it\'s not just another flashcard app.',
+    quote: 'I went from barely passing pharmacology to scoring in the top 10%. The citations and weak-spot review flow made it feel built for real exam pressure, not generic flashcards.',
     rating: 5,
   },
   {
     name: 'James Okafor',
-    role: 'Software Engineer',
+    role: 'Bar Exam Candidate',
     avatar: avatarJames,
-    quote: 'Learning new frameworks used to mean forgetting the last one. Now I actually retain concepts across stacks. Worth every minute.',
+    quote: 'I could see exactly which Civil Procedure rules I kept missing. AuraMind turned my outlines into cards fast and pushed the right review blocks back in front of me.',
     rating: 5,
   },
   {
     name: 'Priya Sharma',
-    role: 'Language Learner',
+    role: 'PMP Certification Candidate',
     avatar: avatarPriya,
-    quote: 'I\'m learning Mandarin and the decay curve visualization helped me understand why I kept forgetting tones. Three months in and I can hold real conversations.',
+    quote: 'I needed a study tool, not another productivity toy. The review timing and source-backed cards helped me keep hundreds of definitions straight.',
     rating: 4,
   },
 ];
@@ -46,7 +46,7 @@ const TestimonialsSection = () => {
           <p className="text-eyebrow mb-6">Testimonials</p>
           <h2 className="text-impact-lg text-foreground">
             TRUSTED BY<br />
-            <span className="text-primary">BRILLIANT MINDS.</span>
+            <span className="text-primary">HIGH-STAKES LEARNERS.</span>
           </h2>
         </motion.div>
 
@@ -63,7 +63,6 @@ const TestimonialsSection = () => {
               <div className="absolute -inset-[1px] rounded-sm bg-gradient-to-b from-primary/40 via-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-[1px]" />
 
               <div className="relative bg-card border border-border group-hover:border-primary/30 rounded-sm p-10 lg:p-12 flex flex-col justify-between min-h-[380px] transition-all duration-500">
-                {/* Avatar & Info */}
                 <div className="flex items-center gap-5 mb-8">
                   <motion.div
                     whileHover={{ scale: 1.1 }}
@@ -83,12 +82,10 @@ const TestimonialsSection = () => {
                   </div>
                 </div>
 
-                {/* Quote */}
                 <p className="text-base md:text-lg text-muted-foreground leading-relaxed font-medium flex-1 italic">
                   "{t.quote}"
                 </p>
 
-                {/* Rating */}
                 <div className="flex gap-1.5 mt-8">
                   {Array.from({ length: t.rating }).map((_, j) => (
                     <motion.div

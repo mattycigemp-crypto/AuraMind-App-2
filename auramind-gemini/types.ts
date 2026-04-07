@@ -1,9 +1,23 @@
+export type CardSourceType = 'sample' | 'import' | 'ai' | 'lecture' | 'notes' | 'research' | 'manual';
+
+export interface CardCitation {
+  id: string;
+  label: string;
+  excerpt?: string;
+  locator?: string;
+  sourceType: CardSourceType;
+}
+
 export interface Card {
   id: string;
   question: string;
   answer: string;
   deckId: string;
   image?: string; // Optional image URL
+  citations?: CardCitation[];
+  sourceLabel?: string;
+  sourceType?: CardSourceType;
+  trustScore?: number;
   // Spaced Repetition System (SRS) data
   nextReview: number; // Timestamp
   interval: number; // Days
@@ -18,6 +32,8 @@ export interface Deck {
   description: string;
   createdAt: number;
   cardCount: number;
+  isSample?: boolean;
+  sourceLabel?: string;
 }
 
 export enum ViewState {
@@ -77,6 +93,9 @@ export interface FlashcardData {
   answer: string;
   topic?: string;
   difficulty?: 'easy' | 'medium' | 'hard';
+  citations?: CardCitation[];
+  sourceLabel?: string;
+  sourceType?: CardSourceType;
 }
 
 export interface StudyToolAction {
@@ -105,4 +124,5 @@ export interface UserProfile {
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   phone?: string;
+  lastStudyDate?: string;
 }

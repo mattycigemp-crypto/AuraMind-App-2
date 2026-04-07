@@ -16,7 +16,8 @@ import {
   Compass,
   Shield,
   Sun,
-  Moon
+  Moon,
+  GraduationCap
 } from 'lucide-react';
 import { useTheme } from '../hooks/useTheme';
 
@@ -36,6 +37,7 @@ const CosmicSidebar: React.FC<CosmicSidebarProps> = ({ onLogout, user, isAdmin }
     { title: 'Study Plan', path: '/dashboard/planner', icon: Layers },
     { title: 'Aura Operator', path: '/chat', icon: Zap },
     { title: 'Insights', path: '/dashboard/insights', icon: Activity },
+    { title: 'Professor', path: '/dashboard/professor', icon: GraduationCap },
     { title: 'Generate', path: '/generate', icon: Compass },
     { title: 'Settings', path: '/settings', icon: Settings },
     { title: 'Docs', path: '/docs', icon: FileText },

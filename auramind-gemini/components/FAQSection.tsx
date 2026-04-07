@@ -9,15 +9,15 @@ import {
 const faqs = [
   {
     q: 'How is AuraMind different from regular flashcard apps?',
-    a: 'AuraMind adjusts your review schedule based on how well you know each card. It helps you study the right material at the right time instead of using one fixed schedule for everyone.',
+    a: 'AuraMind is built for high-stakes exam prep. It combines source-backed flashcards, weak-spot analysis, and adaptive review timing so you can focus on material you are actually at risk of forgetting.',
   },
   {
     q: 'Is my data private and secure?',
-    a: 'Yes. Your data is encrypted and stored securely. We do not sell your data or use it to train outside models, and you can export or delete it at any time.',
+    a: 'Yes. Your study data is stored securely, we do not sell it, and you can export or delete your materials whenever you want. The product is designed as a private study workspace.',
   },
   {
-    q: 'Can I use AuraMind for professional certifications?',
-    a: 'Yes. Many users study for medical exams, law exams, and technical certifications. Exam mode increases review frequency when you need to prepare on a shorter timeline.',
+    q: 'Who is AuraMind best for?',
+    a: 'AuraMind is best for medical students, law students, and professional certification candidates who need to retain dense material under deadline pressure.',
   },
   {
     q: 'What kinds of content can I use?',
@@ -29,7 +29,7 @@ const faqs = [
   },
   {
     q: 'How long does it take to see results?',
-    a: 'Most users notice better recall within 5 to 7 days of consistent use. The system becomes more accurate after a few review sessions.',
+    a: 'Most users can create a first deck and begin reviewing within minutes. Recall quality usually improves after several sessions once the review schedule starts adapting.',
   },
 ];
 

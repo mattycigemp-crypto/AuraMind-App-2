@@ -353,14 +353,6 @@ a {
   gap: var(--gap);
 }
 
-@media (min-width: 992px) {
-  .hero-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) clamp(280px, 22vw, 380px);
-    align-items: flex-end;
-  }
-}
-
 .hero-shell {
   padding-top: calc(var(--nav-height) + clamp(2.5rem, 7vh, 5.5rem));
 }
@@ -379,8 +371,13 @@ a {
 
 .hero-sidecard {
   width: 100%;
-  max-width: clamp(280px, 22vw, 380px);
-  justify-self: end;
+  max-width: min(100%, 52rem);
+}
+
+@media (min-width: 1400px) {
+  .hero-sidecard {
+    max-width: 58rem;
+  }
 }
 
 .brutalist-grid {

@@ -5,7 +5,8 @@ import {
   Layers, 
   Zap, 
   Settings, 
-  Plus
+  Plus,
+  GraduationCap
 } from 'lucide-react';
 
 const MobileNav: React.FC = () => {
@@ -16,8 +17,8 @@ const MobileNav: React.FC = () => {
     { title: 'Dashboard', path: '/dashboard', icon: LayoutGrid },
     { title: 'Study Plan', path: '/dashboard/planner', icon: Layers },
     { title: 'Operator', path: '/chat', icon: Zap },
+    { title: 'Professor', path: '/dashboard/professor', icon: GraduationCap },
     { title: 'Generate', path: '/generate', icon: Plus },
-    { title: 'Settings', path: '/settings', icon: Settings },
   ];
 
   return (
