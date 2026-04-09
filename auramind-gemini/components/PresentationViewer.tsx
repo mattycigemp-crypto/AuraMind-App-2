@@ -91,7 +91,7 @@ const PresentationViewer: React.FC<PresentationViewerProps> = ({ title, slides }
                 }`}
         >
             {/* Slide Content */}
-            <div className="absolute inset-0 flex flex-col p-8 md:p-12 text-white">
+            <div className="absolute inset-0 flex flex-col p-8 md:p-12 text-slate-900 dark:text-white">
                 <div className="flex-1 flex flex-col justify-center">
                     <h2 className="text-3xl md:text-5xl font-bold mb-8 animate-slide-up leading-tight">
                         {slides[currentSlide].title}
@@ -111,7 +111,7 @@ const PresentationViewer: React.FC<PresentationViewerProps> = ({ title, slides }
                 </div>
 
                 {/* Footer */}
-                <div className="mt-auto flex justify-between items-center text-sm text-white/50 border-t border-white/10 pt-4">
+                <div className="mt-auto flex justify-between items-center text-sm text-black/ dark:text-white/ border-t border-black/ dark:border-white/ pt-4">
                     <div>{title}</div>
                     <div>{currentSlide + 1} / {slides.length}</div>
                 </div>
@@ -124,13 +124,13 @@ const PresentationViewer: React.FC<PresentationViewerProps> = ({ title, slides }
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setIsPlaying(!isPlaying)}
-                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                            className="p-2 rounded-full bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ text-slate-900 dark:text-white transition-colors"
                         >
                             {isPlaying ? <Pause size={20} /> : <Play size={20} />}
                         </button>
                         <button
                             onClick={() => { setCurrentSlide(0); setIsPlaying(true); }}
-                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                            className="p-2 rounded-full bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ text-slate-900 dark:text-white transition-colors"
                             title="Restart"
                         >
                             <RotateCcw size={20} />
@@ -146,14 +146,14 @@ const PresentationViewer: React.FC<PresentationViewerProps> = ({ title, slides }
                         <button
                             onClick={handlePrev}
                             disabled={currentSlide === 0}
-                            className="p-2 rounded-full hover:bg-white/10 text-white disabled:opacity-30"
+                            className="p-2 rounded-full hover:bg-black/5 dark:bg-white/ text-slate-900 dark:text-white disabled:opacity-30"
                         >
                             <ChevronLeft size={24} />
                         </button>
                         <button
                             onClick={handleNext}
                             disabled={currentSlide === slides.length - 1}
-                            className="p-2 rounded-full hover:bg-white/10 text-white disabled:opacity-30"
+                            className="p-2 rounded-full hover:bg-black/5 dark:bg-white/ text-slate-900 dark:text-white disabled:opacity-30"
                         >
                             <ChevronRight size={24} />
                         </button>
@@ -161,7 +161,7 @@ const PresentationViewer: React.FC<PresentationViewerProps> = ({ title, slides }
 
                     <button
                         onClick={toggleFullscreen}
-                        className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                        className="p-2 rounded-full bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ text-slate-900 dark:text-white transition-colors"
                     >
                         {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
                     </button>

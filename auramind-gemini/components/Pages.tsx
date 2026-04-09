@@ -65,6 +65,8 @@ import { supabase } from '../services/supabase';
 import { GeneratedCard, generateFlashcards, generateStudyBuddyResponse } from '../services/geminiService';
 import { AuraAgentMode, AuraAgentOutputType, AuraAgentResult, runAuraAgent } from '../services/agentService';
 import { useTheme } from '../hooks/useTheme';
+import { useIsMobile } from '../hooks/use-mobile';
+import MathRichText from './MathRichText';
 
 const PageHeader = ({ title, subtitle, action }: { title: string; subtitle: string; action?: React.ReactNode }) => (
   <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10 relative z-20">
@@ -147,6 +149,12 @@ const CitationStack = ({ card }: { card: Card }) => {
         <p className="text-[9px] uppercase tracking-[0.3em] text-arch-muted">Trust Layer</p>
         <span className="text-[9px] uppercase tracking-[0.3em] text-arch-fg">{card.trustScore || 80}% confidence</span>
       </div>
+      {card.citations[0]?.excerpt && (
+        <div className="rounded-xl border border-arch-border bg-arch-fg/[0.04] p-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-arch-fg">Source Highlight</p>
+          <p className="mt-2 text-xs text-arch-muted leading-relaxed">"{card.citations[0].excerpt}"</p>
+        </div>
+      )}
       {card.citations.map((citation) => (
         <div key={citation.id} className="rounded-xl border border-arch-border bg-arch-fg/[0.03] p-3">
           <p className="text-[10px] font-black uppercase tracking-[0.2em] text-arch-fg">{citation.label}</p>
@@ -269,7 +277,7 @@ export const DashboardPlannerPage = ({ decks, cards, navigate }: { decks: Deck[]
     <div className="space-y-12 py-6">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8 pb-12 border-b border-arch-border">
         <div className="space-y-4">
-          <div className="inline-flex items-center gap-3 px-3 py-1 bg-blue-500 text-white text-[8px] font-black uppercase tracking-[0.4em]">
+          <div className="inline-flex items-center gap-3 px-3 py-1 bg-blue-500 text-slate-900 dark:text-white text-[8px] font-black uppercase tracking-[0.4em]">
              <CalendarDays size={10} />
              Duty Roster Active
           </div>
@@ -304,7 +312,9 @@ export const DashboardPlannerPage = ({ decks, cards, navigate }: { decks: Deck[]
                       <p className="text-xl font-black italic text-arch-fg">{idx + 1}</p>
                     </div>
                     <div className="flex-grow space-y-3">
-                       <p className="text-xs font-bold leading-relaxed text-arch-fg group-hover:translate-x-1 transition-transform">{card.question}</p>
+                       <div className="text-xs font-bold leading-relaxed text-arch-fg group-hover:translate-x-1 transition-transform">
+                         <MathRichText text={card.question} />
+                       </div>
                        <div className="flex items-center gap-4">
                           <span className="text-[8px] font-black text-arch-muted uppercase tracking-[0.3em] flex items-center gap-1">
                              <Clock size={10} /> 
@@ -509,11 +519,15 @@ export const DeckDetailRoute = ({ decks, cards, navigate, deleteCard, setActiveD
             </button>
             <div>
               <p className="text-arch-eyebrow mb-6">Question</p>
-              <h3 className="text-lg font-black italic tracking-tight mb-8 text-arch-fg">{card.question}</h3>
+              <h3 className="text-lg font-black italic tracking-tight mb-8 text-arch-fg">
+                <MathRichText text={card.question} block />
+              </h3>
             </div>
             <div className="pt-6 border-t border-arch-border">
               <p className="text-arch-eyebrow mb-3">Answer</p>
-              <p className="text-xs text-arch-muted italic line-clamp-3 font-medium">{card.answer}</p>
+              <p className="text-xs text-arch-muted italic line-clamp-3 font-medium">
+                <MathRichText text={card.answer} />
+              </p>
               <CitationStack card={card} />
             </div>
           </div>
@@ -529,11 +543,15 @@ export const ChatRoute = ({
   createGeneratedDeck,
   createDeckFromCards,
   user,
+  decks = [],
+  cards = [],
 }: {
   navigate: (path: string) => void;
   createGeneratedDeck: (topic: string) => Promise<{ deckTitle: string; cardCount: number } | null>;
   createDeckFromCards: (title: string, description: string, generatedCards: GeneratedCard[]) => Promise<{ deckId: string; deckTitle: string; cardCount: number } | null>;
   user: UserProfile;
+  decks?: Deck[];
+  cards?: Card[];
 }) => {
   const [mode, setMode] = useState<AuraAgentMode>('study_from_anything');
   const [prompt, setPrompt] = useState('');
@@ -593,6 +611,23 @@ export const ChatRoute = ({
               : 'Generating study outputs'
       );
 
+      // Generate user context from mastery stats
+      let userContext = `User ${user.name || 'Student'}. ` +
+        `Total decks: ${decks.length}. Total cards: ${cards.length}. ` +
+        `Current streak: ${user.streak || 0}.`;
+      
+      const deckMastery = decks.map(d => {
+        const deckCards = cards.filter(c => c.deckId === d.id);
+        if (!deckCards.length) return null;
+        const avgUnderstanding = deckCards.reduce((sum, c) => sum + c.understandingLevel, 0) / deckCards.length;
+        return `${d.title} (${Math.round(avgUnderstanding)}% mastery)`;
+      }).filter(Boolean);
+
+      if (deckMastery.length) {
+        userContext += `\nPerformance context: ${deckMastery.join(', ')}.`;
+        userContext += `\nAdapt your responses and difficulty dynamically based on their mastery levels in these topics.`;
+      }
+
       setResult(await runAuraAgent({
         mode,
         prompt,
@@ -601,6 +636,7 @@ export const ChatRoute = ({
         outputType,
         difficulty,
         file,
+        userContext,
       }));
     } catch (error: any) {
       setError(error?.message || 'The operator could not complete the run.');
@@ -891,8 +927,12 @@ export const ChatRoute = ({
                       {availableFlashcards.slice(0, 5).map((card, index) => (
                         <div key={`${card.question}-${index}`} className="border border-arch-border bg-arch-bg p-6 group hover:bg-arch-muted/5 transition-all">
                           <p className="text-[8px] font-black uppercase tracking-[0.4em] text-arch-muted italic mb-3">Flashcard {(index + 1).toString().padStart(2, '0')}</p>
-                          <p className="text-xs font-black italic tracking-tight text-arch-fg">{card.question}</p>
-                          <p className="text-[10px] text-arch-muted font-medium mt-4 uppercase tracking-widest">{card.answer}</p>
+                          <div className="text-xs font-black italic tracking-tight text-arch-fg">
+                            <MathRichText text={card.question} />
+                          </div>
+                          <div className="text-[10px] text-arch-muted font-medium mt-4 uppercase tracking-widest">
+                            <MathRichText text={card.answer} />
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -1341,7 +1381,7 @@ export const SettingsPage = ({
               </div>
               <button 
                 onClick={() => setShowDeleteModal(true)} 
-                className="bg-red-500 hover:bg-red-600 text-white px-8 py-4 text-[10px] font-black uppercase tracking-[0.4em] transition-colors"
+                className="bg-red-500 hover:bg-red-600 text-slate-900 dark:text-white px-8 py-4 text-[10px] font-black uppercase tracking-[0.4em] transition-colors"
               >
                 Deactivate Account
               </button>
@@ -1381,7 +1421,7 @@ export const SettingsPage = ({
                           ? 'border-red-500 bg-red-500'
                           : 'border-arch-border'
                       }`}>
-                        {deleteReasons.includes(reason) && <Check size={12} className="text-white" />}
+                        {deleteReasons.includes(reason) && <Check size={12} className="text-slate-900 dark:text-white" />}
                       </div>
                       <span className="text-xs font-bold uppercase tracking-widest text-arch-fg">{reason}</span>
                     </button>
@@ -1420,7 +1460,7 @@ export const SettingsPage = ({
                       setDeleteStep(2);
                     }}
                     disabled={deleteReasons.length === 0}
-                    className="flex-1 bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-[0.4em] text-[10px] py-4 disabled:opacity-40 transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 bg-red-500 hover:bg-red-600 text-slate-900 dark:text-white font-black uppercase tracking-[0.4em] text-[10px] py-4 disabled:opacity-40 transition-colors flex items-center justify-center gap-2"
                   >
                     Continue <ChevronRight size={14} />
                   </button>
@@ -1471,7 +1511,7 @@ export const SettingsPage = ({
                   <button
                     onClick={handleDeleteAccount}
                     disabled={isDeleting || !deletePassword}
-                    className="flex-1 bg-red-500 hover:bg-red-600 text-white font-black uppercase tracking-[0.4em] text-[10px] py-4 disabled:opacity-50 transition-colors"
+                    className="flex-1 bg-red-500 hover:bg-red-600 text-slate-900 dark:text-white font-black uppercase tracking-[0.4em] text-[10px] py-4 disabled:opacity-50 transition-colors"
                   >
                     {isDeleting ? 'Deactivating...' : 'Confirm Deactivation'}
                   </button>
@@ -2396,11 +2436,15 @@ export const GenerateCardsRoute = ({ activeDeckId, navigate, saveGeneratedCards 
                 </div>
                 <div>
                   <p className="text-arch-eyebrow mb-3">Question</p>
-                  <p className="text-sm font-black italic tracking-tight text-arch-fg">{card.question}</p>
+                  <p className="text-sm font-black italic tracking-tight text-arch-fg">
+                    <MathRichText text={card.question} block />
+                  </p>
                 </div>
                 <div>
                   <p className="text-arch-eyebrow mb-3">Answer</p>
-                  <p className="text-xs text-arch-muted font-medium italic whitespace-pre-wrap">{card.answer}</p>
+                  <p className="text-xs text-arch-muted font-medium italic whitespace-pre-wrap">
+                    <MathRichText text={card.answer} block />
+                  </p>
                 </div>
                 {includeExplanations && card.explanation && (
                   <div className="pt-6 border-t border-arch-border/50">
@@ -2440,10 +2484,50 @@ export const StudyModeRoute = ({
   const [isCoaching, setIsCoaching] = useState(false);
   const [voiceError, setVoiceError] = useState('');
   const recognitionRef = useRef<any>(null);
+  const reminderTimeoutRef = useRef<number | null>(null);
+  const [voiceReminderEnabled, setVoiceReminderEnabled] = useState(false);
+  const [voiceReminderMode, setVoiceReminderMode] = useState<'fixed' | 'random'>('random');
+  const [voiceReminderMinutes, setVoiceReminderMinutes] = useState(3);
+  const [autoListenAfterPrompt, setAutoListenAfterPrompt] = useState(false);
+  const VOICE_PREFS_KEY = 'auramind.voiceStudyPrefs';
+  const [highContrastMode, setHighContrastMode] = useState(false);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (deckId) setActiveDeckId(deckId);
   }, [deckId, setActiveDeckId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(VOICE_PREFS_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        enabled?: boolean;
+        mode?: 'fixed' | 'random';
+        minutes?: number;
+        autoListen?: boolean;
+      };
+      if (typeof parsed.enabled === 'boolean') setVoiceReminderEnabled(parsed.enabled);
+      if (parsed.mode === 'fixed' || parsed.mode === 'random') setVoiceReminderMode(parsed.mode);
+      if (typeof parsed.minutes === 'number') setVoiceReminderMinutes(Math.min(60, Math.max(1, Math.round(parsed.minutes))));
+      if (typeof parsed.autoListen === 'boolean') setAutoListenAfterPrompt(parsed.autoListen);
+    } catch {
+      // Ignore malformed local settings and continue with defaults.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const payload = {
+      enabled: voiceReminderEnabled,
+      mode: voiceReminderMode,
+      minutes: voiceReminderMinutes,
+      autoListen: autoListenAfterPrompt,
+    };
+    window.localStorage.setItem(VOICE_PREFS_KEY, JSON.stringify(payload));
+  }, [voiceReminderEnabled, voiceReminderMode, voiceReminderMinutes, autoListenAfterPrompt]);
 
   if (!deckId) return <Navigate to="/dashboard" replace />;
 
@@ -2479,13 +2563,26 @@ export const StudyModeRoute = ({
     window.speechSynthesis.speak(utterance);
   };
 
-  const startVoiceAnswer = () => {
+  const stopVoiceAnswer = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {
+        // No-op: recognizer can throw when already stopped.
+      }
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+  };
+
+  const startVoiceAnswer = (promptedQuestion?: string) => {
     const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognitionCtor) {
       setVoiceError('Voice capture is not supported in this browser.');
       return;
     }
 
+    stopVoiceAnswer();
     setVoiceError('');
     setVoiceTranscript('');
     setVoiceFeedback('');
@@ -2508,9 +2605,11 @@ export const StudyModeRoute = ({
       setIsCoaching(true);
 
       try {
+        const question = promptedQuestion || activeCard.question;
+        const answer = promptedQuestion ? activeCard.answer : activeCard.answer;
         const response = await generateStudyBuddyResponse(
           'Evaluate the learner answer, identify what was correct or missing, and respond like a concise Socratic coach.',
-          `Card question: ${activeCard.question}\nCorrect answer: ${activeCard.answer}\nLearner answer: ${transcript}`
+          `Card question: ${question}\nCorrect answer: ${answer}\nLearner answer: ${transcript}`
         );
         setVoiceFeedback(response.response);
         setVoiceQuestions(response.followUpQuestions || []);
@@ -2525,7 +2624,63 @@ export const StudyModeRoute = ({
     recognition.start();
   };
 
+  const getReminderDelayMs = () => {
+    const baseMs = Math.max(1, voiceReminderMinutes) * 60_000;
+    if (voiceReminderMode === 'fixed') return baseMs;
+    const minMs = 45_000;
+    const maxMs = Math.max(baseMs, minMs + 15_000);
+    return Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+  };
+
+  const clearVoiceReminderTimer = () => {
+    if (reminderTimeoutRef.current) {
+      window.clearTimeout(reminderTimeoutRef.current);
+      reminderTimeoutRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    if (!voiceReminderEnabled || showAnswer) {
+      clearVoiceReminderTimer();
+      return;
+    }
+
+    const schedulePrompt = () => {
+      clearVoiceReminderTimer();
+      reminderTimeoutRef.current = window.setTimeout(() => {
+        speakText(`Flashcard reminder. ${activeCard.question}`);
+        if (autoListenAfterPrompt) {
+          window.setTimeout(() => startVoiceAnswer(activeCard.question), 1400);
+        }
+        schedulePrompt();
+      }, getReminderDelayMs());
+    };
+
+    schedulePrompt();
+    return clearVoiceReminderTimer;
+  }, [
+    activeCard.id,
+    activeCard.question,
+    autoListenAfterPrompt,
+    showAnswer,
+    voiceReminderEnabled,
+    voiceReminderMode,
+    voiceReminderMinutes,
+  ]);
+
+  useEffect(() => () => {
+    clearVoiceReminderTimer();
+    stopVoiceAnswer();
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  }, []);
+
   const handleRating = async (rating: Rating) => {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      if (rating >= Rating.GOOD) navigator.vibrate(24);
+      else navigator.vibrate([14, 30, 14]);
+    }
     await rateCard(activeCard.id, rating);
     setShowAnswer(false);
     setVoiceTranscript('');
@@ -2535,15 +2690,62 @@ export const StudyModeRoute = ({
     setCurrentIndex((prev) => prev + 1);
   };
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.target && (event.target as HTMLElement).tagName.match(/INPUT|TEXTAREA|SELECT/)) return;
+      if (event.key === ' ') {
+        event.preventDefault();
+        setShowAnswer((prev) => !prev);
+        return;
+      }
+      if (!showAnswer) return;
+      if (event.key === '1') handleRating(Rating.AGAIN);
+      if (event.key === '2') handleRating(Rating.HARD);
+      if (event.key === '3') handleRating(Rating.GOOD);
+      if (event.key === '4') handleRating(Rating.EASY);
+      if (event.key === 'ArrowLeft') handleRating(Rating.AGAIN);
+      if (event.key === 'ArrowRight') handleRating(Rating.GOOD);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showAnswer, activeCard.id]);
+
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (!isMobile || !showAnswer) return;
+    setTouchStartX(event.changedTouches[0]?.clientX ?? null);
+  };
+
+  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (!isMobile || !showAnswer || touchStartX === null) return;
+    const endX = event.changedTouches[0]?.clientX ?? touchStartX;
+    const delta = endX - touchStartX;
+    setTouchStartX(null);
+    if (Math.abs(delta) < 60) return;
+    if (delta > 0) {
+      handleRating(Rating.GOOD);
+      return;
+    }
+    handleRating(Rating.AGAIN);
+  };
+
   return (
-    <div className="space-y-10 py-4">
+    <div className={`space-y-10 py-4 ${highContrastMode ? 'contrast-125 saturate-0' : ''}`}>
       <PageHeader
         title="STUDY MODE."
         subtitle={`${deck.title} • ${safeCurrentIndex + 1} of ${dueCards.length} queued`}
         action={
-          <button onClick={() => navigate(`/deck/${deckId}`)} className="flex items-center gap-2 text-arch-eyebrow hover:text-arch-fg transition-colors group">
-            <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Deck
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setHighContrastMode((prev) => !prev)}
+              aria-label="Toggle high contrast mode"
+              className="inline-flex items-center gap-2 border border-arch-border px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-arch-fg"
+            >
+              {highContrastMode ? 'Contrast On' : 'Contrast Off'}
+            </button>
+            <button onClick={() => navigate(`/deck/${deckId}`)} className="flex items-center gap-2 text-arch-eyebrow hover:text-arch-fg transition-colors group">
+              <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Deck
+            </button>
+          </div>
         }
       />
 
@@ -2552,25 +2754,76 @@ export const StudyModeRoute = ({
           <motion.div className="h-full bg-arch-fg" animate={{ width: `${((safeCurrentIndex + 1) / dueCards.length) * 100}%` }} />
         </div>
 
-        <div className="border border-arch-border bg-arch-fg/5 p-12 min-h-[480px] flex flex-col justify-between">
+        <div
+          className="border border-arch-border bg-arch-fg/5 p-12 min-h-[480px] flex flex-col justify-between"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
           <div>
             <p className="text-arch-eyebrow mb-10">{showAnswer ? 'Response sequence' : 'Inquiry protocol'}</p>
-            <h2 className="text-4xl font-black leading-tight italic tracking-tighter text-arch-fg">{showAnswer ? activeCard.answer : activeCard.question}</h2>
+            <h2 className="text-4xl font-black leading-tight italic tracking-tighter text-arch-fg">
+              <MathRichText text={showAnswer ? activeCard.answer : activeCard.question} block />
+            </h2>
             <div className="mt-6 flex flex-wrap gap-3">
-              <button onClick={() => speakText(showAnswer ? activeCard.answer : activeCard.question)} className="inline-flex items-center gap-2 border border-arch-border px-4 py-3 text-[10px] font-black uppercase tracking-[0.25em] text-arch-fg">
+              <button aria-label="Read current flashcard aloud" onClick={() => speakText(showAnswer ? activeCard.answer : activeCard.question)} className="inline-flex items-center gap-2 border border-arch-border px-4 py-3 text-[10px] font-black uppercase tracking-[0.25em] text-arch-fg">
                 <Volume2 size={14} />
                 Read Aloud
               </button>
-              <button onClick={startVoiceAnswer} className="inline-flex items-center gap-2 border border-arch-border px-4 py-3 text-[10px] font-black uppercase tracking-[0.25em] text-arch-fg">
+              <button aria-label="Speak answer with voice recognition" onClick={startVoiceAnswer} className="inline-flex items-center gap-2 border border-arch-border px-4 py-3 text-[10px] font-black uppercase tracking-[0.25em] text-arch-fg">
                 <Mic2 size={14} />
                 {isListening ? 'Listening...' : 'Voice Socratic'}
+              </button>
+              <button
+                onClick={() => {
+                  setVoiceReminderEnabled((prev) => !prev);
+                  setVoiceError('');
+                }}
+                className={`inline-flex items-center gap-2 border px-4 py-3 text-[10px] font-black uppercase tracking-[0.25em] ${
+                  voiceReminderEnabled ? 'border-arch-fg text-arch-fg bg-arch-fg/10' : 'border-arch-border text-arch-fg'
+                }`}
+              >
+                <Bell size={14} />
+                {voiceReminderEnabled ? 'Voice Reminders On' : 'Voice Reminders Off'}
+              </button>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <label className="border border-arch-border px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-arch-muted flex items-center justify-between">
+                Reminder Mode
+                <select
+                  value={voiceReminderMode}
+                  onChange={(event) => setVoiceReminderMode(event.target.value as 'fixed' | 'random')}
+                  className="bg-transparent text-arch-fg text-[10px] uppercase tracking-[0.2em] outline-none"
+                >
+                  <option value="random" className="bg-black text-slate-900 dark:text-white">Random</option>
+                  <option value="fixed" className="bg-black text-slate-900 dark:text-white">Fixed</option>
+                </select>
+              </label>
+              <label className="border border-arch-border px-4 py-3 text-[10px] uppercase tracking-[0.2em] text-arch-muted flex items-center justify-between">
+                Interval (minutes)
+                <input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={voiceReminderMinutes}
+                  onChange={(event) => setVoiceReminderMinutes(Math.max(1, Number(event.target.value) || 1))}
+                  className="w-14 bg-transparent text-right text-arch-fg outline-none"
+                />
+              </label>
+              <button
+                onClick={() => setAutoListenAfterPrompt((prev) => !prev)}
+                className={`border px-4 py-3 text-[10px] font-black uppercase tracking-[0.25em] inline-flex items-center justify-center gap-2 ${
+                  autoListenAfterPrompt ? 'border-arch-fg text-arch-fg bg-arch-fg/10' : 'border-arch-border text-arch-muted'
+                }`}
+              >
+                <Mic2 size={14} />
+                {autoListenAfterPrompt ? 'Auto Listen On' : 'Auto Listen Off'}
               </button>
             </div>
             <CitationStack card={activeCard} />
           </div>
 
           {!showAnswer ? (
-            <button onClick={() => setShowAnswer(true)} className="btn-arch self-start min-w-[200px]">
+            <button aria-label="Reveal flashcard answer" onClick={() => setShowAnswer(true)} className="btn-arch self-start min-w-[200px]">
               Reveal Answer
             </button>
           ) : (
@@ -2584,12 +2837,18 @@ export const StudyModeRoute = ({
                 <button
                   key={option.label}
                   onClick={() => handleRating(option.rating)}
+                  aria-label={`Rate card ${option.label}`}
                   className={`border border-arch-border bg-arch-bg px-6 py-6 text-[10px] font-black uppercase tracking-[0.3em] transition-all ${option.tone}`}
                 >
                   {option.label}
                 </button>
               ))}
             </div>
+          )}
+          {isMobile && showAnswer && (
+            <p className="mt-4 text-[10px] uppercase tracking-[0.2em] text-arch-muted">
+              Swipe right = know (Good), swipe left = review (Again)
+            </p>
           )}
         </div>
 

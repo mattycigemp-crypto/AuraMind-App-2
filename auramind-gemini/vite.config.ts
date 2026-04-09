@@ -17,6 +17,18 @@ export default defineConfig(({ mode }) => {
       },
     },
     plugins: [react()],
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            vendor: ['react', 'react-dom', 'react-router-dom'],
+            ui: ['framer-motion', 'lucide-react', 'sonner'],
+            radix: ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-popover', '@radix-ui/react-tabs'],
+            supabase: ['@supabase/supabase-js'],
+          }
+        }
+      }
+    },
     test: {
       globals: true,
       environment: 'jsdom',

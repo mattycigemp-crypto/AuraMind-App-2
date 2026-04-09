@@ -30,7 +30,7 @@ const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({
       id: 'welcome',
       title: 'Welcome to AuraMind',
       content:
-        "AuraMind helps you study with flashcards, smart review timing, and AI study tools. Let's take a quick tour so you can get started fast.",
+        "AuraMind accelerates your learning. Skip the manual work and instantly convert any topic into study material.",
       position: 'center',
       icon: Sparkles,
       action: () => {
@@ -38,104 +38,22 @@ const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({
       },
     },
     {
-      id: 'dashboard-overview',
-      title: 'Your Study Dashboard',
+      id: 'core-action',
+      title: '1-Tap Generation',
       content:
-        "This is your main study page. It now combines your AI operator, deck performance, leaderboard, and control surfaces so you can move fast without losing context.",
-      target: '[data-testid="dashboard-header"]',
-      position: 'bottom',
-      icon: BrainCircuit,
-      action: () => {
-        const statsElement = document.querySelector('[data-testid="progress-snapshot"]');
-        statsElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      },
-    },
-    {
-      id: 'create-deck',
-      title: 'Create Your First Deck',
-      content:
-        'Create a deck from scratch or let Aura Operator generate one for you. This is the quickest path into the app.',
-      target: '[data-testid="create-deck-button"]',
-      position: 'bottom',
-      icon: Plus,
-      completionAction: () => {
-        console.log('Ready to create first deck');
-      },
-    },
-    {
-      id: 'deck-cards',
-      title: 'Your Flashcard Decks',
-      content:
-        'Each deck now carries real performance metadata like mastery, due count, and study volume so the ranking and insights pages stay grounded in actual activity.',
-      target: '[data-testid="decks-list"]',
-      position: 'top',
-      icon: BookOpen,
-      action: () => {
-        const firstDeck = document.querySelector('[data-testid="deck-card"]');
-        if (firstDeck) {
-          firstDeck.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2');
-          setTimeout(() => {
-            firstDeck.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2');
-          }, 2000);
-        }
-      },
-    },
-    {
-      id: 'ai-generation',
-      title: 'AI-Powered Generation',
-      content:
-        'Aura Operator is the flagship AI surface. Use it to research, coach, and create decks that actually save into your library.',
+        'Just type what you want to learn here and tap Execute. Or tap "Load Sample Decks" below to start studying immediately.',
       target: '[data-testid="ai-generate-section"]',
       position: 'top',
-      icon: Sparkles,
+      icon: BrainCircuit,
       action: () => {
         const generateSection = document.querySelector('[data-testid="ai-generate-section"]');
         generateSection?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       },
-    },
-    {
-      id: 'progress-tracking',
-      title: 'Track Your Progress',
-      content:
-        'Your dashboard now exposes focus score, retention lift, and study pulse. These signals help you decide what to attack next.',
-      target: '[data-testid="progress-snapshot"]',
-      position: 'left',
-      icon: Target,
-      action: () => {
-        const progressBars = document.querySelectorAll('[data-testid="progress-bar"]');
-        progressBars.forEach(bar => {
-          bar.classList.add('animate-pulse');
-          setTimeout(() => {
-            bar.classList.remove('animate-pulse');
-          }, 2000);
-        });
-      },
-    },
-    {
-      id: 'leaderboard',
-      title: 'Leaderboard and Ranking',
-      content:
-        'The leaderboard now uses real deck scores from this account instead of fabricated names or points. Ranking updates as your decks improve.',
-      target: '[data-testid="leaderboard-section"]',
-      position: 'left',
-      icon: Award,
-      action: () => {
-        console.log('Showing leaderboard details');
-      },
-    },
-    {
-      id: 'ready-to-start',
-      title: "You're All Set",
-      content:
-        'You now know the basics of AuraMind. Start by creating your first deck or trying the AI tools. Regular review is what helps the most.',
-      position: 'center',
-      icon: Award,
       completionAction: () => {
         completeTutorial('onboarding');
         onComplete?.();
-        console.log('Onboarding completed!');
       },
-    },
+    }
   ];
 
   return (

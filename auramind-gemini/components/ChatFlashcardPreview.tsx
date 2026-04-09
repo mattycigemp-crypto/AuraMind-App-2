@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FlashcardData } from '../types';
 import { Eye, EyeOff, Plus, FolderOpen } from 'lucide-react';
+import MathRichText from './MathRichText';
 
 interface ChatFlashcardPreviewProps {
   cards: FlashcardData[];
@@ -64,7 +65,7 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
               )}
               <button
                 onClick={() => setShowSaveDialog(true)}
-                className="flex items-center gap-1 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors"
+                className="flex items-center gap-1 px-3 py-1 bg-purple-600 hover:bg-purple-700 text-slate-900 dark:text-white text-sm rounded-lg transition-colors"
               >
                 <Plus size={14} />
                 Save to Deck
@@ -86,7 +87,9 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
           <div className="mb-4">
             <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Question:</div>
             <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg min-h-[80px] flex items-center">
-              <p className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{currentCard.question}</p>
+              <div className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
+                <MathRichText text={currentCard.question} />
+              </div>
             </div>
           </div>
 
@@ -106,13 +109,13 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
                 ? 'bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700' 
                 : 'bg-gray-50 dark:bg-gray-700'
             }`}>
-              <p className={`whitespace-pre-wrap ${
+              <div className={`whitespace-pre-wrap ${
                 showAnswer 
                   ? 'text-gray-900 dark:text-gray-100' 
                   : 'text-gray-400 dark:text-gray-500 select-none'
               }`}>
-                {showAnswer ? currentCard.answer : 'Click to reveal answer'}
-              </p>
+                {showAnswer ? <MathRichText text={currentCard.answer} /> : 'Click to reveal answer'}
+              </div>
             </div>
           </div>
 
@@ -137,7 +140,7 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
               className={`px-4 py-2 rounded-lg transition-colors ${
                 currentIndex === cards.length - 1
                   ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                  : 'bg-purple-600 hover:bg-purple-700 text-white'
+                  : 'bg-purple-600 hover:bg-purple-700 text-slate-900 dark:text-white'
               }`}
             >
               {currentIndex === cards.length - 1 ? 'Last Card' : 'Next'}
@@ -184,7 +187,7 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
                 disabled={!deckTitle.trim()}
                 className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
                   deckTitle.trim()
-                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                    ? 'bg-purple-600 hover:bg-purple-700 text-slate-900 dark:text-white'
                     : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                 }`}
               >

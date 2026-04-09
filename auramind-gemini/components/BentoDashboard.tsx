@@ -3,7 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, Deck, UserProfile, ViewState } from '../types';
 import OnboardingTutorial from './OnboardingTutorial';
-import { enrollInBetaChallenge, getBetaChallenge, getChallengeProgress, parseImportText } from '../services/roadmapService';
+import { generateFlashcards } from '../services/geminiService';
+import ActivityHeatmap from './ActivityHeatmap';
+import { extractStudyAssetText } from '../services/documentImportService';
+import {
+  enrollInBetaChallenge,
+  getBetaChallenge,
+  getChallengeProgress,
+  parseImportText,
+  parseNotionImportText,
+  parseObsidianMarkdownImport,
+  parseApkgFile,
+} from '../services/roadmapService';
 import {
   ArrowRight,
   BrainCircuit,
@@ -62,9 +73,9 @@ const LivePulse = () => (
 const MiniBar = ({ value, max = 100 }: { value: number; max?: number }) => {
   const pct = Math.min(100, Math.max(0, (value / max) * 100));
   return (
-    <div className="h-1 w-full bg-white/[0.03] overflow-hidden rounded-full">
+    <div className="h-1 w-full bg-black/5 dark:bg-white/ overflow-hidden rounded-full">
       <motion.div
-        className="h-full bg-white/20"
+        className="h-full bg-black/5 dark:bg-white/"
         initial={{ width: 0 }}
         animate={{ width: `${pct}%` }}
         transition={{ duration: 1, ease: [0.22, 1, 0.36, 1], delay: 0.5 }}
@@ -92,6 +103,10 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
   const [importTitle, setImportTitle] = useState('Imported deck');
   const [importText, setImportText] = useState('');
   const [importStatus, setImportStatus] = useState('');
+  const [importMode, setImportMode] = useState<'anki_quizlet' | 'notion' | 'obsidian' | 'anki_apkg'>('anki_quizlet');
+  const [isOptimizingImport, setIsOptimizingImport] = useState(false);
+  const [isDraggingImportFile, setIsDraggingImportFile] = useState(false);
+  const [isProcessingStudyAsset, setIsProcessingStudyAsset] = useState(false);
   const [challenge, setChallenge] = useState(() => getBetaChallenge(user.id));
 
   useEffect(() => {
@@ -160,6 +175,9 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
 
   const nextDeck = filteredDecks[0];
   const challengeProgress = getChallengeProgress(challenge, user.streak);
+  const streakFreezes = Math.floor((user.streak || 0) / 7);
+  const daysIntoFreezeCycle = (user.streak || 0) % 7;
+  const daysToNextFreeze = daysIntoFreezeCycle === 0 ? 7 : 7 - daysIntoFreezeCycle;
   const xpToday = cards.filter((card) => {
     if (!card.lastReviewed) return false;
     const startOfDay = new Date();
@@ -184,7 +202,14 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
 
   const handleImport = async () => {
     try {
-      const parsed = parseImportText(importText, importTitle.trim() || 'Imported deck');
+      const deckTitle = importTitle.trim() || 'Imported deck';
+      const parser =
+        importMode === 'notion'
+          ? parseNotionImportText
+          : importMode === 'obsidian'
+            ? parseObsidianMarkdownImport
+            : parseImportText;
+      const parsed = parser(importText, deckTitle);
       const created = await onImportDeck(parsed.title, parsed.description, parsed.cards);
       if (created) {
         setImportStatus(`Imported ${created.cardCount} cards into ${created.deckTitle}.`);
@@ -192,6 +217,144 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
       }
     } catch (error: any) {
       setImportStatus(error?.message || 'Import failed.');
+    }
+  };
+
+  const handleImportFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      if (importMode === 'anki_apkg') {
+        const deckTitle = (importTitle.trim() || file.name.replace(/\.[^.]+$/, '') || 'Anki import').trim();
+        const parsed = await parseApkgFile(file, deckTitle);
+        const created = await onImportDeck(parsed.title, parsed.description, parsed.cards);
+        if (created) {
+          setImportStatus(`Imported ${created.cardCount} cards from ${file.name} into ${created.deckTitle}.`);
+          setImportText('');
+        }
+        return;
+      }
+
+      const text = await file.text();
+      setImportText(text);
+      const deckTitle = (importTitle.trim() || file.name.replace(/\.[^.]+$/, '') || 'Imported deck').trim();
+      const parser =
+        importMode === 'notion'
+          ? parseNotionImportText
+          : importMode === 'obsidian'
+            ? parseObsidianMarkdownImport
+            : parseImportText;
+      const parsed = parser(text, deckTitle);
+      const created = await onImportDeck(parsed.title, parsed.description, parsed.cards);
+      if (created) {
+        setImportStatus(`Imported ${created.cardCount} cards from ${file.name} into ${created.deckTitle}.`);
+        setImportText('');
+      }
+    } catch {
+      setImportStatus('Could not import this file. If this is APKG, confirm it is a valid Anki package with notes.');
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  const handleStudyAssetUpload = async (file: File) => {
+    try {
+      setIsProcessingStudyAsset(true);
+      setImportStatus(`Reading ${file.name}...`);
+      const sourceText = await extractStudyAssetText(file);
+      if (!sourceText.trim()) {
+        setImportStatus('No readable content found in this file.');
+        return;
+      }
+
+      setImportText(sourceText.slice(0, 12000));
+      setImportStatus('Generating flashcards from uploaded file...');
+      const generated = await generateFlashcards(
+        `Preserve equations and LaTeX-style notation exactly when present.\n\n${sourceText.slice(0, 28000)}`,
+        {
+          cardStyle: 'conceptual',
+          difficulty: 'medium',
+          includeExplanations: false,
+        }
+      );
+
+      if (!generated.length) {
+        setImportStatus('No cards generated from this upload.');
+        return;
+      }
+
+      const baseTitle = importTitle.trim() || file.name.replace(/\.[^.]+$/, '') || 'Study asset import';
+      const created = await onImportDeck(
+        `${baseTitle} (Auto Import)`,
+        `Auto-generated from ${file.name}.`,
+        generated.map((card, index) => ({
+          question: card.question,
+          answer: card.answer,
+          sourceLabel: `Upload: ${file.name}`,
+          sourceType: 'import',
+          citations: [
+            {
+              id: `upload-${index + 1}`,
+              label: file.name,
+              excerpt: `${card.question} ${card.answer}`.slice(0, 220),
+              locator: `Generated card ${index + 1}`,
+              sourceType: 'import',
+            },
+          ],
+        }))
+      );
+
+      if (created) {
+        setImportStatus(`Auto-imported ${created.cardCount} cards from ${file.name} into ${created.deckTitle}.`);
+      }
+    } catch (error: any) {
+      setImportStatus(error?.message || 'Failed to process this study asset.');
+    } finally {
+      setIsProcessingStudyAsset(false);
+    }
+  };
+
+  const handleAiOptimizeImport = async () => {
+    const source = importText.trim();
+    if (!source) {
+      setImportStatus('Paste source content before running AI optimize.');
+      return;
+    }
+
+    try {
+      setIsOptimizingImport(true);
+      setImportStatus('Running AI optimization...');
+      const optimizedCards = await generateFlashcards(source, {
+        cardStyle: 'conceptual',
+        difficulty: 'medium',
+        includeExplanations: false,
+      });
+      if (!optimizedCards.length) {
+        setImportStatus('AI optimize returned no cards. Try adding more source text.');
+        return;
+      }
+
+      const optimizedTitle = `${(importTitle.trim() || 'Imported deck')} (AI Optimized)`;
+      const created = await onImportDeck(
+        optimizedTitle,
+        'AI-optimized import from provided source text.',
+        optimizedCards.map((card) => ({
+          question: card.question,
+          answer: card.answer,
+          sourceLabel: 'AI optimized import',
+          sourceType: 'ai',
+        }))
+      );
+
+      if (created) {
+        setImportStatus(`AI optimized ${created.cardCount} cards into ${created.deckTitle}.`);
+        setImportText('');
+      }
+    } catch (error: any) {
+      setImportStatus(error?.message || 'AI optimize failed.');
+    } finally {
+      setIsOptimizingImport(false);
     }
   };
 
@@ -212,7 +375,7 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
       <motion.header data-testid="dashboard-header" variants={fadeUp} className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
         <div className="space-y-6">
           <div className="flex items-center gap-4">
-            <div className="arch-pill bg-white/[0.03] border-white/5 text-white/50 px-4 py-1.5 backdrop-blur-md">
+            <div className="arch-pill bg-black/5 dark:bg-white/ border-black/ dark:border-white/ text-black/ dark:text-white/ px-4 py-1.5 backdrop-blur-md">
               <LivePulse />
               <span className="text-[10px] uppercase font-black tracking-[0.2em]">Neural Active</span>
             </div>
@@ -221,11 +384,11 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
             <motion.h1 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="text-4xl sm:text-5xl lg:text-7xl font-display font-black text-white leading-none tracking-tightest"
+              className="text-4xl sm:text-5xl lg:text-7xl font-display font-black text-slate-900 dark:text-white leading-none tracking-tightest"
             >
               {greeting}
             </motion.h1>
-            <p className="text-white/40 text-sm font-medium tracking-wide">
+            <p className="text-black/ dark:text-white/ text-sm font-medium tracking-wide">
               {stats.cardsDue > 0
                 ? `You have ${stats.cardsDue} card${stats.cardsDue === 1 ? '' : 's'} due for review.`
                 : 'Your knowledge baseline is stable. All decks processed.'}
@@ -235,20 +398,20 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
 
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative group flex-1 md:w-[320px]">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-white/50 transition-colors" size={16} />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-black/ dark:text-white/ group-focus-within:text-black/ dark:text-white/ transition-colors" size={16} />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="SEARCH NEURAL BASE..."
-              className="w-full bg-white/[0.03] border border-white/5 py-4 pl-14 pr-6 outline-none focus:border-white/20 transition-all font-black text-[10px] tracking-[0.3em] uppercase text-white placeholder:text-white/20 rounded-2xl backdrop-blur-xl"
+              className="w-full bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ py-4 pl-14 pr-6 outline-none focus:border-black/ dark:border-white/ transition-all font-black text-[10px] tracking-[0.3em] uppercase text-slate-900 dark:text-white placeholder:text-black/ dark:text-white/ rounded-2xl backdrop-blur-xl"
             />
           </div>
           <button
             onClick={() => navigate('/settings')}
-            className="w-14 h-14 bg-white/[0.03] border border-white/5 rounded-2xl flex items-center justify-center hover:bg-white/10 transition-all group backdrop-blur-xl"
+            className="w-14 h-14 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-2xl flex items-center justify-center hover:bg-black/5 dark:bg-white/ transition-all group backdrop-blur-xl"
           >
-            <Settings size={20} className="text-white/40 group-hover:text-white group-hover:rotate-45 transition-all" />
+            <Settings size={20} className="text-black/ dark:text-white/ group-hover:text-slate-900 dark:text-white group-hover:rotate-45 transition-all" />
           </button>
         </div>
       </motion.header>
@@ -262,18 +425,18 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
           { label: 'Retention Rate', value: `${stats.retention}%`, icon: Target, color: 'text-emerald-400', detail: 'Baseline stability' },
         ].map((item, i) => (
           <div key={item.label} data-testid="progress-bar" className="group relative">
-            <div className="absolute inset-0 bg-white/[0.01] rounded-[32px] blur-sm translate-y-2 group-hover:translate-y-4 transition-transform opacity-0 group-hover:opacity-100" />
-            <div className="relative bg-white/[0.02] border border-white/5 p-8 rounded-[32px] hover:bg-white/[0.04] transition-all duration-500 overflow-hidden backdrop-blur-xl group-hover:border-white/10">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-white/[0.02] -mr-8 -mt-8 rounded-full blur-2xl group-hover:bg-white/[0.05] transition-all" />
+            <div className="absolute inset-0 bg-black/5 dark:bg-white/ rounded-[32px] blur-sm translate-y-2 group-hover:translate-y-4 transition-transform opacity-0 group-hover:opacity-100" />
+            <div className="relative bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ p-8 rounded-[32px] hover:bg-black/5 dark:bg-white/ transition-all duration-500 overflow-hidden backdrop-blur-xl group-hover:border-black/ dark:border-white/">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-black/5 dark:bg-white/ -mr-8 -mt-8 rounded-full blur-2xl group-hover:bg-black/5 dark:bg-white/ transition-all" />
               <div className="flex items-center justify-between mb-6">
-                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30">{item.label}</p>
-                <item.icon size={14} className="text-white/10 group-hover:text-white/30 transition-colors" />
+                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-black/ dark:text-white/">{item.label}</p>
+                <item.icon size={14} className="text-black/ dark:text-white/ group-hover:text-black/ dark:text-white/ transition-colors" />
               </div>
               <div className="space-y-1">
-                <p className={`text-3xl sm:text-4xl lg:text-5xl font-display font-black italic leading-none ${item.color || 'text-white'}`}>
+                <p className={`text-3xl sm:text-4xl lg:text-5xl font-display font-black italic leading-none ${item.color || 'text-slate-900 dark:text-white'}`}>
                   {item.value}
                 </p>
-                <p className="text-[9px] text-white/20 uppercase font-black tracking-widest">{item.detail}</p>
+                <p className="text-[9px] text-black/ dark:text-white/ uppercase font-black tracking-widest">{item.detail}</p>
               </div>
             </div>
           </div>
@@ -283,32 +446,32 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
       {/* PRIMARY INTERFACE: OPERATOR + PRIORITY */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 relative z-10">
         {/* AURA OPERATOR - 7 COLUMNS */}
-        <motion.div data-testid="ai-generate-section" variants={fadeUp} className="xl:col-span-7 bg-white/[0.02] border border-white/5 rounded-[40px] p-8 sm:p-12 relative overflow-hidden group backdrop-blur-xl border-l border-t border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+        <motion.div data-testid="ai-generate-section" variants={fadeUp} className="xl:col-span-7 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-[40px] p-8 sm:p-12 relative overflow-hidden group backdrop-blur-xl border-l border-t border-black/ dark:border-white/ shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-purple-600/5 blur-[120px] rounded-full pointer-events-none group-hover:bg-purple-600/10 transition-colors duration-1000" />
           
           <div className="relative z-10 space-y-12 h-full flex flex-col justify-between">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/[0.03] border border-white/5 rounded-xl flex items-center justify-center">
-                  <Cpu size={20} className="text-white/40" />
+                <div className="w-10 h-10 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-xl flex items-center justify-center">
+                  <Cpu size={20} className="text-black/ dark:text-white/" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/80">Command Center</p>
-                  <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.2em] mt-0.5 italic">Aura Mk.4</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-black/ dark:text-white/">Command Center</p>
+                  <p className="text-[9px] font-bold text-black/ dark:text-white/ uppercase tracking-[0.2em] mt-0.5 italic">Aura Mk.4</p>
                 </div>
               </div>
-              <div className="arch-pill bg-white/[0.06] border-white/10 px-3 py-1">
+              <div className="arch-pill bg-black/5 dark:bg-white/ border-black/ dark:border-white/ px-3 py-1">
                 <LivePulse />
-                <span className="text-[9px] font-black uppercase tracking-widest text-white/60">Ready</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-black/ dark:text-white/">Ready</span>
               </div>
             </div>
 
             <div className="space-y-6">
-              <h2 className="text-4xl sm:text-6xl font-display font-black italic uppercase tracking-tightest leading-[0.85] text-white">
+              <h2 className="text-4xl sm:text-6xl font-display font-black italic uppercase tracking-tightest leading-[0.85] text-slate-900 dark:text-white">
                 GENERATE.<br />
-                <span className="text-white/20">ACCELERATE.</span>
+                <span className="text-black/ dark:text-white/">ACCELERATE.</span>
               </h2>
-              <p className="text-sm text-white/40 max-w-lg font-medium leading-relaxed">
+              <p className="text-sm text-black/ dark:text-white/ max-w-lg font-medium leading-relaxed">
                 Execute deep neural extraction. Convert complex signals into structured knowledge assets through any topic or set of notes.
               </p>
             </div>
@@ -329,7 +492,7 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
                     }
                   }}
                   placeholder="Incept a new topic..."
-                  className="w-full bg-white/[0.03] border border-white/5 px-8 py-5 outline-none focus:border-white/20 group-hover/input:bg-white/[0.05] transition-all font-bold text-sm text-white placeholder:text-white/20 rounded-2xl"
+                  className="w-full bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ px-8 py-5 outline-none focus:border-black/ dark:border-white/ group-hover/input:bg-black/5 dark:bg-white/ transition-all font-bold text-sm text-slate-900 dark:text-white placeholder:text-black/ dark:text-white/ rounded-2xl"
                 />
               </div>
               <button
@@ -353,35 +516,35 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
         </motion.div>
 
         {/* PRIORITY VECTOR - 5 COLUMNS */}
-        <motion.div variants={fadeUp} className="xl:col-span-5 bg-white/[0.02] border border-white/5 rounded-[40px] p-8 sm:p-10 relative overflow-hidden group backdrop-blur-xl group flex flex-col justify-between shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
+        <motion.div variants={fadeUp} className="xl:col-span-5 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-[40px] p-8 sm:p-10 relative overflow-hidden group backdrop-blur-xl group flex flex-col justify-between shadow-[0_20px_50px_rgba(0,0,0,0.4)]">
           <div className="space-y-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Clock3 size={16} className="text-white/20" />
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Priority Stream</p>
+                <Clock3 size={16} className="text-black/ dark:text-white/" />
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-black/ dark:text-white/">Priority Stream</p>
               </div>
-              <div className="text-[10px] font-black uppercase text-white/20">01 / {filteredDecks.length}</div>
+              <div className="text-[10px] font-black uppercase text-black/ dark:text-white/">01 / {filteredDecks.length}</div>
             </div>
 
             {nextDeck ? (
               <div className="space-y-8">
                 <div className="space-y-3">
-                  <h3 className="text-3xl lg:text-5xl font-display font-black italic uppercase tracking-tightest leading-none text-white transition-all group-hover:translate-x-2 duration-500">
+                  <h3 className="text-3xl lg:text-5xl font-display font-black italic uppercase tracking-tightest leading-none text-slate-900 dark:text-white transition-all group-hover:translate-x-2 duration-500">
                     {nextDeck.title}
                   </h3>
-                  <p className="text-xs text-white/30 italic line-clamp-2 leading-relaxed font-medium">
+                  <p className="text-xs text-black/ dark:text-white/ italic line-clamp-2 leading-relaxed font-medium">
                     {nextDeck.description || "Experimental neural collection focused on core principles."}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/[0.01] border border-white/5 p-6 rounded-3xl">
-                    <p className="text-[8px] font-black uppercase tracking-[0.4em] text-white/20 mb-2">Assets</p>
-                    <p className="text-3xl font-display font-black italic text-white leading-none">{nextDeck.cardCount || 0}</p>
+                  <div className="bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ p-6 rounded-3xl">
+                    <p className="text-[8px] font-black uppercase tracking-[0.4em] text-black/ dark:text-white/ mb-2">Assets</p>
+                    <p className="text-3xl font-display font-black italic text-slate-900 dark:text-white leading-none">{nextDeck.cardCount || 0}</p>
                   </div>
-                  <div className="bg-white/[0.01] border border-white/5 p-6 rounded-3xl">
-                    <p className="text-[8px] font-black uppercase tracking-[0.4em] text-white/20 mb-2">Mastery</p>
-                    <p className="text-3xl font-display font-black italic text-white leading-none">{nextDeck.mastery}%</p>
+                  <div className="bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ p-6 rounded-3xl">
+                    <p className="text-[8px] font-black uppercase tracking-[0.4em] text-black/ dark:text-white/ mb-2">Mastery</p>
+                    <p className="text-3xl font-display font-black italic text-slate-900 dark:text-white leading-none">{nextDeck.mastery}%</p>
                     <div className="mt-3">
                       <MiniBar value={nextDeck.mastery} />
                     </div>
@@ -390,12 +553,12 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
               </div>
             ) : (
               <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
-                <div className="w-16 h-16 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-center">
-                  <ZapOff size={24} className="text-white/10" />
+                <div className="w-16 h-16 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-2xl flex items-center justify-center">
+                  <ZapOff size={24} className="text-black/ dark:text-white/" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">No Signals Detected</p>
-                  <p className="text-[9px] text-white/10 uppercase tracking-widest italic">Create a collection to start.</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-black/ dark:text-white/">No Signals Detected</p>
+                  <p className="text-[9px] text-black/ dark:text-white/ uppercase tracking-widest italic">Create a collection to start.</p>
                 </div>
               </div>
             )}
@@ -404,7 +567,7 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
           {nextDeck && (
             <button
               onClick={() => onSelectDeck(nextDeck.id)}
-              className="w-full mt-10 py-5 bg-white/[0.03] border border-white/10 rounded-2xl flex items-center justify-center gap-3 text-white/80 hover:bg-white hover:text-black hover:border-white transition-all duration-500 font-black uppercase text-[10px] tracking-[0.3em] group/btn"
+              className="w-full mt-10 py-5 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-2xl flex items-center justify-center gap-3 text-black/ dark:text-white/ hover:bg-white hover:text-black hover:border-white transition-all duration-500 font-black uppercase text-[10px] tracking-[0.3em] group/btn"
             >
               <Zap size={14} className="group-hover/btn:fill-current" />
               Initialize Session
@@ -415,15 +578,15 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 relative z-10">
-        <motion.div variants={fadeUp} className="xl:col-span-4 bg-white/[0.02] border border-white/5 rounded-[36px] p-8 backdrop-blur-xl space-y-6">
+        <motion.div variants={fadeUp} className="xl:col-span-4 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-[36px] p-8 backdrop-blur-xl space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Aha Moment</p>
-              <h3 className="text-2xl font-display font-black italic uppercase text-white mt-2">Start in 30 seconds</h3>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-black/ dark:text-white/">Aha Moment</p>
+              <h3 className="text-2xl font-display font-black italic uppercase text-slate-900 dark:text-white mt-2">Start in 30 seconds</h3>
             </div>
-            <Rocket size={18} className="text-white/30" />
+            <Rocket size={18} className="text-black/ dark:text-white/" />
           </div>
-          <p className="text-sm text-white/40 leading-relaxed">
+          <p className="text-sm text-black/ dark:text-white/ leading-relaxed">
             Load sample decks, take the fast tour, and drop straight into a study session without setup friction.
           </p>
           <div className="grid gap-3">
@@ -435,71 +598,159 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
             </button>
             <button
               onClick={() => setShowOnboarding(true)}
-              className="w-full bg-white/[0.04] border border-white/10 text-white rounded-2xl px-5 py-4 text-[10px] font-black uppercase tracking-[0.3em]"
+              className="w-full bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ text-slate-900 dark:text-white rounded-2xl px-5 py-4 text-[10px] font-black uppercase tracking-[0.3em]"
             >
               Start 30s Tour
             </button>
           </div>
         </motion.div>
 
-        <motion.div variants={fadeUp} className="xl:col-span-4 bg-white/[0.02] border border-white/5 rounded-[36px] p-8 backdrop-blur-xl space-y-6">
+        <motion.div variants={fadeUp} className="xl:col-span-4 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-[36px] p-8 backdrop-blur-xl space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">One-Click Import</p>
-              <h3 className="text-2xl font-display font-black italic uppercase text-white mt-2">Anki / Quizlet</h3>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-black/ dark:text-white/">One-Click Import</p>
+              <h3 className="text-2xl font-display font-black italic uppercase text-slate-900 dark:text-white mt-2">Anki / Notion / Obsidian</h3>
             </div>
-            <Upload size={18} className="text-white/30" />
+            <Upload size={18} className="text-black/ dark:text-white/" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              ['anki_quizlet', 'Anki/Quizlet text'],
+              ['notion', 'Notion page'],
+              ['obsidian', 'Obsidian markdown'],
+              ['anki_apkg', 'Anki .apkg'],
+            ].map(([id, label]) => (
+              <button
+                key={id}
+                onClick={() => setImportMode(id as 'anki_quizlet' | 'notion' | 'obsidian' | 'anki_apkg')}
+                className={`rounded-xl border px-3 py-2 text-[9px] font-black uppercase tracking-[0.2em] ${
+                  importMode === id ? 'border-black/ dark:border-white/ bg-black/5 dark:bg-white/ text-slate-900 dark:text-white' : 'border-black/ dark:border-white/ bg-black/5 dark:bg-white/ text-black/ dark:text-white/'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div
+            onDragOver={(event) => {
+              event.preventDefault();
+              setIsDraggingImportFile(true);
+            }}
+            onDragLeave={() => setIsDraggingImportFile(false)}
+            onDrop={(event) => {
+              event.preventDefault();
+              setIsDraggingImportFile(false);
+              const droppedFile = event.dataTransfer.files?.[0];
+              if (droppedFile) handleStudyAssetUpload(droppedFile);
+            }}
+            className={`rounded-2xl border-2 border-dashed px-5 py-4 text-xs transition-all ${
+              isDraggingImportFile
+                ? 'border-black/ dark:border-white/ bg-black/5 dark:bg-white/ text-slate-900 dark:text-white'
+                : 'border-black/ dark:border-white/ bg-black/5 dark:bg-white/ text-black/ dark:text-white/'
+            }`}
+          >
+            <p className="font-black uppercase tracking-[0.2em]">Drop PDF / PPTX here</p>
+            <p className="mt-2 text-black/ dark:text-white/">Auto-generate cards with equation text preserved.</p>
           </div>
           <input
             type="text"
             value={importTitle}
             onChange={(event) => setImportTitle(event.target.value)}
             placeholder="Deck title"
-            className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-5 py-4 text-sm text-white placeholder:text-white/20"
+            className="w-full bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-2xl px-5 py-4 text-sm text-slate-900 dark:text-white placeholder:text-black/ dark:text-white/"
           />
+          <input
+            type="file"
+            accept={importMode === 'anki_apkg' ? '.apkg' : '.md,.markdown,.txt,.pdf,.pptx,.ppt'}
+            onChange={handleImportFile}
+            className="w-full bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-2xl px-5 py-3 text-xs text-black/ dark:text-white/ file:mr-3 file:rounded-lg file:border-0 file:bg-black/5 dark:bg-white/ file:px-3 file:py-2 file:text-xs file:font-semibold file:text-slate-900 dark:text-white"
+          />
+          <button
+            onClick={() => {
+              const input = document.createElement('input');
+              input.type = 'file';
+              input.accept = '.pdf,.pptx,.ppt';
+              input.onchange = () => {
+                const selected = input.files?.[0];
+                if (selected) handleStudyAssetUpload(selected);
+              };
+              input.click();
+            }}
+            disabled={isProcessingStudyAsset}
+            className="w-full bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ text-slate-900 dark:text-white rounded-2xl px-5 py-4 text-[10px] font-black uppercase tracking-[0.3em]"
+          >
+            {isProcessingStudyAsset ? 'Processing Upload...' : 'Upload PDF / PowerPoint'}
+          </button>
           <textarea
             value={importText}
             onChange={(event) => setImportText(event.target.value)}
-            placeholder={"Paste `term<TAB>definition`, `front::back`, or Q:/A: blocks"}
-            className="w-full min-h-[170px] bg-white/[0.03] border border-white/5 rounded-2xl px-5 py-4 text-sm text-white placeholder:text-white/20"
+            placeholder={
+              importMode === 'notion'
+                ? 'Paste Notion page Markdown or copied page text'
+                : importMode === 'obsidian'
+                  ? 'Paste Obsidian Markdown'
+                  : importMode === 'anki_apkg'
+                    ? 'Upload .apkg above for one-click import, or paste `front::back` as fallback'
+                    : 'Paste `term<TAB>definition`, `front::back`, or Q:/A: blocks'
+            }
+            className="w-full min-h-[170px] bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-2xl px-5 py-4 text-sm text-slate-900 dark:text-white placeholder:text-black/ dark:text-white/"
           />
           <button
             onClick={handleImport}
-            className="w-full bg-white/[0.04] border border-white/10 text-white rounded-2xl px-5 py-4 text-[10px] font-black uppercase tracking-[0.3em]"
+            className="w-full bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ text-slate-900 dark:text-white rounded-2xl px-5 py-4 text-[10px] font-black uppercase tracking-[0.3em]"
           >
             Import Deck
           </button>
-          {importStatus && <p className="text-xs text-white/45">{importStatus}</p>}
+          <button
+            onClick={handleAiOptimizeImport}
+            disabled={isOptimizingImport}
+            className="w-full bg-transparent border border-black/ dark:border-white/ text-black/ dark:text-white/ rounded-2xl px-5 py-4 text-[10px] font-black uppercase tracking-[0.3em]"
+          >
+            {isOptimizingImport ? 'Optimizing...' : 'AI Optimize This Deck'}
+          </button>
+          {importStatus && <p className="text-xs text-black/ dark:text-white/">{importStatus}</p>}
         </motion.div>
 
-        <motion.div variants={fadeUp} className="xl:col-span-4 bg-white/[0.02] border border-white/5 rounded-[36px] p-8 backdrop-blur-xl space-y-6">
+        <motion.div variants={fadeUp} className="xl:col-span-4 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-[36px] p-8 backdrop-blur-xl space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">Retention Battery</p>
-              <h3 className="text-2xl font-display font-black italic uppercase text-white mt-2">Momentum Layer</h3>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-black/ dark:text-white/">Retention Battery</p>
+              <h3 className="text-2xl font-display font-black italic uppercase text-slate-900 dark:text-white mt-2">Momentum Layer</h3>
             </div>
             <Flame size={18} className="text-amber-400" />
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
-              <p className="text-[9px] uppercase tracking-[0.3em] text-white/30">Streak</p>
-              <p className="mt-2 text-2xl font-black text-white">{user.streak || 0}d</p>
+            <div className="rounded-2xl border border-black/ dark:border-white/ bg-black/5 dark:bg-white/ p-4">
+              <p className="text-[9px] uppercase tracking-[0.3em] text-black/ dark:text-white/">Streak</p>
+              <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{user.streak || 0}d</p>
             </div>
-            <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
-              <p className="text-[9px] uppercase tracking-[0.3em] text-white/30">XP Today</p>
-              <p className="mt-2 text-2xl font-black text-white">{xpToday}</p>
+            <div className="rounded-2xl border border-black/ dark:border-white/ bg-black/5 dark:bg-white/ p-4">
+              <p className="text-[9px] uppercase tracking-[0.3em] text-black/ dark:text-white/">XP Today</p>
+              <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{xpToday}</p>
             </div>
-            <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
-              <p className="text-[9px] uppercase tracking-[0.3em] text-white/30">Badges</p>
-              <p className="mt-2 text-2xl font-black text-white">{achievementCount}</p>
+            <div className="rounded-2xl border border-black/ dark:border-white/ bg-black/5 dark:bg-white/ p-4">
+              <p className="text-[9px] uppercase tracking-[0.3em] text-black/ dark:text-white/">Badges</p>
+              <p className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{achievementCount}</p>
             </div>
           </div>
-          <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-5">
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-500/10 p-4">
+            <p className="text-[9px] uppercase tracking-[0.3em] text-emerald-700 dark:text-emerald-200">Streak Freeze Bank</p>
+            <p className="mt-2 text-sm text-slate-800 dark:text-white/80">
+              {streakFreezes} freeze{streakFreezes === 1 ? '' : 's'} earned
+              {' '}({daysToNextFreeze} days to next).
+            </p>
+          </div>
+          
+          <div className="rounded-2xl border border-black/ dark:border-white/ bg-black/5 dark:bg-white/ p-5">
+            <ActivityHeatmap streak={user.streak || 0} studiedToday={stats.studiedToday} />
+          </div>
+
+          <div className="rounded-2xl border border-black/ dark:border-white/ bg-black/5 dark:bg-white/ p-5">
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Beta Challenge</p>
-              <span className="text-[10px] text-white/40">{challengeProgress.completedDays}/{challengeProgress.targetDays}</span>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-black/ dark:text-white/">Beta Challenge</p>
+              <span className="text-[10px] text-black/ dark:text-white/">{challengeProgress.completedDays}/{challengeProgress.targetDays}</span>
             </div>
-            <p className="text-sm text-white/45 mt-3 leading-relaxed">
+            <p className="text-sm text-black/ dark:text-white/ mt-3 leading-relaxed">
               {challengeProgress.active
                 ? `${challengeProgress.remainingDays === 0 ? 'Challenge complete.' : `${challengeProgress.remainingDays} day${challengeProgress.remainingDays === 1 ? '' : 's'} left`} Keep studying and share progress with med, law, and cert communities.`
                 : 'Join the high-stakes student challenge and build a 7-day study streak.'}
@@ -513,7 +764,7 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
               </button>
               <button
                 onClick={() => navigate('/dashboard/professor')}
-                className="flex-1 bg-white/[0.04] border border-white/10 text-white rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-[0.3em]"
+                className="flex-1 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ text-slate-900 dark:text-white rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-[0.3em]"
               >
                 Professor View
               </button>
@@ -528,12 +779,12 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
         <motion.div variants={fadeUp} className="xl:col-span-8 space-y-6">
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-3">
-              <Layers size={16} className="text-white/20" />
+              <Layers size={16} className="text-black/ dark:text-white/" />
               <p className="text-arch-eyebrow uppercase">Neural Library</p>
             </div>
             <button 
               onClick={() => navigate('/generate')}
-              className="text-[10px] font-black uppercase tracking-[0.2em] text-white/20 hover:text-white transition-colors flex items-center gap-2 group"
+              className="text-[10px] font-black uppercase tracking-[0.2em] text-black/ dark:text-white/ hover:text-slate-900 dark:text-white transition-colors flex items-center gap-2 group"
             >
               Expand All
               <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
@@ -549,26 +800,26 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.05 }}
-                className="group relative bg-white/[0.02] border border-white/5 p-7 rounded-[32px] text-left hover:bg-white/[0.04] transition-all hover:border-white/10 overflow-hidden"
+                className="group relative bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ p-7 rounded-[32px] text-left hover:bg-black/5 dark:bg-white/ transition-all hover:border-black/ dark:border-white/ overflow-hidden"
               >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-white/[0.01] -mr-8 -mt-8 rounded-full blur-xl group-hover:bg-white/[0.03] transition-all" />
+                <div className="absolute top-0 right-0 w-24 h-24 bg-black/5 dark:bg-white/ -mr-8 -mt-8 rounded-full blur-xl group-hover:bg-black/5 dark:bg-white/ transition-all" />
                 <div className="flex flex-col justify-between h-full min-h-[160px] space-y-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <div className="arch-pill bg-white/[0.03] text-white/30 border-white/5 py-1 px-3">
+                      <div className="arch-pill bg-black/5 dark:bg-white/ text-black/ dark:text-white/ border-black/ dark:border-white/ py-1 px-3">
                         <span className="text-[9px] font-black uppercase tracking-widest">
                           {deck.due > 0 ? `${deck.due} SIGNAL` : 'STABLE'}
                         </span>
                       </div>
-                      <ArrowRight size={14} className="text-white/5 group-hover:text-white transition-all -translate-x-2 group-hover:translate-x-0" />
+                      <ArrowRight size={14} className="text-black/ dark:text-white/ group-hover:text-slate-900 dark:text-white transition-all -translate-x-2 group-hover:translate-x-0" />
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-xl font-display font-black italic uppercase tracking-tight text-white line-clamp-1">{deck.title}</h3>
-                      <p className="text-[11px] text-white/30 font-medium leading-relaxed line-clamp-2 italic">{deck.description}</p>
+                      <h3 className="text-xl font-display font-black italic uppercase tracking-tight text-slate-900 dark:text-white line-clamp-1">{deck.title}</h3>
+                      <p className="text-[11px] text-black/ dark:text-white/ font-medium leading-relaxed line-clamp-2 italic">{deck.description}</p>
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-[0.3em] text-white/20">
+                    <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-[0.3em] text-black/ dark:text-white/">
                       <span>Sync: {deck.mastery}%</span>
                       <span>Total: {deck.cardCount || 0}</span>
                     </div>
@@ -580,14 +831,14 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
 
             <button
               onClick={() => navigate('/generate')}
-              className="bg-white/[0.01] border border-white/5 border-dashed rounded-[32px] p-7 flex flex-col items-center justify-center min-h-[200px] group hover:bg-white/[0.03] hover:border-white/20 transition-all gap-4"
+              className="bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ border-dashed rounded-[32px] p-7 flex flex-col items-center justify-center min-h-[200px] group hover:bg-black/5 dark:bg-white/ hover:border-black/ dark:border-white/ transition-all gap-4"
             >
-              <div className="w-12 h-12 bg-white/[0.03] border border-white/5 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-white group-hover:text-black transition-all">
+              <div className="w-12 h-12 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:bg-white group-hover:text-black transition-all">
                 <Plus size={24} />
               </div>
               <div className="text-center">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Incept New</p>
-                <p className="text-[8px] text-white/10 uppercase tracking-widest mt-1">Manual or AI-driven</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-black/ dark:text-white/">Incept New</p>
+                <p className="text-[8px] text-black/ dark:text-white/ uppercase tracking-widest mt-1">Manual or AI-driven</p>
               </div>
             </button>
           </div>
@@ -596,13 +847,13 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
         {/* SIDEBAR TOOLS - 4 COLUMNS */}
         <div className="xl:col-span-4 space-y-8">
           {/* LEADERBOARD */}
-          <motion.div data-testid="leaderboard-section" variants={fadeUp} className="bg-white/[0.02] border border-white/5 rounded-[40px] overflow-hidden backdrop-blur-xl border-l border-t border-white/10 p-2">
+          <motion.div data-testid="leaderboard-section" variants={fadeUp} className="bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-[40px] overflow-hidden backdrop-blur-xl border-l border-t border-black/ dark:border-white/ p-2">
             <div className="flex items-center justify-between p-6 pb-2">
               <div className="flex items-center gap-3">
-                <Trophy size={16} className="text-white/20" />
+                <Trophy size={16} className="text-black/ dark:text-white/" />
                 <p className="text-arch-eyebrow uppercase">Neural Ranking</p>
               </div>
-              <Activity size={14} className="text-white/10" />
+              <Activity size={14} className="text-black/ dark:text-white/" />
             </div>
             
             <div className="space-y-1 mt-4">
@@ -610,39 +861,39 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
                 <button
                   key={entry.id}
                   onClick={() => onSelectDeck(entry.id)}
-                  className="w-full flex items-center justify-between gap-4 px-6 py-4 hover:bg-white/[0.03] transition-all group rounded-3xl"
+                  className="w-full flex items-center justify-between gap-4 px-6 py-4 hover:bg-black/5 dark:bg-white/ transition-all group rounded-3xl"
                 >
                   <div className="flex items-center gap-4">
-                    <span className={`text-[10px] font-black italic w-5 ${i === 0 ? 'text-white' : 'text-white/20'}`}>
+                    <span className={`text-[10px] font-black italic w-5 ${i === 0 ? 'text-slate-900 dark:text-white' : 'text-black/ dark:text-white/'}`}>
                       {String(entry.rank).padStart(2, '0')}
                     </span>
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-white/80 group-hover:text-white transition-colors">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-black/ dark:text-white/ group-hover:text-slate-900 dark:text-white transition-colors">
                         {entry.title}
                       </p>
-                      <p className="text-[8px] text-white/20 uppercase font-bold tracking-widest mt-0.5 whitespace-nowrap">
+                      <p className="text-[8px] text-black/ dark:text-white/ uppercase font-bold tracking-widest mt-0.5 whitespace-nowrap">
                         {entry.cardCount} units · {entry.mastery}%
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-display font-black italic text-white">{entry.score}</p>
-                    <p className="text-[7px] text-white/10 font-bold uppercase tracking-widest">PTS</p>
+                    <p className="text-sm font-display font-black italic text-slate-900 dark:text-white">{entry.score}</p>
+                    <p className="text-[7px] text-black/ dark:text-white/ font-bold uppercase tracking-widest">PTS</p>
                   </div>
                 </button>
               ))}
               {leaderboard.length === 0 && (
                 <div className="p-12 text-center">
-                  <p className="text-[10px] text-white/10 font-black uppercase tracking-[0.4em] italic">Aura Offline.</p>
+                  <p className="text-[10px] text-black/ dark:text-white/ font-black uppercase tracking-[0.4em] italic">Aura Offline.</p>
                 </div>
               )}
             </div>
           </motion.div>
 
           {/* QUICK ACCESS */}
-          <motion.div variants={fadeUp} className="bg-white/[0.02] border border-white/5 rounded-[40px] p-2 overflow-hidden backdrop-blur-xl border-l border-t border-white/10">
+          <motion.div variants={fadeUp} className="bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-[40px] p-2 overflow-hidden backdrop-blur-xl border-l border-t border-black/ dark:border-white/">
             <div className="p-6 pb-2 flex items-center gap-3">
-              <Sparkles size={16} className="text-white/20" />
+              <Sparkles size={16} className="text-black/ dark:text-white/" />
               <p className="text-arch-eyebrow uppercase">System Map</p>
             </div>
             <div className="space-y-1 mt-4">
@@ -654,9 +905,9 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
                 <button
                   key={item.title}
                   onClick={() => navigate(item.path)}
-                  className="w-full flex items-center gap-5 px-6 py-5 hover:bg-white text-white/60 hover:text-black transition-all duration-500 group rounded-3xl"
+                  className="w-full flex items-center gap-5 px-6 py-5 hover:bg-white text-black/ dark:text-white/ hover:text-black transition-all duration-500 group rounded-3xl"
                 >
-                  <div className="w-10 h-10 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center group-hover:bg-black/5 group-hover:border-black/10 transition-all shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ flex items-center justify-center group-hover:bg-black/5 group-hover:border-black/10 transition-all shrink-0">
                     <item.icon size={18} />
                   </div>
                   <div className="text-left flex-1">

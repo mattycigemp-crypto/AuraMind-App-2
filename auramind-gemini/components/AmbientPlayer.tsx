@@ -192,26 +192,26 @@ const AmbientPlayer: React.FC = () => {
                 onError={handleTrackError}
             />
 
-            <div className="bg-black/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden accent-gradient-border ring-1 ring-white/5">
+            <div className="bg-black/60 backdrop-blur-xl border border-black/ dark:border-white/ rounded-3xl shadow-2xl overflow-hidden accent-gradient-border ring-1 ring-white/5">
 
                 {/* Minimized View */}
                 {isMinimized ? (
                     <button
                         onClick={() => setIsMinimized(false)}
-                        className="flex items-center gap-4 p-3 pr-6 hover:bg-white/5 transition-colors group"
+                        className="flex items-center gap-4 p-3 pr-6 hover:bg-black/5 dark:bg-white/ transition-colors group"
                     >
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPlaying ? 'accent-gradient shadow-[0_0_15px_rgba(168,85,247,0.4)] animate-spin-slow' : 'bg-white/10'}`}>
-                            <Music size={18} className="text-white" />
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPlaying ? 'accent-gradient shadow-[0_0_15px_rgba(168,85,247,0.4)] animate-spin-slow' : 'bg-black/5 dark:bg-white/'}`}>
+                            <Music size={18} className="text-slate-900 dark:text-white" />
                         </div>
 
                         {isPlaying && (
                             <div className="flex flex-col items-start mr-2">
-                                <span className="text-xs font-bold text-white max-w-[100px] truncate">{currentTrack.title}</span>
+                                <span className="text-xs font-bold text-slate-900 dark:text-white max-w-[100px] truncate">{currentTrack.title}</span>
                                 <span className="text-[10px] text-purple-300">{currentTrack.type}</span>
                             </div>
                         )}
 
-                        {!isPlaying && <span className="text-sm font-medium text-white/70 group-hover:text-white">Music</span>}
+                        {!isPlaying && <span className="text-sm font-medium text-black/ dark:text-white/ group-hover:text-slate-900 dark:text-white">Music</span>}
                     </button>
                 ) : (
                     /* Maximized View */
@@ -220,14 +220,14 @@ const AmbientPlayer: React.FC = () => {
                         <div className="p-5 flex justify-between items-center bg-gradient-to-b from-white/5 to-transparent">
                             <button
                                 onClick={() => setShowPlaylist(!showPlaylist)}
-                                className={`p-2 rounded-full transition-colors ${showPlaylist ? 'bg-white/10 text-white' : 'text-white/50 hover:text-white'}`}
+                                className={`p-2 rounded-full transition-colors ${showPlaylist ? 'bg-black/5 dark:bg-white/ text-slate-900 dark:text-white' : 'text-black/ dark:text-white/ hover:text-slate-900 dark:text-white'}`}
                             >
                                 <List size={18} />
                             </button>
-                            <span className="text-xs font-bold tracking-[0.2em] uppercase text-white/40">Now Playing</span>
+                            <span className="text-xs font-bold tracking-[0.2em] uppercase text-black/ dark:text-white/">Now Playing</span>
                             <button
                                 onClick={() => setIsMinimized(true)}
-                                className="p-2 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                                className="p-2 rounded-full text-black/ dark:text-white/ hover:text-slate-900 dark:text-white hover:bg-black/5 dark:bg-white/ transition-colors"
                             >
                                 <Minimize2 size={18} />
                             </button>
@@ -238,23 +238,23 @@ const AmbientPlayer: React.FC = () => {
                             <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
                                 <button
                                     onClick={() => setShowUrlInput(!showUrlInput)}
-                                    className="w-full py-3 px-4 rounded-xl border border-dashed border-white/20 text-white/50 hover:text-white hover:border-white/40 hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-sm font-medium mb-4"
+                                    className="w-full py-3 px-4 rounded-xl border border-dashed border-black/ dark:border-white/ text-black/ dark:text-white/ hover:text-slate-900 dark:text-white hover:border-black/ dark:border-white/ hover:bg-black/5 dark:bg-white/ transition-all flex items-center justify-center gap-2 text-sm font-medium mb-4"
                                 >
                                     <Plus size={16} /> Add Custom URL
                                 </button>
 
                                 {showUrlInput && (
-                                    <div className="mb-4 bg-white/5 p-3 rounded-xl space-y-2">
+                                    <div className="mb-4 bg-black/5 dark:bg-white/ p-3 rounded-xl space-y-2">
                                         <input
                                             type="text"
                                             value={customUrl}
                                             onChange={(e) => setCustomUrl(e.target.value)}
                                             placeholder="Paste MP3 URL..."
-                                            className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500 transition-colors"
+                                            className="w-full bg-black/50 border border-black/ dark:border-white/ rounded-lg px-3 py-2 text-xs text-slate-900 dark:text-white placeholder:text-neutral-500 focus:outline-none focus:border-purple-500 transition-colors"
                                         />
                                         <div className="flex gap-2">
-                                            <button onClick={addCustomTrack} className="flex-1 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold py-2 rounded-lg transition-colors">Add</button>
-                                            <button onClick={() => setShowUrlInput(false)} className="px-3 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition-colors"><X size={14} /></button>
+                                            <button onClick={addCustomTrack} className="flex-1 bg-purple-600 hover:bg-purple-500 text-slate-900 dark:text-white text-xs font-bold py-2 rounded-lg transition-colors">Add</button>
+                                            <button onClick={() => setShowUrlInput(false)} className="px-3 bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ text-slate-900 dark:text-white text-xs font-bold rounded-lg transition-colors"><X size={14} /></button>
                                         </div>
                                     </div>
                                 )}
@@ -263,9 +263,9 @@ const AmbientPlayer: React.FC = () => {
                                     <div
                                         key={track.id}
                                         onClick={() => { setCurrentTrackIndex(idx); setIsPlaying(true); }}
-                                        className={`p-3 rounded-xl flex items-center gap-3 cursor-pointer transition-all group ${currentTrackIndex === idx ? 'bg-white/10 shadow-lg' : 'hover:bg-white/5'}`}
+                                        className={`p-3 rounded-xl flex items-center gap-3 cursor-pointer transition-all group ${currentTrackIndex === idx ? 'bg-black/5 dark:bg-white/ shadow-lg' : 'hover:bg-black/5 dark:bg-white/'}`}
                                     >
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${currentTrackIndex === idx ? 'accent-gradient text-white' : 'bg-white/5 text-neutral-500 group-hover:text-white'}`}>
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${currentTrackIndex === idx ? 'accent-gradient text-slate-900 dark:text-white' : 'bg-black/5 dark:bg-white/ text-neutral-500 group-hover:text-slate-900 dark:text-white'}`}>
                                             {currentTrackIndex === idx && isPlaying ? (
                                                 <div className="flex gap-[2px] items-end h-3">
                                                     <div className="w-[2px] bg-white animate-music-bar h-full"></div>
@@ -277,7 +277,7 @@ const AmbientPlayer: React.FC = () => {
                                             )}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h4 className={`text-sm font-bold truncate ${currentTrackIndex === idx ? 'text-white' : 'text-neutral-400 group-hover:text-neutral-200'}`}>
+                                            <h4 className={`text-sm font-bold truncate ${currentTrackIndex === idx ? 'text-slate-900 dark:text-white' : 'text-neutral-400 group-hover:text-neutral-200'}`}>
                                                 {track.title}
                                             </h4>
                                             <p className="text-[10px] text-neutral-600 uppercase tracking-wider">{track.type}</p>
@@ -290,8 +290,8 @@ const AmbientPlayer: React.FC = () => {
                             <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
                                 <div className={`w-32 h-32 rounded-full mb-6 relative flex items-center justify-center shadow-[0_0_40px_rgba(124,58,237,0.2)] transition-all duration-700 ${isPlaying ? 'scale-100' : 'scale-90 opacity-80'}`}>
                                     <div className={`absolute inset-0 rounded-full accent-gradient opacity-20 ${isPlaying ? 'animate-pulse' : ''}`}></div>
-                                    <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-900 to-black border border-white/10 flex items-center justify-center overflow-hidden">
-                                        <Music size={40} className={`text-white/20 ${isPlaying ? 'animate-bounce-subtle' : ''}`} />
+                                    <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-900 to-black border border-black/ dark:border-white/ flex items-center justify-center overflow-hidden">
+                                        <Music size={40} className={`text-black/ dark:text-white/ ${isPlaying ? 'animate-bounce-subtle' : ''}`} />
                                     </div>
                                     {/* Rotating Border */}
                                     {isPlaying && (
@@ -300,7 +300,7 @@ const AmbientPlayer: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-1 mb-8 w-full">
-                                    <h3 className="text-xl font-bold text-white truncate px-4">{currentTrack.title}</h3>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white truncate px-4">{currentTrack.title}</h3>
                                     <p className="text-sm text-purple-300 font-medium">{currentTrack.type}</p>
                                     {hasTrackError && (
                                         <p className="text-xs text-red-300">This track could not be loaded. Skipping to the next available track.</p>
@@ -309,7 +309,7 @@ const AmbientPlayer: React.FC = () => {
 
                                 {/* Progress Bar */}
                                 <div className="w-full space-y-2 mb-6 group">
-                                    <div className="relative h-1 bg-white/10 rounded-full overflow-hidden cursor-pointer">
+                                    <div className="relative h-1 bg-black/5 dark:bg-white/ rounded-full overflow-hidden cursor-pointer">
                                         <div
                                             className="absolute top-0 left-0 h-full accent-gradient"
                                             style={{ width: `${(progress / duration) * 100}%` }}
@@ -323,7 +323,7 @@ const AmbientPlayer: React.FC = () => {
                                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         />
                                     </div>
-                                    <div className="flex justify-between text-[10px] font-medium text-white/30 px-1">
+                                    <div className="flex justify-between text-[10px] font-medium text-black/ dark:text-white/ px-1">
                                         <span>{formatTime(progress)}</span>
                                         <span>{formatTime(duration)}</span>
                                     </div>
@@ -333,28 +333,28 @@ const AmbientPlayer: React.FC = () => {
                                 <div className="flex items-center justify-center gap-6 w-full">
                                     <button
                                         onClick={() => setIsShuffle(!isShuffle)}
-                                        className={`text-white/40 hover:text-white transition-colors ${isShuffle ? 'text-purple-400' : ''}`}
+                                        className={`text-black/ dark:text-white/ hover:text-slate-900 dark:text-white transition-colors ${isShuffle ? 'text-purple-400' : ''}`}
                                     >
                                         <Shuffle size={18} />
                                     </button>
 
-                                    <button onClick={prevTrack} className="text-white hover:text-purple-300 transition-colors">
+                                    <button onClick={prevTrack} className="text-slate-900 dark:text-white hover:text-purple-300 transition-colors">
                                         <SkipBack size={24} />
                                     </button>
 
                                     <button
                                         onClick={togglePlay}
-                                        className="w-14 h-14 flex items-center justify-center rounded-full accent-gradient text-white shadow-lg hover:brightness-110 active:scale-95 transition-all"
+                                        className="w-14 h-14 flex items-center justify-center rounded-full accent-gradient text-slate-900 dark:text-white shadow-lg hover:brightness-110 active:scale-95 transition-all"
                                     >
                                         {isPlaying ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" className="ml-1" />}
                                     </button>
 
-                                    <button onClick={nextTrack} className="text-white hover:text-purple-300 transition-colors">
+                                    <button onClick={nextTrack} className="text-slate-900 dark:text-white hover:text-purple-300 transition-colors">
                                         <SkipForward size={24} />
                                     </button>
 
                                     <button
-                                        className="text-white/40 hover:text-white transition-colors relative group/vol"
+                                        className="text-black/ dark:text-white/ hover:text-slate-900 dark:text-white transition-colors relative group/vol"
                                         onClick={() => setVolume(v => v === 0 ? 0.5 : 0)}
                                     >
                                         {volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}

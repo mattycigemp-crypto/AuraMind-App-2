@@ -166,7 +166,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user, onBack }) => {
                        }`}
                      >
                        {plan.badge && (
-                         <div className="absolute -top-3 right-6 bg-blue-500 text-white px-3 py-1 text-[8px] font-black uppercase tracking-[0.2em]">
+                         <div className="absolute -top-3 right-6 bg-blue-500 text-slate-900 dark:text-white px-3 py-1 text-[8px] font-black uppercase tracking-[0.2em]">
                            {plan.badge}
                          </div>
                        )}
@@ -229,11 +229,11 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user, onBack }) => {
 
             <div className="architectural-panel p-8 bg-arch-muted/5 flex items-center justify-center gap-12">
                <div className="flex items-center gap-3 grayscale opacity-30 invert">
-                  <span className="text-[8px] font-black text-white bg-black p-1">LemonSqueezy</span>
+                  <span className="text-[8px] font-black text-slate-900 dark:text-white bg-black p-1">LemonSqueezy</span>
                </div>
                <div className="w-px h-6 bg-arch-border" />
                <div className="flex items-center gap-3 grayscale opacity-30 invert">
-                  <span className="text-[12px] font-black text-white italic">Aura OS</span>
+                  <span className="text-[12px] font-black text-slate-900 dark:text-white italic">Aura OS</span>
                </div>
             </div>
           </div>

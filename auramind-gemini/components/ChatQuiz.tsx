@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Quiz, QuizQuestion } from '../types';
 import { CheckCircle, XCircle, RotateCcw } from 'lucide-react';
+import MathRichText from './MathRichText';
 
 interface ChatQuizProps {
   quiz: Quiz;
@@ -95,7 +96,7 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
 
         <button
           onClick={resetQuiz}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-slate-900 dark:text-white rounded-lg transition-colors"
         >
           <RotateCcw size={16} />
           Retake Quiz
@@ -129,9 +130,9 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
       </div>
 
       <div className="p-6">
-        <h4 className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
-          {currentQ.question}
-        </h4>
+        <div className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
+          <MathRichText text={currentQ.question} />
+        </div>
 
         <div className="space-y-3 mb-6">
           {currentQ.options.map((option, index) => {
@@ -174,7 +175,7 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
                     showIncorrect ? 'text-red-700 dark:text-red-300' :
                     'text-gray-900 dark:text-gray-100'
                   }`}>
-                    {option}
+                    <MathRichText text={option} />
                   </span>
                 </div>
               </button>
@@ -185,7 +186,9 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
         {showFeedback && currentQ.explanation && (
           <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
             <h5 className="font-medium text-blue-900 dark:text-blue-300 mb-2">Explanation:</h5>
-            <p className="text-sm text-blue-800 dark:text-blue-200">{currentQ.explanation}</p>
+            <div className="text-sm text-blue-800 dark:text-blue-200">
+              <MathRichText text={currentQ.explanation} />
+            </div>
           </div>
         )}
 
@@ -207,7 +210,7 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
               disabled={!isAnswered}
               className={`px-4 py-2 rounded-lg transition-colors ${
                 isAnswered
-                  ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                  ? 'bg-purple-600 hover:bg-purple-700 text-slate-900 dark:text-white'
                   : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
               }`}
             >
@@ -216,7 +219,7 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
           ) : (
             <button
               onClick={handleNext}
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-slate-900 dark:text-white rounded-lg transition-colors"
             >
               {currentQuestion < quiz.questions.length - 1 ? 'Next Question' : 'View Results'}
             </button>

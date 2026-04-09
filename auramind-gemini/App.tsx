@@ -7,32 +7,34 @@ import { generateDeckFromTopic, GeneratedCard } from './services/geminiService';
 import { dbService } from './services/dbService';
 import { PREMADE_CARDS, PREMADE_DECKS } from './data/premadeContent';
 import { createMetadataTemplates, mergeCardMetadata, persistCardMetadata } from './services/roadmapService';
-import AuraLandingPage from './components/AuraLandingPage';
-import BentoDashboard from './components/BentoDashboard';
-import AppLayout from './components/AppLayout';
+import { analyticsService } from './services/analyticsService';
+
+const AuraLandingPage = React.lazy(() => import('./components/AuraLandingPage'));
+const BentoDashboard = React.lazy(() => import('./components/BentoDashboard'));
+const AppLayout = React.lazy(() => import('./components/AppLayout'));
+
+const DashboardInsightsPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.DashboardInsightsPage })));
+const DashboardPlannerPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.DashboardPlannerPage })));
+const ProfessorDashboardPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.ProfessorDashboardPage })));
+const DeckDetailRoute = React.lazy(() => import('./components/Pages').then(m => ({ default: m.DeckDetailRoute })));
+const GenerateCardsRoute = React.lazy(() => import('./components/Pages').then(m => ({ default: m.GenerateCardsRoute })));
+const StudyModeRoute = React.lazy(() => import('./components/Pages').then(m => ({ default: m.StudyModeRoute })));
+const ChatRoute = React.lazy(() => import('./components/Pages').then(m => ({ default: m.ChatRoute })));
+const SettingsPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.SettingsPage })));
+const AdminConsolePage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.AdminConsolePage })));
+const DocsPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.DocsPage })));
+const PrivacyPolicyPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.PrivacyPolicyPage })));
+const TermsOfServicePage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.TermsOfServicePage })));
+const ResetPasswordPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.ResetPasswordPage })));
+const RestoreAccountPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.RestoreAccountPage })));
+const NotFoundPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.NotFoundPage })));
+
+const PaymentPage = React.lazy(() => import('./components/PaymentPage'));
+const AuthPage = React.lazy(() => import('./components/AuthPage'));
+
 import AmbientPlayer from './components/AmbientPlayer';
 import { ThemeProvider, useTheme } from './hooks/useTheme';
 import { supabase } from './services/supabase';
-import {
-  DashboardInsightsPage,
-  DashboardPlannerPage,
-  ProfessorDashboardPage,
-  DeckDetailRoute,
-  GenerateCardsRoute,
-  StudyModeRoute,
-  ChatRoute,
-  SettingsPage,
-  AdminConsolePage,
-  DocsPage,
-  PrivacyPolicyPage,
-  TermsOfServicePage,
-  ResetPasswordPage,
-  RestoreAccountPage,
-  NotFoundPage
-} from './components/Pages';
-
-import PaymentPage from './components/PaymentPage';
-import AuthPage from './components/AuthPage';
 
 // Icons
 import {
@@ -158,6 +160,10 @@ const AppContent = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<'active' | 'trialing' | 'canceled' | 'past_due' | 'none' | 'loading'>('loading');
 
+  useEffect(() => {
+    analyticsService.init();
+  }, []);
+
   const checkSubscription = async (userId: string, email: string) => {
     try {
       const response = await fetch('/api/check-subscription', {
@@ -199,11 +205,13 @@ const AppContent = () => {
         setCards([]);
         setActiveDeckId(null);
         setSubscriptionStatus('none');
+        analyticsService.reset();
         return;
       }
 
       const profile = mapAuthUserToProfile(session.user);
       setUser(profile);
+      analyticsService.identify(profile.id, { email: profile.email, plan: profile.plan });
       
       if (profile.isAdmin || profile.email === 'matty.cigemp@gmail.com') {
         setSubscriptionStatus('active');
@@ -384,7 +392,8 @@ const AppContent = () => {
   const onLogout = () => { supabase.auth.signOut(); navigate('/auth'); };
 
   return (
-    <div className="min-h-screen bg-arch-bg text-white font-body selection:bg-white selection:text-black">
+    <div className="min-h-screen bg-background text-foreground font-body selection:bg-primary selection:text-primary-foreground">
+      <Suspense fallback={<LoadingOverlay />}>
       <AnimatePresence mode="wait">
         <Routes location={location}>
           <Route path="/" element={<PageTransition><AuraLandingPage onGetStarted={(e) => navigate('/auth', { state: { email: e } })} /></PageTransition>} />
@@ -402,7 +411,7 @@ const AppContent = () => {
             <Route path="/dashboard/professor" element={<PageTransition><ProfessorDashboardPage decks={decks} cards={cards} user={currentUser} /></PageTransition>} />
             <Route path="/deck/:id" element={<PageTransition><DeckDetailRoute decks={decks} cards={cards} navigate={navigate} deleteCard={deleteCard} setActiveDeckId={setActiveDeckId} /></PageTransition>} />
             <Route path="/generate" element={<PageTransition><GenerateCardsRoute activeDeckId={activeDeckId} navigate={navigate} user={currentUser} saveGeneratedCards={saveGeneratedCards} /></PageTransition>} />
-            <Route path="/chat" element={<PageTransition><ChatRoute navigate={navigate} createGeneratedDeck={createGeneratedDeck} createDeckFromCards={createDeckFromCards} user={currentUser} /></PageTransition>} />
+            <Route path="/chat" element={<PageTransition><ChatRoute navigate={navigate} createGeneratedDeck={createGeneratedDeck} createDeckFromCards={createDeckFromCards} user={currentUser} decks={decks} cards={cards} /></PageTransition>} />
             <Route path="/settings" element={<PageTransition><SettingsPage user={currentUser} onUpdateUser={updateUserProfile} /></PageTransition>} />
             <Route path="/admin/vault" element={user?.isAdmin ? <PageTransition><AdminConsolePage decks={decks} cards={cards} user={currentUser} /></PageTransition> : <Navigate to="/dashboard" replace />} />
             <Route path="/docs" element={<PageTransition><DocsPage /></PageTransition>} />
@@ -420,6 +429,7 @@ const AppContent = () => {
           <Route path="*" element={<PageTransition><NotFoundPage navigate={navigate} /></PageTransition>} />
         </Routes>
       </AnimatePresence>
+      </Suspense>
       {location.pathname.startsWith('/dashboard') && <AmbientPlayer />}
       <ScrollTopButton />
     </div>

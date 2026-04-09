@@ -2,9 +2,25 @@ import { supabase } from './supabase';
 import { Card, Deck } from '../types';
 import { enrichCardsWithStoredMetadata } from './roadmapService';
 
+// Caching layer to avoid refecthing on navigation switch
+let cachedDecks: Deck[] | null = null;
+let cachedCards: Card[] | null = null;
+let lastOwnerId: string | null = null;
+
 export const dbService = {
+    // --- CACHE MGMT ---
+    clearCache() {
+        cachedDecks = null;
+        cachedCards = null;
+        lastOwnerId = null;
+    },
+
     // --- DECKS ---
     async fetchDecks(userId: string): Promise<Deck[]> {
+        if (cachedDecks && lastOwnerId === userId) {
+            return cachedDecks;
+        }
+
         const { data, error } = await supabase
             .from('decks')
             .select('*')
@@ -12,13 +28,17 @@ export const dbService = {
             .order('created_at', { ascending: false });
 
         if (error) throw error;
-        return (data ?? []).map(d => ({
+        const res = (data ?? []).map(d => ({
             id: d.id,
             title: d.title,
             description: d.description,
             createdAt: new Date(d.created_at).getTime(),
             cardCount: d.card_count
         }));
+
+        cachedDecks = res;
+        lastOwnerId = userId;
+        return res;
     },
 
     async createDeck(userId: string, title: string, description: string): Promise<Deck> {
@@ -36,13 +56,18 @@ export const dbService = {
             .single();
 
         if (error) throw error;
-        return {
+        const newDeck = {
             id: data.id,
             title: data.title,
             description: data.description,
             createdAt: new Date(data.created_at).getTime(),
             cardCount: data.card_count
         };
+
+        if (cachedDecks && lastOwnerId === userId) {
+            cachedDecks = [newDeck, ...cachedDecks];
+        }
+        return newDeck;
     },
 
     async updateDeck(id: string, updates: Partial<Deck>): Promise<void> {
@@ -57,6 +82,10 @@ export const dbService = {
             .eq('id', id);
 
         if (error) throw error;
+
+        if (cachedDecks) {
+            cachedDecks = cachedDecks.map(d => d.id === id ? { ...d, ...updates } : d);
+        }
     },
 
     async deleteDeck(id: string): Promise<void> {
@@ -66,17 +95,28 @@ export const dbService = {
             .eq('id', id);
 
         if (error) throw error;
+
+        if (cachedDecks) {
+            cachedDecks = cachedDecks.filter(d => d.id !== id);
+        }
+        if (cachedCards) {
+            cachedCards = cachedCards.filter(c => c.deckId !== id);
+        }
     },
 
     // --- CARDS ---
     async fetchCards(userId: string): Promise<Card[]> {
+        if (cachedCards && lastOwnerId === userId) {
+            return cachedCards;
+        }
+
         const { data, error } = await supabase
             .from('cards')
             .select('*')
             .eq('user_id', userId);
 
         if (error) throw error;
-        return enrichCardsWithStoredMetadata((data ?? []).map(c => ({
+        const res = enrichCardsWithStoredMetadata((data ?? []).map(c => ({
             id: c.id,
             question: c.question,
             answer: c.answer,
@@ -87,6 +127,10 @@ export const dbService = {
             repetition: c.repetition,
             lastReviewed: c.last_reviewed ? new Date(c.last_reviewed).getTime() : undefined
         })));
+
+        cachedCards = res;
+        lastOwnerId = userId;
+        return res;
     },
 
     async saveCards(userId: string, cards: Omit<Card, 'id'>[]): Promise<Card[]> {
@@ -108,7 +152,7 @@ export const dbService = {
             .select();
 
         if (error) throw error;
-        return (data ?? []).map(c => ({
+        const res = (data ?? []).map(c => ({
             id: c.id,
             question: c.question,
             answer: c.answer,
@@ -119,6 +163,12 @@ export const dbService = {
             repetition: c.repetition,
             lastReviewed: c.last_reviewed ? new Date(c.last_reviewed).getTime() : undefined
         }));
+
+        if (cachedCards && lastOwnerId === userId) {
+            cachedCards = [...cachedCards, ...res];
+        }
+
+        return res;
     },
 
     async updateCard(id: string, updates: Partial<Card>): Promise<void> {
@@ -137,6 +187,10 @@ export const dbService = {
             .eq('id', id);
 
         if (error) throw error;
+
+        if (cachedCards) {
+            cachedCards = cachedCards.map(c => c.id === id ? { ...c, ...updates } : c);
+        }
     },
 
     async deleteCard(id: string): Promise<void> {
@@ -146,5 +200,9 @@ export const dbService = {
             .eq('id', id);
 
         if (error) throw error;
+
+        if (cachedCards) {
+            cachedCards = cachedCards.filter(c => c.id !== id);
+        }
     }
 };

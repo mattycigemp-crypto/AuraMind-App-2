@@ -109,7 +109,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
       {visible && (
         <motion.div
           ref={menuRef}
-          className={`fixed z-50 min-w-[200px] rounded-xl border border-black/10 bg-white/95 py-2 shadow-2xl backdrop-blur-sm dark:border-white/10 dark:bg-black/95 ${className}`}
+          className={`fixed z-50 min-w-[200px] rounded-xl border border-black/10 bg-black/5 dark:bg-white/ py-2 shadow-2xl backdrop-blur-sm dark:border-white/10 dark:bg-black/95 ${className}`}
           style={{
             left: adjustedPosition.x,
             top: adjustedPosition.y,
@@ -141,7 +141,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     ? 'text-black/30 dark:text-white/30 cursor-not-allowed'
                     : item.danger
                     ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                    : 'text-black/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-white/5'
+                    : 'text-black/70 dark:text-white/70 hover:bg-black/5 dark:hover:bg-black/5 dark:bg-white/'
                 }`}
               >
                 {Icon && <Icon size={16} className="flex-shrink-0" />}

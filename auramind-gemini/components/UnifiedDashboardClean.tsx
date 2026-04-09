@@ -463,13 +463,13 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 text-slate-900 dark:text-white overflow-hidden">
       <div className="h-screen flex flex-col">
         {/* Enhanced Header */}
-        <header className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 sticky top-0 z-50">
+        <header className="bg-black/5 dark:bg-white/ dark:bg-slate-800/80 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                    <BrainCircuit size={20} className="text-white" />
+                    <BrainCircuit size={20} className="text-slate-900 dark:text-white" />
                   </div>
                   <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                     AuraMind
@@ -532,7 +532,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
                 <div className="flex flex-wrap gap-3">
                   <button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2.5 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                    className="flex items-center gap-2 bg-blue-500 text-slate-900 dark:text-white px-4 py-2.5 rounded-lg font-medium hover:bg-blue-600 transition-colors"
                   >
                     <Plus size={16} />
                     New Deck
@@ -654,12 +654,12 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 p-5 text-white">
-                      <p className="text-sm font-medium text-white/80">Next best session</p>
+                    <div className="rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 p-5 text-slate-900 dark:text-white">
+                      <p className="text-sm font-medium text-black/ dark:text-white/">Next best session</p>
                       <h3 className="text-xl font-semibold mt-2">
                         {studyInsights.nextBestAction ? studyInsights.nextBestAction.title : 'Start a new topic'}
                       </h3>
-                      <p className="text-sm text-white/80 mt-2">
+                      <p className="text-sm text-black/ dark:text-white/ mt-2">
                         {studyInsights.nextBestAction
                           ? `${studyInsights.nextBestAction.dueCount} cards are due now.`
                           : 'No overdue cards right now. Generate a new deck or review an existing one.'}
@@ -708,7 +708,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
                     </div>
                     <button
                       onClick={() => setIsCreateModalOpen(true)}
-                      className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors"
+                      className="flex items-center gap-2 bg-blue-500 text-slate-900 dark:text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors"
                     >
                       <Plus size={16} />
                       New Deck
@@ -753,7 +753,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
                     <p className="text-slate-600 dark:text-slate-300 mb-4">Create your first deck to get started with AuraMind!</p>
                     <button
                       onClick={() => setIsCreateModalOpen(true)}
-                      className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all"
+                      className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-slate-900 dark:text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all"
                     >
                       <Plus size={20} />
                       Create Your First Deck
@@ -870,7 +870,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
 
             {/* AI Generation */}
             <div className="mb-6">
-              <div className="bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl p-6 text-white">
+              <div className="bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl p-6 text-slate-900 dark:text-white">
                 <h2 className="text-xl font-bold mb-2">AI-Powered Learning</h2>
                 <p className="mb-4 opacity-90">
                   Generate flashcards and decks from any topic using advanced AI technology
@@ -881,7 +881,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
                     placeholder="Enter a topic to generate cards..."
                     value={generatePrompt}
                     onChange={(e) => setGeneratePrompt(e.target.value)}
-                    className="flex-1 px-4 py-3 bg-white/20 rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/20"
+                    className="flex-1 px-4 py-3 bg-black/5 dark:bg-white/ rounded-lg text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/20"
                   />
                   <button
                     onClick={handleGenerateDeck}
@@ -1031,7 +1031,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
 
                 <div className="space-y-5">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-white flex items-center justify-center text-lg font-semibold">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-slate-900 dark:text-white flex items-center justify-center text-lg font-semibold">
                       {user.name?.charAt(0).toUpperCase() || 'A'}
                     </div>
                     <div>
@@ -1063,7 +1063,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
                     </button>
                     <button
                       onClick={onLogout}
-                      className="flex-1 px-4 py-2 rounded-lg bg-red-500 text-white font-medium hover:bg-red-600 transition-colors"
+                      className="flex-1 px-4 py-2 rounded-lg bg-red-500 text-slate-900 dark:text-white font-medium hover:bg-red-600 transition-colors"
                     >
                       Log out
                     </button>
@@ -1124,7 +1124,7 @@ const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
                     <button
                       type="submit"
                       disabled={!newDeckTitle.trim() || isCreatingDeck}
-                      className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 px-4 py-2 bg-blue-500 text-slate-900 dark:text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isCreatingDeck ? 'Creating...' : 'Create Deck'}
                     </button>

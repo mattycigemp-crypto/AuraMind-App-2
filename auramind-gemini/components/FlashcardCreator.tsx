@@ -48,7 +48,7 @@ const FlashcardCreator: React.FC<FlashcardCreatorProps> = ({ onAddCard, classNam
                             value={question}
                             onChange={(e) => setQuestion(e.target.value)}
                             placeholder="e.g. What is Mitochondrial DNA?"
-                            className="w-full dark:bg-white/[0.03] bg-black/[0.03] border dark:border-white/10 border-black/10 rounded-2xl px-6 py-4 text-sm dark:text-white text-black focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all dark:placeholder:text-white/10 placeholder:text-black/10"
+                            className="w-full dark:bg-white/[0.03] bg-black/[0.03] border dark:border-white/10 border-black/10 rounded-2xl px-6 py-4 text-sm dark:text-white text-black focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all dark:placeholder:text-black/ dark:text-white/ placeholder:text-black/10"
                             required
                         />
                     </div>
@@ -61,7 +61,7 @@ const FlashcardCreator: React.FC<FlashcardCreatorProps> = ({ onAddCard, classNam
                             value={answer}
                             onChange={(e) => setAnswer(e.target.value)}
                             placeholder="e.g. Small circular chromosome found in the mitochondria..."
-                            className="w-full dark:bg-white/[0.03] bg-black/[0.03] border dark:border-white/10 border-black/10 rounded-2xl px-6 py-4 text-sm dark:text-white text-black focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all dark:placeholder:text-white/10 placeholder:text-black/10 h-32 resize-none"
+                            className="w-full dark:bg-white/[0.03] bg-black/[0.03] border dark:border-white/10 border-black/10 rounded-2xl px-6 py-4 text-sm dark:text-white text-black focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all dark:placeholder:text-black/ dark:text-white/ placeholder:text-black/10 h-32 resize-none"
                             required
                         />
                     </div>
@@ -70,8 +70,8 @@ const FlashcardCreator: React.FC<FlashcardCreatorProps> = ({ onAddCard, classNam
                 <button
                     type="submit"
                     className={`w-full py-5 rounded-[24px] font-bold uppercase tracking-[0.2em] text-xs transition-all shadow-xl flex items-center justify-center gap-3 relative overflow-hidden ${isSuccess
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/20'
+                        ? 'bg-emerald-500 text-slate-900 dark:text-white'
+                        : 'bg-indigo-600 hover:bg-indigo-500 text-slate-900 dark:text-white shadow-indigo-600/20'
                         }`}
                 >
                     {isSuccess ? (
@@ -86,7 +86,7 @@ const FlashcardCreator: React.FC<FlashcardCreatorProps> = ({ onAddCard, classNam
                         </>
                     )}
 
-                    <div className="absolute inset-0 bg-white/10 translate-x-[-100%] hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
+                    <div className="absolute inset-0 bg-black/5 dark:bg-white/ translate-x-[-100%] hover:translate-x-[100%] transition-transform duration-700 pointer-events-none" />
                 </button>
             </form>
         </div>

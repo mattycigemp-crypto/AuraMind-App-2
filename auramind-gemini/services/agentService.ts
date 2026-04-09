@@ -27,6 +27,7 @@ export interface AuraAgentRequest {
     outputType?: AuraAgentOutputType;
     difficulty?: 'easy' | 'medium' | 'hard';
     file?: File | null;
+    userContext?: string;
 }
 
 export interface AuraAgentResult {
@@ -124,18 +125,19 @@ export const runAuraAgent = async (request: AuraAgentRequest): Promise<AuraAgent
             result.flashcards = await generateFlashcards(effectiveContent, {
                 difficulty,
                 includeExplanations: true,
-                useThinking: outputType === 'deck' || outputType === 'all'
+                useThinking: outputType === 'deck' || outputType === 'all',
+                userContext: request.userContext
             });
         }
 
         if (outputType === 'quiz' || outputType === 'all') {
-            result.quiz = await generateQuizFromContent(effectiveContent, request.prompt || 'Study Material', difficulty);
+            result.quiz = await generateQuizFromContent(effectiveContent, request.prompt || 'Study Material', difficulty, request.userContext);
         }
 
         if (outputType === 'summary' || outputType === 'all') {
             result.summary = sourceText
                 ? `Processed source content and generated study outputs for "${request.prompt || 'uploaded material'}".`
-                : await generateSummaryFromTopic(request.prompt.trim());
+                : await generateSummaryFromTopic(request.prompt.trim(), request.userContext);
         }
 
         return result;
@@ -148,7 +150,7 @@ export const runAuraAgent = async (request: AuraAgentRequest): Promise<AuraAgent
 
         return {
             title: 'Study Buddy',
-            studyBuddy: await generateStudyBuddyResponse(request.prompt.trim(), sourceText || undefined),
+            studyBuddy: await generateStudyBuddyResponse(request.prompt.trim(), sourceText || undefined, request.userContext),
             extractedText: sourceText || undefined,
             metadata: { difficulty }
         };
@@ -162,9 +164,10 @@ export const runAuraAgent = async (request: AuraAgentRequest): Promise<AuraAgent
         const flashcards = await generateFlashcards(sourceText, {
             difficulty,
             includeExplanations: true,
-            useThinking: true
+            useThinking: true,
+            userContext: request.userContext
         });
-        const quiz = await generateQuizFromContent(sourceText, request.prompt || request.file?.name || 'Imported Content', difficulty);
+        const quiz = await generateQuizFromContent(sourceText, request.prompt || request.file?.name || 'Imported Content', difficulty, request.userContext);
 
         return {
             title: 'Content Pipeline',
@@ -185,7 +188,7 @@ export const runAuraAgent = async (request: AuraAgentRequest): Promise<AuraAgent
 
     return {
         title: 'Research Assistant',
-        researchPack: await generateResearchPack(request.prompt.trim(), difficulty),
+        researchPack: await generateResearchPack(request.prompt.trim(), difficulty, request.userContext),
         metadata: { difficulty }
     };
 };

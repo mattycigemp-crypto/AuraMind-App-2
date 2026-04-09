@@ -82,10 +82,10 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onSessionComplete }) => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <button onClick={() => setIsMuted(!isMuted)} className="p-2 dark:hover:bg-white/5 hover:bg-black/5 dark:text-white/40 text-black/40 dark:hover:text-white hover:text-black transition-all">
+                    <button onClick={() => setIsMuted(!isMuted)} className="p-2 dark:hover:bg-black/5 dark:bg-white/ hover:bg-black/5 dark:text-white/40 text-black/40 dark:hover:text-slate-900 dark:text-white hover:text-black transition-all">
                         {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
                     </button>
-                    <button onClick={() => setShowSettings(!showSettings)} className="p-2 dark:hover:bg-white/5 hover:bg-black/5 dark:text-white/40 text-black/40 dark:hover:text-white hover:text-black transition-all">
+                    <button onClick={() => setShowSettings(!showSettings)} className="p-2 dark:hover:bg-black/5 dark:bg-white/ hover:bg-black/5 dark:text-white/40 text-black/40 dark:hover:text-slate-900 dark:text-white hover:text-black transition-all">
                         <Settings2 size={18} />
                     </button>
                 </div>
@@ -97,7 +97,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onSessionComplete }) => {
                         <circle
                             cx="96" cy="96" r="88"
                             stroke="currentColor" strokeWidth="4" fill="transparent"
-                            className="text-white/5"
+                            className="text-black/ dark:text-white/"
                         />
                         <circle
                             cx="96" cy="96" r="88"
@@ -122,7 +122,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onSessionComplete }) => {
             <div className="flex items-center justify-center gap-6 mt-8">
                 <button
                     onClick={resetTimer}
-                    className="p-3 dark:text-white/40 text-black/40 dark:hover:text-white hover:text-black dark:hover:bg-white/5 hover:bg-black/5 rounded-2xl transition-all active:scale-90"
+                    className="p-3 dark:text-white/40 text-black/40 dark:hover:text-slate-900 dark:text-white hover:text-black dark:hover:bg-black/5 dark:bg-white/ hover:bg-black/5 rounded-2xl transition-all active:scale-90"
                 >
                     <RotateCcw size={22} />
                 </button>
@@ -130,7 +130,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onSessionComplete }) => {
                     onClick={toggleTimer}
                     className={`w-16 h-16 rounded-3xl flex items-center justify-center transition-all shadow-xl active:scale-95 ${isActive
                         ? 'dark:bg-white/5 bg-black/5 border dark:border-white/10 border-black/10 dark:text-white text-black'
-                        : 'dark:bg-white bg-black dark:text-black text-white'
+                        : 'dark:bg-white bg-black dark:text-black text-slate-900 dark:text-white'
                         }`}
                 >
                     {isActive ? <Pause size={28} fill="currentColor" /> : <Play size={28} fill="currentColor" className="ml-1" />}
@@ -142,12 +142,12 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onSessionComplete }) => {
                 <div className="absolute inset-0 bg-black/95 backdrop-blur-xl z-10 p-6 flex flex-col animate-in fade-in zoom-in duration-200">
                     <div className="flex items-center justify-between mb-8">
                         <h4 className="text-sm font-bold uppercase tracking-widest">Timer Config</h4>
-                        <button onClick={() => setShowSettings(false)} className="p-2 hover:bg-white/5 rounded-lg"><X size={18} /></button>
+                        <button onClick={() => setShowSettings(false)} className="p-2 hover:bg-black/5 dark:bg-white/ rounded-lg"><X size={18} /></button>
                     </div>
 
                     <div className="space-y-6 flex-1">
                         <div className="space-y-3">
-                            <div className="flex justify-between text-[11px] font-bold text-white/40 uppercase tracking-widest">
+                            <div className="flex justify-between text-[11px] font-bold text-black/ dark:text-white/ uppercase tracking-widest">
                                 <span>Focus Minutes</span>
                                 <span>{workTime}m</span>
                             </div>
@@ -155,12 +155,12 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onSessionComplete }) => {
                                 type="range" min="1" max="60"
                                 value={workTime}
                                 onChange={(e) => setWorkTime(parseInt(e.target.value))}
-                                className="w-full accent-purple-500 bg-white/10 h-1 rounded-lg appearance-none"
+                                className="w-full accent-purple-500 bg-black/5 dark:bg-white/ h-1 rounded-lg appearance-none"
                             />
                         </div>
 
                         <div className="space-y-3">
-                            <div className="flex justify-between text-[11px] font-bold text-white/40 uppercase tracking-widest">
+                            <div className="flex justify-between text-[11px] font-bold text-black/ dark:text-white/ uppercase tracking-widest">
                                 <span>Break Minutes</span>
                                 <span>{breakTime}m</span>
                             </div>
@@ -168,7 +168,7 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onSessionComplete }) => {
                                 type="range" min="1" max="30"
                                 value={breakTime}
                                 onChange={(e) => setBreakTime(parseInt(e.target.value))}
-                                className="w-full accent-emerald-500 bg-white/10 h-1 rounded-lg appearance-none"
+                                className="w-full accent-emerald-500 bg-black/5 dark:bg-white/ h-1 rounded-lg appearance-none"
                             />
                         </div>
                     </div>

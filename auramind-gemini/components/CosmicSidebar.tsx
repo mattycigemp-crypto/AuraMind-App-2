@@ -95,7 +95,7 @@ const CosmicSidebar: React.FC<CosmicSidebarProps> = ({ onLogout, user, isAdmin }
         )}
       </nav>
 
-      <div className="p-3 border-t border-white/5 space-y-2">
+      <div className="p-3 border-t border-black/ dark:border-white/ space-y-2">
         <div className="hidden xl:flex items-center gap-4 p-8 bg-arch-muted/5 border-t border-arch-border">
           {user.avatar ? (
             <img src={user.avatar} alt={user.name} className="w-10 h-10 grayscale object-cover border border-arch-border" />
@@ -122,9 +122,9 @@ const CosmicSidebar: React.FC<CosmicSidebarProps> = ({ onLogout, user, isAdmin }
 
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-6 p-8 group/logout hover:bg-red-600 hover:text-white transition-all text-arch-muted"
+          className="w-full flex items-center gap-6 p-8 group/logout hover:bg-red-600 hover:text-slate-900 dark:text-white transition-all text-arch-muted"
         >
-          <LogOut size={20} className="group-hover/logout:text-white transition-all" />
+          <LogOut size={20} className="group-hover/logout:text-slate-900 dark:text-white transition-all" />
           <span className="text-[10px] font-black uppercase tracking-[0.4em] hidden xl:block">Log Out</span>
         </button>
       </div>

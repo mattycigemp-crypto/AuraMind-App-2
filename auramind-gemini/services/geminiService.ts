@@ -21,7 +21,9 @@ export interface FlashcardGenerationOptions {
     cardStyle?: 'definition' | 'conceptual' | 'multiple_choice';
     difficulty?: 'easy' | 'medium' | 'hard';
     includeExplanations?: boolean;
+    includeExplanations?: boolean;
     useThinking?: boolean;
+    userContext?: string;
 }
 
 export interface StudyBuddyResponse {
@@ -62,12 +64,16 @@ export const generateFlashcards = async (
     Focus on key concepts, definitions, and important facts.
     Use this flashcard style: ${cardStyle}.
     Target difficulty: ${difficulty}.
+    Use this flashcard style: ${cardStyle}.
+    Target difficulty: ${difficulty}.
     ${cardStyle === 'multiple_choice'
         ? 'For multiple choice cards, write the question so the answer contains the correct option plus a short explanation.'
         : ''}
     ${includeExplanations
         ? 'Include a short explanation for why the answer is correct.'
         : 'Do not include explanation text.'}
+    
+    ${options.userContext ? `Student Context:\n${options.userContext}\nAdapt style, depth, and difficulty according to their mastery metrics.` : ''}
     
     Text content:
     "${content}"
@@ -163,14 +169,16 @@ export const generateDeckFromTopic = async (topic: string): Promise<{ title: str
 /**
  * Uses Search Grounding to research a topic and return a summary.
  */
-export const generateSummaryFromTopic = async (topic: string): Promise<string> => {
+export const generateSummaryFromTopic = async (topic: string, userContext?: string): Promise<string> => {
     const ai = getAIClient();
     const model = "gemini-3-flash-preview";
+    
+    const contextStr = userContext ? `\n\nStudent Context:\n${userContext}\nAdapt explanation depth regarding their weak/strong spots if relevant.` : "";
 
     try {
         const response = await ai.models.generateContent({
             model,
-            contents: `Research the topic "${topic}" and provide a detailed comprehensive study summary covering key facts, dates, definitions, and concepts. The summary should be dense with information suitable for creating flashcards.`,
+            contents: `Research the topic "${topic}" and provide a detailed comprehensive study summary covering key facts, dates, definitions, and concepts. The summary should be dense with information suitable for creating flashcards.${contextStr}`,
             config: {
                 tools: [{ googleSearch: {} }]
             }
@@ -186,14 +194,17 @@ export const generateSummaryFromTopic = async (topic: string): Promise<string> =
 export const generateQuizFromContent = async (
     content: string,
     topic: string,
-    difficulty: 'easy' | 'medium' | 'hard' = 'medium'
+    difficulty: 'easy' | 'medium' | 'hard' = 'medium',
+    userContext?: string
 ): Promise<Quiz> => {
     const ai = getAIClient();
     const model = "gemini-3-flash-preview";
+    
+    const contextStr = userContext ? `\n\nStudent Context:\n${userContext}\nAdjust questions based on their demonstrated proficiency/mastery in these topics.` : "";
 
     const response = await ai.models.generateContent({
         model,
-        contents: `Create a clean study quiz about "${topic}" using this source content:\n\n${content}`,
+        contents: `Create a clean study quiz about "${topic}" using this source content:\n\n${content}${contextStr}`,
         config: {
             responseMimeType: "application/json",
             responseSchema: {
@@ -247,16 +258,19 @@ export const generateQuizFromContent = async (
 
 export const generateStudyBuddyResponse = async (
     prompt: string,
-    sourceText?: string
+    sourceText?: string,
+    userContext?: string
 ): Promise<StudyBuddyResponse> => {
     const ai = getAIClient();
     const model = "gemini-3-flash-preview";
+    
+    const contextStr = userContext ? `\nStudent Context:\n${userContext}\nIf you know their mastery level, tailor your tone and explanations to their skill.` : "";
 
     const response = await ai.models.generateContent({
         model,
         contents: `You are AuraMind Companion, an elite but clear study tutor.
 User request: ${prompt}
-${sourceText ? `Primary source material:\n${sourceText}` : 'No source material was provided. Use general knowledge.'}
+${sourceText ? `Primary source material:\n${sourceText}` : 'No source material was provided. Use general knowledge.'}${contextStr}
 Respond with a tutoring answer, 3 follow-up questions, and up to 4 helpful flashcards.`,
         config: {
             responseMimeType: "application/json",
@@ -302,14 +316,17 @@ Respond with a tutoring answer, 3 follow-up questions, and up to 4 helpful flash
 
 export const generateResearchPack = async (
     topic: string,
-    difficulty: 'easy' | 'medium' | 'hard' = 'medium'
+    difficulty: 'easy' | 'medium' | 'hard' = 'medium',
+    userContext?: string
 ): Promise<ResearchPack> => {
     const ai = getAIClient();
     const model = "gemini-3-pro-preview";
+    
+    const contextStr = userContext ? `\nStudent Context:\n${userContext}\nAdapt content depth and vocabulary to fit their known metrics/weaknesses if applicable.` : "";
 
     const response = await ai.models.generateContent({
         model,
-        contents: `Research "${topic}" and build a study pack for a ${difficulty} learner. Include a tight summary, key concepts, important facts, misconceptions, flashcards, and a quiz.`,
+        contents: `Research "${topic}" and build a study pack for a ${difficulty} learner.${contextStr}\nInclude a tight summary, key concepts, important facts, misconceptions, flashcards, and a quiz.`,
         config: {
             thinkingConfig: { thinkingBudget: 24576 },
             tools: [{ googleSearch: {} }],

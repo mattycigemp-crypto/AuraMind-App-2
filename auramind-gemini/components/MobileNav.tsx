@@ -22,7 +22,7 @@ const MobileNav: React.FC = () => {
   ];
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-t border-arch-border z-[100] flex items-center justify-around px-2">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-black/5 dark:bg-white/ dark:bg-black/80 backdrop-blur-xl border-t border-arch-border z-[100] flex items-center justify-around px-2">
       {navItems.map((item) => {
         const isActive = location.pathname === item.path;
         return (

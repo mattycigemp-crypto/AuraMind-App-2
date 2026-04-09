@@ -164,7 +164,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       {/* Loading overlay */}
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-          <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-black/ dark:border-white/ border-t-white rounded-full animate-spin" />
         </div>
       )}
 
@@ -176,7 +176,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
         >
-          <div className="w-20 h-20 bg-white/90 rounded-full flex items-center justify-center shadow-xl">
+          <div className="w-20 h-20 bg-black/5 dark:bg-white/ rounded-full flex items-center justify-center shadow-xl">
             <Play size={32} className="text-black ml-1" />
           </div>
         </motion.button>
@@ -193,7 +193,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           {/* Progress bar */}
           <div
             ref={progressBarRef}
-            className="w-full h-1 bg-white/30 rounded-full mb-4 cursor-pointer group"
+            className="w-full h-1 bg-black/5 dark:bg-white/ rounded-full mb-4 cursor-pointer group"
             onClick={handleProgressClick}
           >
             <div
@@ -205,12 +205,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           </div>
 
           {/* Control buttons */}
-          <div className="flex items-center justify-between text-white">
+          <div className="flex items-center justify-between text-slate-900 dark:text-white">
             <div className="flex items-center gap-4">
               {/* Play/Pause */}
               <button
                 onClick={togglePlay}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ transition-colors"
               >
                 {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
               </button>
@@ -218,7 +218,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               {/* Restart */}
               <button
                 onClick={restart}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ transition-colors"
               >
                 <RotateCcw size={16} />
               </button>
@@ -226,7 +226,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               {/* Mute/Unmute */}
               <button
                 onClick={toggleMute}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ transition-colors"
               >
                 {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
               </button>
@@ -240,7 +240,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             {/* Fullscreen */}
             <button
               onClick={toggleFullscreen}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ transition-colors"
             >
               <Maximize size={18} />
             </button>
@@ -250,7 +250,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
       {/* Title overlay */}
       {title && (
-        <div className="absolute top-4 left-4 text-white">
+        <div className="absolute top-4 left-4 text-slate-900 dark:text-white">
           <h3 className="text-lg font-semibold drop-shadow-lg">{title}</h3>
         </div>
       )}

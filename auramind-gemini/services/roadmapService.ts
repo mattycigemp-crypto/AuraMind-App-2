@@ -1,4 +1,7 @@
 import { Card, CardCitation, CardSourceType, FlashcardData } from '../types';
+import JSZip from 'jszip';
+import initSqlJs from 'sql.js';
+import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url';
 
 const CARD_META_KEY = 'auramind-card-meta-v1';
 const BETA_CHALLENGE_KEY = 'auramind-beta-challenge-v1';
@@ -199,6 +202,137 @@ export const parseImportText = (input: string, fallbackTitle = 'Imported deck'):
   }
 
   throw new Error('Could not detect a supported import format. Use tab-separated lines, `front::back`, or Q:/A: blocks.');
+};
+
+const stripMarkdown = (value: string) =>
+  value
+    .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/[*_`>#-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const parseMarkdownSections = (
+  markdown: string,
+  fallbackTitle: string,
+  sourceLabel: string,
+  sourceType: CardSourceType = 'notes'
+): ParsedImportDeck => {
+  const cleaned = markdown.trim();
+  if (!cleaned) {
+    throw new Error('Paste Markdown content before importing.');
+  }
+
+  const headingMatches = Array.from(cleaned.matchAll(/^(#{1,3})\s+(.+)$/gm));
+  if (!headingMatches.length) {
+    return parseImportText(cleaned, fallbackTitle);
+  }
+
+  const cards: FlashcardData[] = headingMatches
+    .map((match, index) => {
+      const title = stripMarkdown(match[2] || '');
+      const start = (match.index || 0) + match[0].length;
+      const end = headingMatches[index + 1]?.index ?? cleaned.length;
+      const section = cleaned.slice(start, end).trim();
+      const body = stripMarkdown(section);
+      if (!title || body.length < 20) return null;
+      return makeImportedCard(
+        `What should I remember about ${title}?`,
+        body,
+        sourceLabel,
+        sourceType,
+        title
+      );
+    })
+    .filter((card): card is FlashcardData => Boolean(card));
+
+  if (!cards.length) {
+    return parseImportText(cleaned, fallbackTitle);
+  }
+
+  return {
+    title: fallbackTitle,
+    description: `Imported from ${sourceLabel} Markdown sections.`,
+    cards,
+    detectedFormat: 'paragraphs',
+  };
+};
+
+export const parseNotionImportText = (input: string, fallbackTitle = 'Notion import'): ParsedImportDeck => {
+  const normalized = input
+    .replace(/\[\[toc\]\]/gi, '')
+    .replace(/^\s*-\s\[( |x)\]\s+/gim, '- ')
+    .trim();
+  return parseMarkdownSections(normalized, fallbackTitle, 'Notion import', 'notes');
+};
+
+export const parseObsidianMarkdownImport = (input: string, fallbackTitle = 'Obsidian import'): ParsedImportDeck => {
+  const normalized = input
+    .replace(/\[\[([^\]]+)\]\]/g, '$1')
+    .replace(/%%[\s\S]*?%%/g, '')
+    .trim();
+  return parseMarkdownSections(normalized, fallbackTitle, 'Obsidian import', 'notes');
+};
+
+const stripHtml = (value: string) =>
+  value
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+export const parseApkgFile = async (file: File, fallbackTitle = 'Anki import'): Promise<ParsedImportDeck> => {
+  const zip = await JSZip.loadAsync(await file.arrayBuffer());
+  const collectionFile = zip.file('collection.anki21') || zip.file('collection.anki2');
+  if (!collectionFile) {
+    throw new Error('APKG does not contain a collection database.');
+  }
+
+  const SQL = await initSqlJs({ locateFile: () => sqlWasmUrl });
+  const db = new SQL.Database(new Uint8Array(await collectionFile.async('uint8array')));
+
+  const noteQuery = db.exec('SELECT flds FROM notes LIMIT 5000;');
+  const rows = noteQuery?.[0]?.values || [];
+  const cards = rows
+    .map((row: unknown, index: number) => {
+      const raw = Array.isArray(row) ? String(row[0] || '') : '';
+      if (!raw) return null;
+      const fields = raw.split('\x1f').map((entry) => stripHtml(entry));
+      const question = fields[0] || '';
+      const answer = fields.slice(1).join(' ').trim() || fields[1] || '';
+      if (!question || !answer) return null;
+      return makeImportedCard(question, answer, 'Anki APKG import', 'import', `Note ${index + 1}`);
+    })
+    .filter((card): card is FlashcardData => Boolean(card));
+
+  if (!cards.length) {
+    throw new Error('No valid cards found in APKG notes.');
+  }
+
+  const deckMeta = db.exec('SELECT decks FROM col LIMIT 1;');
+  const deckJson = String(deckMeta?.[0]?.values?.[0]?.[0] || '{}');
+  let detectedTitle = fallbackTitle;
+
+  try {
+    const parsedDecks = JSON.parse(deckJson) as Record<string, { name?: string }>;
+    const meaningful = Object.values(parsedDecks).find((deck) => deck?.name && deck.name !== 'Default');
+    if (meaningful?.name) detectedTitle = meaningful.name;
+  } catch {
+    // Ignore malformed deck metadata and keep fallback title.
+  }
+
+  db.close();
+  return {
+    title: detectedTitle,
+    description: `Imported from Anki APKG: ${file.name}`,
+    cards,
+    detectedFormat: 'anki',
+  };
 };
 
 export const getBetaChallenge = (userId: string): BetaChallengeState | null => {
