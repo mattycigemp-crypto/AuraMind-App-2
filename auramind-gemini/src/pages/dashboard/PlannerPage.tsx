@@ -1,10 +1,12 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, CalendarDays, Clock, Command, TrendingUp, WandSparkles, Zap } from 'lucide-react';
 import { Deck, Card } from '../../types';
 import MathRichText from '../../components/shared/MathRichText';
 import { getDeckAnalytics } from '../../components/shared/PageComponents';
 
-export const DashboardPlannerPage = ({ decks, cards, navigate }: { decks: Deck[], cards: Card[], navigate: any }) => {
+export const DashboardPlannerPage = ({ decks, cards }: { decks: Deck[], cards: Card[] }) => {
+  const navigate = useNavigate();
   const upcoming = [...cards]
     .sort((a, b) => a.nextReview - b.nextReview)
     .slice(0, 8);

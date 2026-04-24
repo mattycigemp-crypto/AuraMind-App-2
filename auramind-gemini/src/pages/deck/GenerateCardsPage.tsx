@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Loader2 } from 'lucide-react';
 import { Deck, Card } from '../../types';
 import { GeneratedCard } from '../../services/api/deepseekService';
 import MathRichText from '../../components/shared/MathRichText';
 import { generateFlashcards } from '../../services/api/deepseekService';
 
-export const GenerateCardsRoute = ({ activeDeckId, navigate, saveGeneratedCards }: any) => {
+export const GenerateCardsRoute = ({ activeDeckId, saveGeneratedCards }: any) => {
+  const navigate = useNavigate();
   const [sourceText, setSourceText] = useState('');
   const [cardStyle, setCardStyle] = useState<'definition' | 'conceptual' | 'multiple_choice'>('conceptual');
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');

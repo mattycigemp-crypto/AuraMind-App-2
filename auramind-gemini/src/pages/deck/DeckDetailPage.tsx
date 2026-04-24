@@ -1,11 +1,12 @@
 import React, { useEffect } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Trash2 } from 'lucide-react';
 import { Deck, Card } from '../../types';
 import MathRichText from '../../components/shared/MathRichText';
 import { CitationStack } from '../../components/shared/PageComponents';
 
-export const DeckDetailRoute = ({ decks, cards, navigate, deleteCard, setActiveDeckId }: any) => {
+export const DeckDetailRoute = ({ decks, cards, deleteCard, setActiveDeckId }: any) => {
+  const navigate = useNavigate();
   const { id } = useParams();
 
   useEffect(() => {

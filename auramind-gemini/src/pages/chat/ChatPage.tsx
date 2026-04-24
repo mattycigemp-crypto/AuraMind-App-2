@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, BrainCircuit, FileText, Target, ShieldCheck, Link2, FileUp, WandSparkles, Loader2, Radar, Trash2, Crown, Command, Check, AlertTriangle, Mail, CreditCard, Lock, LayoutGrid, CalendarDays, ArrowRight, ChevronRight, Globe, Search, Bell, Mic2, Settings, Activity, Sparkles, Terminal, User, Users, Eye, EyeOff, Copy, Download, Share2, Volume2, GraduationCap, Quote } from 'lucide-react';
 import { Deck, Card, UserProfile } from '../../types';
 import { GeneratedCard } from '../../services/api/deepseekService';
@@ -24,20 +25,19 @@ const runAuraAgent = async (params: any): Promise<AuraAgentResult> => {
 };
 
 export const ChatRoute = ({
-  navigate,
   createGeneratedDeck,
   createDeckFromCards,
   user,
   decks = [],
   cards = [],
 }: {
-  navigate: (path: string) => void;
   createGeneratedDeck: (topic: string) => Promise<{ deckTitle: string; cardCount: number } | null>;
   createDeckFromCards: (title: string, description: string, generatedCards: GeneratedCard[]) => Promise<{ deckId: string; deckTitle: string; cardCount: number } | null>;
   user: UserProfile;
   decks?: Deck[];
   cards?: Card[];
 }) => {
+  const navigate = useNavigate();
   const [mode, setMode] = useState<AuraAgentMode>('study_from_anything');
   const [prompt, setPrompt] = useState('');
   const [sourceText, setSourceText] = useState('');

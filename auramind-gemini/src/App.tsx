@@ -429,11 +429,11 @@ const AppContent = () => {
           <Route element={<ProtectedRoute user={user} status={subscriptionStatus} onLogout={onLogout} />}>
             <Route path="/dashboard" element={<PageTransition><BentoDashboard decks={decks} cards={cards} onCreateDeck={createDeck} onSelectDeck={(id)=>navigate(`/deck/${id}`)} onDeleteDeck={deleteDeck} onGenerateDeck={createGeneratedDeck} onImportDeck={importDeckFromCards} onLoadDemoData={loadSampleDecks} onNavigate={(v)=>navigate(v === 'AURA_CHAT' ? '/chat' : '/generate')} user={currentUser} /></PageTransition>} />
             <Route path="/dashboard/insights" element={<PageTransition><DashboardInsightsPage decks={decks} cards={cards} /></PageTransition>} />
-            <Route path="/dashboard/planner" element={<PageTransition><DashboardPlannerPage decks={decks} cards={cards} navigate={navigate} /></PageTransition>} />
+            <Route path="/dashboard/planner" element={<PageTransition><DashboardPlannerPage decks={decks} cards={cards} /></PageTransition>} />
             <Route path="/dashboard/professor" element={<PageTransition><ProfessorDashboardPage decks={decks} cards={cards} user={currentUser} /></PageTransition>} />
-            <Route path="/deck/:id" element={<PageTransition><DeckDetailRoute decks={decks} cards={cards} navigate={navigate} deleteCard={deleteCard} setActiveDeckId={setActiveDeckId} /></PageTransition>} />
-            <Route path="/generate" element={<PageTransition><GenerateCardsRoute activeDeckId={activeDeckId} navigate={navigate} user={currentUser} saveGeneratedCards={saveGeneratedCards} /></PageTransition>} />
-            <Route path="/chat" element={<PageTransition><ChatRoute navigate={navigate} createGeneratedDeck={createGeneratedDeck} createDeckFromCards={createDeckFromCards} user={currentUser} decks={decks} cards={cards} /></PageTransition>} />
+            <Route path="/deck/:id" element={<PageTransition><DeckDetailRoute decks={decks} cards={cards} deleteCard={deleteCard} setActiveDeckId={setActiveDeckId} /></PageTransition>} />
+            <Route path="/generate" element={<PageTransition><GenerateCardsRoute activeDeckId={activeDeckId} user={currentUser} saveGeneratedCards={saveGeneratedCards} /></PageTransition>} />
+            <Route path="/chat" element={<PageTransition><ChatRoute createGeneratedDeck={createGeneratedDeck} createDeckFromCards={createDeckFromCards} user={currentUser} decks={decks} cards={cards} /></PageTransition>} />
             <Route path="/settings" element={<PageTransition><SettingsPage user={currentUser} onUpdateUser={updateUserProfile} /></PageTransition>} />
             <Route path="/admin/vault" element={(() => {
               const permissions = getPermissions(currentUser.role || UserRole.USER);
