@@ -135,20 +135,25 @@ export const sendWelcomeEmail = async (options: WelcomeEmailOptions): Promise<{ 
     <body>
       <div class="container">
         <div class="header">
-          <h1>Welcome to AuraMind</h1>
+          <h1>Welcome to AuraMind! 🎉</h1>
         </div>
         <div class="content">
           <p>Hi ${options.name},</p>
-          <p>Welcome to AuraMind! We're excited to help you master any subject with our AI-powered study tools.</p>
-          <p>Here's what you can do:</p>
+          <p>Thanks for signing up! Your account is ready to go.</p>
+          <p><strong>Here's how to get started:</strong></p>
+          <ol>
+            <li>Click the button below to go to your dashboard</li>
+            <li>Create your first deck of flashcards</li>
+            <li>Start studying with our smart review system</li>
+          </ol>
+          <p><strong>What makes AuraMind different:</strong></p>
           <ul>
-            <li>✨ Generate flashcards from your notes</li>
-            <li>🎯 Study with spaced repetition</li>
-            <li>🤖 Get help from our AI study assistant</li>
-            <li>📊 Track your learning progress</li>
+            <li>✨ <strong>AI-powered:</strong> Turn any text into flashcards instantly</li>
+            <li>🎯 <strong>Smart review:</strong> We show you cards at the right time</li>
+            <li>📊 <strong>Track progress:</strong> See how much you've learned</li>
           </ul>
-          <a href="${window.location.origin}/dashboard" class="button">Get Started</a>
-          <p>If you have any questions, just reply to this email. We're here to help!</p>
+          <a href="${window.location.origin}/dashboard" class="button">Go to Dashboard</a>
+          <p><strong>Need help?</strong> Just reply to this email and we'll assist you.</p>
         </div>
         <div class="footer">
           <p>&copy; ${new Date().getFullYear()} AuraMind. All rights reserved.</p>
@@ -160,7 +165,7 @@ export const sendWelcomeEmail = async (options: WelcomeEmailOptions): Promise<{ 
 
   return sendEmail({
     to: options.email,
-    subject: 'Welcome to AuraMind! 🎉',
+    subject: 'Welcome to AuraMind! Your account is ready',
     html,
   });
 };
@@ -186,17 +191,19 @@ export const sendSignInAlert = async (options: SignInAlertOptions): Promise<{ su
     <body>
       <div class="container">
         <div class="alert">
-          <h2>🔐 Security Alert: New Sign In</h2>
+          <h2>🔐 New sign-in detected</h2>
         </div>
         <p>Hi ${options.name},</p>
-        <p>We detected a new sign-in to your AuraMind account:</p>
+        <p>Someone just signed into your AuraMind account. Here are the details:</p>
         <ul>
-          <li><strong>Time:</strong> ${options.timestamp}</li>
-          ${options.location ? `<li><strong>Location:</strong> ${options.location}</li>` : ''}
+          <li><strong>When:</strong> ${options.timestamp}</li>
+          ${options.location ? `<li><strong>Where:</strong> ${options.location}</li>` : ''}
           ${options.device ? `<li><strong>Device:</strong> ${options.device}</li>` : ''}
         </ul>
-        <p>If this was you, no action is needed. If you didn't sign in, please secure your account immediately.</p>
-        <p>Stay safe,<br>The AuraMind Team</p>
+        <p><strong>Was this you?</strong></p>
+        <p>If yes, you can ignore this email. Your account is secure.</p>
+        <p><strong>If this wasn't you:</strong></p>
+        <p>Someone else has access to your account. Please change your password immediately to protect your data.</p>
         <div class="footer">
           <p>&copy; ${new Date().getFullYear()} AuraMind. All rights reserved.</p>
         </div>
@@ -207,7 +214,7 @@ export const sendSignInAlert = async (options: SignInAlertOptions): Promise<{ su
 
   return sendEmail({
     to: options.email,
-    subject: 'Security Alert: New Sign In to Your AuraMind Account',
+    subject: 'New sign-in to your AuraMind account',
     html,
   });
 };
@@ -234,19 +241,16 @@ export const sendTrialEndingEmail = async (options: TrialEndingOptions): Promise
     <body>
       <div class="container">
         <div class="alert">
-          <h2>⚠️ Your Trial is Ending Soon</h2>
+          <h2>⚠️ Your free trial is ending soon</h2>
         </div>
         <p>Hi ${options.name},</p>
-        <p>Your AuraMind free trial will end on <strong>${options.trialEnds}</strong> (${options.daysRemaining} days from now).</p>
-        <p>Don't lose access to your AI-powered study tools! Upgrade now to continue:</p>
-        <ul>
-          <li>✨ Unlimited flashcard generation</li>
-          <li>🎯 Advanced spaced repetition algorithms</li>
-          <li>🤖 Priority AI support</li>
-          <li>📊 Detailed learning analytics</li>
-        </ul>
-        <a href="${window.location.origin}/settings" class="button">Upgrade Your Account</a>
-        <p>If you have any questions, just reply to this email.</p>
+        <p>Your free trial ends in <strong>${options.daysRemaining} days</strong> on ${options.trialEnds}.</p>
+        <p><strong>What happens when your trial ends:</strong></p>
+        <p>You'll lose access to premium features like unlimited flashcard generation and advanced study tools.</p>
+        <p><strong>Keep your access:</strong></p>
+        <p>Upgrade to a paid plan to continue using all features without interruption.</p>
+        <a href="${window.location.origin}/settings" class="button">Upgrade Now</a>
+        <p><strong>Questions?</strong> Reply to this email and we'll help you out.</p>
         <div class="footer">
           <p>&copy; ${new Date().getFullYear()} AuraMind. All rights reserved.</p>
         </div>
@@ -257,7 +261,7 @@ export const sendTrialEndingEmail = async (options: TrialEndingOptions): Promise
 
   return sendEmail({
     to: options.email,
-    subject: `Your AuraMind Trial Ends in ${options.daysRemaining} Days`,
+    subject: `Your free trial ends in ${options.daysRemaining} days`,
     html,
   });
 };
@@ -283,13 +287,19 @@ export const sendPaymentSuccessEmail = async (options: PaymentSuccessOptions): P
     <body>
       <div class="container">
         <div class="success">
-          <h2>✅ Payment Successful</h2>
+          <h2>✅ Payment successful</h2>
         </div>
         <p>Hi ${options.name},</p>
-        <p>Your payment of <strong>${options.amount}</strong> for the <strong>${options.plan}</strong> plan was successful!</p>
-        <p>Your subscription is now active. Your next billing date is <strong>${options.nextBilling}</strong>.</p>
-        <p>Thank you for choosing AuraMind. Happy studying!</p>
-        <a href="${window.location.origin}/dashboard" style="color: #000;">Go to Dashboard →</a>
+        <p>Great news! Your payment went through successfully.</p>
+        <p><strong>Payment details:</strong></p>
+        <ul>
+          <li>Amount: ${options.amount}</li>
+          <li>Plan: ${options.plan}</li>
+          <li>Next billing date: ${options.nextBilling}</li>
+        </ul>
+        <p><strong>Your subscription is now active.</strong> You can start using all premium features right away.</p>
+        <a href="${window.location.origin}/dashboard" style="color: #000; font-weight: bold;">Go to Dashboard →</a>
+        <p>Thanks for being a valued member of AuraMind!</p>
         <div class="footer">
           <p>&copy; ${new Date().getFullYear()} AuraMind. All rights reserved.</p>
         </div>
@@ -300,7 +310,7 @@ export const sendPaymentSuccessEmail = async (options: PaymentSuccessOptions): P
 
   return sendEmail({
     to: options.email,
-    subject: 'Payment Successful - AuraMind Subscription',
+    subject: 'Payment successful - Your AuraMind subscription is active',
     html,
   });
 };
@@ -327,18 +337,20 @@ export const sendPaymentFailedEmail = async (options: PaymentFailedOptions): Pro
     <body>
       <div class="container">
         <div class="alert">
-          <h2>❌ Payment Failed</h2>
+          <h2>❌ Payment failed</h2>
         </div>
         <p>Hi ${options.name},</p>
-        <p>We were unable to process your payment of <strong>${options.amount}</strong> on <strong>${options.lastAttempt}</strong>.</p>
-        <p>This could be due to:</p>
+        <p>We couldn't process your payment of ${options.amount} on ${options.lastAttempt}.</p>
+        <p><strong>Why this might have happened:</strong></p>
         <ul>
-          <li>Insufficient funds</li>
-          <li>Expired card</li>
-          <li>Card declined by bank</li>
+          <li>Not enough money in your account</li>
+          <li>Your card has expired</li>
+          <li>Your bank declined the transaction</li>
         </ul>
-        <p>Please update your payment method to avoid service interruption.</p>
+        <p><strong>What you need to do:</strong></p>
+        <p>Update your payment method to keep your subscription active. If you don't, you'll lose access to premium features.</p>
         <a href="${window.location.origin}/settings" class="button">Update Payment Method</a>
+        <p><strong>Need help?</strong> Reply to this email and we'll assist you.</p>
         <div class="footer">
           <p>&copy; ${new Date().getFullYear()} AuraMind. All rights reserved.</p>
         </div>
@@ -349,7 +361,7 @@ export const sendPaymentFailedEmail = async (options: PaymentFailedOptions): Pro
 
   return sendEmail({
     to: options.email,
-    subject: 'Action Required: Payment Failed - AuraMind',
+    subject: 'Payment failed - Please update your payment method',
     html,
   });
 };
@@ -376,14 +388,16 @@ export const sendSubscriptionCancelledEmail = async (options: SubscriptionCancel
     <body>
       <div class="container">
         <div class="info">
-          <h2>📋 Subscription Cancelled</h2>
+          <h2>📋 Subscription cancelled</h2>
         </div>
         <p>Hi ${options.name},</p>
-        <p>Your <strong>${options.plan}</strong> subscription has been cancelled.</p>
-        <p>Your access will continue until <strong>${options.effectiveDate}</strong>.</p>
-        <p>We're sorry to see you go! If you change your mind, you can resubscribe anytime.</p>
+        <p>Your ${options.plan} subscription has been cancelled.</p>
+        <p><strong>What this means:</strong></p>
+        <p>You'll still have access to all features until ${options.effectiveDate}. After that date, your account will switch to the free plan.</p>
+        <p><strong>Want to keep your subscription?</strong></p>
+        <p>You can reactivate it anytime before or after the cancellation date.</p>
         <a href="${window.location.origin}/settings" class="button">Reactivate Subscription</a>
-        <p>Thank you for being part of AuraMind!</p>
+        <p>Thanks for trying AuraMind. We hope to see you again!</p>
         <div class="footer">
           <p>&copy; ${new Date().getFullYear()} AuraMind. All rights reserved.</p>
         </div>
@@ -394,7 +408,7 @@ export const sendSubscriptionCancelledEmail = async (options: SubscriptionCancel
 
   return sendEmail({
     to: options.email,
-    subject: 'Subscription Cancelled - AuraMind',
+    subject: 'Your AuraMind subscription has been cancelled',
     html,
   });
 };
@@ -421,13 +435,16 @@ export const sendPasswordResetEmail = async (options: PasswordResetOptions): Pro
     <body>
       <div class="container">
         <div class="alert">
-          <h2>🔑 Password Reset Request</h2>
+          <h2>🔑 Reset your password</h2>
         </div>
         <p>Hi ${options.name},</p>
-        <p>We received a request to reset your password. Click the button below to reset it:</p>
+        <p>We received a request to reset your password for your AuraMind account.</p>
+        <p><strong>To reset your password:</strong></p>
+        <p>Click the button below. This will take you to a page where you can create a new password.</p>
         <a href="${options.resetLink}" class="button">Reset Password</a>
-        <p>This link will expire in <strong>${options.expiresIn}</strong>.</p>
-        <p>If you didn't request this change, you can safely ignore this email.</p>
+        <p><strong>Important:</strong> This link expires in ${options.expiresIn}. After that, you'll need to request a new password reset.</p>
+        <p><strong>Didn't request this?</strong></p>
+        <p>If you didn't ask to reset your password, you can safely ignore this email. Your account is still secure.</p>
         <div class="footer">
           <p>&copy; ${new Date().getFullYear()} AuraMind. All rights reserved.</p>
         </div>
@@ -438,7 +455,7 @@ export const sendPasswordResetEmail = async (options: PasswordResetOptions): Pro
 
   return sendEmail({
     to: options.email,
-    subject: 'Reset Your AuraMind Password',
+    subject: 'Reset your AuraMind password',
     html,
   });
 };
@@ -465,13 +482,22 @@ export const sendEmailVerificationEmail = async (options: EmailVerificationOptio
     <body>
       <div class="container">
         <div class="alert">
-          <h2>✉️ Verify Your Email Address</h2>
+          <h2>✉️ Verify your email address</h2>
         </div>
         <p>Hi ${options.name},</p>
-        <p>Please verify your email address to complete your AuraMind account setup:</p>
+        <p>Please verify your email to complete your AuraMind account setup.</p>
+        <p><strong>Why verify your email?</strong></p>
+        <p>Verifying your email helps us:</p>
+        <ul>
+          <li>Keep your account secure</li>
+          <li>Send you important updates about your account</li>
+          <li>Recover your account if you forget your password</li>
+        </ul>
+        <p><strong>To verify your email:</strong></p>
+        <p>Click the button below. It only takes a second.</p>
         <a href="${options.verificationLink}" class="button">Verify Email</a>
-        <p>This helps us secure your account and send you important notifications.</p>
-        <p>If you didn't create an AuraMind account, you can safely ignore this email.</p>
+        <p><strong>Didn't create an account?</strong></p>
+        <p>If you didn't sign up for AuraMind, you can safely ignore this email.</p>
         <div class="footer">
           <p>&copy; ${new Date().getFullYear()} AuraMind. All rights reserved.</p>
         </div>
@@ -482,7 +508,7 @@ export const sendEmailVerificationEmail = async (options: EmailVerificationOptio
 
   return sendEmail({
     to: options.email,
-    subject: 'Verify Your Email Address - AuraMind',
+    subject: 'Verify your email address',
     html,
   });
 };
