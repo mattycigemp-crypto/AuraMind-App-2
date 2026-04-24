@@ -1,9 +1,25 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronLeft, Radar, Link2, FileUp, WandSparkles, Trash2, Download, Copy, LayoutGrid, Check, Plus, MessageSquareText } from 'lucide-react';
-import { GeneratedCard, UserProfile, Deck, Card } from '../../types';
-import { AuraAgentMode, AuraAgentOutputType, AuraAgentResult, runAuraAgent } from '../../services/agentService';
-import MathRichText from '../../components/MathRichText';
-import PageHeader from '../../components/ui/PageHeader';
+import { UserProfile, Deck, Card } from '../../types';
+import { GeneratedCard } from '../../services/api/deepseekService';
+import MathRichText from '../../components/shared/MathRichText';
+import PageHeader from '../../components/shared/PageHeader';
+// TODO: AuraAgent types and functions need to be implemented
+// import { AuraAgentMode, AuraAgentOutputType, AuraAgentResult, runAuraAgent } from '../../services/agentService';
+
+type AuraAgentMode = 'study_from_anything' | 'study_buddy' | 'content_pipeline' | 'research_assistant';
+type AuraAgentOutputType = 'all' | 'flashcards' | 'quiz' | 'summary';
+interface AuraAgentResult {
+  flashcards?: GeneratedCard[];
+  quiz?: any;
+  summary?: string;
+}
+
+// TODO: Implement runAuraAgent function
+const runAuraAgent = async (params: any): Promise<AuraAgentResult> => {
+  console.warn('runAuraAgent not implemented yet', params);
+  return {};
+};
 
 interface AuraOperatorPageProps {
   navigate: (path: string) => void;

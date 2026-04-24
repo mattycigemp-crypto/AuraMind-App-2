@@ -72,7 +72,7 @@ describe('dbService', () => {
             })
           })
         })
-      });
+      } as any);
 
       const result = await dbService.fetchDecks('user-123');
       
@@ -101,7 +101,7 @@ describe('dbService', () => {
             })
           })
         })
-      });
+      } as any);
 
       const result = await dbService.createDeck('user-123', 'New Deck', 'New Description');
       
@@ -118,7 +118,7 @@ describe('dbService', () => {
             error: null
           })
         })
-      });
+      } as any);
 
       await expect(
         dbService.updateDeck('deck-1', { title: 'Updated Title' })
@@ -134,7 +134,7 @@ describe('dbService', () => {
             error: null
           })
         })
-      });
+      } as any);
 
       await expect(dbService.deleteDeck('deck-1')).resolves.not.toThrow();
     });
@@ -163,7 +163,7 @@ describe('dbService', () => {
             error: null
           })
         })
-      });
+      } as any);
 
       const result = await dbService.fetchCards('user-123');
       
@@ -195,7 +195,7 @@ describe('dbService', () => {
             error: null
           })
         })
-      });
+      } as any);
 
       const cardsToSave = [
         {
@@ -224,7 +224,7 @@ describe('dbService', () => {
             error: null
           })
         })
-      });
+      } as any);
 
       await expect(
         dbService.updateCard('card-1', { question: 'Updated Question' })
@@ -240,7 +240,7 @@ describe('dbService', () => {
             error: null
           })
         })
-      });
+      } as any);
 
       await expect(dbService.deleteCard('card-1')).resolves.not.toThrow();
     });

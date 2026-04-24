@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { ChevronLeft, Trash2 } from 'lucide-react';
-import MathRichText from '../../components/MathRichText';
-import CitationStack from '../../components/ui/CitationStack';
+import MathRichText from '../../components/shared/MathRichText';
+import CitationStack from '../../components/shared/CitationStack';
 
 interface DeckDetailRouteProps {
   decks: any[];

@@ -11,11 +11,9 @@ interface State {
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State;
-
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    (this as any).state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: Error): State {
@@ -36,12 +34,14 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null });
-    window.location.reload();
+    (this as any).setState({ hasError: false, error: null });
+    if (typeof window !== 'undefined') {
+      window.location.reload();
+    }
   };
 
   render() {
-    if (this.state.hasError) {
+    if ((this as any).state.hasError) {
       return (
         <div className="min-h-screen bg-background flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-card border border-border rounded-lg p-8 text-center">
@@ -54,7 +54,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </h1>
 
             <p className="text-muted-foreground mb-6">
-              {this.state.error?.message || 'An unexpected error occurred'}
+              {(this as any).state.error?.message || 'An unexpected error occurred'}
             </p>
 
             <button
@@ -73,6 +73,6 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.props.children;
+    return (this as any).props.children;
   }
 }

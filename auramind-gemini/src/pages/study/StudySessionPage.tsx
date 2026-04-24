@@ -3,11 +3,22 @@ import { useParams, Navigate } from 'react-router-dom';
 import { ChevronLeft, Volume2, Mic2, Bell, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, Deck, Rating } from '../../types';
-import { generateStudyBuddyResponse } from '../../services/deepseekService';
-import MathRichText from '../../components/MathRichText';
-import CitationStack from '../../components/ui/CitationStack';
-import PageHeader from '../../components/ui/PageHeader';
-import { useIsMobile } from '../../hooks/useIsMobile';
+import { generateStudyBuddyResponse } from '../../services/api/deepseekService';
+import MathRichText from '../../components/shared/MathRichText';
+import CitationStack from '../../components/shared/CitationStack';
+import PageHeader from '../../components/shared/PageHeader';
+
+// Simple useIsMobile hook implementation
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  return isMobile;
+};
 
 interface StudySessionPageProps {
   decks: Deck[];
