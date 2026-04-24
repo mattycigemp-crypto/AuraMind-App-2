@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../services/database/supabase';
 import { emailService } from '../../services/email/emailService';
+import { trialService } from '../../services/trial/trialService';
+import { emailVerificationService } from '../../services/auth/emailVerificationService';
 
 interface AuthPageProps {
   onBack: () => void;
@@ -77,8 +79,9 @@ const AuthPage: React.FC<AuthPageProps> = ({ onBack, onContinue }) => {
             return;
           }
 
-          // Send welcome email for successful signup
+          // Send welcome email and start trial for successful signup
           if (data?.user) {
+            await trialService.startTrial(data.user.id);
             await emailService.sendWelcomeEmail({
               name: fullName || 'User',
               email,
@@ -149,6 +152,18 @@ const AuthPage: React.FC<AuthPageProps> = ({ onBack, onContinue }) => {
       alert("Password reset email sent! Check your inbox.");
     } catch (err: any) {
       alert(err.message || "Failed to send reset email. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setLoading(true);
+    try {
+      await emailVerificationService.sendVerificationEmail(email, fullName);
+      alert("Verification email sent! Check your inbox.");
+    } catch (err: any) {
+      alert(err.message || 'Failed to send verification email.');
     } finally {
       setLoading(false);
     }
@@ -261,6 +276,13 @@ const AuthPage: React.FC<AuthPageProps> = ({ onBack, onContinue }) => {
                   className="w-full btn-arch py-4"
                 >
                   Back to Sign In
+                </button>
+                <button
+                  onClick={handleResendVerification}
+                  disabled={loading}
+                  className="w-full text-[10px] uppercase font-black tracking-widest text-arch-muted hover:text-arch-fg transition-colors disabled:opacity-50"
+                >
+                  {loading ? 'Sending...' : 'Resend Verification Email'}
                 </button>
               </motion.div>
             ) : otpSent ? (
