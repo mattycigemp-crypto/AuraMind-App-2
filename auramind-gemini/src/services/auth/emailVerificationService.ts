@@ -22,7 +22,7 @@ export const emailVerificationService = {
     await emailService.sendEmailVerificationEmail({
       name: name || 'User',
       email,
-      verificationLink: `${window.location.origin}/auth/callback?email=${email}`,
+      verificationLink: `${window.location.origin}/auth/callback`,
     });
 
     return data;

@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: auramind-gemini/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd auramind-gemini
+          npm ci
+
+      - name: Run type check
+        run: |
+          cd auramind-gemini
+          npm run type-check
+
+      - name: Run tests
+        run: |
+          cd auramind-gemini
+          npm test -- --run
+
+      - name: Build project
+        run: |
+          cd auramind-gemini
+          npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.node-version }}
+          path: auramind-gemini/dist
+          retention-days: 7

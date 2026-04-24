@@ -1,0 +1,11 @@
+{
+  "name": "auramind-api",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.101.1",
+    "@vercel/node": "^5.5.22",
+    "resend": "^4.0.0",
+    "stripe": "^20.2.0"
+  }
+}

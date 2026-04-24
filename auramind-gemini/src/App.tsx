@@ -27,6 +27,7 @@ const PrivacyPolicyPage = React.lazy(() => import('./pages/legal/PrivacyPolicyPa
 const TermsOfServicePage = React.lazy(() => import('./pages/legal/TermsOfServicePage'));
 const ResetPasswordPage = React.lazy(() => import('./pages/auth/ResetPasswordPage'));
 const RestoreAccountPage = React.lazy(() => import('./pages/auth/RestoreAccountPage'));
+const CallbackPage = React.lazy(() => import('./pages/auth/CallbackPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 
 const PaymentPage = React.lazy(() => import('./components/auth/PaymentPage'));
@@ -441,6 +442,7 @@ const AppContent = () => {
           } />
           <Route path="/reset-password" element={<PageTransition><ResetPasswordPage navigate={navigate} /></PageTransition>} />
           <Route path="/restore-account" element={<PageTransition><RestoreAccountPage navigate={navigate} /></PageTransition>} />
+          <Route path="/auth/callback" element={<PageTransition><CallbackPage /></PageTransition>} />
           <Route path="*" element={<PageTransition><NotFoundPage navigate={navigate} /></PageTransition>} />
         </Routes>
       </AnimatePresence>
