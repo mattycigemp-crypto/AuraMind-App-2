@@ -64,7 +64,7 @@ export const GenerateCardsRoute = ({ activeDeckId, navigate, saveGeneratedCards 
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-arch-impact text-[48px] lowercase">CARD GENERATOR.</h1>
-          <p className="text-arch-eyebrow mt-4">Choose how the AI should make your cards.</p>
+          <p className="text-arch-eyebrow mt-4">Create flashcards from your notes or study materials using AI.</p>
         </div>
         <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-arch-eyebrow hover:text-arch-fg transition-colors group">
           <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Back to Dashboard
@@ -78,9 +78,10 @@ export const GenerateCardsRoute = ({ activeDeckId, navigate, saveGeneratedCards 
             <textarea
               value={sourceText}
               onChange={(e) => setSourceText(e.target.value)}
-              placeholder="Paste notes, a lecture summary, textbook text, or a topic outline here..."
+              placeholder="Paste your notes, lecture summary, textbook text, or a topic outline here. The AI will analyze this content to create flashcards."
               className="w-full min-h-[300px] resize-none bg-arch-fg/5 border border-arch-border p-8 text-xs font-medium outline-none focus:border-arch-fg transition-all text-arch-fg"
             />
+            <p className="text-[8px] text-arch-muted uppercase tracking-[0.3em] italic mt-2">Tip: More detailed content produces better flashcards.</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -88,17 +89,18 @@ export const GenerateCardsRoute = ({ activeDeckId, navigate, saveGeneratedCards 
               <p className="text-arch-eyebrow mb-4">Card Style</p>
               <div className="grid gap-2">
                 {[
-                  ['definition', 'Definition'],
-                  ['conceptual', 'Conceptual'],
-                  ['multiple_choice', 'Multiple Choice'],
-                ].map(([value, label]) => (
+                  ['definition', 'Definition', 'Simple Q&A pairs for terms and concepts'],
+                  ['conceptual', 'Conceptual', 'Deeper questions testing understanding'],
+                  ['multiple_choice', 'Multiple Choice', 'Questions with answer options'],
+                ].map(([value, label, description]) => (
                   <button
                     key={value}
                     type="button"
                     onClick={() => setCardStyle(value as 'definition' | 'conceptual' | 'multiple_choice')}
-                    className={`border p-5 text-left text-[10px] font-black uppercase tracking-widest transition-all ${cardStyle === value ? 'border-arch-fg bg-arch-fg text-arch-bg' : 'border-arch-border text-arch-muted hover:bg-arch-fg/5 hover:text-arch-fg'}`}
+                    className={`border p-5 text-left transition-all ${cardStyle === value ? 'border-arch-fg bg-arch-fg text-arch-bg' : 'border-arch-border text-arch-muted hover:bg-arch-fg/5 hover:text-arch-fg'}`}
                   >
-                    {label}
+                    <p className="text-[10px] font-black uppercase tracking-widest">{label}</p>
+                    <p className="text-[8px] uppercase tracking-[0.3em] italic mt-2">{description}</p>
                   </button>
                 ))}
               </div>
@@ -108,17 +110,18 @@ export const GenerateCardsRoute = ({ activeDeckId, navigate, saveGeneratedCards 
               <p className="text-arch-eyebrow mb-4">Difficulty</p>
               <div className="grid gap-2">
                 {[
-                  ['easy', 'Easy'],
-                  ['medium', 'Medium'],
-                  ['hard', 'Hard'],
-                ].map(([value, label]) => (
+                  ['easy', 'Easy', 'Basic recall and simple concepts'],
+                  ['medium', 'Medium', 'Standard difficulty for most learners'],
+                  ['hard', 'Hard', 'Complex concepts and applications'],
+                ].map(([value, label, description]) => (
                   <button
                     key={value}
                     type="button"
                     onClick={() => setDifficulty(value as 'easy' | 'medium' | 'hard')}
-                    className={`border p-5 text-left text-[10px] font-black uppercase tracking-widest transition-all ${difficulty === value ? 'border-arch-fg bg-arch-fg text-arch-bg' : 'border-arch-border text-arch-muted hover:bg-arch-fg/5 hover:text-arch-fg'}`}
+                    className={`border p-5 text-left transition-all ${difficulty === value ? 'border-arch-fg bg-arch-fg text-arch-bg' : 'border-arch-border text-arch-muted hover:bg-arch-fg/5 hover:text-arch-fg'}`}
                   >
-                    {label}
+                    <p className="text-[10px] font-black uppercase tracking-widest">{label}</p>
+                    <p className="text-[8px] uppercase tracking-[0.3em] italic mt-2">{description}</p>
                   </button>
                 ))}
               </div>
@@ -131,27 +134,36 @@ export const GenerateCardsRoute = ({ activeDeckId, navigate, saveGeneratedCards 
               onClick={() => setIncludeExplanations((prev) => !prev)}
               className={`border p-6 text-left transition-all ${includeExplanations ? 'border-arch-fg bg-arch-fg/5' : 'border-arch-border bg-transparent'}`}
             >
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-arch-fg">Explanations</p>
-              <p className="text-[8px] text-arch-muted uppercase tracking-[0.3em] italic mt-3">Add a reason for each answer.</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-arch-fg">Include Explanations</p>
+              <p className="text-[8px] text-arch-muted uppercase tracking-[0.3em] italic mt-3">Add context and reasoning to each answer.</p>
             </button>
             <button
               type="button"
               onClick={() => setUseThinking((prev) => !prev)}
               className={`border p-6 text-left transition-all ${useThinking ? 'border-arch-fg bg-arch-fg/5' : 'border-arch-border bg-transparent'}`}
             >
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-arch-fg">Better Quality</p>
-              <p className="text-[8px] text-arch-muted uppercase tracking-[0.3em] italic mt-3">Use thinking for precision.</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-arch-fg">Enhanced Quality</p>
+              <p className="text-[8px] text-arch-muted uppercase tracking-[0.3em] italic mt-3">Use advanced AI for better precision (slower).</p>
             </button>
           </div>
 
-          {error && <p className="text-xs text-red-500 font-bold uppercase tracking-widest">{error}</p>}
+          {error && (
+            <div className="border border-red-500/30 bg-red-500/5 p-4">
+              <p className="text-xs text-red-500 font-bold uppercase tracking-widest">{error}</p>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-4 pt-4 border-t border-arch-border">
             <button type="submit" disabled={loading} className="btn-arch min-w-[180px]">
-              {loading ? 'Processing...' : 'Generate Cards'}
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 size={16} className="animate-spin" />
+                  Generating...
+                </span>
+              ) : 'Generate Cards'}
             </button>
             <button type="button" disabled={!generatedCards.length || saving} onClick={handleSave} className="btn-arch-outline min-w-[180px] disabled:opacity-40">
-              {saving ? 'Saving...' : activeDeckId ? `Save ${generatedCards.length || ''} Cards` : 'Open a Deck to Save'}
+              {saving ? 'Saving...' : activeDeckId ? `Save ${generatedCards.length} Card${generatedCards.length !== 1 ? 's' : ''}` : 'Open a Deck to Save'}
             </button>
           </div>
         </form>
@@ -160,14 +172,19 @@ export const GenerateCardsRoute = ({ activeDeckId, navigate, saveGeneratedCards 
           <div className="flex items-center justify-between gap-4 mb-10 pb-6 border-b border-arch-border">
             <div>
               <p className="text-arch-eyebrow mb-2">Preview</p>
-              <h2 className="text-2xl font-black italic lowercase">{generatedCards.length ? `${generatedCards.length} Cards Ready` : 'No Cards Yet'}</h2>
+              <h2 className="text-2xl font-black italic lowercase">
+                {generatedCards.length ? `${generatedCards.length} Card${generatedCards.length !== 1 ? 's' : ''} Generated` : 'No Cards Yet'}
+              </h2>
+              <p className="text-[8px] text-arch-muted uppercase tracking-[0.3em] italic mt-2">
+                {generatedCards.length ? 'Review and save your flashcards' : 'Generate cards to see preview'}
+              </p>
             </div>
           </div>
 
           <div className="space-y-6 max-h-[800px] overflow-y-auto pr-4 scrollbar-hide">
             {!generatedCards.length && (
               <div className="border border-arch-border bg-arch-fg/5 p-8 text-arch-muted text-[10px] uppercase tracking-[0.4em] italic text-center">
-                Operator standby. Generate to preview output.
+                Add content and click "Generate Cards" to create flashcards.
               </div>
             )}
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Activity } from 'lucide-react';
 import { Deck, Card } from '../../types';
+import HelpTooltip from './HelpTooltip';
 
 const PageHeader = ({ title, subtitle, action }: { title: string; subtitle: string; action?: React.ReactNode }) => (
   <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10 relative z-20">
@@ -95,4 +96,4 @@ const CitationStack = ({ card }: { card: Card }) => {
   );
 };
 
-export { PageHeader, MetricTile, BarSeries, getDeckAnalytics, normalizeSeries, CitationStack };
+export { PageHeader, MetricTile, BarSeries, getDeckAnalytics, normalizeSeries, CitationStack, HelpTooltip };
