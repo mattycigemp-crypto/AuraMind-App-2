@@ -11,8 +11,36 @@ const useLocalAI = getEnv('VITE_USE_LOCAL_AI') === 'true';
 const customModel = getEnv('VITE_AI_MODEL');
 const localBaseUrl = '/local-ai/v1';
 
+// Simple in-memory cache for AI responses
+const responseCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Generate cache key
+const getCacheKey = (prefix: string, params: any): string => {
+    return `${prefix}:${JSON.stringify(params)}`;
+};
+
+// Get cached response
+const getCachedResponse = (key: string): any | null => {
+    const cached = responseCache.get(key);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        console.log('✅ Using cached response');
+        return cached.data;
+    }
+    return null;
+};
+
+// Store response in cache
+const setCachedResponse = (key: string, data: any): void => {
+    responseCache.set(key, { data, timestamp: Date.now() });
+    if (responseCache.size > 100) {
+        const oldestKey = Array.from(responseCache.keys())[0];
+        responseCache.delete(oldestKey);
+    }
+};
+
 const getDeepSeekClient = () => {
-    // Try API keys in order of preference
+    // Try API keys in order of preference (Groq first for speed, then OpenRouter)
     let apiKey: string;
     let baseUrl: string;
     let defaultModel: string;
@@ -24,9 +52,10 @@ const getDeepSeekClient = () => {
         defaultModel = 'local-model';
         apiKeySource = 'local';
     } else if (groqKey) {
+        // Groq is faster - use it first
         apiKey = groqKey;
         baseUrl = 'https://api.groq.com/openai/v1';
-        defaultModel = customModel || 'groq/groq-llama3-8b-8192-tool-preview';
+        defaultModel = customModel || 'llama-3.3-70b-versatile'; // Use faster, more capable model
         apiKeySource = 'groq';
     } else if (openRouterKey) {
         apiKey = openRouterKey;
@@ -34,7 +63,7 @@ const getDeepSeekClient = () => {
         defaultModel = customModel || 'deepseek/deepseek-r1-0528:free';
         apiKeySource = 'openrouter';
     } else {
-        throw new Error('No valid API key found. Please set VITE_OPENROUTER_API_KEY, VITE_GROQ_API_KEY, or enable VITE_USE_LOCAL_AI=true');
+        throw new Error('No valid API key found. Please set VITE_GROQ_API_KEY, VITE_OPENROUTER_API_KEY, or enable VITE_USE_LOCAL_AI=true');
     }
 
     if (!apiKey && !useLocalAI) {
@@ -106,6 +135,10 @@ export const generateFlashcards = async (
     content: string,
     options: FlashcardGenerationOptions = {}
 ): Promise<GeneratedCard[]> => {
+    const cacheKey = getCacheKey('flashcards', { content, options });
+    const cached = getCachedResponse(cacheKey);
+    if (cached) return cached;
+
     const client = getDeepSeekClient();
     const {
         cardStyle = 'conceptual',
@@ -114,30 +147,35 @@ export const generateFlashcards = async (
         userContext = '',
     } = options;
 
-    const prompt = `You are an expert study assistant. 
-Analyze the following text and create a list of effective flashcards (Question and Answer pairs) to help a student learn this material.
-Focus on key concepts, definitions, and important facts.
-Use this flashcard style: ${cardStyle}.
-Target difficulty: ${difficulty}.
+    const prompt = `You are an expert study assistant specializing in creating effective flashcards for learning.
+Analyze the following text and create high-quality flashcards (Question and Answer pairs).
+
+## Instructions:
+- Focus on key concepts, definitions, relationships, and important facts
+- Create questions that test understanding, not just memorization
+- Use this flashcard style: ${cardStyle}
+- Target difficulty: ${difficulty}
 ${cardStyle === 'multiple_choice'
-        ? 'For multiple choice cards, write the question so the answer contains the correct option plus a short explanation.'
+        ? '- For multiple choice cards, write the question so the answer contains the correct option plus a short explanation'
         : ''}
 ${includeExplanations
-        ? 'Include a short explanation for why the answer is correct.'
-        : 'Do not include explanation text.'}
+        ? '- Include a brief explanation for why the answer is correct'
+        : '- Do not include explanation text'}
+${userContext ? `- Student Context: ${userContext}\n- Adapt style, depth, and difficulty according to their mastery metrics` : ''}
 
-${userContext ? `Student Context:\n${userContext}\nAdapt style, depth, and difficulty according to their mastery metrics.` : ''}
-
-Text content:
+## Text to analyze:
 "${content}"
 
-Respond with a JSON array of flashcard objects. Each object should have:
-- question: string
-- answer: string
-- difficulty: "easy" | "medium" | "hard"
-- explanation: string (optional)
+## Response Format:
+Respond with ONLY a valid JSON array. No conversational text, no markdown code blocks, no explanations outside the JSON.
 
-Example format:
+Each flashcard object must have:
+- question: string (clear, specific question)
+- answer: string (concise, accurate answer)
+- difficulty: "easy" | "medium" | "hard"
+- explanation: string (optional, only if requested)
+
+Example:
 [
     {
         "question": "What is photosynthesis?",
@@ -152,14 +190,24 @@ Example format:
             { role: "user", content: prompt }
         ]);
 
-        const content = response.choices[0]?.message?.content;
-        if (!content) return [];
+        const responseContent = response.choices[0]?.message?.content;
+        if (!responseContent) return [];
 
-        // Parse JSON response
-        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        // Parse JSON response - try multiple patterns
+        let jsonMatch = responseContent.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) {
+            // Try to find JSON in code blocks
+            jsonMatch = responseContent.match(/```json\s*([\s\S]*?)\s*```/);
+            if (jsonMatch) {
+                jsonMatch = [jsonMatch[1]];
+            }
+        }
+        
         if (!jsonMatch) return [];
         
-        return JSON.parse(jsonMatch[0]) as GeneratedCard[];
+        const cards = JSON.parse(jsonMatch[0]) as GeneratedCard[];
+        setCachedResponse(cacheKey, cards);
+        return cards;
     } catch (error) {
         console.error("Error generating flashcards:", error);
         throw error;
@@ -170,13 +218,26 @@ Example format:
  * Generates a full deck (title, description, cards) from a topic using DeepSeek.
  */
 export const generateDeckFromTopic = async (topic: string): Promise<{ title: string, description: string, cards: GeneratedCard[] }> => {
+    const cacheKey = getCacheKey('deck', { topic });
+    const cached = getCachedResponse(cacheKey);
+    if (cached) return cached;
+
     const client = getDeepSeekClient();
 
-    const prompt = `Create a complete study deck about: "${topic}".
+    const prompt = `You are an expert educational content creator. Create a comprehensive study deck about: "${topic}".
 
-Generate a response with this JSON structure:
+## Instructions:
+- Create a clear, descriptive title
+- Write a brief description (1-2 sentences) of what this deck covers
+- Generate 8-12 comprehensive flashcards covering the most important aspects
+- Include a mix of easy, medium, and hard difficulty cards
+- Focus on key concepts, definitions, relationships, and applications
+
+## Response Format:
+Respond with ONLY a valid JSON object. No conversational text, no markdown code blocks.
+
 {
-    "title": "Title of the deck",
+    "title": "Deck Title",
     "description": "Brief description of what this deck covers",
     "cards": [
         {
@@ -185,9 +246,7 @@ Generate a response with this JSON structure:
             "difficulty": "easy|medium|hard"
         }
     ]
-}
-
-Create 8-12 comprehensive flashcards covering the most important aspects of the topic.`;
+}`;
 
     try {
         const response = await client.chat([
@@ -197,10 +256,20 @@ Create 8-12 comprehensive flashcards covering the most important aspects of the 
         const content = response.choices[0]?.message?.content;
         if (!content) throw new Error("No response from AI");
 
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        // Parse JSON response - try multiple patterns
+        let jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+            if (jsonMatch) {
+                jsonMatch = [jsonMatch[1]];
+            }
+        }
+        
         if (!jsonMatch) throw new Error("Invalid JSON response");
         
-        return JSON.parse(jsonMatch[0]) as { title: string, description: string, cards: GeneratedCard[] };
+        const deck = JSON.parse(jsonMatch[0]) as { title: string, description: string, cards: GeneratedCard[] };
+        setCachedResponse(cacheKey, deck);
+        return deck;
     } catch (error) {
         console.error("Error generating deck:", error);
         throw error;
@@ -235,15 +304,29 @@ export const generateQuizFromContent = async (
     difficulty: 'easy' | 'medium' | 'hard' = 'medium',
     userContext?: string
 ): Promise<Quiz> => {
+    const cacheKey = getCacheKey('quiz', { content, topic, difficulty, userContext });
+    const cached = getCachedResponse(cacheKey);
+    if (cached) return cached;
+
     const client = getDeepSeekClient();
     
     const contextStr = userContext ? `\n\nStudent Context:\n${userContext}\nAdjust questions based on their demonstrated proficiency/mastery in these topics.` : "";
 
-    const prompt = `Create a clean study quiz about "${topic}" using this source content:
+    const prompt = `You are an expert educational assessment creator. Create a comprehensive study quiz about "${topic}" using the provided source content.
 
+## Instructions:
+- Create 5-8 multiple choice questions
+- Ensure questions test understanding, not just recall
+- Include clear, plausible distractors (wrong answers)
+- Provide explanations for why the correct answer is right
+${userContext ? '- Adjust question difficulty based on student context' : ''}
+
+## Source Content:
 ${content}${contextStr}
 
-Generate a JSON quiz with this structure:
+## Response Format:
+Respond with ONLY a valid JSON object. No conversational text, no markdown code blocks.
+
 {
     "id": "unique-quiz-id",
     "title": "Quiz Title",
@@ -260,21 +343,29 @@ Generate a JSON quiz with this structure:
     ]
 }
 
-Create 5-8 multiple choice questions. The correctAnswer should be the index (0-3) of the correct option.`;
+Note: correctAnswer should be the index (0-3) of the correct option.`;
 
     try {
         const response = await client.chat([
             { role: "user", content: prompt }
         ]);
 
-        const content = response.choices[0]?.message?.content;
-        if (!content) throw new Error("No quiz response from AI");
+        const responseContent = response.choices[0]?.message?.content;
+        if (!responseContent) throw new Error("No quiz response from AI");
 
-        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        // Parse JSON response - try multiple patterns
+        let jsonMatch = responseContent.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            jsonMatch = responseContent.match(/```json\s*([\s\S]*?)\s*```/);
+            if (jsonMatch) {
+                jsonMatch = [jsonMatch[1]];
+            }
+        }
+        
         if (!jsonMatch) throw new Error("Invalid JSON response");
 
         const parsed = JSON.parse(jsonMatch[0]) as Quiz;
-        return {
+        const quiz = {
             ...parsed,
             topic: parsed.topic || topic,
             difficulty: (parsed.difficulty || difficulty) as Quiz['difficulty'],
@@ -285,6 +376,8 @@ Create 5-8 multiple choice questions. The correctAnswer should be the index (0-3
                 correctAnswer: Math.max(0, Math.min(question.correctAnswer, Math.max(0, question.options.length - 1))),
             }))
         };
+        setCachedResponse(cacheKey, quiz);
+        return quiz;
     } catch (error) {
         console.error("Error generating quiz:", error);
         throw error;

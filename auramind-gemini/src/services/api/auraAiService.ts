@@ -1,12 +1,40 @@
 // Aura AI Service
 // Integrates with OpenRouter API to access AI models
 
+// Simple in-memory cache for AI responses
+const responseCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Generate cache key from request parameters
+const getCacheKey = (model: string, messages: Message[], temperature: number): string => {
+  return `${model}:${temperature}:${JSON.stringify(messages)}`;
+};
+
+// Get cached response if available and not expired
+const getCachedResponse = (key: string): any | null => {
+  const cached = responseCache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    console.log('✅ Using cached AI response');
+    return cached.data;
+  }
+  return null;
+};
+
+// Store response in cache
+const setCachedResponse = (key: string, data: any): void => {
+  responseCache.set(key, { data, timestamp: Date.now() });
+  // Limit cache size
+  if (responseCache.size > 100) {
+    const oldestKey = Array.from(responseCache.keys())[0];
+    responseCache.delete(oldestKey);
+  }
+};
+
 // Study Agent System Prompt
-// Study Agent System Prompt
-export const STUDY_AGENT_SYSTEM_PROMPT = `You are Aura, an advanced AI study companion for AuraMind. Your goal is to help students calculate, memorize, and master topics efficiently.
+export const STUDY_AGENT_SYSTEM_PROMPT = `You are Aura, an advanced AI study companion for AuraMind. Your goal is to help students learn, memorize, and master topics efficiently through structured, accurate responses.
 
 ## Your Capabilities
-You have access to specific study tools. When a user requests one of these actions, you MUST output ONLY the JSON structure for that tool. DO NOT include conversational filler, markdown explanations, or backticks around the JSON unless specifically asked for a code example.
+When a user requests one of these actions, output ONLY the JSON structure for that tool. No conversational filler, markdown explanations, or backticks around JSON unless asked for code examples.
 
 ### 1. generate_quiz (For tests/assessments)
 {
@@ -60,11 +88,12 @@ You have access to specific study tools. When a user requests one of these actio
 }
 
 ## Core Rules
-1. If a tool is requested (quiz, flashcard, slide, explanation), output ONLY the raw JSON structure. DO NOT include conversational text, preamble ("Sure", "I have generated"), or postscript.
+1. If a tool is requested (quiz, flashcard, slide, explanation), output ONLY the raw JSON structure. No conversational text, preamble ("Sure", "I have generated"), or postscript.
 2. If the user asks a general question NOT covered by tools, provide a friendly, academic text response.
 3. For "Explain X then Y", prioritize the "explain_concept" tool which contains a rich explanation field.
 4. Always respond as AuraMind AI. Be accurate, concise, and academic.
-5. Never mention "DeepSeek", "Model", or internal technical details in the output.`;
+5. Never mention "DeepSeek", "Model", or internal technical details in the output.
+6. Ensure all JSON output is valid and properly formatted.`;
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -116,16 +145,17 @@ export class AuraAiClient {
   private readonly apiKeySource: string;
 
   constructor(apiKey?: string, baseUrl?: string, model?: string) {
-    // Try API keys in order of preference
+    // Try API keys in order of preference (Groq first for speed, then OpenRouter)
     if (useLocalAI) {
       this.apiKey = 'not-needed';
       this.baseUrl = localBaseUrl;
       this.defaultModel = model || 'local-model';
       this.apiKeySource = 'local';
     } else if (groqKey) {
+      // Groq is faster - use it first
       this.apiKey = groqKey;
       this.baseUrl = 'https://api.groq.com/openai/v1';
-      this.defaultModel = model || 'groq/groq-llama3-8b-8192-tool-preview';
+      this.defaultModel = model || 'llama-3.3-70b-versatile'; // Use faster model
       this.apiKeySource = 'groq';
     } else if (openRouterKey) {
       this.apiKey = openRouterKey;
@@ -133,7 +163,7 @@ export class AuraAiClient {
       this.defaultModel = model || customModel || 'deepseek/deepseek-r1-0528:free';
       this.apiKeySource = 'openrouter';
     } else {
-      throw new Error('No valid API key found. Please set VITE_OPENROUTER_API_KEY, VITE_GROQ_API_KEY, or enable VITE_USE_LOCAL_AI=true');
+      throw new Error('No valid API key found. Please set VITE_GROQ_API_KEY, VITE_OPENROUTER_API_KEY, or enable VITE_USE_LOCAL_AI=true');
     }
   }
 
@@ -145,7 +175,7 @@ export class AuraAiClient {
     }
   }
 
-  async chatCompletion(options: ChatCompletionOptions): Promise<ChatCompletionResponse> {
+  async chatCompletion(options: ChatCompletionOptions, useCache: boolean = true): Promise<ChatCompletionResponse> {
     const {
       model = this.defaultModel,
       messages,
@@ -155,6 +185,15 @@ export class AuraAiClient {
 
     this.checkApiKey();
 
+    // Check cache first
+    const cacheKey = getCacheKey(model, messages, temperature);
+    if (useCache) {
+      const cached = getCachedResponse(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+
     // Debug logging
     console.log('🔍 API Debug Info:');
     console.log('  - Base URL:', this.baseUrl);
@@ -163,55 +202,89 @@ export class AuraAiClient {
     console.log('  - Has API Key:', !!this.apiKey);
     console.log('  - Messages Count:', messages.length);
 
-    try {
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey || 'not-needed'}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': typeof window !== 'undefined' ? window.location.href : 'http://localhost:3000',
-          'X-Title': typeof document !== 'undefined' ? (document.title || 'AuraMind') : 'AuraMind App',
-        },
-        body: JSON.stringify({
-          model,
-          messages,
-          temperature,
-          max_tokens,
-        }),
-      });
+    // Retry logic for transient failures
+    const maxRetries = 3;
+    let lastError: Error | null = null;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage = 'Failed to fetch from AI API';
-        
-        console.log('❌ API Error Details:');
-        console.log('  - Status:', response.status);
-        console.log('  - Status Text:', response.statusText);
-        console.log('  - Error Text:', errorText);
-        console.log('  - Base URL:', this.baseUrl);
-        console.log('  - API Key Source:', this.apiKeySource);
-        
-        try {
-          const jsonError = JSON.parse(errorText);
-          errorMessage = jsonError.error?.message || jsonError.message || errorMessage;
-          console.log('  - Parsed Error:', jsonError);
-        } catch (e) {
-          errorMessage = `API Error (${response.status}): ${errorText || response.statusText}`;
-          console.log('  - Raw Error Message:', errorMessage);
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const response = await fetch(`${this.baseUrl}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.apiKey || 'not-needed'}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': typeof window !== 'undefined' ? window.location.href : 'http://localhost:3000',
+            'X-Title': typeof document !== 'undefined' ? (document.title || 'AuraMind') : 'AuraMind App',
+          },
+          body: JSON.stringify({
+            model,
+            messages,
+            temperature,
+            max_tokens,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          let errorMessage = 'Failed to fetch from AI API';
+          
+          console.log('❌ API Error Details:');
+          console.log('  - Status:', response.status);
+          console.log('  - Status Text:', response.statusText);
+          console.log('  - Error Text:', errorText);
+          console.log('  - Base URL:', this.baseUrl);
+          console.log('  - API Key Source:', this.apiKeySource);
+          
+          try {
+            const jsonError = JSON.parse(errorText);
+            errorMessage = jsonError.error?.message || jsonError.message || errorMessage;
+            console.log('  - Parsed Error:', jsonError);
+          } catch (e) {
+            errorMessage = `API Error (${response.status}): ${errorText || response.statusText}`;
+            console.log('  - Raw Error Message:', errorMessage);
+          }
+
+          if (this.baseUrl.includes('local-ai')) {
+            errorMessage = `Local AI Connection Failed: Please ensure your local model server (e.g. LM Studio) is running on ${this.baseUrl.replace('/local-ai', 'localhost')}. Detail: ${errorMessage}`;
+          }
+
+          // Don't retry on client errors (4xx)
+          if (response.status >= 400 && response.status < 500) {
+            throw new Error(errorMessage);
+          }
+
+          // Retry on server errors (5xx) or network issues
+          lastError = new Error(errorMessage);
+          if (attempt < maxRetries - 1) {
+            console.log(`🔄 Retrying... (${attempt + 1}/${maxRetries})`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))); // Exponential backoff
+            continue;
+          }
+          throw new Error(errorMessage);
         }
 
-        if (this.baseUrl.includes('local-ai')) {
-          errorMessage = `Local AI Connection Failed: Please ensure your local model server (e.g. LM Studio) is running on ${this.baseUrl.replace('/local-ai', 'localhost')}. Detail: ${errorMessage}`;
+        const data = await response.json();
+        
+        // Cache successful response
+        if (useCache) {
+          setCachedResponse(cacheKey, data);
         }
-
-        throw new Error(errorMessage);
+        
+        return data;
+      } catch (error) {
+        console.error(`Error in AI API call (attempt ${attempt + 1}/${maxRetries}):`, error);
+        lastError = error as Error;
+        
+        if (attempt < maxRetries - 1) {
+          console.log(`🔄 Retrying... (${attempt + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+          continue;
+        }
+        throw lastError;
       }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Error in AI API call:', error);
-      throw error;
     }
+
+    throw lastError || new Error('Failed to complete AI API call');
   }
 
   // Helper method for simple user messages
