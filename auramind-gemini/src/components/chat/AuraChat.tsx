@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { auraAiClient, STUDY_AGENT_SYSTEM_PROMPT } from '../services/auraAiService';
+import { auraAiClient, STUDY_AGENT_SYSTEM_PROMPT } from '../../services/api/auraAiService';
 import { ChevronLeft, Bot, Music, X, Send, Sparkles, BrainCircuit, History, Target, Cpu, Activity, Globe } from 'lucide-react';
-import { StudyToolAction, ChatMessage, Quiz, FlashcardData, Deck, Card } from '../types';
+import { StudyToolAction, ChatMessage, Quiz, FlashcardData, Deck, Card } from '../../types';
 import ChatQuiz from './ChatQuiz';
 import ChatFlashcardPreview from './ChatFlashcardPreview';
-import PresentationViewer from './PresentationViewer';
-import { getInitialCardState } from '../services/srs';
+import PresentationViewer from '../study/PresentationViewer';
+import { getInitialCardState } from '../../services/study/srs';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Message {

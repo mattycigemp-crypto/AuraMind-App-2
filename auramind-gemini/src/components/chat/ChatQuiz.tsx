@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Quiz, QuizQuestion } from '../types';
+import { Quiz, QuizQuestion } from '../../types';
 import { CheckCircle, XCircle, RotateCcw } from 'lucide-react';
-import MathRichText from './MathRichText';
+import MathRichText from '../shared/MathRichText';
 
 interface ChatQuizProps {
   quiz: Quiz;

@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import { motion } from 'framer-motion';
-import AuraLogo from './AuraLogo';
+import AuraLogo from '../landing/AuraLogo';
 
 const LoadingScreen = forwardRef<HTMLDivElement>((_, ref) => {
   return (

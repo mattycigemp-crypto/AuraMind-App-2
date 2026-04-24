@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { AuraAiClient } from '../services/auraAiService';
+import { AuraAiClient } from '../services/api/auraAiService';
 
 // Mock fetch globally
 global.fetch = vi.fn();

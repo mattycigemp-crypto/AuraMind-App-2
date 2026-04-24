@@ -2,40 +2,40 @@ import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Deck, Card, Rating, UserProfile } from './types';
-import { calculateSRS, getInitialCardState } from './services/srs';
-import { generateDeckFromTopic, GeneratedCard } from './services/deepseekService';
-import { dbService } from './services/dbService';
+import { calculateSRS, getInitialCardState } from './services/study/srs';
+import { generateDeckFromTopic, GeneratedCard } from './services/api/deepseekService';
+import { dbService } from './services/database/dbService';
 import { PREMADE_CARDS, PREMADE_DECKS } from './data/premadeContent';
-import { createMetadataTemplates, mergeCardMetadata, persistCardMetadata } from './services/roadmapService';
-import { analyticsService } from './services/analyticsService';
+import { createMetadataTemplates, mergeCardMetadata, persistCardMetadata } from './services/study/roadmapService';
+import { analyticsService } from './services/analytics/analyticsService';
 
-const AuraLandingPage = React.lazy(() => import('./components/AuraLandingPage'));
-const BentoDashboard = React.lazy(() => import('./components/BentoDashboard'));
-const AppLayout = React.lazy(() => import('./components/AppLayout'));
+const AuraLandingPage = React.lazy(() => import('./components/landing/AuraLandingPage'));
+const BentoDashboard = React.lazy(() => import('./components/dashboard/BentoDashboard'));
+const AppLayout = React.lazy(() => import('./components/shared/AppLayout'));
 
-const DashboardInsightsPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.DashboardInsightsPage })));
-const DashboardPlannerPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.DashboardPlannerPage })));
-const ProfessorDashboardPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.ProfessorDashboardPage })));
-const DeckDetailRoute = React.lazy(() => import('./components/Pages').then(m => ({ default: m.DeckDetailRoute })));
-const GenerateCardsRoute = React.lazy(() => import('./components/Pages').then(m => ({ default: m.GenerateCardsRoute })));
-const StudyModeRoute = React.lazy(() => import('./components/Pages').then(m => ({ default: m.StudyModeRoute })));
-const ChatRoute = React.lazy(() => import('./components/Pages').then(m => ({ default: m.ChatRoute })));
-const SettingsPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.SettingsPage })));
-const AdminConsolePage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.AdminConsolePage })));
-const DocsPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.DocsPage })));
-const PrivacyPolicyPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.PrivacyPolicyPage })));
-const TermsOfServicePage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.TermsOfServicePage })));
-const ResetPasswordPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.ResetPasswordPage })));
-const RestoreAccountPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.RestoreAccountPage })));
-const NotFoundPage = React.lazy(() => import('./components/Pages').then(m => ({ default: m.NotFoundPage })));
+const DashboardInsightsPage = React.lazy(() => import('./pages/dashboard/InsightsPage'));
+const DashboardPlannerPage = React.lazy(() => import('./pages/dashboard/PlannerPage'));
+const ProfessorDashboardPage = React.lazy(() => import('./pages/dashboard/ProfessorDashboardPage'));
+const DeckDetailRoute = React.lazy(() => import('./pages/deck/DeckDetailPage'));
+const GenerateCardsRoute = React.lazy(() => import('./pages/deck/GenerateCardsPage'));
+const StudyModeRoute = React.lazy(() => import('./pages/study/StudyModePage'));
+const ChatRoute = React.lazy(() => import('./pages/chat/ChatPage'));
+const SettingsPage = React.lazy(() => import('./pages/auth/SettingsPage'));
+const AdminConsolePage = React.lazy(() => import('./pages/auth/AdminConsolePage'));
+const DocsPage = React.lazy(() => import('./pages/legal/DocsPage'));
+const PrivacyPolicyPage = React.lazy(() => import('./pages/legal/PrivacyPolicyPage'));
+const TermsOfServicePage = React.lazy(() => import('./pages/legal/TermsOfServicePage'));
+const ResetPasswordPage = React.lazy(() => import('./pages/auth/ResetPasswordPage'));
+const RestoreAccountPage = React.lazy(() => import('./pages/auth/RestoreAccountPage'));
+const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 
-const PaymentPage = React.lazy(() => import('./components/PaymentPage'));
-const AuthPage = React.lazy(() => import('./components/AuthPage'));
+const PaymentPage = React.lazy(() => import('./components/auth/PaymentPage'));
+const AuthPage = React.lazy(() => import('./components/auth/AuthPage'));
 
-import AmbientPlayer from './components/AmbientPlayer';
-import { ErrorBoundary } from './components/ErrorBoundary';
+import AmbientPlayer from './components/shared/AmbientPlayer';
+import { ErrorBoundary } from './components/shared/ErrorBoundary';
 import { ThemeProvider, useTheme } from './hooks/useTheme';
-import { supabase } from './services/supabase';
+import { supabase } from './services/database/supabase';
 
 // Icons
 import {
@@ -269,7 +269,14 @@ const AppContent = () => {
     if (!user) return null;
     const deck = await dbService.createDeck(user.id, title, description);
     const seededCards = cardsToSave.map((card) => getInitialCardState(deck.id, card.question, card.answer));
-    const templates = createMetadataTemplates(cardsToSave, sourceLabel, sourceType);
+    const cardsWithMetadata = cardsToSave.map(card => ({
+      question: card.question,
+      answer: card.answer,
+      citations: [],
+      sourceLabel,
+      sourceType
+    }));
+    const templates = createMetadataTemplates(cardsWithMetadata, sourceLabel, sourceType);
     const savedCards = mergeCardMetadata(await dbService.saveCards(user.id, seededCards), templates);
     persistCardMetadata(savedCards);
     await dbService.updateDeck(deck.id, { cardCount: savedCards.length });

@@ -1,8 +1,8 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import CosmicSidebar from './CosmicSidebar';
+import CosmicSidebar from '../dashboard/CosmicSidebar';
 import MobileNav from './MobileNav';
-import { UserProfile } from '../types';
+import { UserProfile } from '../../types';
 
 interface AppLayoutProps {
   user: UserProfile;

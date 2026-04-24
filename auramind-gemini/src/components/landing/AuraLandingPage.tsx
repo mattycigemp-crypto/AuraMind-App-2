@@ -21,18 +21,18 @@ import {
   LockKeyhole,
   GraduationCap
 } from 'lucide-react';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 import AuraLogo from './AuraLogo';
 import MarqueeSection from './MarqueeSection';
-import LoadingScreen from './LoadingScreen';
-import FullScreenNav from './FullScreenNav';
+import LoadingScreen from '../shared/LoadingScreen';
+import FullScreenNav from '../shared/FullScreenNav';
 import ParallaxSection from './ParallaxSection';
-import StatsCounter from './StatsCounter';
-import HorizontalScrollGallery from './HorizontalScrollGallery';
+import StatsCounter from '../shared/StatsCounter';
+import HorizontalScrollGallery from '../shared/HorizontalScrollGallery';
 import TestimonialsSection from './TestimonialsSection';
 import FAQSection from './FAQSection';
 import Starfield from './Starfield';
-import SmoothScroll from './SmoothScroll';
+import SmoothScroll from '../shared/SmoothScroll';
 import heroNeuralBg from '@/assets/hero-neural-bg.jpg';
 
 type StudyMode = 'Foundation' | 'Exam' | 'Deep Work';

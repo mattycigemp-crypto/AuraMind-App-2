@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowUpRight } from 'lucide-react';
-import AuraLogo from './AuraLogo';
+import AuraLogo from '../landing/AuraLogo';
 
 const navLinks = [
   { label: 'How It Works', href: '#protocols' },

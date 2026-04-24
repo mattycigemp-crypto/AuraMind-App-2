@@ -1,23 +1,14 @@
 import React, { useMemo } from 'react';
 import { GraduationCap, Quote } from 'lucide-react';
-import { Card, Deck, UserProfile } from '../../types';
-import { getDeckAnalytics, normalizeSeries } from '../../lib/analytics';
-import PageHeader from '../../components/ui/PageHeader';
-import MetricTile from '../../components/ui/MetricTile';
-import BarSeries from '../../components/ui/BarSeries';
+import { Deck, Card, UserProfile } from '../../types';
+import { PageHeader, MetricTile, BarSeries, getDeckAnalytics, normalizeSeries } from '../../components/shared/PageComponents';
 
-interface ProfessorDashboardPageProps {
-  decks: Deck[];
-  cards: Card[];
-  user: UserProfile;
-}
-
-const ProfessorDashboardPage: React.FC<ProfessorDashboardPageProps> = ({ decks, cards, user }) => {
+export const ProfessorDashboardPage = ({ decks, cards, user }: { decks: Deck[]; cards: Card[]; user: UserProfile }) => {
   const analytics = useMemo(() => getDeckAnalytics(decks, cards), [decks, cards]);
-  const adoption = analytics.length === 0 ? 0 : Math.round((analytics.filter((deck) => (deck.cardCount || 0) > 0).length / analytics.length) * 100);
-  const atRiskDecks = analytics.filter((deck) => deck.due > Math.max(3, Math.ceil((deck.cardCount || 0) * 0.25)));
+  const adoption = analytics.length === 0 ? 0 : Math.round((analytics.filter((deck) => deck.cardCount > 0).length / analytics.length) * 100);
+  const atRiskDecks = analytics.filter((deck) => deck.due > Math.max(3, Math.ceil(deck.cardCount * 0.25)));
   const strongestDecks = [...analytics].sort((a, b) => b.mastery - a.mastery).slice(0, 4);
-  const weeklySignals = normalizeSeries(analytics.slice(0, 7).map((deck) => Math.min(100, deck.mastery + (deck.reviews || 0))));
+  const weeklySignals = normalizeSeries(analytics.slice(0, 7).map((deck) => Math.min(100, deck.mastery + deck.reviews)));
   const citationCoverage = cards.length === 0 ? 0 : Math.round((cards.filter((card) => card.citations?.length).length / cards.length) * 100);
 
   return (
@@ -53,7 +44,7 @@ const ProfessorDashboardPage: React.FC<ProfessorDashboardPageProps> = ({ decks, 
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-sm font-black uppercase tracking-[0.2em] text-arch-fg">{deck.title}</p>
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-arch-muted mt-2">{deck.cardCount || 0} cards • {deck.reviews || 0} reviews • {deck.mastery}% mastery</p>
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-arch-muted mt-2">{deck.cardCount} cards • {deck.reviews} reviews • {deck.mastery}% mastery</p>
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-black italic text-arch-fg">{deck.due}</p>
@@ -68,8 +59,8 @@ const ProfessorDashboardPage: React.FC<ProfessorDashboardPageProps> = ({ decks, 
         <div className="space-y-8">
           <div className="architectural-panel p-8 space-y-6">
             <div>
-               <p className="text-arch-eyebrow">Interventions</p>
-               <h3 className="text-xl font-black italic uppercase text-arch-fg mt-2">High-risk modules</h3>
+              <p className="text-arch-eyebrow">Interventions</p>
+              <h3 className="text-xl font-black italic uppercase text-arch-fg mt-2">High-risk modules</h3>
             </div>
             {atRiskDecks.length === 0 && (
               <p className="text-sm text-arch-muted italic">No modules are over the risk threshold right now.</p>
@@ -84,15 +75,15 @@ const ProfessorDashboardPage: React.FC<ProfessorDashboardPageProps> = ({ decks, 
 
           <div className="architectural-panel p-8 space-y-6">
             <div>
-               <p className="text-arch-eyebrow">Quality Signals</p>
-               <h3 className="text-xl font-black italic uppercase text-arch-fg mt-2">Most stable decks</h3>
+              <p className="text-arch-eyebrow">Quality Signals</p>
+              <h3 className="text-xl font-black italic uppercase text-arch-fg mt-2">Most stable decks</h3>
             </div>
             {strongestDecks.map((deck) => (
               <div key={deck.id} className="border border-arch-border p-5">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.25em] text-arch-fg">{deck.title}</p>
-                    <p className="mt-2 text-xs text-arch-muted">{deck.mastery}% mastery with {deck.reviews || 0} total reviews recorded.</p>
+                    <p className="mt-2 text-xs text-arch-muted">{deck.mastery}% mastery with {deck.reviews} total reviews recorded.</p>
                   </div>
                   <Quote size={16} className="text-arch-muted" />
                 </div>
@@ -104,5 +95,3 @@ const ProfessorDashboardPage: React.FC<ProfessorDashboardPageProps> = ({ decks, 
     </div>
   );
 };
-
-export default ProfessorDashboardPage;

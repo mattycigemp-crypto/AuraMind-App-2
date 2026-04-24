@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
-import { Card, Deck } from '../types';
-import { enrichCardsWithStoredMetadata } from './roadmapService';
+import { Card, Deck } from '../../types';
+import { enrichCardsWithStoredMetadata } from '../study/roadmapService';
 
 // Caching layer to avoid refecthing on navigation switch
 let cachedDecks: Deck[] | null = null;

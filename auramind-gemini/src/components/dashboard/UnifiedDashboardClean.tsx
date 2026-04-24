@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Card, Deck, UserProfile, ViewState } from '../types';
+import { Card, Deck, UserProfile, ViewState } from '../../types';
 import {
   ArrowRight,
   ArrowUp,
@@ -56,9 +56,9 @@ import {
   X,
   User
 } from 'lucide-react';
-import { useContextMenu, ContextMenuItem } from './ui/ContextMenu';
-import OnboardingTutorial from './OnboardingTutorial';
-import { useTutorial } from './TutorialSystem';
+import { useContextMenu, ContextMenuItem } from '../ui/ContextMenu';
+import OnboardingTutorial from '../shared/OnboardingTutorial';
+import { useTutorial } from '../shared/TutorialSystem';
 
 interface UserSettings {
   theme: 'light' | 'dark' | 'auto';

@@ -1,5 +1,5 @@
 import { Deck, Card } from '../types';
-import { createCitation } from '../services/roadmapService';
+import { createCitation } from '../services/study/roadmapService';
 
 export const PREMADE_DECKS: Deck[] = [
     {

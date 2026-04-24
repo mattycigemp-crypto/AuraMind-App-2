@@ -1,25 +1,17 @@
 import React, { useMemo } from 'react';
-import { Activity } from 'lucide-react';
-import { Card, Deck } from '../../types';
-import { getDeckAnalytics } from '../../lib/analytics';
-import MetricTile from '../../components/ui/MetricTile';
-import BarSeries from '../../components/ui/BarSeries';
+import { Activity, ArrowRight, ChevronLeft, Clock, TrendingUp, WandSparkles, Zap } from 'lucide-react';
+import { Deck, Card } from '../../types';
+import { MetricTile, BarSeries, getDeckAnalytics } from '../../components/shared/PageComponents';
 
-interface DashboardInsightsPageProps {
-  decks: Deck[];
-  cards: Card[];
-}
-
-const DashboardInsightsPage: React.FC<DashboardInsightsPageProps> = ({ decks, cards }) => {
+export const DashboardInsightsPage = ({ decks, cards }: { decks: Deck[], cards: Card[] }) => {
   const dueCards = cards.filter((c) => c.nextReview <= Date.now()).length;
   const masteredCards = cards.filter((c) => (c.interval || 0) >= 14 && (c.repetition || 0) >= 3).length;
   const retention = cards.length === 0 ? 0 : Math.round((masteredCards / cards.length) * 100);
-  
   const topDecks = useMemo(
     () => [...getDeckAnalytics(decks, cards)].sort((a, b) => (b.cardCount || 0) - (a.cardCount || 0)).slice(0, 5),
     [cards, decks]
   );
-  
+
   const weekly = [82, 94, 76, 88, 91, 74, 96];
 
   return (
@@ -42,7 +34,7 @@ const DashboardInsightsPage: React.FC<DashboardInsightsPageProps> = ({ decks, ca
         <MetricTile label="Retention Quotient" value={`${retention}%`} detail="Mastery probability across entire library." />
         <MetricTile label="Mission Critical" value={dueCards} detail="Immediate reviews required for momentum." accent="text-amber-400" />
         <MetricTile label="Deep Memory" value={masteredCards} detail="Cards successfully encoded in long-term storage." accent="text-emerald-400" />
-        <MetricTile label="Study Streak" value="12" detail="Consecutive days of architectural learning." accent="text-blue-400" />
+        <MetricTile label="Study Streak" value={12} detail="Consecutive days of architectural learning." accent="text-blue-400" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -109,5 +101,3 @@ const DashboardInsightsPage: React.FC<DashboardInsightsPageProps> = ({ decks, ca
     </div>
   );
 };
-
-export default DashboardInsightsPage;

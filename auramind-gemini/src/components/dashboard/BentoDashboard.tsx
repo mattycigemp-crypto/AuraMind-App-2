@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Card, Deck, UserProfile, ViewState } from '../types';
-import OnboardingTutorial from './OnboardingTutorial';
-import { generateFlashcards } from '../services/deepseekService';
+import { Card, Deck, UserProfile, ViewState } from '../../types';
+import OnboardingTutorial from '../shared/OnboardingTutorial';
+import { generateFlashcards } from '../../services/api/deepseekService';
 import ActivityHeatmap from './ActivityHeatmap';
-import { extractStudyAssetText } from '../services/documentImportService';
+import { extractStudyAssetText } from '../../services/import/documentImportService';
 import {
   enrollInBetaChallenge,
   getBetaChallenge,
@@ -14,7 +14,7 @@ import {
   parseNotionImportText,
   parseObsidianMarkdownImport,
   parseApkgFile,
-} from '../services/roadmapService';
+} from '../../services/study/roadmapService';
 import {
   ArrowRight,
   BrainCircuit,

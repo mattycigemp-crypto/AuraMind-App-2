@@ -1,15 +1,11 @@
 import React, { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
-import { generateFlashcards, GeneratedCard } from '../../services/deepseekService';
-import MathRichText from '../../components/MathRichText';
+import { ChevronLeft, Loader2 } from 'lucide-react';
+import { Deck, Card } from '../../types';
+import { GeneratedCard } from '../../services/api/deepseekService';
+import MathRichText from '../../components/shared/MathRichText';
+import { generateFlashcards } from '../../services/api/deepseekService';
 
-interface GenerateCardsPageProps {
-  activeDeckId: string | null;
-  navigate: (path: string) => void;
-  saveGeneratedCards: (cards: GeneratedCard[]) => Promise<void>;
-}
-
-const GenerateCardsPage: React.FC<GenerateCardsPageProps> = ({ activeDeckId, navigate, saveGeneratedCards }) => {
+export const GenerateCardsRoute = ({ activeDeckId, navigate, saveGeneratedCards }: any) => {
   const [sourceText, setSourceText] = useState('');
   const [cardStyle, setCardStyle] = useState<'definition' | 'conceptual' | 'multiple_choice'>('conceptual');
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('medium');
@@ -207,5 +203,3 @@ const GenerateCardsPage: React.FC<GenerateCardsPageProps> = ({ activeDeckId, nav
     </div>
   );
 };
-
-export default GenerateCardsPage;

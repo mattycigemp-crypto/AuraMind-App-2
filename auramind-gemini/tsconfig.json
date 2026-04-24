@@ -28,9 +28,8 @@
     "noEmit": true
   },
   "include": [
-    "src/index.tsx",
-    "src/App.tsx",
-    "src/vite-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
     "vite.config.ts"
   ],
   "exclude": [

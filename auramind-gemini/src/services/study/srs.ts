@@ -1,4 +1,4 @@
-import { Card, Rating, SRSResult } from '../types';
+import { Card, Rating, SRSResult } from '../../types';
 
 /**
  * SuperMemo-2 (SM-2) Algorithm implementation

@@ -1,4 +1,4 @@
-import { Card, CardCitation, CardSourceType, FlashcardData } from '../types';
+import { Card, CardCitation, CardSourceType, FlashcardData } from '../../types';
 import JSZip from 'jszip';
 import initSqlJs from 'sql.js';
 import sqlWasmUrl from 'sql.js/dist/sql-wasm.wasm?url';

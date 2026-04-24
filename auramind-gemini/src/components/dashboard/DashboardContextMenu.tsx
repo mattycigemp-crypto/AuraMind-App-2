@@ -1,5 +1,5 @@
 import React from 'react';
-import { useContextMenu, ContextMenuItem } from './ui/ContextMenu';
+import { useContextMenu, ContextMenuItem } from '../ui/ContextMenu';
 import {
   RefreshCw,
   Download,

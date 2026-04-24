@@ -1,9 +1,9 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
-import { dbService } from '../services/dbService';
-import { supabase } from '../services/supabase';
+import { dbService } from '../services/database/dbService';
+import { supabase } from '../services/database/supabase';
 
 // Mock Supabase client
-vi.mock('../services/supabase', () => ({
+vi.mock('../services/database/supabase', () => ({
   supabase: {
     from: vi.fn(() => ({
       select: vi.fn(() => ({

@@ -16,7 +16,7 @@ import {
   Zap,
   Lock
 } from 'lucide-react';
-import { supabase } from '../services/supabase';
+import { supabase } from '../../services/database/supabase';
 
 interface AuthPageProps {
   onBack: () => void;

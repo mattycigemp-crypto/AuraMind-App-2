@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { FlashcardData } from '../types';
+import { FlashcardData } from '../../types';
 import { Eye, EyeOff, Plus, FolderOpen } from 'lucide-react';
-import MathRichText from './MathRichText';
+import MathRichText from '../shared/MathRichText';
 
 interface ChatFlashcardPreviewProps {
   cards: FlashcardData[];

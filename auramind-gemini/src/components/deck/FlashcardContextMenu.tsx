@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card } from '../types';
-import { useContextMenu, ContextMenuItem } from './ui/ContextMenu';
+import { Card } from '../../types';
+import { useContextMenu, ContextMenuItem } from '../ui/ContextMenu';
 import {
   Edit,
   Copy,

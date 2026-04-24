@@ -1,16 +1,10 @@
 import React from 'react';
-import { CalendarDays, Clock, ArrowRight, Zap, Command, WandSparkles, TrendingUp } from 'lucide-react';
-import { Card, Deck } from '../../types';
-import { getDeckAnalytics } from '../../lib/analytics';
-import MathRichText from '../../components/MathRichText';
+import { ArrowRight, CalendarDays, Clock, Command, TrendingUp, WandSparkles, Zap } from 'lucide-react';
+import { Deck, Card } from '../../types';
+import MathRichText from '../../components/shared/MathRichText';
+import { getDeckAnalytics } from '../../components/shared/PageComponents';
 
-interface DashboardPlannerPageProps {
-  decks: Deck[];
-  cards: Card[];
-  navigate: (path: string) => void;
-}
-
-const DashboardPlannerPage: React.FC<DashboardPlannerPageProps> = ({ decks, cards, navigate }) => {
+export const DashboardPlannerPage = ({ decks, cards, navigate }: { decks: Deck[], cards: Card[], navigate: any }) => {
   const upcoming = [...cards]
     .sort((a, b) => a.nextReview - b.nextReview)
     .slice(0, 8);
@@ -60,7 +54,7 @@ const DashboardPlannerPage: React.FC<DashboardPlannerPageProps> = ({ decks, card
                        </div>
                        <div className="flex items-center gap-4">
                           <span className="text-[8px] font-black text-arch-muted uppercase tracking-[0.3em] flex items-center gap-1">
-                             <Clock size={10} /> 
+                             <Clock size={10} />
                              DEBUT: {new Date(card.nextReview).toLocaleDateString()}
                           </span>
                        </div>
@@ -129,5 +123,3 @@ const DashboardPlannerPage: React.FC<DashboardPlannerPageProps> = ({ decks, card
     </div>
   );
 };
-
-export default DashboardPlannerPage;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { calculateSRS, getInitialCardState } from '../services/srs';
+import { calculateSRS, getInitialCardState } from '../services/study/srs';
 import { Rating } from '../types';
 
 describe('srs helpers', () => {

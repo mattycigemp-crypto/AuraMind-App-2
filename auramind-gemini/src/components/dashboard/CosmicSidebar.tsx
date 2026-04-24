@@ -1,17 +1,17 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { UserProfile } from '../types';
-import { 
-  BrainCircuit, 
+import { UserProfile } from '../../types';
+import {
+  BrainCircuit,
   Crown,
   FileText,
-  LayoutGrid, 
-  Layers, 
-  Zap, 
-  Activity, 
-  Settings, 
-  LogOut, 
-  BookOpen, 
+  LayoutGrid,
+  Layers,
+  Zap,
+  Activity,
+  Settings,
+  LogOut,
+  BookOpen,
   Plus,
   Compass,
   Shield,
@@ -19,7 +19,7 @@ import {
   Moon,
   GraduationCap
 } from 'lucide-react';
-import { useTheme } from '../hooks/useTheme';
+import { useTheme } from '../../hooks/useTheme';
 
 interface CosmicSidebarProps {
   onLogout: () => void;
