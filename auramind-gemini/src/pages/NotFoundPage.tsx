@@ -1,6 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
-export const NotFoundPage = ({ navigate }: any) => (
+export const NotFoundPage = () => {
+  const navigate = useNavigate();
+  return (
   <div className="min-h-screen flex items-center justify-center p-6 bg-arch-bg text-center font-black">
     <div className="space-y-10">
       <h1 className="text-[120px] font-black text-arch-fg/5 select-none leading-none">404.</h1>
@@ -11,4 +14,5 @@ export const NotFoundPage = ({ navigate }: any) => (
       <button onClick={() => navigate('/')} className="btn-arch px-12">Return to Base</button>
     </div>
   </div>
-);
+  );
+};

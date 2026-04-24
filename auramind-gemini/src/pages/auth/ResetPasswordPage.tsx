@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { supabase } from '../../services/database/supabase';
 
-export const ResetPasswordPage = ({ navigate }: any) => {
+export const ResetPasswordPage = () => {
+  const navigate = useNavigate();
   const [newPassword, setNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);

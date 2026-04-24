@@ -453,10 +453,10 @@ const AppContent = () => {
               ? <PageTransition><StudyModeRoute decks={decks} cards={cards} navigate={navigate} setActiveDeckId={setActiveDeckId} rateCard={rateCard} /></PageTransition>
               : <Navigate to="/subscribe" replace />
           } />
-          <Route path="/reset-password" element={<PageTransition><ResetPasswordPage navigate={navigate} /></PageTransition>} />
-          <Route path="/restore-account" element={<PageTransition><RestoreAccountPage navigate={navigate} /></PageTransition>} />
+          <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
+          <Route path="/restore-account" element={<PageTransition><RestoreAccountPage /></PageTransition>} />
           <Route path="/auth/callback" element={<PageTransition><CallbackPage /></PageTransition>} />
-          <Route path="*" element={<PageTransition><NotFoundPage navigate={navigate} /></PageTransition>} />
+          <Route path="*" element={<PageTransition><NotFoundPage /></PageTransition>} />
         </Routes>
       </AnimatePresence>
       </Suspense>
