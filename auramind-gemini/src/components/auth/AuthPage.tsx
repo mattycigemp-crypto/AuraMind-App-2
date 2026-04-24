@@ -17,6 +17,7 @@ import {
   Lock
 } from 'lucide-react';
 import { supabase } from '../../services/database/supabase';
+import { emailService } from '../../services/email/emailService';
 
 interface AuthPageProps {
   onBack: () => void;
@@ -52,6 +53,14 @@ const AuthPage: React.FC<AuthPageProps> = ({ onBack, onContinue }) => {
         if (mode === 'login') {
           const { error } = await supabase.auth.signInWithPassword({ email, password });
           if (error) throw error;
+          
+          // Send sign-in alert email
+          await emailService.sendSignInAlert({
+            name: fullName || 'User',
+            email,
+            timestamp: new Date().toLocaleString(),
+            device: navigator.userAgent,
+          });
         } else {
           const { data, error } = await supabase.auth.signUp({ 
             email, 
@@ -66,6 +75,14 @@ const AuthPage: React.FC<AuthPageProps> = ({ onBack, onContinue }) => {
           if (data?.user && !data.session) {
             setVerificationSent(true);
             return;
+          }
+
+          // Send welcome email for successful signup
+          if (data?.user) {
+            await emailService.sendWelcomeEmail({
+              name: fullName || 'User',
+              email,
+            });
           }
         }
       } else {
@@ -120,6 +137,15 @@ const AuthPage: React.FC<AuthPageProps> = ({ onBack, onContinue }) => {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
+      
+      // Send password reset email via our service
+      await emailService.sendPasswordResetEmail({
+        name: 'User',
+        email,
+        resetLink: `${window.location.origin}/reset-password`,
+        expiresIn: '1 hour',
+      });
+      
       alert("Password reset email sent! Check your inbox.");
     } catch (err: any) {
       alert(err.message || "Failed to send reset email. Please try again.");
