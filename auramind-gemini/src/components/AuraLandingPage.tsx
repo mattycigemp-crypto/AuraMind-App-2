@@ -279,8 +279,8 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
                 </div>
 
                 <h1 className="text-impact-hero text-foreground mb-8">
-                  STUDY THE MATERIAL<br />
-                  <span className="text-primary/70">YOU ARE ACTUALLY FORGETTING.</span>
+                  FOR THOSE WITH<br />
+                  <span className="text-primary/70">BAD MEMORY.</span>
                 </h1>
 
                 <p className="max-w-xl text-base md:text-lg text-muted-foreground mb-12 font-medium leading-relaxed">

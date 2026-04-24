@@ -23,6 +23,7 @@ export interface Card {
   interval: number; // Days
   easeFactor: number;
   repetition: number;
+  understandingLevel?: number;
   lastReviewed?: number; // Timestamp of last review
 }
 

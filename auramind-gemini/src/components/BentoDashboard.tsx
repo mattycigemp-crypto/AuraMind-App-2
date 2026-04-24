@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, Deck, UserProfile, ViewState } from '../types';
 import OnboardingTutorial from './OnboardingTutorial';
-import { generateFlashcards } from '../services/geminiService';
+import { generateFlashcards } from '../services/deepseekService';
 import ActivityHeatmap from './ActivityHeatmap';
 import { extractStudyAssetText } from '../services/documentImportService';
 import {

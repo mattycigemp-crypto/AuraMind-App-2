@@ -9,7 +9,7 @@ import {
     generateResearchPack,
     generateStudyBuddyResponse,
     generateSummaryFromTopic
-} from './geminiService';
+} from './deepseekService';
 
 export type AuraAgentMode =
     | 'study_from_anything'

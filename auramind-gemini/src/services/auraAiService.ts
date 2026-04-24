@@ -104,6 +104,7 @@ const getEnv = (key: string): string => {
 };
 
 const openRouterKey = getEnv('VITE_OPENROUTER_API_KEY');
+const groqKey = getEnv('VITE_GROQ_API_KEY');
 const useLocalAI = getEnv('VITE_USE_LOCAL_AI') === 'true';
 const customModel = getEnv('VITE_AI_MODEL');
 const localBaseUrl = '/local-ai/v1';
@@ -112,25 +113,35 @@ export class AuraAiClient {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly defaultModel: string;
+  private readonly apiKeySource: string;
 
-  constructor(apiKey: string, baseUrl?: string, model?: string) {
-    this.apiKey = apiKey;
-    this.baseUrl = baseUrl || 'https://openrouter.ai/api/v1';
-
-    if (model) {
-      this.defaultModel = model;
+  constructor(apiKey?: string, baseUrl?: string, model?: string) {
+    // Try API keys in order of preference
+    if (useLocalAI) {
+      this.apiKey = 'not-needed';
+      this.baseUrl = localBaseUrl;
+      this.defaultModel = model || 'local-model';
+      this.apiKeySource = 'local';
+    } else if (groqKey) {
+      this.apiKey = groqKey;
+      this.baseUrl = 'https://api.groq.com/openai/v1';
+      this.defaultModel = model || 'groq/groq-llama3-8b-8192-tool-preview';
+      this.apiKeySource = 'groq';
+    } else if (openRouterKey) {
+      this.apiKey = openRouterKey;
+      this.baseUrl = baseUrl || 'https://openrouter.ai/api/v1';
+      this.defaultModel = model || customModel || 'deepseek/deepseek-r1-0528:free';
+      this.apiKeySource = 'openrouter';
     } else {
-      // Fallback: Use a generic ID for local servers, or Gemini for OpenRouter
-      this.defaultModel = this.baseUrl.includes('local-ai')
-        ? 'local-model'
-        : 'google/gemini-2.0-flash-lite-preview-02-05:free';
+      throw new Error('No valid API key found. Please set VITE_OPENROUTER_API_KEY, VITE_GROQ_API_KEY, or enable VITE_USE_LOCAL_AI=true');
     }
   }
 
   private checkApiKey() {
     // Local servers like LM Studio often don't require an API key
-    if (!this.apiKey && this.baseUrl.includes('openrouter.ai')) {
-      throw new Error('API key is missing. Please set VITE_OPENROUTER_API_KEY in your .env file.');
+    if (!this.apiKey && !this.baseUrl.includes('local-ai')) {
+      const source = this.apiKeySource === 'groq' ? 'VITE_GROQ_API_KEY' : 'VITE_OPENROUTER_API_KEY';
+      throw new Error(`API key is missing. Please set ${source} in your .env file.`);
     }
   }
 
@@ -143,6 +154,14 @@ export class AuraAiClient {
     } = options;
 
     this.checkApiKey();
+
+    // Debug logging
+    console.log('🔍 API Debug Info:');
+    console.log('  - Base URL:', this.baseUrl);
+    console.log('  - Model:', this.defaultModel);
+    console.log('  - API Key Source:', this.apiKeySource);
+    console.log('  - Has API Key:', !!this.apiKey);
+    console.log('  - Messages Count:', messages.length);
 
     try {
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
@@ -164,11 +183,21 @@ export class AuraAiClient {
       if (!response.ok) {
         const errorText = await response.text();
         let errorMessage = 'Failed to fetch from AI API';
+        
+        console.log('❌ API Error Details:');
+        console.log('  - Status:', response.status);
+        console.log('  - Status Text:', response.statusText);
+        console.log('  - Error Text:', errorText);
+        console.log('  - Base URL:', this.baseUrl);
+        console.log('  - API Key Source:', this.apiKeySource);
+        
         try {
           const jsonError = JSON.parse(errorText);
           errorMessage = jsonError.error?.message || jsonError.message || errorMessage;
+          console.log('  - Parsed Error:', jsonError);
         } catch (e) {
           errorMessage = `API Error (${response.status}): ${errorText || response.statusText}`;
+          console.log('  - Raw Error Message:', errorMessage);
         }
 
         if (this.baseUrl.includes('local-ai')) {
@@ -292,11 +321,7 @@ export class AuraAiClient {
   }
 }
 
-export const auraAiClient = new AuraAiClient(
-  openRouterKey,
-  useLocalAI ? localBaseUrl : undefined,
-  customModel || undefined
-);
+export const auraAiClient = new AuraAiClient();
 
 // Export types for use in other components
 export type { Message, ChatCompletionOptions, ChatCompletionResponse };

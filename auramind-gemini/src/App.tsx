@@ -3,7 +3,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { AnimatePresence, motion } from 'framer-motion';
 import { Deck, Card, Rating, UserProfile } from './types';
 import { calculateSRS, getInitialCardState } from './services/srs';
-import { generateDeckFromTopic, GeneratedCard } from './services/geminiService';
+import { generateDeckFromTopic, GeneratedCard } from './services/deepseekService';
 import { dbService } from './services/dbService';
 import { PREMADE_CARDS, PREMADE_DECKS } from './data/premadeContent';
 import { createMetadataTemplates, mergeCardMetadata, persistCardMetadata } from './services/roadmapService';
@@ -33,6 +33,7 @@ const PaymentPage = React.lazy(() => import('./components/PaymentPage'));
 const AuthPage = React.lazy(() => import('./components/AuthPage'));
 
 import AmbientPlayer from './components/AmbientPlayer';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { ThemeProvider, useTheme } from './hooks/useTheme';
 import { supabase } from './services/supabase';
 
@@ -228,20 +229,27 @@ const AppContent = () => {
       setCards(fetchedCards);
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        navigate('/reset-password');
-      }
-      if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'INITIAL_SESSION') {
-        syncSession(session);
-      }
-    });
+    let subscription: { unsubscribe: () => void } | null = null;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    if (supabase) {
+      const { data: { subscription: sub } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          navigate('/reset-password');
+        }
+        if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'INITIAL_SESSION') {
+          syncSession(session);
+        }
+      });
+      subscription = sub;
+    } else {
+      console.warn('Supabase not initialized - authentication disabled');
+    }
+
+    supabase?.auth.getSession().then(({ data: { session } }) => {
       syncSession(session);
     });
 
-    return () => subscription.unsubscribe();
+    return () => subscription?.unsubscribe();
   }, [navigate]);
 
   const createDeck = async (t: string, d: string) => {
@@ -437,9 +445,11 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <ThemeProvider>
-    <AppContent />
-  </ThemeProvider>
+  <ErrorBoundary>
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  </ErrorBoundary>
 );
 
 export default App;

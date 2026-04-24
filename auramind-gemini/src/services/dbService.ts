@@ -17,6 +17,11 @@ export const dbService = {
 
     // --- DECKS ---
     async fetchDecks(userId: string): Promise<Deck[]> {
+        if (!supabase) {
+            console.warn('Supabase not initialized, returning empty decks');
+            return [];
+        }
+        
         if (cachedDecks && lastOwnerId === userId) {
             return cachedDecks;
         }
@@ -27,7 +32,10 @@ export const dbService = {
             .eq('user_id', userId)
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Error fetching decks:', error);
+            throw error;
+        }
         const res = (data ?? []).map(d => ({
             id: d.id,
             title: d.title,
@@ -106,6 +114,11 @@ export const dbService = {
 
     // --- CARDS ---
     async fetchCards(userId: string): Promise<Card[]> {
+        if (!supabase) {
+            console.warn('Supabase not initialized, returning empty cards');
+            return [];
+        }
+        
         if (cachedCards && lastOwnerId === userId) {
             return cachedCards;
         }
@@ -115,7 +128,10 @@ export const dbService = {
             .select('*')
             .eq('user_id', userId);
 
-        if (error) throw error;
+        if (error) {
+            console.error('Error fetching cards:', error);
+            throw error;
+        }
         const res = enrichCardsWithStoredMetadata((data ?? []).map(c => ({
             id: c.id,
             question: c.question,

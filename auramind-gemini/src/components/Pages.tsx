@@ -62,7 +62,7 @@ import {
 } from 'lucide-react';
 import { Deck, Card, Rating, UserProfile } from '../types';
 import { supabase } from '../services/supabase';
-import { GeneratedCard, generateFlashcards, generateStudyBuddyResponse } from '../services/geminiService';
+import { GeneratedCard, generateFlashcards, generateStudyBuddyResponse } from '../services/deepseekService';
 import { AuraAgentMode, AuraAgentOutputType, AuraAgentResult, runAuraAgent } from '../services/agentService';
 import { useTheme } from '../hooks/useTheme';
 import { useIsMobile } from '../hooks/use-mobile';

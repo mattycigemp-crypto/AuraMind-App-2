@@ -18,7 +18,7 @@ const PLANS = [
     name: 'MONTHLY PROTOCOL',
     price: '$9.99',
     interval: '/MO',
-    variantId: import.meta.env.VITE_LEMON_SQUEEZY_VARIANT_ID_MONTHLY || '612345',
+    priceId: import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY || 'price_1SNlszGhRq84JnUVyNTmKt3A',
     badge: null,
     desc: 'Full access with flexible maintenance.'
   },
@@ -27,7 +27,7 @@ const PLANS = [
     name: 'ANNUAL SYSTEM',
     price: '$3.99',
     interval: '/MO',
-    variantId: import.meta.env.VITE_LEMON_SQUEEZY_VARIANT_ID_YEARLY || '612346',
+    priceId: import.meta.env.VITE_STRIPE_PRICE_ID_ANNUAL || 'price_1SedVnGhRq84JnUVctLWWuWJ',
     badge: 'SAVE 60%',
     totalPrice: '$47.88 Billed Annually',
     desc: 'The complete cognitive upgrade.'
@@ -54,25 +54,22 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user, onBack }) => {
     setError('');
 
     try {
-      const response = await fetch('/api/create-ls-checkout', {
+      const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          variantId: plan.variantId,
+          priceId: plan.priceId,
           userId: user.id,
           email: user.email,
-          name: user.name,
         }),
       });
 
       const data = await response.json();
 
       if (data.url) {
-        if ((window as any).LemonSqueezy) {
-          (window as any).LemonSqueezy.Url.Open(data.url);
-        } else {
-          window.location.href = data.url;
-        }
+        window.location.href = data.url;
+      } else if (data.alreadySubscribed) {
+        setError('You are already subscribed to a plan.');
       } else {
         setError(data.error || 'Could not start checkout.');
       }
@@ -229,10 +226,12 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user, onBack }) => {
 
             <div className="architectural-panel p-8 bg-arch-muted/5 flex items-center justify-center gap-12">
                <div className="flex items-center gap-3 grayscale opacity-30 invert">
-                  <span className="text-[8px] font-black text-slate-900 dark:text-white bg-black p-1">LemonSqueezy</span>
+                  <CreditCard size={14} className="text-white" />
+                  <span className="text-[8px] font-black text-slate-900 dark:text-white bg-black p-1">Stripe Secure</span>
                </div>
                <div className="w-px h-6 bg-arch-border" />
                <div className="flex items-center gap-3 grayscale opacity-30 invert">
+                  <Shield size={14} className="text-white" />
                   <span className="text-[12px] font-black text-slate-900 dark:text-white italic">Aura OS</span>
                </div>
             </div>
