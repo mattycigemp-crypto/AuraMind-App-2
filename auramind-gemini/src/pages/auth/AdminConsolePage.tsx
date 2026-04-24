@@ -16,12 +16,19 @@ interface AdminUser {
 }
 
 export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user: UserProfile }) => {
-  const [panel, setPanel] = useState<'users' | 'analytics' | 'settings' | 'coupons'>('users');
+  const [panel, setPanel] = useState<'users' | 'analytics' | 'settings' | 'coupons' | 'testing'>('users');
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingCoupons, setLoadingCoupons] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [testResults, setTestResults] = useState<any>(null);
+  const [testEmail, setTestEmail] = useState('');
+  const [testPassword, setTestPassword] = useState('');
+  const [testMakeAdmin, setTestMakeAdmin] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [userDetails, setUserDetails] = useState<any>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   // Coupon Creation State
   const [newCoupon, setNewCoupon] = useState({
@@ -134,8 +141,121 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
     if (user.isAdmin) {
       if (panel === 'users') fetchUsers();
       if (panel === 'coupons') fetchCoupons();
+      if (panel === 'testing') runSystemTests();
     }
   }, [user.isAdmin, panel]);
+
+  const runSystemTests = async () => {
+    setActionError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      
+      const res = await fetch('/api/test-admin', {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Tests failed');
+      setTestResults(data);
+    } catch (err: any) {
+      setActionError(err.message || 'System tests failed');
+    }
+  };
+
+  const handleCreateTestUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setActionError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch('/api/admin-test-utility', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          action: 'create_test_user',
+          testData: {
+            email: testEmail,
+            password: testPassword,
+            makeAdmin: testMakeAdmin
+          }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to create test user');
+
+      setTestEmail('');
+      setTestPassword('');
+      alert('Test user created successfully!');
+      fetchUsers();
+    } catch (err: any) {
+      setActionError(err.message);
+    }
+  };
+
+  const handleViewUserDetails = async (userId: string) => {
+    setLoadingDetails(true);
+    setActionError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch('/api/admin-test-utility', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          action: 'get_user_details',
+          targetUserId: userId
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to fetch user details');
+
+      setUserDetails(data.user);
+      setSelectedUser(adminUsers.find(u => u.id === userId) || null);
+    } catch (err: any) {
+      setActionError(err.message);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const handleSetSubscription = async (userId: string, status: string, plan: string) => {
+    setActionError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch('/api/admin-test-utility', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          action: 'set_subscription',
+          targetUserId: userId,
+          testData: { status, plan }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update subscription');
+
+      alert('Subscription updated successfully!');
+      fetchUsers();
+    } catch (err: any) {
+      setActionError(err.message);
+    }
+  };
 
   if (!user.isAdmin) {
     return (
@@ -195,8 +315,9 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
         {[
           ['users', 'User Management'],
           ['coupons', 'Promo Codes'],
-          ['analytics', 'Analytics (Mock)'],
+          ['analytics', 'Analytics'],
           ['settings', 'Platform Config'],
+          ['testing', 'Testing Tools'],
         ].map(([value, label]) => (
           <button
             key={value}
@@ -265,13 +386,22 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
                           </span>
                         </td>
                         <td className="p-5">
-                          <button
-                            onClick={() => handleToggleAdmin(u.id, u.isAdmin)}
-                            disabled={u.email === 'matty.cigemp@gmail.com' || u.id === user.id}
-                            className="btn-arch-outline px-4 py-2 text-[9px] disabled:opacity-30 disabled:cursor-not-allowed"
-                          >
-                            {u.isAdmin ? 'Revoke Admin' : 'Make Admin'}
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleToggleAdmin(u.id, u.isAdmin)}
+                              disabled={u.email === 'matty.cigemp@gmail.com' || u.id === user.id}
+                              className="btn-arch-outline px-3 py-2 text-[9px] disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              {u.isAdmin ? 'Revoke' : 'Admin'}
+                            </button>
+                            <button
+                              onClick={() => handleViewUserDetails(u.id)}
+                              disabled={loadingDetails}
+                              className="btn-arch-outline px-3 py-2 text-[9px]"
+                            >
+                              Details
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -279,6 +409,105 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
                 </table>
               </div>
             )}
+          </div>
+        )}
+
+        {/* User Details Modal */}
+        {selectedUser && userDetails && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { setSelectedUser(null); setUserDetails(null); }}>
+            <div className="architectural-panel p-8 max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-black italic lowercase text-arch-fg">User Details</h2>
+                <button onClick={() => { setSelectedUser(null); setUserDetails(null); }} className="text-arch-muted hover:text-arch-fg">
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 border border-arch-border bg-arch-fg/5">
+                    <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-2">Email</p>
+                    <p className="text-xs text-arch-fg">{selectedUser.email}</p>
+                  </div>
+                  <div className="p-4 border border-arch-border bg-arch-fg/5">
+                    <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-2">Name</p>
+                    <p className="text-xs text-arch-fg">{selectedUser.name}</p>
+                  </div>
+                  <div className="p-4 border border-arch-border bg-arch-fg/5">
+                    <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-2">User ID</p>
+                    <p className="text-xs text-arch-fg font-mono">{selectedUser.id}</p>
+                  </div>
+                  <div className="p-4 border border-arch-border bg-arch-fg/5">
+                    <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-2">Plan</p>
+                    <p className="text-xs text-arch-fg">{selectedUser.plan}</p>
+                  </div>
+                  <div className="p-4 border border-arch-border bg-arch-fg/5">
+                    <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-2">Joined</p>
+                    <p className="text-xs text-arch-fg">{new Date(selectedUser.created).toLocaleDateString()}</p>
+                  </div>
+                  <div className="p-4 border border-arch-border bg-arch-fg/5">
+                    <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-2">Admin</p>
+                    <p className={`text-xs font-black ${selectedUser.isAdmin ? 'text-emerald-400' : 'text-arch-muted'}`}>
+                      {selectedUser.isAdmin ? 'Yes' : 'No'}
+                    </p>
+                  </div>
+                </div>
+
+                {userDetails.metadata && (
+                  <div className="border border-arch-border bg-arch-fg/5 p-6">
+                    <h3 className="text-sm font-black italic lowercase text-arch-fg mb-4">Metadata</h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-[9px] text-arch-muted uppercase">Subscription Status</span>
+                        <span className="text-[9px] font-black text-arch-fg">{userDetails.metadata.subscription_status || 'none'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[9px] text-arch-muted uppercase">Stripe Customer</span>
+                        <span className="text-[9px] font-mono text-arch-fg">{userDetails.metadata.stripe_customer_id || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[9px] text-arch-muted uppercase">Stripe Subscription</span>
+                        <span className="text-[9px] font-mono text-arch-fg">{userDetails.metadata.stripe_subscription_id || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[9px] text-arch-muted uppercase">Trial End</span>
+                        <span className="text-[9px] text-arch-fg">{userDetails.metadata.trial_end ? new Date(userDetails.metadata.trial_end).toLocaleDateString() : 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="border border-arch-border bg-arch-fg/5 p-6">
+                  <h3 className="text-sm font-black italic lowercase text-arch-fg mb-4">Subscription Management</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <button
+                      onClick={() => handleSetSubscription(selectedUser.id, 'active', 'Pro')}
+                      className="btn-arch px-4 py-3 text-[9px]"
+                    >
+                      Set Pro (Active)
+                    </button>
+                    <button
+                      onClick={() => handleSetSubscription(selectedUser.id, 'trialing', 'Pro')}
+                      className="btn-arch-outline px-4 py-3 text-[9px]"
+                    >
+                      Set Pro (Trial)
+                    </button>
+                    <button
+                      onClick={() => handleSetSubscription(selectedUser.id, 'canceled', 'Starter')}
+                      className="btn-arch-outline px-4 py-3 text-[9px]"
+                    >
+                      Cancel (Starter)
+                    </button>
+                    <button
+                      onClick={() => handleSetSubscription(selectedUser.id, 'past_due', 'Starter')}
+                      className="btn-arch-outline px-4 py-3 text-[9px]"
+                    >
+                      Past Due (Starter)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -426,10 +655,174 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
           </p>
         )}
 
-        {panel !== 'users' && panel !== 'coupons' && (
-          <div className="py-20 text-center">
-            <h3 className="text-xl font-black text-arch-muted italic lowercase">Module offline.</h3>
-            <p className="text-[10px] uppercase tracking-widest text-arch-muted mt-4">This section is currently a placeholder.</p>
+        {panel === 'analytics' && (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <MetricTile label="Total Users" value={adminUsers.length || '--'} detail="Registered accounts" />
+              <MetricTile label="Active Subscriptions" value={adminUsers.filter(u => u.plan === 'Pro').length || '--'} detail="Paying members" />
+              <MetricTile label="Trial Users" value={adminUsers.filter(u => u.plan === 'Starter').length || '--'} detail="Free tier" />
+              <MetricTile label="Admins" value={adminUsers.filter(u => u.isAdmin).length || '--'} detail="System administrators" />
+            </div>
+
+            <div className="border border-arch-border bg-arch-fg/5 p-8">
+              <h3 className="text-lg font-black italic lowercase text-arch-fg mb-6">User Growth</h3>
+              <div className="space-y-4">
+                {adminUsers.slice(0, 10).map((u, i) => (
+                  <div key={u.id} className="flex items-center justify-between p-4 border border-arch-border bg-arch-bg">
+                    <div className="flex items-center gap-3">
+                      <span className="text-arch-muted text-xs">#{i + 1}</span>
+                      <span className="text-xs font-bold text-arch-fg">{u.name}</span>
+                    </div>
+                    <span className="text-[10px] text-arch-muted uppercase tracking-widest">
+                      {new Date(u.created).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {panel === 'settings' && (
+          <div className="space-y-8">
+            <div className="border border-arch-border bg-arch-fg/5 p-8">
+              <h3 className="text-lg font-black italic lowercase text-arch-fg mb-6">System Configuration</h3>
+              <div className="space-y-6">
+                <div className="p-4 border border-arch-border bg-arch-bg">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-arch-muted mb-2">Environment</p>
+                  <p className="text-xs text-arch-fg">{process.env.NODE_ENV || 'production'}</p>
+                </div>
+                <div className="p-4 border border-arch-border bg-arch-bg">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-arch-muted mb-2">Supabase URL</p>
+                  <p className="text-xs text-arch-fg font-mono">{process.env.VITE_SUPABASE_URL ? '✓ Configured' : '✗ Missing'}</p>
+                </div>
+                <div className="p-4 border border-arch-border bg-arch-bg">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-arch-muted mb-2">Service Role Key</p>
+                  <p className="text-xs text-arch-fg font-mono">{process.env.SUPABASE_SERVICE_ROLE_KEY ? '✓ Configured' : '✗ Missing'}</p>
+                </div>
+                <div className="p-4 border border-arch-border bg-arch-bg">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-arch-muted mb-2">Stripe Secret</p>
+                  <p className="text-xs text-arch-fg font-mono">{process.env.STRIPE_SECRET_KEY ? '✓ Configured' : '✗ Missing'}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border border-arch-border bg-arch-fg/5 p-8">
+              <h3 className="text-lg font-black italic lowercase text-arch-fg mb-6">Documentation</h3>
+              <p className="text-[9px] text-arch-muted uppercase tracking-widest italic">
+                See ADMIN_GUIDE.md in the project root for complete documentation on admin features, testing utilities, and API endpoints.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {panel === 'testing' && (
+          <div className="space-y-8">
+            {actionError && (
+              <div className="bg-red-500/10 border border-red-500/20 p-4 text-xs font-black uppercase tracking-widest text-red-500">
+                {actionError}
+              </div>
+            )}
+
+            {/* System Tests */}
+            <div className="border border-arch-border bg-arch-fg/5 p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-black italic lowercase text-arch-fg">System Diagnostics</h3>
+                <button onClick={runSystemTests} className="btn-arch-outline px-4 py-2 text-[9px]">
+                  Run Tests
+                </button>
+              </div>
+
+              {testResults ? (
+                <div className="space-y-4">
+                  <div className="p-4 border border-arch-border bg-arch-bg">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-arch-muted mb-2">Overall Status</p>
+                    <p className={`text-xs font-black ${testResults.summary?.overallStatus === 'healthy' ? 'text-emerald-400' : 'text-red-500'}`}>
+                      {testResults.summary?.overallStatus || 'Unknown'}
+                    </p>
+                    <p className="text-[9px] text-arch-muted mt-2">
+                      {testResults.summary?.passed || 0} passed, {testResults.summary?.failed || 0} failed, {testResults.summary?.skipped || 0} skipped
+                    </p>
+                  </div>
+
+                  {testResults.tests?.map((test: any, i: number) => (
+                    <div key={i} className="p-4 border border-arch-border bg-arch-bg">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-bold text-arch-fg">{test.name}</p>
+                        <span className={`text-[9px] font-black uppercase tracking-widest ${
+                          test.status === 'passed' ? 'text-emerald-400' : 
+                          test.status === 'failed' ? 'text-red-500' : 'text-arch-muted'
+                        }`}>
+                          {test.status}
+                        </span>
+                      </div>
+                      <p className="text-[9px] text-arch-muted">{test.message}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[9px] text-arch-muted uppercase tracking-widest italic">
+                  Click "Run Tests" to check system health
+                </p>
+              )}
+            </div>
+
+            {/* Create Test User */}
+            <div className="border border-arch-border bg-arch-fg/5 p-8">
+              <h3 className="text-lg font-black italic lowercase text-arch-fg mb-6">Create Test User</h3>
+              <form onSubmit={handleCreateTestUser} className="space-y-4">
+                <div>
+                  <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-3 italic">Email</p>
+                  <input
+                    type="email"
+                    value={testEmail}
+                    onChange={(e) => setTestEmail(e.target.value)}
+                    placeholder="test@example.com"
+                    className="w-full bg-arch-bg border border-arch-border p-4 text-xs font-medium outline-none focus:border-arch-fg text-arch-fg"
+                    required
+                  />
+                </div>
+                <div>
+                  <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-3 italic">Password</p>
+                  <input
+                    type="password"
+                    value={testPassword}
+                    onChange={(e) => setTestPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-arch-bg border border-arch-border p-4 text-xs font-medium outline-none focus:border-arch-fg text-arch-fg"
+                    required
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="makeAdmin"
+                    checked={testMakeAdmin}
+                    onChange={(e) => setTestMakeAdmin(e.target.checked)}
+                    className="w-4 h-4"
+                  />
+                  <label htmlFor="makeAdmin" className="text-[9px] font-black uppercase tracking-widest text-arch-fg">
+                    Grant Admin Access
+                  </label>
+                </div>
+                <button type="submit" className="btn-arch w-full">
+                  Create Test User
+                </button>
+              </form>
+            </div>
+
+            {/* Testing Guide */}
+            <div className="border border-arch-border bg-arch-fg/5 p-8">
+              <h3 className="text-lg font-black italic lowercase text-arch-fg mb-6">Testing Guide</h3>
+              <div className="space-y-4 text-[9px] text-arch-muted uppercase tracking-widest">
+                <p>1. Use "Create Test User" to generate test accounts</p>
+                <p>2. Grant admin access to test admin-specific features</p>
+                <p>3. Run system diagnostics to check API integrations</p>
+                <p>4. Test subscription flows with test users</p>
+                <p>5. Verify admin permissions and access controls</p>
+                <p className="text-arch-fg mt-4">Admins automatically get free access to all features</p>
+              </div>
+            </div>
           </div>
         )}
       </div>
