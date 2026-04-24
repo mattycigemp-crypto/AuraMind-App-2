@@ -118,15 +118,16 @@ export const dbService = {
             console.warn('Supabase not initialized, returning empty cards');
             return [];
         }
-        
+
         if (cachedCards && lastOwnerId === userId) {
             return cachedCards;
         }
 
+        // Fetch cards through decks relationship
         const { data, error } = await supabase
             .from('cards')
             .select('*')
-            .eq('user_id', userId);
+            .in('deck_id', (await this.fetchDecks(userId)).map(d => d.id));
 
         if (error) {
             console.error('Error fetching cards:', error);
@@ -151,7 +152,6 @@ export const dbService = {
 
     async saveCards(userId: string, cards: Omit<Card, 'id'>[]): Promise<Card[]> {
         const dbCards = cards.map(c => ({
-            user_id: userId,
             question: c.question,
             answer: c.answer,
             deck_id: c.deckId,

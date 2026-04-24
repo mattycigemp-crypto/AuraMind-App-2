@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { analyticsService } from '../../services/analytics/analyticsService';
 
 interface Props {
   children: ReactNode;
@@ -24,13 +25,11 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error('Error caught by boundary:', error, errorInfo);
 
     // Log to error reporting service if available
-    if (typeof window !== 'undefined' && (window as any).posthog) {
-      (window as any).posthog.capture('error_boundary', {
-        error: error.message,
-        stack: error.stack,
-        componentStack: errorInfo.componentStack,
-      });
-    }
+    analyticsService.track('error_boundary', {
+      error: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
+    });
   }
 
   handleReset = () => {
