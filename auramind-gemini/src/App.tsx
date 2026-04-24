@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Deck, Card, Rating, UserProfile } from './types';
+import { Deck, Card, Rating, UserProfile, UserRole } from './types';
 import { calculateSRS, getInitialCardState } from './services/study/srs';
 import { generateDeckFromTopic, GeneratedCard } from './services/api/deepseekService';
 import { dbService } from './services/database/dbService';
 import { PREMADE_CARDS, PREMADE_DECKS } from './data/premadeContent';
 import { createMetadataTemplates, mergeCardMetadata, persistCardMetadata } from './services/study/roadmapService';
 import { analyticsService } from './services/analytics/analyticsService';
+import { getPermissions, getDefaultRole } from './utils/permissions';
 
 const AuraLandingPage = React.lazy(() => import('./components/landing/AuraLandingPage'));
 const BentoDashboard = React.lazy(() => import('./components/dashboard/BentoDashboard'));
@@ -183,6 +184,9 @@ const AppContent = () => {
 
   const mapAuthUserToProfile = (authUser: any): UserProfile => {
     const metadata = authUser.user_metadata || {};
+    const role = (metadata.role as UserRole) || getDefaultRole(authUser.email);
+    const permissions = getPermissions(role);
+    
     return {
       id: authUser.id,
       name: metadata.full_name || authUser.email?.split('@')[0] || 'User',
@@ -191,7 +195,8 @@ const AppContent = () => {
       plan: metadata.plan || 'Starter',
       streak: typeof metadata.streak === 'number' ? metadata.streak : 0,
       joinedDate: metadata.joined_date ? Number(metadata.joined_date) : Date.now(),
-      isAdmin: metadata.is_admin ?? authUser.email === 'matty.cigemp@gmail.com',
+      isAdmin: permissions.canAccessAdminPanel,
+      role: role,
       isEmailVerified: !!authUser.email_confirmed_at,
       isPhoneVerified: !!authUser.phone_confirmed_at,
       phone: authUser.phone || '',
@@ -215,7 +220,8 @@ const AppContent = () => {
       setUser(profile);
       analyticsService.identify(profile.id, { email: profile.email, plan: profile.plan });
       
-      if (profile.isAdmin || profile.email === 'matty.cigemp@gmail.com') {
+      const permissions = getPermissions(profile.role || UserRole.USER);
+      if (permissions.hasFreeAccess) {
         setSubscriptionStatus('active');
       } else {
         await checkSubscription(session.user.id, session.user.email || '');
@@ -429,7 +435,14 @@ const AppContent = () => {
             <Route path="/generate" element={<PageTransition><GenerateCardsRoute activeDeckId={activeDeckId} navigate={navigate} user={currentUser} saveGeneratedCards={saveGeneratedCards} /></PageTransition>} />
             <Route path="/chat" element={<PageTransition><ChatRoute navigate={navigate} createGeneratedDeck={createGeneratedDeck} createDeckFromCards={createDeckFromCards} user={currentUser} decks={decks} cards={cards} /></PageTransition>} />
             <Route path="/settings" element={<PageTransition><SettingsPage user={currentUser} onUpdateUser={updateUserProfile} /></PageTransition>} />
-            <Route path="/admin/vault" element={user?.isAdmin ? <PageTransition><AdminConsolePage decks={decks} cards={cards} user={currentUser} /></PageTransition> : <Navigate to="/dashboard" replace />} />
+            <Route path="/admin/vault" element={(() => {
+              const permissions = getPermissions(currentUser.role || UserRole.USER);
+              return permissions.canAccessAdminPanel ? (
+                <PageTransition><AdminConsolePage decks={decks} cards={cards} user={currentUser} /></PageTransition>
+              ) : (
+                <Navigate to="/dashboard" replace />
+              );
+            })()} />
             <Route path="/docs" element={<PageTransition><DocsPage /></PageTransition>} />
             <Route path="/privacy" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
             <Route path="/terms" element={<PageTransition><TermsOfServicePage /></PageTransition>} />

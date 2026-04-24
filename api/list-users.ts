@@ -49,6 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       email: u.email,
       name: u.user_metadata?.full_name || u.email?.split('@')[0],
       isAdmin: u.user_metadata?.is_admin || u.email === 'matty.cigemp@gmail.com',
+      role: u.user_metadata?.role || (u.email === 'matty.cigemp@gmail.com' ? 'owner' : 'user'),
       avatar: u.user_metadata?.avatar_url,
       lastSignIn: u.last_sign_in_at,
       created: u.created_at,

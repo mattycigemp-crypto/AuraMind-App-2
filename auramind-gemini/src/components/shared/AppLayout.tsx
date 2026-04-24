@@ -18,7 +18,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ user, onLogout }) => {
       <div className="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vh] bg-arch-muted/5 blur-[180px] rounded-full pointer-events-none" />
 
       {/* PERSISTENT SIDEBAR */}
-      <CosmicSidebar onLogout={onLogout} user={user} isAdmin={user.isAdmin} />
+      <CosmicSidebar onLogout={onLogout} user={user} />
 
       {/* CONTENT AREA */}
       <main className="pl-0 lg:pl-20 xl:pl-64 min-h-screen transition-all duration-500 relative z-10 pb-20 lg:pb-0">

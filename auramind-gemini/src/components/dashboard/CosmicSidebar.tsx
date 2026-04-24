@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { UserProfile } from '../../types';
+import { UserProfile, UserRole } from '../../types';
 import {
   BrainCircuit,
   Crown,
@@ -22,14 +22,16 @@ import {
   X
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
+import { ROLE_LABELS, getPermissions } from '../../utils/permissions';
 
 interface CosmicSidebarProps {
   onLogout: () => void;
   user: UserProfile;
-  isAdmin?: boolean;
 }
 
-const CosmicSidebar: React.FC<CosmicSidebarProps> = ({ onLogout, user, isAdmin }) => {
+const CosmicSidebar: React.FC<CosmicSidebarProps> = ({ onLogout, user }) => {
+  const userRole = user.role || UserRole.USER;
+  const permissions = getPermissions(userRole);
   const navigate = useNavigate();
   const location = useLocation();
   const { theme, setTheme, resolvedTheme, toggleTheme } = useTheme();
@@ -71,7 +73,7 @@ const CosmicSidebar: React.FC<CosmicSidebarProps> = ({ onLogout, user, isAdmin }
                 </div>
                 <div>
                   <span className="font-black tracking-[0.3em] text-[10px] block uppercase text-arch-fg">AURAMIND</span>
-                  <span className="text-[8px] uppercase tracking-[0.4em] text-arch-muted">{isAdmin ? 'Staff Console' : 'Study OS'}</span>
+                  <span className="text-[8px] uppercase tracking-[0.4em] text-arch-muted">{permissions.canAccessAdminPanel ? 'Staff Console' : 'Study OS'}</span>
                 </div>
               </div>
               <button onClick={() => setMobileMenuOpen(false)} className="text-arch-fg hover:text-arch-muted transition-colors">
@@ -138,7 +140,7 @@ const CosmicSidebar: React.FC<CosmicSidebarProps> = ({ onLogout, user, isAdmin }
         </div>
         <div className="hidden xl:block opacity-100 transition-opacity">
           <span className="font-black tracking-[0.3em] text-[10px] block uppercase text-arch-fg">AURAMIND</span>
-          <span className="text-[8px] uppercase tracking-[0.4em] text-arch-muted mt-1">{isAdmin ? 'Staff Console' : 'Study OS'}</span>
+          <span className="text-[8px] uppercase tracking-[0.4em] text-arch-muted mt-1">{permissions.canAccessAdminPanel ? 'Staff Console' : 'Study OS'}</span>
         </div>
       </div>
 
@@ -164,7 +166,7 @@ const CosmicSidebar: React.FC<CosmicSidebarProps> = ({ onLogout, user, isAdmin }
           })}
         </div>
 
-        {isAdmin && (
+        {permissions.canAccessAdminPanel && (
           <div className="border-t border-arch-border">
             <button
               onClick={() => navigate('/admin/vault')}
@@ -189,7 +191,7 @@ const CosmicSidebar: React.FC<CosmicSidebarProps> = ({ onLogout, user, isAdmin }
             </div>
           )}
           <div className="min-w-0">
-            <p className="text-[8px] font-black uppercase tracking-[0.4em] text-arch-muted">{isAdmin ? 'Staff' : 'Member'}</p>
+            <p className="text-[8px] font-black uppercase tracking-[0.4em] text-arch-muted">{ROLE_LABELS[userRole]}</p>
             <p className="text-[10px] font-black uppercase tracking-widest truncate text-arch-fg">{user.name || 'ACTIVE USER'}</p>
           </div>
         </div>

@@ -113,6 +113,14 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export enum UserRole {
+  OWNER = 'owner',
+  CEO = 'ceo',
+  ADMIN = 'admin',
+  EMPLOYEE = 'employee',
+  USER = 'user'
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -122,6 +130,7 @@ export interface UserProfile {
   streak: number;
   joinedDate: number;
   isAdmin?: boolean;
+  role?: UserRole;
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   phone?: string;

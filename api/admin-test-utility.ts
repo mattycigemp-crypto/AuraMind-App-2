@@ -154,7 +154,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       case 'create_test_user': {
-        const { email, password, makeAdmin = false } = testData || {};
+        const { email, password, makeAdmin = false, role = 'user' } = testData || {};
         
         if (!email || !password) {
           return json(res, 400, { error: 'email and password required' });
@@ -166,7 +166,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           email_confirm: true,
           user_metadata: {
             full_name: email.split('@')[0],
-            is_admin: makeAdmin,
+            is_admin: makeAdmin || role === 'owner' || role === 'ceo' || role === 'admin',
+            role: role,
             plan: 'Starter',
             subscription_status: 'none',
             joined_date: Date.now().toString()
@@ -181,7 +182,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           user: {
             id: data.user.id,
             email: data.user.email,
-            isAdmin: makeAdmin
+            isAdmin: makeAdmin || role === 'owner' || role === 'ceo' || role === 'admin',
+            role: role
           }
         });
       }
@@ -209,8 +211,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
+      case 'set_role': {
+        if (!targetUserId) {
+          return json(res, 400, { error: 'targetUserId required' });
+        }
+
+        const { role } = testData || {};
+        
+        const { data: userData } = await supabase.auth.admin.getUserById(targetUserId);
+        if (!userData?.user) {
+          return json(res, 404, { error: 'Target user not found' });
+        }
+
+        // Prevent changing owner role
+        if (userData.user.email === 'matty.cigemp@gmail.com') {
+          return json(res, 403, { error: 'Cannot change owner role' });
+        }
+
+        const { error: updateError } = await supabase.auth.admin.updateUserById(targetUserId, {
+          user_metadata: {
+            ...userData.user.user_metadata,
+            role: role || 'user',
+            is_admin: role === 'owner' || role === 'ceo' || role === 'admin'
+          }
+        });
+
+        if (updateError) throw updateError;
+
+        return json(res, 200, { 
+          success: true, 
+          message: `Role updated to ${role || 'user'} for ${userData.user.email}`,
+          role: role || 'user'
+        });
+      }
+
       default:
-        return json(res, 400, { error: 'Invalid action. Supported: grant_admin, revoke_admin, set_subscription, create_test_user, get_user_details' });
+        return json(res, 400, { error: 'Invalid action. Supported: grant_admin, revoke_admin, set_subscription, create_test_user, get_user_details, set_role' });
     }
   } catch (err: any) {
     return json(res, 500, { error: err.message || 'Operation failed' });

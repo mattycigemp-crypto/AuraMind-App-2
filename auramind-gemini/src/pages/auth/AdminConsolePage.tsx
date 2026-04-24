@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Crown, Command, Plus, Trash2, Loader2 } from 'lucide-react';
-import { Deck, Card, UserProfile } from '../../types';
+import { Deck, Card, UserProfile, UserRole } from '../../types';
 import { PageHeader, MetricTile } from '../../components/shared/PageComponents';
 import { supabase } from '../../services/database/supabase';
+import { ROLE_LABELS, ROLE_DESCRIPTIONS, canManageRole, getPermissions } from '../../utils/permissions';
 
 interface AdminUser {
   id: string;
   email: string;
   name: string;
   isAdmin: boolean;
+  role?: UserRole;
   avatar?: string;
   lastSignIn?: string;
   created: string;
@@ -26,9 +28,11 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
   const [testEmail, setTestEmail] = useState('');
   const [testPassword, setTestPassword] = useState('');
   const [testMakeAdmin, setTestMakeAdmin] = useState(false);
+  const [testRole, setTestRole] = useState<UserRole>(UserRole.USER);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [userDetails, setUserDetails] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [changingRole, setChangingRole] = useState(false);
 
   // Coupon Creation State
   const [newCoupon, setNewCoupon] = useState({
@@ -180,7 +184,8 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
           testData: {
             email: testEmail,
             password: testPassword,
-            makeAdmin: testMakeAdmin
+            makeAdmin: testMakeAdmin,
+            role: testRole
           }
         })
       });
@@ -257,7 +262,45 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
     }
   };
 
-  if (!user.isAdmin) {
+  const handleChangeRole = async (userId: string, newRole: UserRole) => {
+    setChangingRole(true);
+    setActionError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const res = await fetch('/api/admin-test-utility', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          action: 'set_role',
+          targetUserId: userId,
+          testData: { role: newRole }
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update role');
+
+      alert('Role updated successfully!');
+      fetchUsers();
+      if (selectedUser?.id === userId) {
+        handleViewUserDetails(userId);
+      }
+    } catch (err: any) {
+      setActionError(err.message);
+    } finally {
+      setChangingRole(false);
+    }
+  };
+
+  const userRole = user.role || (user.email === 'matty.cigemp@gmail.com' ? UserRole.OWNER : UserRole.USER);
+  const userPermissions = getPermissions(userRole);
+
+  if (!userPermissions.canAccessAdminPanel) {
     return (
       <div className="space-y-10 py-4">
         <PageHeader title="ADMIN SUITE." subtitle="Restricted surface for staff roles only." />
@@ -265,7 +308,7 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
           <ShieldCheck size={64} className="mx-auto text-arch-muted" />
           <h2 className="text-arch-impact text-[32px] lowercase italic">Access Restricted.</h2>
           <p className="text-arch-muted text-[10px] uppercase tracking-[0.4em] italic max-w-xl mx-auto leading-loose">
-            This control room is reserved for owners, admins, and moderators with elevated system permissions.
+            This control room is reserved for users with elevated system permissions.
           </p>
           <button onClick={() => window.history.back()} className="btn-arch mt-8">Return to Base</button>
         </div>
@@ -381,19 +424,18 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
                           </span>
                         </td>
                         <td className="p-5">
-                          <span className={`text-[9px] font-black uppercase tracking-[0.3em] ${u.isAdmin ? 'text-emerald-400' : 'text-arch-muted'}`}>
-                            {u.isAdmin ? 'Admin' : 'User'}
+                          <span className={`text-[9px] font-black uppercase tracking-[0.3em] ${
+                            u.role === UserRole.OWNER ? 'text-purple-400' :
+                            u.role === UserRole.CEO ? 'text-blue-400' :
+                            u.role === UserRole.ADMIN ? 'text-emerald-400' :
+                            u.role === UserRole.EMPLOYEE ? 'text-yellow-400' :
+                            'text-arch-muted'
+                          }`}>
+                            {ROLE_LABELS[u.role || UserRole.USER]}
                           </span>
                         </td>
                         <td className="p-5">
                           <div className="flex gap-2">
-                            <button
-                              onClick={() => handleToggleAdmin(u.id, u.isAdmin)}
-                              disabled={u.email === 'matty.cigemp@gmail.com' || u.id === user.id}
-                              className="btn-arch-outline px-3 py-2 text-[9px] disabled:opacity-30 disabled:cursor-not-allowed"
-                            >
-                              {u.isAdmin ? 'Revoke' : 'Admin'}
-                            </button>
                             <button
                               onClick={() => handleViewUserDetails(u.id)}
                               disabled={loadingDetails}
@@ -446,9 +488,15 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
                     <p className="text-xs text-arch-fg">{new Date(selectedUser.created).toLocaleDateString()}</p>
                   </div>
                   <div className="p-4 border border-arch-border bg-arch-fg/5">
-                    <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-2">Admin</p>
-                    <p className={`text-xs font-black ${selectedUser.isAdmin ? 'text-emerald-400' : 'text-arch-muted'}`}>
-                      {selectedUser.isAdmin ? 'Yes' : 'No'}
+                    <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-2">Role</p>
+                    <p className={`text-xs font-black ${
+                      selectedUser.role === UserRole.OWNER ? 'text-purple-400' :
+                      selectedUser.role === UserRole.CEO ? 'text-blue-400' :
+                      selectedUser.role === UserRole.ADMIN ? 'text-emerald-400' :
+                      selectedUser.role === UserRole.EMPLOYEE ? 'text-yellow-400' :
+                      'text-arch-muted'
+                    }`}>
+                      {ROLE_LABELS[selectedUser.role || UserRole.USER]}
                     </p>
                   </div>
                 </div>
@@ -506,6 +554,38 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
                     </button>
                   </div>
                 </div>
+
+                {userPermissions.canManageRoles && canManageRole(userRole, selectedUser.role || UserRole.USER) && (
+                  <div className="border border-arch-border bg-arch-fg/5 p-6">
+                    <h3 className="text-sm font-black italic lowercase text-arch-fg mb-4">Role Management</h3>
+                    <p className="text-[9px] text-arch-muted uppercase tracking-widest mb-4">
+                      Current: {ROLE_LABELS[selectedUser.role || UserRole.USER]}
+                    </p>
+                    <div className="grid grid-cols-1 gap-3">
+                      {Object.values(UserRole).map((role) => {
+                        if (!canManageRole(userRole, role)) return null;
+                        const isCurrentRole = selectedUser.role === role;
+                        return (
+                          <button
+                            key={role}
+                            onClick={() => handleChangeRole(selectedUser.id, role)}
+                            disabled={changingRole || isCurrentRole}
+                            className={`px-4 py-3 text-[9px] font-black uppercase tracking-widest transition-all ${
+                              isCurrentRole
+                                ? 'bg-arch-fg text-arch-bg cursor-not-allowed'
+                                : 'btn-arch-outline'
+                            }`}
+                          >
+                            {ROLE_LABELS[role]} {isCurrentRole && '(Current)'}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[8px] text-arch-muted uppercase tracking-widest mt-4 italic">
+                      {ROLE_DESCRIPTIONS[selectedUser.role || UserRole.USER]}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -804,6 +884,18 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
                   <label htmlFor="makeAdmin" className="text-[9px] font-black uppercase tracking-widest text-arch-fg">
                     Grant Admin Access
                   </label>
+                </div>
+                <div>
+                  <p className="text-[8px] font-black uppercase tracking-widest text-arch-muted mb-3 italic">Role</p>
+                  <select
+                    value={testRole}
+                    onChange={(e) => setTestRole(e.target.value as UserRole)}
+                    className="w-full bg-arch-bg border border-arch-border p-4 text-xs font-medium outline-none focus:border-arch-fg text-arch-fg appearance-none"
+                  >
+                    {Object.values(UserRole).map((role) => (
+                      <option key={role} value={role}>{ROLE_LABELS[role]}</option>
+                    ))}
+                  </select>
                 </div>
                 <button type="submit" className="btn-arch w-full">
                   Create Test User
