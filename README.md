@@ -48,9 +48,12 @@ An AI-powered study companion application with spaced repetition, flashcard mana
    
    # Stripe Configuration (for payments)
    VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key_here
-   
-   # Email Configuration
-   RESEND_FROM_EMAIL=noreply@yourdomain.com
+   VITE_STRIPE_PRICE_ID_MONTHLY=price_1SNlszGhRq84JnUVyNTmKt3A
+   VITE_STRIPE_PRICE_ID_ANNUAL=price_1SedVnGhRq84JnUVctLWWuWJ
+
+   # Email Configuration (IMPORTANT: Must use verified domain in Resend)
+   RESEND_FROM_EMAIL=noreply@mail.auramind.app
+   RESEND_API_KEY=your_resend_api_key_here
    ```
 
 4. **Start the development server**
@@ -91,7 +94,8 @@ AuraMind App 2/
 |----------|-------------|--------------|
 | `VITE_SUPABASE_URL` | Supabase project URL | Supabase Dashboard → Settings → API |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anonymous key | Supabase Dashboard → Settings → API |
-| `RESEND_FROM_EMAIL` | Sender email for notifications | Resend Dashboard → Domains |
+| `RESEND_FROM_EMAIL` | Sender email for notifications (must use verified domain) | Resend Dashboard → Domains |
+| `RESEND_API_KEY` | Resend API key for email sending | Resend Dashboard → API Keys |
 
 ### Optional Variables
 
@@ -102,6 +106,8 @@ AuraMind App 2/
 | `VITE_USE_LOCAL_AI` | Enable local AI server (LM Studio/Ollama) | `false` |
 | `VITE_AI_MODEL` | Custom AI model selection | `deepseek/deepseek-r1-0528:free` |
 | `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key | - |
+| `VITE_STRIPE_PRICE_ID_MONTHLY` | Stripe monthly price ID | - |
+| `VITE_STRIPE_PRICE_ID_ANNUAL` | Stripe annual price ID | - |
 | `VITE_POSTHOG_KEY` | PostHog analytics key | - |
 
 ### Backend Environment Variables (Vercel)
@@ -114,7 +120,7 @@ These should be set in Vercel project settings:
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key |
 | `RESEND_API_KEY` | Resend API key for emails |
-| `RESEND_FROM_EMAIL` | Verified sender email domain |
+| `RESEND_FROM_EMAIL` | Verified sender email domain (must end with @mail.auramind.app) |
 
 ## 🏗️ Build & Deployment
 
