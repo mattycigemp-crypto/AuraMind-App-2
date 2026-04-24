@@ -6,24 +6,24 @@ import avatarPriya from '@/assets/avatar-priya.jpg';
 
 const testimonials = [
   {
-    name: 'Sarah Kim',
-    role: 'Med Student, Johns Hopkins',
+    name: 'Alex Chen',
+    role: 'Computer Science Student',
     avatar: avatarSarah,
-    quote: 'I went from barely passing pharmacology to scoring in the top 10%. The citations and weak-spot review flow made it feel built for real exam pressure, not generic flashcards.',
+    quote: 'The spaced repetition system really helped me retain complex algorithms and data structures for my technical interviews.',
     rating: 5,
   },
   {
-    name: 'James Okafor',
-    role: 'Bar Exam Candidate',
+    name: 'Jordan Martinez',
+    role: 'Medical Student',
     avatar: avatarJames,
-    quote: 'I could see exactly which Civil Procedure rules I kept missing. AuraMind turned my outlines into cards fast and pushed the right review blocks back in front of me.',
+    quote: 'Being able to import my lecture notes and automatically generate flashcards saved me hours of study prep time each week.',
     rating: 5,
   },
   {
-    name: 'Priya Sharma',
-    role: 'PMP Certification Candidate',
+    name: 'Taylor Wilson',
+    role: 'Law Student',
     avatar: avatarPriya,
-    quote: 'I needed a study tool, not another productivity toy. The review timing and source-backed cards helped me keep hundreds of definitions straight.',
+    quote: 'The weak-spot analysis feature showed me exactly which legal concepts I needed to focus on before exams.',
     rating: 4,
   },
 ];
@@ -103,6 +103,10 @@ const TestimonialsSection = () => {
             </motion.div>
           ))}
         </div>
+
+        <p className="text-center text-xs text-muted-foreground italic mt-8">
+          * Placeholder testimonials for demonstration purposes
+        </p>
       </div>
     </section>
   );

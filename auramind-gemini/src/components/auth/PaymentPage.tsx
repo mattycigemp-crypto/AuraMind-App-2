@@ -35,10 +35,10 @@ const PLANS = [
 ];
 
 const FEATURES = [
-  { icon: BrainCircuit, label: 'Unlimited AI-powered flashcard generation', detail: 'No more "generation limits". Create entire libraries in seconds.' },
-  { icon: Bot, label: 'Full Aura Operator — 4 study agent modes', detail: 'Deep focus, rapid-fire, Socratic, and summary modes unlocked.' },
-  { icon: BookOpen, label: 'Unlimited deck creation & study sessions', detail: 'Architecture for 100 or 10,000 cards. It scales with you.' },
-  { icon: Sparkles, label: 'Research assistant & content pipeline', detail: 'Convert PDFs, URLs, and YouTube videos into mastery decks.' },
+  { icon: BrainCircuit, label: 'AI-powered flashcard generation', detail: 'Generate flashcards from your notes, outlines, and study materials with AI.' },
+  { icon: Bot, label: 'Aura Operator — 4 study agent modes', detail: 'Study From Anything, Study Buddy, Content Pipeline, and Research Assistant modes.' },
+  { icon: BookOpen, label: 'Deck creation & study sessions', detail: 'Create unlimited decks and study with spaced repetition.' },
+  { icon: Sparkles, label: 'Research assistant & content pipeline', detail: 'Convert PDFs, PowerPoint files, and text into study materials.' },
 ];
 
 const PaymentPage: React.FC<PaymentPageProps> = ({ user, onBack }) => {

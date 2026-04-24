@@ -91,7 +91,7 @@ export const DashboardInsightsPage = ({ decks, cards }: { decks: Deck[], cards: 
            <div className="space-y-4 max-w-xl">
              <p className="text-arch-eyebrow">Aura Intelligence Report</p>
              <h3 className="text-3xl font-black italic text-arch-fg uppercase leading-tight">Your cognitive system is operating at peak capacity.</h3>
-             <p className="text-arch-muted text-xs font-medium leading-relaxed italic">The spacing algorithm predicts 94% retention if the current mission-critical backlog is cleared within 24 hours. Focus on the "High Velocity" decks first.</p>
+             <p className="text-arch-muted text-xs font-medium leading-relaxed italic">Focus on clearing your mission-critical backlog to maximize retention. The spacing algorithm optimizes review timing for long-term memory.</p>
            </div>
            <div className="flex gap-4">
              <button className="btn-arch px-10">Generate Strategy</button>
