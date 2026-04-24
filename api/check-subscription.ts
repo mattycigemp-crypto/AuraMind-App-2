@@ -27,7 +27,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Check Supabase user metadata (Single source of truth for Lemon Squeezy integration)
+    // Check Supabase user metadata (Single source of truth for subscription status)
     const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
 
     if (userError || !userData?.user) {

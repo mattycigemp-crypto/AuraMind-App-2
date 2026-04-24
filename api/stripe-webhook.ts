@@ -6,6 +6,18 @@ const json = (res: VercelResponse, status: number, body: Record<string, unknown>
   res.status(status).setHeader('Content-Type', 'application/json').send(JSON.stringify(body));
 };
 
+const getInvoiceSubscriptionId = (invoice: Stripe.Invoice): string | null => {
+  const subscription = (invoice as Stripe.Invoice & {
+    subscription?: string | Stripe.Subscription | null;
+  }).subscription;
+
+  if (!subscription) {
+    return null;
+  }
+
+  return typeof subscription === 'string' ? subscription : subscription.id;
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return json(res, 405, { error: 'Method not allowed' });
@@ -120,9 +132,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         break;
       }
 
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice;
+        const subId = getInvoiceSubscriptionId(invoice);
+
+        if (subId) {
+          const subscription = await stripe.subscriptions.retrieve(subId);
+          const userId = subscription.metadata?.supabase_user_id;
+
+          if (userId) {
+            await supabase.auth.admin.updateUserById(userId, {
+              user_metadata: {
+                subscription_status: subscription.status,
+                plan: 'Pro',
+              },
+            });
+          }
+        }
+        break;
+      }
+
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
-        const subId = invoice.subscription as string | null;
+        const subId = getInvoiceSubscriptionId(invoice);
 
         if (subId) {
           const subscription = await stripe.subscriptions.retrieve(subId);
