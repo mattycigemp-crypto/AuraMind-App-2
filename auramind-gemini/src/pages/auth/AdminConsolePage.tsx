@@ -51,7 +51,7 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const res = await fetch('/api/list-users', {
+      const res = await fetch('/api/admin/list', {
         headers: { Authorization: `Bearer ${session.access_token}` }
       });
       const data = await res.json();
@@ -70,7 +70,7 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const res = await fetch('/api/list-coupons', {
+      const res = await fetch('/api/coupons/list', {
         headers: { Authorization: `Bearer ${session.access_token}` }
       });
       const data = await res.json();
@@ -92,13 +92,15 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
       if (!session) return;
 
       const payload = {
-        ...newCoupon,
+        id: newCoupon.id || undefined,
+        name: newCoupon.name || 'Coupon',
         percent_off: newCoupon.percent_off ? parseFloat(newCoupon.percent_off) : undefined,
         amount_off: newCoupon.amount_off ? parseInt(newCoupon.amount_off) * 100 : undefined, // Convert to cents
+        duration: newCoupon.duration || 'once',
         duration_in_months: newCoupon.duration === 'repeating' ? parseInt(newCoupon.duration_in_months) : undefined,
       };
 
-      const res = await fetch('/api/create-coupon', {
+      const res = await fetch('/api/coupons/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -125,7 +127,7 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const res = await fetch('/api/delete-coupon', {
+      const res = await fetch('/api/coupons/delete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -155,7 +157,7 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       
-      const res = await fetch('/api/test-admin', {
+      const res = await fetch('/api/admin/test', {
         headers: { Authorization: `Bearer ${session.access_token}` }
       });
       const data = await res.json();
@@ -173,7 +175,7 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const res = await fetch('/api/admin-test-utility', {
+      const res = await fetch('/api/admin/utility', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -209,7 +211,7 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const res = await fetch('/api/admin-test-utility', {
+      const res = await fetch('/api/admin/utility', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -239,7 +241,7 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const res = await fetch('/api/admin-test-utility', {
+      const res = await fetch('/api/admin/utility', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -269,7 +271,7 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const res = await fetch('/api/admin-test-utility', {
+      const res = await fetch('/api/admin/utility', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

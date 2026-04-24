@@ -137,7 +137,7 @@ export const SettingsPage = ({
       }
 
       setDeleteStatus('Deactivating account...');
-      const res = await fetch('/api/user-delete', {
+      const res = await fetch('/api/account/delete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -337,28 +337,7 @@ export const SettingsPage = ({
                 </div>
               </div>
               <button
-                onClick={async () => {
-                  try {
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (!session) throw new Error('Authentication required.');
-
-                    const res = await fetch('/api/stripe-portal', {
-                      method: 'POST',
-                      headers: {
-                        'Authorization': `Bearer ${session.access_token}`
-                      }
-                    });
-
-                    const data = await res.json();
-                    if (data.url) {
-                      window.location.href = data.url;
-                    } else {
-                      throw new Error(data.error || 'Failed to open billing portal.');
-                    }
-                  } catch (err: any) {
-                    setProfileStatus(err.message || 'Could not access billing portal.');
-                  }
-                }}
+                onClick={() => window.open('/subscribe', '_blank')}
                 className="btn-arch w-full md:w-auto"
               >
                 Manage Subscription

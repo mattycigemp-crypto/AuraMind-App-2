@@ -54,7 +54,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user, onBack }) => {
     setError('');
 
     try {
-      const response = await fetch('/api/create-checkout-session', {
+      const response = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

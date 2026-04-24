@@ -169,7 +169,7 @@ const AppContent = () => {
 
   const checkSubscription = async (userId: string, email: string) => {
     try {
-      const response = await fetch('/api/check-subscription', {
+      const response = await fetch('/api/subscription', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, email })
