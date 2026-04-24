@@ -1,0 +1,4 @@
+api/delete-account.ts
+api/digest.ts
+api/reminder.ts
+api/welcome.ts
