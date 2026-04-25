@@ -12,7 +12,7 @@ import { getPermissions, getDefaultRole } from './utils/permissions';
 
 const AuraLandingPage = React.lazy(() => import('./components/landing/AuraLandingPage'));
 const BentoDashboard = React.lazy(() => import('./components/dashboard/BentoDashboard'));
-const AppLayout = React.lazy(() => import('./components/shared/AppLayout'));
+import AppLayout from './components/shared/AppLayout';
 
 const DashboardInsightsPage = React.lazy(() => import('./pages/dashboard/InsightsPage'));
 const DashboardPlannerPage = React.lazy(() => import('./pages/dashboard/PlannerPage'));
