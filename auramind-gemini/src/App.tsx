@@ -17,7 +17,7 @@ const AppLayout = React.lazy(() => import('./components/shared/AppLayout'));
 const DashboardInsightsPage = React.lazy(() => import('./pages/dashboard/InsightsPage'));
 const DashboardPlannerPage = React.lazy(() => import('./pages/dashboard/PlannerPage'));
 const ProfessorDashboardPage = React.lazy(() => import('./pages/dashboard/ProfessorDashboardPage'));
-const DeckDetailRoute = React.lazy(() => import('./pages/deck/DeckDetailPage'));
+const DeckDetailRoute = React.lazy(() => import('./pages/deck/DeckDetailRoute'));
 const GenerateCardsRoute = React.lazy(() => import('./pages/deck/GenerateCardsPage'));
 const StudyModeRoute = React.lazy(() => import('./pages/study/StudyModePage'));
 const ChatRoute = React.lazy(() => import('./pages/chat/ChatPage'));
@@ -418,12 +418,12 @@ const AppContent = () => {
       <Suspense fallback={<LoadingOverlay />}>
       <AnimatePresence mode="wait">
         <Routes location={location}>
-          <Route path="/" element={<PageTransition><AuraLandingPage onGetStarted={(e) => navigate('/auth', { state: { email: e } })} /></PageTransition>} />
-          <Route path="/auth" element={<PageTransition><AuthPage onBack={() => navigate('/')} onContinue={() => navigate('/dashboard')} /></PageTransition>} />
+          <Route path="/" element={<PageTransition><AuraLandingPage /></PageTransition>} />
+          <Route path="/auth" element={<PageTransition><AuthPage /></PageTransition>} />
           <Route path="/subscribe" element={
             user && (subscriptionStatus === 'active' || subscriptionStatus === 'trialing')
               ? <Navigate to="/dashboard" replace />
-              : <PageTransition><PaymentPage user={currentUser as any} onBack={() => navigate('/')} /></PageTransition>
+              : <PageTransition><PaymentPage user={currentUser as any} /></PageTransition>
           } />
           
           <Route element={<ProtectedRoute user={user} status={subscriptionStatus} onLogout={onLogout} />}>

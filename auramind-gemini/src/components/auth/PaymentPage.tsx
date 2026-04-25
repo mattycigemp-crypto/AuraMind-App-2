@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap, Shield, BrainCircuit, Infinity, ChevronLeft,
@@ -9,7 +10,6 @@ import {
 
 interface PaymentPageProps {
   user: { id: string; email: string; name: string };
-  onBack: () => void;
 }
 
 const PLANS = [
@@ -41,7 +41,8 @@ const FEATURES = [
   { icon: Sparkles, label: 'Research assistant & content pipeline', detail: 'Convert PDFs, PowerPoint files, and text into study materials.' },
 ];
 
-const PaymentPage: React.FC<PaymentPageProps> = ({ user, onBack }) => {
+const PaymentPage: React.FC<PaymentPageProps> = ({ user }) => {
+  const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState('annual');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -88,7 +89,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user, onBack }) => {
 
       <div className="relative z-10 max-w-7xl mx-auto">
         <button
-          onClick={onBack}
+          onClick={() => navigate('/')}
           className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.4em] text-arch-muted hover:text-arch-fg transition-colors mb-20"
         >
           <ChevronLeft size={14} />

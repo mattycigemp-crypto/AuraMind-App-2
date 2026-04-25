@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import {
   Activity,
@@ -115,11 +116,8 @@ const buildCurvePath = (points: number[], width: number, height: number) => {
     .join(' ');
 };
 
-interface AuraLandingPageProps {
-  onGetStarted?: (email?: string) => void;
-}
-
-const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
+const AuraLandingPage: React.FC = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [mode, setMode] = useState<StudyMode>('Foundation');
   const [intensity, setIntensity] = useState(72);
@@ -179,9 +177,7 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onGetStarted) {
-      onGetStarted(email);
-    }
+    navigate('/auth', { state: { email } });
   };
 
   return (
@@ -227,8 +223,8 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
               >
                 {resolvedTheme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
               </button>
-              <button 
-                onClick={() => onGetStarted?.()}
+              <button
+                onClick={() => navigate('/auth')}
                 className="btn-protocol py-3 px-6 text-[9px] hidden sm:inline-flex rounded-sm"
               >
                 Get Access
@@ -673,7 +669,7 @@ const AuraLandingPage: React.FC<AuraLandingPageProps> = ({ onGetStarted }) => {
                 Create your first source-backed deck, see your weak spots, and start reviewing in minutes.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <button onClick={() => onGetStarted?.()} className="bg-foreground text-background px-10 py-5 text-sm font-black uppercase tracking-[.3em] hover:scale-[1.03] transition-transform rounded-sm shadow-xl">
+                <button onClick={() => navigate('/auth')} className="bg-foreground text-background px-10 py-5 text-sm font-black uppercase tracking-[.3em] hover:scale-[1.03] transition-transform rounded-sm shadow-xl">
                   START FREE STUDY SESSION
                 </button>
                 <a href="#lab" className="border-2 border-primary-foreground/30 text-primary-foreground px-10 py-5 text-sm font-black uppercase tracking-[.3em] hover:border-primary-foreground hover:bg-primary-foreground/5 transition-all rounded-sm">

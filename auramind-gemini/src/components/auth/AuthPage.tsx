@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ChevronLeft, 
@@ -21,12 +21,8 @@ import { emailService } from '../../services/email/emailService';
 import { trialService } from '../../services/trial/trialService';
 import { emailVerificationService } from '../../services/auth/emailVerificationService';
 
-interface AuthPageProps {
-  onBack: () => void;
-  onContinue: () => void;
-}
-
-const AuthPage: React.FC<AuthPageProps> = ({ onBack, onContinue }) => {
+const AuthPage: React.FC = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -99,7 +95,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onBack, onContinue }) => {
         setOtpSent(true);
         return;
       }
-      onContinue();
+      navigate('/dashboard');
     } catch (err: any) {
       if (err.message === 'Email not confirmed') {
         setVerificationSent(true);
@@ -121,7 +117,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onBack, onContinue }) => {
         type: 'sms'
       });
       if (error) throw error;
-      onContinue();
+      navigate('/dashboard');
     } catch (err: any) {
       alert(err.message || 'OTP Verification failed.');
     } finally {
@@ -239,7 +235,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onBack, onContinue }) => {
           <div className="flex justify-between items-center">
             <button
               type="button"
-              onClick={onBack}
+              onClick={() => navigate('/')}
               className="group inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-arch-muted transition-colors hover:text-arch-fg"
             >
               <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
