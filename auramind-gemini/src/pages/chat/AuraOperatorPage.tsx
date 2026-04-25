@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Radar, Link2, FileUp, WandSparkles, Trash2, Download, Copy, LayoutGrid, Check, Plus, MessageSquareText } from 'lucide-react';
 import { UserProfile, Deck, Card } from '../../types';
 import { GeneratedCard } from '../../services/api/deepseekService';
@@ -22,7 +23,6 @@ const runAuraAgent = async (params: any): Promise<AuraAgentResult> => {
 };
 
 interface AuraOperatorPageProps {
-  navigate: (path: string) => void;
   createGeneratedDeck: (topic: string) => Promise<{ deckTitle: string; cardCount: number } | null>;
   createDeckFromCards: (title: string, description: string, generatedCards: GeneratedCard[]) => Promise<{ deckId: string; deckTitle: string; cardCount: number } | null>;
   user: UserProfile;
@@ -31,13 +31,13 @@ interface AuraOperatorPageProps {
 }
 
 const AuraOperatorPage: React.FC<AuraOperatorPageProps> = ({
-  navigate,
   createGeneratedDeck,
   createDeckFromCards,
   user,
   decks = [],
   cards = [],
 }) => {
+  const navigate = useNavigate();
   const [mode, setMode] = useState<AuraAgentMode>('study_from_anything');
   const [prompt, setPrompt] = useState('');
   const [sourceText, setSourceText] = useState('');

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Trash2 } from 'lucide-react';
 import MathRichText from '../../components/shared/MathRichText';
 import CitationStack from '../../components/shared/CitationStack';
@@ -7,12 +7,12 @@ import CitationStack from '../../components/shared/CitationStack';
 interface DeckDetailRouteProps {
   decks: any[];
   cards: any[];
-  navigate: (path: string) => void;
   deleteCard: (id: string) => void;
   setActiveDeckId: (id: string) => void;
 }
 
-const DeckDetailRoute: React.FC<DeckDetailRouteProps> = ({ decks, cards, navigate, deleteCard, setActiveDeckId }) => {
+const DeckDetailRoute: React.FC<DeckDetailRouteProps> = ({ decks, cards, deleteCard, setActiveDeckId }) => {
+  const navigate = useNavigate();
   const { id } = useParams();
   
   useEffect(() => {

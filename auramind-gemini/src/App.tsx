@@ -450,7 +450,7 @@ const AppContent = () => {
 
           <Route path="/study/:deckId" element={
             subscriptionStatus === 'active' || subscriptionStatus === 'trialing' || subscriptionStatus === 'loading'
-              ? <PageTransition><StudyModeRoute decks={decks} cards={cards} navigate={navigate} setActiveDeckId={setActiveDeckId} rateCard={rateCard} /></PageTransition>
+              ? <PageTransition><StudyModeRoute decks={decks} cards={cards} setActiveDeckId={setActiveDeckId} rateCard={rateCard} /></PageTransition>
               : <Navigate to="/subscribe" replace />
           } />
           <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />

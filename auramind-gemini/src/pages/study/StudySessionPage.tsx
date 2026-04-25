@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Volume2, Mic2, Bell, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, Deck, Rating } from '../../types';
@@ -23,7 +23,6 @@ const useIsMobile = () => {
 interface StudySessionPageProps {
   decks: Deck[];
   cards: Card[];
-  navigate: (path: string) => void;
   setActiveDeckId: (deckId: string) => void;
   rateCard: (id: string, rating: Rating) => Promise<void> | void;
 }
@@ -31,10 +30,10 @@ interface StudySessionPageProps {
 const StudySessionPage: React.FC<StudySessionPageProps> = ({
   decks,
   cards,
-  navigate,
   setActiveDeckId,
   rateCard,
 }) => {
+  const navigate = useNavigate();
   const { deckId } = useParams();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
