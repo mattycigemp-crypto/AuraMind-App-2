@@ -249,7 +249,7 @@ export const sendTrialEndingEmail = async (options: TrialEndingOptions): Promise
         <p>You'll lose access to premium features like unlimited flashcard generation and advanced study tools.</p>
         <p><strong>Keep your access:</strong></p>
         <p>Upgrade to a paid plan to continue using all features without interruption.</p>
-        <a href="${window.location.origin}/settings" class="button">Upgrade Now</a>
+        <a href="${window.location.origin}/subscribe" class="button">Upgrade Now</a>
         <p><strong>Questions?</strong> Reply to this email and we'll help you out.</p>
         <div class="footer">
           <p>&copy; ${new Date().getFullYear()} AuraMind. All rights reserved.</p>
@@ -349,7 +349,7 @@ export const sendPaymentFailedEmail = async (options: PaymentFailedOptions): Pro
         </ul>
         <p><strong>What you need to do:</strong></p>
         <p>Update your payment method to keep your subscription active. If you don't, you'll lose access to premium features.</p>
-        <a href="${window.location.origin}/settings" class="button">Update Payment Method</a>
+        <a href="${window.location.origin}/subscribe" class="button">Update Payment Method</a>
         <p><strong>Need help?</strong> Reply to this email and we'll assist you.</p>
         <div class="footer">
           <p>&copy; ${new Date().getFullYear()} AuraMind. All rights reserved.</p>
@@ -396,7 +396,7 @@ export const sendSubscriptionCancelledEmail = async (options: SubscriptionCancel
         <p>You'll still have access to all features until ${options.effectiveDate}. After that date, your account will switch to the free plan.</p>
         <p><strong>Want to keep your subscription?</strong></p>
         <p>You can reactivate it anytime before or after the cancellation date.</p>
-        <a href="${window.location.origin}/settings" class="button">Reactivate Subscription</a>
+        <a href="${window.location.origin}/subscribe" class="button">Reactivate Subscription</a>
         <p>Thanks for trying AuraMind. We hope to see you again!</p>
         <div class="footer">
           <p>&copy; ${new Date().getFullYear()} AuraMind. All rights reserved.</p>

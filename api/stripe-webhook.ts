@@ -16,16 +16,43 @@ const sendPaymentSuccessEmail = async (email: string, name: string, amount: stri
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'noreply@mail.auramind.app',
       to: email,
-      subject: 'Payment Successful - AuraMind',
+      subject: 'Payment successful - Your AuraMind subscription is active',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #333;">Payment Successful</h1>
-          <p>Hi ${name},</p>
-          <p>Your payment of <strong>${amount}</strong> for the <strong>${plan}</strong> plan was successful.</p>
-          <p>Next billing date: ${nextBilling}</p>
-          <p>Thank you for being a valued AuraMind member!</p>
-          <p style="color: #666; font-size: 12px;">If you didn't make this payment, please contact support immediately.</p>
-        </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Payment Successful - AuraMind</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .success { background: #d4edda; border-left: 4px solid #28a745; padding: 15px; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="success">
+              <h2>✅ Payment successful</h2>
+            </div>
+            <p>Hi ${name},</p>
+            <p>Great news! Your payment went through successfully.</p>
+            <p><strong>Payment details:</strong></p>
+            <ul>
+              <li>Amount: ${amount}</li>
+              <li>Plan: ${plan}</li>
+              <li>Next billing date: ${nextBilling}</li>
+            </ul>
+            <p><strong>Your subscription is now active.</strong> You can start using all premium features right away.</p>
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://auramind.app'}/dashboard" style="color: #000; font-weight: bold;">Go to Dashboard →</a>
+            <p>Thanks for being a valued member of AuraMind!</p>
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} AuraMind. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
       `,
     });
   } catch (error) {
@@ -38,17 +65,45 @@ const sendPaymentFailedEmail = async (email: string, name: string, amount: strin
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'noreply@mail.auramind.app',
       to: email,
-      subject: 'Payment Failed - AuraMind',
+      subject: 'Payment failed - Please update your payment method',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #e74c3c;">Payment Failed</h1>
-          <p>Hi ${name},</p>
-          <p>We were unable to process your payment of <strong>${amount}</strong>.</p>
-          <p>Last attempt: ${lastAttempt}</p>
-          <p>Please update your payment information to avoid service interruption.</p>
-          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://auramind.app'}/settings" style="display: inline-block; padding: 12px 24px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; margin-top: 20px;">Update Payment Info</a>
-          <p style="color: #666; font-size: 12px; margin-top: 20px;">If you believe this is an error, please contact support.</p>
-        </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Payment Failed - AuraMind</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .alert { background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; margin: 20px 0; }
+            .button { display: inline-block; padding: 12px 24px; background: #000; color: #fff; text-decoration: none; border-radius: 4px; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="alert">
+              <h2>❌ Payment failed</h2>
+            </div>
+            <p>Hi ${name},</p>
+            <p>We couldn't process your payment of ${amount} on ${lastAttempt}.</p>
+            <p><strong>Why this might have happened:</strong></p>
+            <ul>
+              <li>Not enough money in your account</li>
+              <li>Your card has expired</li>
+              <li>Your bank declined the transaction</li>
+            </ul>
+            <p><strong>What you need to do:</strong></p>
+            <p>Update your payment method to keep your subscription active. If you don't, you'll lose access to premium features.</p>
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://auramind.app'}/subscribe" class="button">Update Payment Method</a>
+            <p><strong>Need help?</strong> Reply to this email and we'll assist you.</p>
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} AuraMind. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
       `,
     });
   } catch (error) {
@@ -61,18 +116,41 @@ const sendSubscriptionCancelledEmail = async (email: string, name: string, plan:
     await resend.emails.send({
       from: process.env.RESEND_FROM_EMAIL || 'noreply@mail.auramind.app',
       to: email,
-      subject: 'Subscription Cancelled - AuraMind',
+      subject: 'Your AuraMind subscription has been cancelled',
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #333;">Subscription Cancelled</h1>
-          <p>Hi ${name},</p>
-          <p>Your <strong>${plan}</strong> subscription has been cancelled.</p>
-          <p>Effective date: ${effectiveDate}</p>
-          <p>You'll continue to have access until the end of your current billing period.</p>
-          <p>We're sorry to see you go! If you change your mind, you can resubscribe anytime.</p>
-          <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://auramind.app'}/subscribe" style="display: inline-block; padding: 12px 24px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; margin-top: 20px;">Resubscribe</a>
-          <p style="color: #666; font-size: 12px; margin-top: 20px;">Thank you for trying AuraMind!</p>
-        </div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Subscription Cancelled - AuraMind</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .info { background: #e2e3e5; border-left: 4px solid #6c757d; padding: 15px; margin: 20px 0; }
+            .button { display: inline-block; padding: 12px 24px; background: #000; color: #fff; text-decoration: none; border-radius: 4px; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="info">
+              <h2>📋 Subscription cancelled</h2>
+            </div>
+            <p>Hi ${name},</p>
+            <p>Your ${plan} subscription has been cancelled.</p>
+            <p><strong>What this means:</strong></p>
+            <p>You'll still have access to all features until ${effectiveDate}. After that date, your account will switch to the free plan.</p>
+            <p><strong>Want to keep your subscription?</strong></p>
+            <p>You can reactivate it anytime before or after the cancellation date.</p>
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://auramind.app'}/subscribe" class="button">Reactivate Subscription</a>
+            <p>Thanks for trying AuraMind. We hope to see you again!</p>
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} AuraMind. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
       `,
     });
   } catch (error) {
