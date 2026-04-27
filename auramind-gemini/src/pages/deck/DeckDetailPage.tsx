@@ -1,13 +1,16 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Trash2 } from 'lucide-react';
 import { Deck, Card } from '../../types';
 import MathRichText from '../../components/shared/MathRichText';
 import { CitationStack } from '../../components/shared/PageComponents';
+import FlashcardCreator from '../../components/deck/FlashcardCreator';
+import { getInitialCardState } from '../../services/study/srs';
 
-export const DeckDetailRoute = ({ decks, cards, deleteCard, setActiveDeckId }: any) => {
+export const DeckDetailRoute = ({ decks, cards, deleteCard, setActiveDeckId, saveCard }: any) => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [showCreator, setShowCreator] = useState(false);
 
   useEffect(() => {
     if (id) setActiveDeckId(id);
@@ -18,6 +21,12 @@ export const DeckDetailRoute = ({ decks, cards, deleteCard, setActiveDeckId }: a
   const deckCards = cards.filter((c: any) => c.deckId === id);
 
   if (!deck) return <Navigate to="/dashboard" replace />;
+
+  const handleAddCard = async (question: string, answer: string) => {
+    if (!id) return;
+    const newCard = getInitialCardState(id, question, answer);
+    await saveCard(newCard);
+  };
 
   return (
     <div className="space-y-8 py-4">
@@ -31,9 +40,22 @@ export const DeckDetailRoute = ({ decks, cards, deleteCard, setActiveDeckId }: a
           <p className="text-arch-muted mt-4 max-w-xl font-medium tracking-tight whitespace-pre-wrap">{deck.description}</p>
         </div>
         <div className="flex gap-4">
+          <button 
+            onClick={() => setShowCreator(!showCreator)}
+            className="btn-arch px-6 bg-black/5 dark:bg-white/ text-black/ dark:text-white/ hover:bg-black/10 dark:bg-white/ transition-all"
+          >
+            {showCreator ? 'Cancel' : 'Add Card'}
+          </button>
           <button onClick={() => navigate(`/study/${id}`)} className="btn-arch px-8">Start Study Session</button>
         </div>
       </div>
+
+      {showCreator && (
+        <FlashcardCreator 
+          onAddCard={handleAddCard}
+          className="mb-8"
+        />
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {deckCards.map((card: any) => (
