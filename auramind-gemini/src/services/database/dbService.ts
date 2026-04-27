@@ -36,12 +36,24 @@ export const dbService = {
             console.error('Error fetching decks:', error);
             throw error;
         }
+        
+        // Fetch cards to calculate card counts
+        const { data: cardsData } = await supabase
+            .from('cards')
+            .select('deck_id')
+            .in('deck_id', (data ?? []).map(d => d.id));
+        
+        const cardCounts = (cardsData ?? []).reduce((acc: any, card: any) => {
+            acc[card.deck_id] = (acc[card.deck_id] || 0) + 1;
+            return acc;
+        }, {});
+        
         const res = (data ?? []).map(d => ({
             id: d.id,
             title: d.title,
             description: d.description,
             createdAt: new Date(d.created_at).getTime(),
-            cardCount: d.card_count
+            cardCount: cardCounts[d.id] || 0
         }));
 
         cachedDecks = res;
@@ -56,8 +68,7 @@ export const dbService = {
                 {
                     user_id: userId,
                     title,
-                    description,
-                    card_count: 0
+                    description
                 }
             ])
             .select()
@@ -69,7 +80,7 @@ export const dbService = {
             title: data.title,
             description: data.description,
             createdAt: new Date(data.created_at).getTime(),
-            cardCount: data.card_count
+            cardCount: 0
         };
 
         if (cachedDecks && lastOwnerId === userId) {
@@ -82,7 +93,6 @@ export const dbService = {
         const dbUpdates: any = {};
         if (updates.title !== undefined) dbUpdates.title = updates.title;
         if (updates.description !== undefined) dbUpdates.description = updates.description;
-        if (updates.cardCount !== undefined) dbUpdates.card_count = updates.cardCount;
 
         const { error } = await supabase
             .from('decks')
