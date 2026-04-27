@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, Suspense } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Deck, Card, Rating, UserProfile, UserRole } from './types';
 import { calculateSRS, getInitialCardState } from './services/study/srs';
@@ -9,30 +9,31 @@ import { PREMADE_CARDS, PREMADE_DECKS } from './data/premadeContent';
 import { createMetadataTemplates, mergeCardMetadata, persistCardMetadata } from './services/study/roadmapService';
 import { analyticsService } from './services/analytics/analyticsService';
 import { getPermissions, getDefaultRole } from './utils/permissions';
+import './i18n/config';
 
-const AuraLandingPage = React.lazy(() => import('./components/landing/AuraLandingPage'));
-const BentoDashboard = React.lazy(() => import('./components/dashboard/BentoDashboard'));
+import AuraLandingPage from './components/landing/AuraLandingPage';
+import BentoDashboard from './components/dashboard/BentoDashboard';
 import AppLayout from './components/shared/AppLayout';
+import AuthPage from './components/auth/AuthPage';
 
-const DashboardInsightsPage = React.lazy(() => import('./pages/dashboard/InsightsPage'));
-const DashboardPlannerPage = React.lazy(() => import('./pages/dashboard/PlannerPage'));
-const ProfessorDashboardPage = React.lazy(() => import('./pages/dashboard/ProfessorDashboardPage'));
-const DeckDetailRoute = React.lazy(() => import('./pages/deck/DeckDetailRoute'));
-const GenerateCardsRoute = React.lazy(() => import('./pages/deck/GenerateCardsPage'));
-const StudyModeRoute = React.lazy(() => import('./pages/study/StudyModePage'));
-const ChatRoute = React.lazy(() => import('./pages/chat/ChatPage'));
-const SettingsPage = React.lazy(() => import('./pages/auth/SettingsPage'));
-const AdminConsolePage = React.lazy(() => import('./pages/auth/AdminConsolePage'));
-const DocsPage = React.lazy(() => import('./pages/legal/DocsPage'));
-const PrivacyPolicyPage = React.lazy(() => import('./pages/legal/PrivacyPolicyPage'));
-const TermsOfServicePage = React.lazy(() => import('./pages/legal/TermsOfServicePage'));
-const ResetPasswordPage = React.lazy(() => import('./pages/auth/ResetPasswordPage'));
-const RestoreAccountPage = React.lazy(() => import('./pages/auth/RestoreAccountPage'));
-const CallbackPage = React.lazy(() => import('./pages/auth/CallbackPage'));
-const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
+import DashboardInsightsPage from './pages/dashboard/InsightsPage';
+import DashboardPlannerPage from './pages/dashboard/PlannerPage';
+import ProfessorDashboardPage from './pages/dashboard/ProfessorDashboardPage';
+import DeckDetailRoute from './pages/deck/DeckDetailRoute';
+import GenerateCardsRoute from './pages/deck/GenerateCardsPage';
+import StudyModeRoute from './pages/study/StudyModePage';
+import ChatRoute from './pages/chat/ChatPage';
+import SettingsPage from './pages/auth/SettingsPage';
+import AdminConsolePage from './pages/auth/AdminConsolePage';
+import DocsPage from './pages/legal/DocsPage';
+import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/legal/TermsOfServicePage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
+import RestoreAccountPage from './pages/auth/RestoreAccountPage';
+import CallbackPage from './pages/auth/CallbackPage';
+import NotFoundPage from './pages/NotFoundPage';
 
-const PaymentPage = React.lazy(() => import('./components/auth/PaymentPage'));
-const AuthPage = React.lazy(() => import('./components/auth/AuthPage'));
+import PaymentPage from './components/auth/PaymentPage';
 
 import AmbientPlayer from './components/shared/AmbientPlayer';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
@@ -155,7 +156,6 @@ const PageTransition = ({ children }: { children: React.ReactNode }) => (
 );
 
 const AppContent = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
   const [decks, setDecks] = useState<Deck[]>([]);
@@ -174,6 +174,20 @@ const AppContent = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, email })
       });
+      
+      if (!response.ok) {
+        console.error('Subscription check failed:', response.status, response.statusText);
+        setSubscriptionStatus('none');
+        return;
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('Subscription check failed: Expected JSON, got', contentType);
+        setSubscriptionStatus('none');
+        return;
+      }
+      
       const data = await response.json();
       setSubscriptionStatus(data.status || 'none');
     } catch (err) {
@@ -240,9 +254,6 @@ const AppContent = () => {
 
     if (supabase) {
       const { data: { subscription: sub } } = supabase.auth.onAuthStateChange((event, session) => {
-        if (event === 'PASSWORD_RECOVERY') {
-          navigate('/reset-password');
-        }
         if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'INITIAL_SESSION') {
           syncSession(session);
         }
@@ -257,13 +268,23 @@ const AppContent = () => {
     });
 
     return () => subscription?.unsubscribe();
-  }, [navigate]);
+  }, []);
 
   const createDeck = async (t: string, d: string) => {
     if (!user) return null;
     const deck = await dbService.createDeck(user.id, t, d);
     setDecks(prev => [...prev, deck]);
     return deck;
+  };
+
+  const loadDecks = async () => {
+    if (!user) return;
+    const [fetchedDecks, fetchedCards] = await Promise.all([
+      dbService.fetchDecks(user.id),
+      dbService.fetchCards(user.id)
+    ]);
+    setDecks(fetchedDecks);
+    setCards(fetchedCards);
   };
 
   const saveDeckWithCards = async (
@@ -330,6 +351,17 @@ const AppContent = () => {
         await updateUserProfile({ streak: nextStreak, lastStudyDate: today });
       }
     }
+  };
+
+  const saveCard = async (card: any) => {
+    if (!user) return;
+    const templates = createMetadataTemplates([card], 'Manual entry', 'manual');
+    const saved = mergeCardMetadata(await dbService.saveCards(user.id, [card]), templates);
+    persistCardMetadata(saved);
+    setCards(prev => [...prev, ...saved]);
+    setDecks(prev => prev.map((deck) => (
+      deck.id === card.deckId ? { ...deck, cardCount: deck.cardCount + saved.length } : deck
+    )));
   };
 
   const saveGeneratedCards = async (newOnes: any[]) => {
@@ -411,11 +443,10 @@ const AppContent = () => {
   };
 
   const currentUser = user || { id: 'guest', name: 'Guest', email: '', plan: 'Starter', streak: 0, joinedDate: Date.now(), isAdmin: false, isEmailVerified: false, isPhoneVerified: false, lastStudyDate: undefined };
-  const onLogout = () => { supabase.auth.signOut(); navigate('/auth'); };
+  const onLogout = () => { supabase.auth.signOut(); };
 
   return (
     <div className="min-h-screen bg-background text-foreground font-body selection:bg-primary selection:text-primary-foreground">
-      <Suspense fallback={<LoadingOverlay />}>
       <AnimatePresence mode="wait">
         <Routes location={location}>
           <Route path="/" element={<PageTransition><AuraLandingPage /></PageTransition>} />
@@ -427,11 +458,11 @@ const AppContent = () => {
           } />
           
           <Route element={<ProtectedRoute user={user} status={subscriptionStatus} onLogout={onLogout} />}>
-            <Route path="/dashboard" element={<PageTransition><BentoDashboard decks={decks} cards={cards} onCreateDeck={createDeck} onSelectDeck={(id)=>navigate(`/deck/${id}`)} onDeleteDeck={deleteDeck} onGenerateDeck={createGeneratedDeck} onImportDeck={importDeckFromCards} onLoadDemoData={loadSampleDecks} onNavigate={(v)=>navigate(v === 'AURA_CHAT' ? '/chat' : '/generate')} user={currentUser} /></PageTransition>} />
+            <Route path="/dashboard" element={<PageTransition><BentoDashboard decks={decks} cards={cards} onDeleteDeck={deleteDeck} onGenerateDeck={createGeneratedDeck} onImportDeck={importDeckFromCards} onLoadDemoData={loadSampleDecks} onNavigate={(v)=>{}} user={currentUser} createDeck={createDeck} onLoadDecks={loadDecks} /></PageTransition>} />
             <Route path="/dashboard/insights" element={<PageTransition><DashboardInsightsPage decks={decks} cards={cards} /></PageTransition>} />
             <Route path="/dashboard/planner" element={<PageTransition><DashboardPlannerPage decks={decks} cards={cards} /></PageTransition>} />
             <Route path="/dashboard/professor" element={<PageTransition><ProfessorDashboardPage decks={decks} cards={cards} user={currentUser} /></PageTransition>} />
-            <Route path="/deck/:id" element={<PageTransition><DeckDetailRoute decks={decks} cards={cards} deleteCard={deleteCard} setActiveDeckId={setActiveDeckId} /></PageTransition>} />
+            <Route path="/deck/:id" element={<PageTransition><DeckDetailRoute decks={decks} cards={cards} deleteCard={deleteCard} setActiveDeckId={setActiveDeckId} saveCard={saveCard} /></PageTransition>} />
             <Route path="/generate" element={<PageTransition><GenerateCardsRoute activeDeckId={activeDeckId} user={currentUser} saveGeneratedCards={saveGeneratedCards} /></PageTransition>} />
             <Route path="/chat" element={<PageTransition><ChatRoute createGeneratedDeck={createGeneratedDeck} createDeckFromCards={createDeckFromCards} user={currentUser} decks={decks} cards={cards} /></PageTransition>} />
             <Route path="/settings" element={<PageTransition><SettingsPage user={currentUser} onUpdateUser={updateUserProfile} /></PageTransition>} />
@@ -459,7 +490,6 @@ const AppContent = () => {
           <Route path="*" element={<PageTransition><NotFoundPage /></PageTransition>} />
         </Routes>
       </AnimatePresence>
-      </Suspense>
       {location.pathname.startsWith('/dashboard') && <AmbientPlayer />}
       <ScrollTopButton />
     </div>
