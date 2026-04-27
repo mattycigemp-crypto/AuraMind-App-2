@@ -16,13 +16,14 @@ import {
   parseApkgFile,
 } from '../../services/study/roadmapService';
 import {
+  Plus,
+  X,
   ArrowRight,
   BrainCircuit,
   ChevronRight,
   Clock3,
   Flame,
   Layers,
-  Plus,
   Search,
   Settings,
   Shield,
@@ -42,15 +43,14 @@ import {
 interface BentoDashboardProps {
   decks: Deck[];
   cards: Card[];
-  onCreateDeck: (title: string, description: string) => void;
-  onSelectDeck: (deckId: string) => void;
   onDeleteDeck: (deckId: string) => void;
   onGenerateDeck: (topic: string) => void;
   onImportDeck: (title: string, description: string, cards: Array<{ question: string; answer: string; citations?: Card['citations']; sourceLabel?: string; sourceType?: Card['sourceType']; }>) => Promise<{ deckId: string; deckTitle: string; cardCount: number } | null>;
   onNavigate: (view: ViewState) => void;
-  onLogout: () => void;
   onLoadDemoData?: () => void;
   user: UserProfile;
+  createDeck: (userId: string, title: string, description: string) => Promise<Deck>;
+  onLoadDecks: () => Promise<void>;
 }
 
 const stagger = {
@@ -87,12 +87,13 @@ const MiniBar = ({ value, max = 100 }: { value: number; max?: number }) => {
 const BentoDashboard: React.FC<BentoDashboardProps> = ({
   decks,
   cards,
-  onSelectDeck,
   onGenerateDeck,
   onImportDeck,
   onNavigate,
   onLoadDemoData,
   user,
+  createDeck,
+  onLoadDecks,
 }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -100,6 +101,11 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
   const [prompt, setPrompt] = useState('');
   const [now, setNow] = useState(Date.now());
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{role: 'user' | 'assistant', content: string, timestamp: number}>>([]);
+  const [isChatTyping, setIsChatTyping] = useState(false);
+  const [showCreateDeckModal, setShowCreateDeckModal] = useState(false);
+  const [newDeckTitle, setNewDeckTitle] = useState('');
+  const [newDeckDescription, setNewDeckDescription] = useState('');
   const [importTitle, setImportTitle] = useState('Imported deck');
   const [importText, setImportText] = useState('');
   const [importStatus, setImportStatus] = useState('');
@@ -363,6 +369,85 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
     setChallenge(nextChallenge);
   };
 
+  const handleCreateDeck = async () => {
+    if (!newDeckTitle.trim()) return;
+
+    try {
+      const newDeck = await createDeck(user.id, newDeckTitle.trim(), newDeckDescription.trim());
+      setShowCreateDeckModal(false);
+      setNewDeckTitle('');
+      setNewDeckDescription('');
+      // Refresh decks
+      await onLoadDecks();
+    } catch (error: any) {
+      console.error('Error creating deck:', error);
+      alert('Failed to create deck: ' + error.message);
+    }
+  };
+
+  const handleChatMessage = async (message: string) => {
+    if (!message.trim()) return;
+
+    // Add user message to chat
+    const userMessage = { role: 'user' as const, content: message, timestamp: Date.now() };
+    setChatMessages(prev => [...prev, userMessage]);
+    setPrompt('');
+    setIsChatTyping(true);
+
+    try {
+      // Check if this is a flashcard generation request
+      const isFlashcardRequest = message.toLowerCase().includes('flashcard') || 
+                                   message.toLowerCase().includes('generate') ||
+                                   message.toLowerCase().includes('create');
+
+      if (isFlashcardRequest) {
+        // Extract topic from message
+        const topic = message.replace(/flashcard|generate|create|cards?/gi, '').trim() || 'general knowledge';
+        
+        // Generate flashcards
+        const cards = await generateFlashcards(topic, {
+          cardStyle: 'conceptual',
+          difficulty: 'medium',
+          includeExplanations: true,
+        });
+
+        const assistantMessage = {
+          role: 'assistant' as const,
+          content: `I've generated ${cards.length} flashcards about "${topic}". Here they are:\n\n${cards.map((card, i) => 
+            `${i + 1}. **${card.question}**\n   ${card.answer}${card.explanation ? `\n   *${card.explanation}*` : ''}`
+          ).join('\n\n')}`,
+          timestamp: Date.now()
+        };
+        setChatMessages(prev => [...prev, assistantMessage]);
+      } else {
+        // Regular chat response using the AI
+        const response = await generateFlashcards(message, {
+          cardStyle: 'conceptual',
+          difficulty: 'medium',
+          includeExplanations: true,
+        });
+
+        const assistantMessage = {
+          role: 'assistant' as const,
+          content: `Here's what I can tell you about "${message}":\n\n${response.map((card, i) => 
+            `**${card.question}**\n${card.answer}${card.explanation ? `\n*${card.explanation}*` : ''}`
+          ).join('\n\n')}`,
+          timestamp: Date.now()
+        };
+        setChatMessages(prev => [...prev, assistantMessage]);
+      }
+    } catch (error: any) {
+      const errorMessage = {
+        role: 'assistant' as const,
+        content: `Sorry, I encountered an error: ${error.message}. Please try again.`,
+        timestamp: Date.now()
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsChatTyping(false);
+    }
+  };
+
   return (
     <>
       <motion.div
@@ -445,71 +530,118 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
 
       {/* PRIMARY INTERFACE: OPERATOR + PRIORITY */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 relative z-10">
-        {/* AURA OPERATOR - 7 COLUMNS */}
-        <motion.div data-testid="ai-generate-section" variants={fadeUp} className="xl:col-span-7 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-[40px] p-8 sm:p-12 relative overflow-hidden group backdrop-blur-xl border-l border-t border-black/ dark:border-white/ shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+        {/* AI CHAT INTERFACE - 7 COLUMNS */}
+        <motion.div data-testid="ai-chat-section" variants={fadeUp} className="xl:col-span-7 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-[40px] p-8 sm:p-12 relative overflow-hidden group backdrop-blur-xl border-l border-t border-black/ dark:border-white/ shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
           <div className="absolute top-[-20%] right-[-10%] w-[60%] h-[60%] bg-purple-600/5 blur-[120px] rounded-full pointer-events-none group-hover:bg-purple-600/10 transition-colors duration-1000" />
           
-          <div className="relative z-10 space-y-12 h-full flex flex-col justify-between">
+          <div className="relative z-10 space-y-6 h-full flex flex-col">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-xl flex items-center justify-center">
-                  <Cpu size={20} className="text-black/ dark:text-white/" />
+                  <BrainCircuit size={20} className="text-black/ dark:text-white/" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-black/ dark:text-white/">Command Center</p>
-                  <p className="text-[9px] font-bold text-black/ dark:text-white/ uppercase tracking-[0.2em] mt-0.5 italic">Aura Mk.4</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-black/ dark:text-white/">AI Study Assistant</p>
+                  <p className="text-[9px] font-bold text-black/ dark:text-white/ uppercase tracking-[0.2em mt-0.5 italic">Chat to Learn</p>
                 </div>
               </div>
               <div className="arch-pill bg-black/5 dark:bg-white/ border-black/ dark:border-white/ px-3 py-1">
                 <LivePulse />
-                <span className="text-[9px] font-black uppercase tracking-widest text-black/ dark:text-white/">Ready</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-black/ dark:text-white/">Online</span>
               </div>
             </div>
 
-            <div className="space-y-6">
-              <h2 className="text-4xl sm:text-6xl font-display font-black italic uppercase tracking-tightest leading-[0.85] text-slate-900 dark:text-white">
-                GENERATE.<br />
-                <span className="text-black/ dark:text-white/">ACCELERATE.</span>
-              </h2>
-              <p className="text-sm text-black/ dark:text-white/ max-w-lg font-medium leading-relaxed">
-                Execute deep neural extraction. Convert complex signals into structured knowledge assets through any topic or set of notes.
-              </p>
+            {/* Chat Messages Display */}
+            <div className="flex-1 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-3xl p-6 min-h-[300px] max-h-[400px] overflow-y-auto space-y-4">
+              {chatMessages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+                  <div className="w-16 h-16 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-2xl flex items-center justify-center">
+                    <BrainCircuit size={24} className="text-black/ dark:text-white/" />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">Start a conversation!</p>
+                    <p className="text-xs text-black/ dark:text-white/">
+                      Ask me to generate flashcards, explain concepts, or help you study any topic.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                chatMessages.map((msg, index) => (
+                  <div
+                    key={index}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[80%] rounded-2xl px-5 py-3 ${
+                        msg.role === 'user'
+                          ? 'bg-white text-black'
+                          : 'bg-black/5 dark:bg-white/ text-slate-900 dark:text-white border border-black/ dark:border-white'
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      <p className="text-[8px] text-black/50 dark:text-white/50 mt-2">
+                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+              {isChatTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-black/5 dark:bg-white/ text-slate-900 dark:text-white border border-black/ dark:border-white rounded-2xl px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-black/50 dark:bg-white/50 rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-black/50 dark:bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                      <div className="w-2 h-2 bg-black/50 dark:bg-white/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1 group/input">
-                <input
-                  type="text"
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && prompt.trim()) {
-                      setIsGenerating(true);
-                      Promise.resolve(onGenerateDeck(prompt.trim())).finally(() => {
-                        setPrompt('');
-                        setTimeout(() => setIsGenerating(false), 300);
-                      });
-                    }
-                  }}
-                  placeholder="Incept a new topic..."
-                  className="w-full bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ px-8 py-5 outline-none focus:border-black/ dark:border-white/ group-hover/input:bg-black/5 dark:bg-white/ transition-all font-bold text-sm text-slate-900 dark:text-white placeholder:text-black/ dark:text-white/ rounded-2xl"
-                />
-              </div>
-              <button
-                data-testid="create-deck-button"
-                onClick={() => {
-                  if (!prompt.trim()) return;
-                  setIsGenerating(true);
-                  Promise.resolve(onGenerateDeck(prompt.trim())).finally(() => {
-                    setPrompt('');
-                    setTimeout(() => setIsGenerating(false), 300);
-                  });
+            {/* Chat Input */}
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && prompt.trim()) {
+                    handleChatMessage(prompt.trim());
+                  }
                 }}
-                disabled={isGenerating}
-                className="bg-white text-black font-black uppercase text-[10px] tracking-[0.2em] px-10 py-5 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(255,255,255,0.1)]"
+                placeholder="Ask me anything... (e.g., 'Generate flashcards about photosynthesis')"
+                className="flex-1 bg-black/5 dark:bg-white/ border border-black/ dark:border-white px-6 py-4 outline-none focus:border-black/ dark:border-white transition-all font-bold text-sm text-slate-900 dark:text-white placeholder:text-black/ dark:text-white rounded-2xl"
+              />
+              <button
+                onClick={() => handleChatMessage(prompt.trim())}
+                disabled={!prompt.trim() || isChatTyping}
+                className="bg-white text-black font-black uppercase text-[10px] tracking-[0.2em] px-8 py-4 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-[0_10px_30px_rgba(255,255,255,0.1)]"
               >
                 <BrainCircuit size={16} />
-                {isGenerating ? 'PROCESSING...' : 'EXECUTE'}
+                Send
+              </button>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => handleChatMessage('Generate flashcards about ' + (searchQuery || 'photosynthesis'))}
+                className="text-[9px] bg-black/5 dark:bg-white/ border border-black/ dark:border-white px-3 py-2 rounded-xl hover:bg-black/10 dark:bg-white/ transition-all text-black/ dark:text-white/ uppercase tracking-wider"
+              >
+                Generate Flashcards
+              </button>
+              <button
+                onClick={() => handleChatMessage('Explain ' + (searchQuery || 'photosynthesis') + ' in simple terms')}
+                className="text-[9px] bg-black/5 dark:bg-white/ border border-black/ dark:border-white px-3 py-2 rounded-xl hover:bg-black/10 dark:bg-white/ transition-all text-black/ dark:text-white/ uppercase tracking-wider"
+              >
+                Explain Concept
+              </button>
+              <button
+                onClick={() => handleChatMessage('Give me practice questions about ' + (searchQuery || 'photosynthesis'))}
+                className="text-9px bg-black/5 dark:bg-white/ border border-black/ dark:border-white px-3 py-2 rounded-xl hover:bg-black/10 dark:bg-white/ transition-all text-black/ dark:text-white/ uppercase tracking-wider"
+              >
+                Practice Questions
               </button>
             </div>
           </div>
@@ -780,15 +912,24 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-3">
               <Layers size={16} className="text-black/ dark:text-white/" />
-              <p className="text-arch-eyebrow uppercase">Neural Library</p>
+              <p className="text-arch-eyebrow uppercase">Your Decks</p>
             </div>
-            <button 
-              onClick={() => navigate('/generate')}
-              className="text-[10px] font-black uppercase tracking-[0.2em] text-black/ dark:text-white/ hover:text-slate-900 dark:text-white transition-colors flex items-center gap-2 group"
-            >
-              Expand All
-              <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-            </button>
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setShowCreateDeckModal(true)}
+                className="text-[10px] font-black uppercase tracking-[0.2em] bg-white text-black px-4 py-2 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
+              >
+                <Plus size={14} />
+                Create New
+              </button>
+              <button 
+                onClick={() => navigate('/generate')}
+                className="text-[10px] font-black uppercase tracking-[0.2em] text-black/ dark:text-white/ hover:text-slate-900 dark:text-white transition-colors flex items-center gap-2 group"
+              >
+                View All
+                <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
           </div>
 
           <div data-testid="decks-list" className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -796,7 +937,7 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
               <motion.button
                 key={deck.id}
                 data-testid="deck-card"
-                onClick={() => onSelectDeck(deck.id)}
+                onClick={() => navigate(`/deck/${deck.id}`)}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + i * 0.05 }}
@@ -922,6 +1063,77 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
         </div>
       </div>
       </motion.div>
+      
+      {/* Create Deck Modal */}
+      {showCreateDeckModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-black border border-black/10 dark:border-white/10 rounded-[40px] p-8 max-w-md w-full space-y-6"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-xl flex items-center justify-center">
+                  <Layers size={20} className="text-black/ dark:text-white/" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.4em] text-black/ dark:text-white/">Create New Deck</p>
+                  <p className="text-[9px] font-bold text-black/ dark:text-white/ uppercase tracking-[0.2em] mt-0.5 italic">Start Learning</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowCreateDeckModal(false)}
+                className="text-black/ dark:text-white/ hover:text-slate-900 dark:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-[0.3em] text-black/ dark:text-white/ ml-1">Deck Title</label>
+                <input
+                  type="text"
+                  value={newDeckTitle}
+                  onChange={(e) => setNewDeckTitle(e.target.value)}
+                  placeholder="e.g., Biology 101"
+                  className="w-full bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ px-6 py-4 outline-none focus:border-black/ dark:border-white/ transition-all font-bold text-sm text-slate-900 dark:text-white placeholder:text-black/ dark:text-white/ rounded-2xl"
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase tracking-[0.3em] text-black/ dark:text-white/ ml-1">Description (Optional)</label>
+                <textarea
+                  value={newDeckDescription}
+                  onChange={(e) => setNewDeckDescription(e.target.value)}
+                  placeholder="What will you learn in this deck?"
+                  className="w-full bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ px-6 py-4 outline-none focus:border-black/ dark:border-white/ transition-all font-bold text-sm text-slate-900 dark:text-white placeholder:text-black/ dark:text-white/ rounded-2xl h-24 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCreateDeckModal(false)}
+                className="flex-1 py-4 rounded-2xl font-bold uppercase tracking-[0.2em] text-xs bg-black/5 dark:bg-white/ text-black/ dark:text-white/ hover:bg-black/10 dark:bg-white/ transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateDeck}
+                disabled={!newDeckTitle.trim()}
+                className="flex-1 py-4 rounded-2xl font-bold uppercase tracking-[0.2em] text-xs bg-white text-black hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <Plus size={16} />
+                Create Deck
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+      
       <OnboardingTutorial isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} onComplete={() => setShowOnboarding(false)} />
     </>
   );
