@@ -42,7 +42,7 @@ import { supabase } from './services/database/supabase';
 
 // Icons
 import {
-  Loader2, ArrowDown, BrainCircuit, Activity
+  ArrowDown, BrainCircuit
 } from 'lucide-react';
 
 // --- PREMIUM COMPONENTS ---
