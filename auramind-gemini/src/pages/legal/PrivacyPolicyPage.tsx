@@ -23,7 +23,7 @@ const LegalShell = ({
   </div>
 );
 
-export const PrivacyPolicyPage = () => (
+const PrivacyPolicyPage = () => (
   <LegalShell
     title="PRIVACY."
     subtitle="How AuraMind handles profile data, study content, and local preferences."
@@ -47,3 +47,5 @@ export const PrivacyPolicyPage = () => (
     ]}
   />
 );
+
+export default PrivacyPolicyPage;

@@ -6,7 +6,7 @@ import { GeneratedCard } from '../../services/api/deepseekService';
 import MathRichText from '../../components/shared/MathRichText';
 import { generateFlashcards } from '../../services/api/deepseekService';
 
-export const GenerateCardsRoute = ({ activeDeckId, saveGeneratedCards }: any) => {
+const GenerateCardsRoute = ({ activeDeckId, saveGeneratedCards }: any) => {
   const navigate = useNavigate();
   const [sourceText, setSourceText] = useState('');
   const [cardStyle, setCardStyle] = useState<'definition' | 'conceptual' | 'multiple_choice'>('conceptual');
@@ -222,3 +222,5 @@ export const GenerateCardsRoute = ({ activeDeckId, saveGeneratedCards }: any) =>
     </div>
   );
 };
+
+export default GenerateCardsRoute;

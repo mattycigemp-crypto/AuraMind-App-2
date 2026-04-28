@@ -3,7 +3,7 @@ import { Activity, ArrowRight, ChevronLeft, Clock, TrendingUp, WandSparkles, Zap
 import { Deck, Card } from '../../types';
 import { MetricTile, BarSeries, getDeckAnalytics } from '../../components/shared/PageComponents';
 
-export const DashboardInsightsPage = ({ decks, cards }: { decks: Deck[], cards: Card[] }) => {
+const DashboardInsightsPage = ({ decks, cards }: { decks: Deck[], cards: Card[] }) => {
   const dueCards = cards.filter((c) => c.nextReview <= Date.now()).length;
   const masteredCards = cards.filter((c) => (c.interval || 0) >= 14 && (c.repetition || 0) >= 3).length;
   const retention = cards.length === 0 ? 0 : Math.round((masteredCards / cards.length) * 100);
@@ -101,3 +101,5 @@ export const DashboardInsightsPage = ({ decks, cards }: { decks: Deck[], cards: 
     </div>
   );
 };
+
+export default DashboardInsightsPage;

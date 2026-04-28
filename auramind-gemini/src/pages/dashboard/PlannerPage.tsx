@@ -5,7 +5,7 @@ import { Deck, Card } from '../../types';
 import MathRichText from '../../components/shared/MathRichText';
 import { getDeckAnalytics } from '../../components/shared/PageComponents';
 
-export const DashboardPlannerPage = ({ decks, cards }: { decks: Deck[], cards: Card[] }) => {
+const DashboardPlannerPage = ({ decks, cards }: { decks: Deck[], cards: Card[] }) => {
   const navigate = useNavigate();
   const upcoming = [...cards]
     .sort((a, b) => a.nextReview - b.nextReview)
@@ -125,3 +125,5 @@ export const DashboardPlannerPage = ({ decks, cards }: { decks: Deck[], cards: C
     </div>
   );
 };
+
+export default DashboardPlannerPage;

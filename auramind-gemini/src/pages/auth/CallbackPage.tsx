@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../services/database/supabase';
 
-export const CallbackPage = () => {
+const CallbackPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,3 +35,5 @@ export const CallbackPage = () => {
     </div>
   );
 };
+
+export default CallbackPage;

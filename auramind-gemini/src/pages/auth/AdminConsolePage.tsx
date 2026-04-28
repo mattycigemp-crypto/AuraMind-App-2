@@ -17,7 +17,7 @@ interface AdminUser {
   plan: string;
 }
 
-export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user: UserProfile }) => {
+const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user: UserProfile }) => {
   const [panel, setPanel] = useState<'users' | 'analytics' | 'settings' | 'coupons' | 'testing'>('users');
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
@@ -923,3 +923,5 @@ export const AdminConsolePage = ({ user }: { decks: Deck[]; cards: Card[]; user:
     </div>
   );
 };
+
+export default AdminConsolePage;

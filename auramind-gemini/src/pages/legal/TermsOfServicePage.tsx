@@ -23,7 +23,7 @@ const LegalShell = ({
   </div>
 );
 
-export const TermsOfServicePage = () => (
+const TermsOfServicePage = () => (
   <LegalShell
     title="TERMS."
     subtitle="Basic use terms for accessing AuraMind and its AI-powered study workflows."
@@ -47,3 +47,5 @@ export const TermsOfServicePage = () => (
     ]}
   />
 );
+
+export default TermsOfServicePage;

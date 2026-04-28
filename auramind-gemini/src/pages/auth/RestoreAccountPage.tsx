@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Check, Mail, Loader2 } from 'lucide-react';
 
-export const RestoreAccountPage = () => {
+const RestoreAccountPage = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
@@ -117,3 +117,5 @@ export const RestoreAccountPage = () => {
     </div>
   );
 };
+
+export default RestoreAccountPage;

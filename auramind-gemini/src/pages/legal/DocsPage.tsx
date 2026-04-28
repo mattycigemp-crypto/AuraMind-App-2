@@ -23,7 +23,7 @@ const LegalShell = ({
   </div>
 );
 
-export const DocsPage = () => (
+const DocsPage = () => (
   <LegalShell
     title="DOCS."
     subtitle="Core product guidance for decks, AI, profiles, settings, and study loops."
@@ -47,3 +47,5 @@ export const DocsPage = () => (
     ]}
   />
 );
+
+export default DocsPage;

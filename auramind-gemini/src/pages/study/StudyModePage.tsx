@@ -8,7 +8,7 @@ import MathRichText from '../../components/shared/MathRichText';
 import { generateStudyBuddyResponse } from '../../services/api/deepseekService';
 import { useIsMobile } from '../../hooks/use-mobile';
 
-export const StudyModeRoute = ({
+const StudyModeRoute = ({
   decks,
   cards,
   setActiveDeckId,
@@ -424,3 +424,5 @@ export const StudyModeRoute = ({
     </div>
   );
 };
+
+export default StudyModeRoute;

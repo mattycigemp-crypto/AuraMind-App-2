@@ -5,7 +5,7 @@ import { PageHeader } from '../../components/shared/PageComponents';
 import { supabase } from '../../services/database/supabase';
 import { useTheme } from '../../hooks/useTheme';
 
-export const SettingsPage = ({
+const SettingsPage = ({
   user,
   onUpdateUser,
 }: {
@@ -536,3 +536,5 @@ export const SettingsPage = ({
     </div>
   );
 };
+
+export default SettingsPage;

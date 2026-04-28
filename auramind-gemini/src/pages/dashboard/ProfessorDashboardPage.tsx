@@ -3,7 +3,7 @@ import { GraduationCap, Quote } from 'lucide-react';
 import { Deck, Card, UserProfile } from '../../types';
 import { PageHeader, MetricTile, BarSeries, getDeckAnalytics, normalizeSeries } from '../../components/shared/PageComponents';
 
-export const ProfessorDashboardPage = ({ decks, cards, user }: { decks: Deck[]; cards: Card[]; user: UserProfile }) => {
+const ProfessorDashboardPage = ({ decks, cards, user }: { decks: Deck[]; cards: Card[]; user: UserProfile }) => {
   const analytics = useMemo(() => getDeckAnalytics(decks, cards), [decks, cards]);
   const adoption = analytics.length === 0 ? 0 : Math.round((analytics.filter((deck) => deck.cardCount > 0).length / analytics.length) * 100);
   const atRiskDecks = analytics.filter((deck) => deck.due > Math.max(3, Math.ceil(deck.cardCount * 0.25)));
@@ -95,3 +95,5 @@ export const ProfessorDashboardPage = ({ decks, cards, user }: { decks: Deck[]; 
     </div>
   );
 };
+
+export default ProfessorDashboardPage;

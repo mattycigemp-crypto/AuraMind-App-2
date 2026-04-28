@@ -7,7 +7,7 @@ import { CitationStack } from '../../components/shared/PageComponents';
 import FlashcardCreator from '../../components/deck/FlashcardCreator';
 import { getInitialCardState } from '../../services/study/srs';
 
-export const DeckDetailRoute = ({ decks, cards, deleteCard, setActiveDeckId, saveCard }: any) => {
+const DeckDetailRoute = ({ decks, cards, deleteCard, setActiveDeckId, saveCard }: any) => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [showCreator, setShowCreator] = useState(false);
@@ -82,3 +82,5 @@ export const DeckDetailRoute = ({ decks, cards, deleteCard, setActiveDeckId, sav
     </div>
   );
 };
+
+export default DeckDetailRoute;

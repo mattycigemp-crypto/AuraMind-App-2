@@ -24,7 +24,7 @@ const runAuraAgent = async (params: any): Promise<AuraAgentResult> => {
   return { flashcards: [], quiz: null, summary: '', metadata: null };
 };
 
-export const ChatRoute = ({
+const ChatRoute = ({
   createGeneratedDeck,
   createDeckFromCards,
   user,
@@ -475,3 +475,5 @@ export const ChatRoute = ({
     </div>
   );
 };
+
+export default ChatRoute;
