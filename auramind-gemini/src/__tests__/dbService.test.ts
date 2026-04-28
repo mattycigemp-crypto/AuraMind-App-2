@@ -63,22 +63,37 @@ describe('dbService', () => {
         }
       ];
 
-      vi.mocked(supabase).from.mockReturnValue({
-        select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockReturnValue({
-            order: vi.fn().mockResolvedValue({
-              data: mockDecks,
+      const mockCards = [
+        {
+          deck_id: 'deck-1'
+        }
+      ];
+
+      vi.mocked(supabase).from
+        .mockReturnValueOnce({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              order: vi.fn().mockResolvedValue({
+                data: mockDecks,
+                error: null
+              })
+            })
+          })
+        } as any)
+        .mockReturnValueOnce({
+          select: vi.fn().mockReturnValue({
+            in: vi.fn().mockResolvedValue({
+              data: mockCards,
               error: null
             })
           })
-        })
-      } as any);
+        } as any);
 
       const result = await dbService.fetchDecks('user-123');
       
       expect(result).toHaveLength(1);
       expect(result[0].title).toBe('Test Deck');
-      expect(result[0].cardCount).toBe(10);
+      expect(result[0].cardCount).toBe(1);
     });
   });
 
@@ -156,9 +171,14 @@ describe('dbService', () => {
         }
       ];
 
+      // Mock fetchDecks to return deck IDs
+      const fetchDecksSpy = vi.spyOn(dbService, 'fetchDecks').mockResolvedValue([
+        { id: 'deck-1', title: 'Test Deck', description: 'Test', cardCount: 1, createdAt: Date.now() }
+      ]);
+
       vi.mocked(supabase).from.mockReturnValue({
         select: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({
+          in: vi.fn().mockResolvedValue({
             data: mockCards,
             error: null
           })
@@ -169,6 +189,9 @@ describe('dbService', () => {
       
       expect(result).toHaveLength(1);
       expect(result[0].question).toBe('Test Question');
+      
+      // Restore the spy
+      fetchDecksSpy.mockRestore();
     });
   });
 
