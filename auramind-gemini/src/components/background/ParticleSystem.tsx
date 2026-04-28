@@ -18,7 +18,7 @@ interface ParticleSystemProps {
 }
 
 const ParticleSystem: React.FC<ParticleSystemProps> = ({ theme, count = 50 }) => {
-  const mousePosition = useMouseTracking({ smoothing: 0.3 });
+  const { mousePosition } = useMouseTracking();
   const [particles, setParticles] = useState<Particle[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<number>();

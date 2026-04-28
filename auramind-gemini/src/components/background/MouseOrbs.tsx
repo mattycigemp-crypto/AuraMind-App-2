@@ -17,7 +17,7 @@ interface MouseOrbsProps {
 }
 
 const MouseOrbs: React.FC<MouseOrbsProps> = ({ theme }) => {
-  const mousePosition = useMouseTracking({ smoothing: 0.1, velocitySmoothing: 0.1 });
+  const { mousePosition } = useMouseTracking();
   const [orbs, setOrbs] = useState<Orb[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<number>();
