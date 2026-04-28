@@ -1,33 +1,16 @@
 {
-  "name": "auramind-watch",
+  "name": "auramind",
   "version": "1.0.0",
-  "type": "module",
-  "description": "Watch mode for auto-build and deploy",
+  "private": true,
+  "description": "AuraMind - AI-powered learning platform",
   "scripts": {
-    "start": "npm run dev --prefix auramind-gemini",
-    "watch": "node watch-deploy.js",
-    "build": "npm run build --prefix auramind-gemini",
-    "dev": "npm run dev --prefix auramind-gemini",
-    "dev:watch": "node watch-deploy.js",
-    "test": "npm test --prefix auramind-gemini"
+    "dev": "cd auramind-gemini && npm run dev",
+    "build": "cd auramind-gemini && npm run build",
+    "preview": "cd auramind-gemini && npm run preview",
+    "test": "cd auramind-gemini && npm run test",
+    "api": "cd api && node server.js"
   },
-  "dependencies": {
-    "@radix-ui/react-progress": "^1.1.8",
-    "@radix-ui/react-slot": "^1.2.4",
-    "@supabase/supabase-js": "^2.101.1",
-    "@tailwindcss/postcss": "^4.2.1",
-    "@vercel/node": "^5.5.22",
-    "axios": "^1.13.2",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "resend": "^4.0.0",
-    "stripe": "^20.2.0",
-    "tailwind-merge": "^3.4.0"
-  },
-  "devDependencies": {
-    "autoprefixer": "^10.4.27",
-    "chokidar": "^3.5.3",
-    "postcss": "^8.5.8",
-    "tailwindcss": "^4.2.1"
-  }
+  "keywords": ["learning", "flashcards", "ai", "education"],
+  "author": "",
+  "license": "MIT"
 }
