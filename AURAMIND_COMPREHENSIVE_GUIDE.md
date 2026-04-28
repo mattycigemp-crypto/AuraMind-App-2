@@ -196,13 +196,13 @@ The classic flashcard experience enhanced with modern features:
 
 #### Quiz Mode
 
-Test knowledge with multiple-choice questions:
+Test knowledge with multiple-choice questions (available within chat interface):
 
 - **AI-Generated Questions**: Automatically created from deck content
 - **Immediate Feedback**: Instant right/wrong indication with explanations
 - **Difficulty Levels**: Questions calibrated to user ability
-- **Timed Challenges**: Optional time limits for added engagement
 - **Score Tracking**: Performance metrics and improvement tracking
+- **Integration**: Available as part of the AI chat experience
 
 #### Study Buddy Chat
 
@@ -216,12 +216,13 @@ Interactive conversational learning:
 
 #### Presentation Mode
 
-Learn through structured presentations:
+Learn through structured presentations (component available, AI generation in development):
 
 - **Slide-Based Learning**: Content organized into logical sequences
-- **Visual Aids**: Automatic generation of diagrams and visualizations
-- **Progressive Disclosure**: Information revealed in optimal sequence
-- **Review Mode**: Quick recap of key points from each slide
+- **Speech Synthesis**: Text-to-speech for audio learning
+- **Navigation Controls**: Easy navigation between slides
+- **Full Screen Mode**: Immersive presentation experience
+- **Auto-Play**: Automatic slide progression with speech
 
 ### Advanced Import Capabilities
 
@@ -243,10 +244,9 @@ AuraMind supports importing from virtually any source:
 
 #### Web Content
 
-- **URL Import**: Extract content from web pages and articles
-- **YouTube Integration**: Generate cards from video transcripts
-- **Wikipedia Scraping**: Create decks from encyclopedia entries
-- **Notion Import**: Convert Notion pages to study materials
+- **URL Import**: Extract content from web pages and articles (planned feature)
+- **Text Paste**: Paste web content directly into the chat interface for card generation
+- **Notion Import**: Convert Notion pages to study materials (planned feature)
 
 #### Academic Sources
 
@@ -269,31 +269,31 @@ AuraMind provides detailed insights into learning progress:
 
 #### Progress Visualization
 
-- **Activity Heatmaps**: Calendar view showing study activity patterns
-- **Learning Curves**: Visual representation of progress over time
-- **Knowledge Maps**: Network diagrams showing concept relationships
-- **Streak Tracking**: Gamification elements to maintain motivation
-- **Goal Progress**: Track progress toward learning objectives
+- **Activity Heatmaps**: Calendar view showing study activity patterns (available in dashboard)
+- **Learning Curves**: Visual representation of progress over time (planned)
+- **Knowledge Maps**: Network diagrams showing concept relationships (planned)
+- **Streak Tracking**: Gamification elements to maintain motivation (available)
+- **Goal Progress**: Track progress toward learning objectives (planned)
 
-#### Predictive Analytics
+#### Predictive Analytics (Planned)
 
 - **Optimal Study Times**: AI-recommended study schedules
 - **Knowledge Gap Analysis**: Identify weak areas requiring attention
 - **Retention Predictions**: Forecast long-term retention based on current performance
 - **Workload Optimization**: Balance study load across different subjects
 
-### Collaboration Features
+### Collaboration Features (Planned)
 
-Learning is often a social activity. AuraMind includes:
+Learning is often a social activity. AuraMind plans to include:
 
-#### Deck Sharing
+#### Deck Sharing (Planned)
 
 - **Public Decks**: Browse and use community-created study materials
 - **Private Sharing**: Share decks with specific users or groups
 - **Collaborative Editing**: Work together on deck creation and refinement
 - **Version Control**: Track changes and maintain history
 
-#### Study Groups
+#### Study Groups (Planned)
 
 - **Group Challenges**: Compete with friends on study metrics
 - **Leaderboards**: Compare progress with peers
@@ -362,17 +362,24 @@ React Router handles client-side routing with protected routes:
 
 ### Backend Architecture
 
-The backend uses Vercel serverless functions for API endpoints:
+The backend uses Vercel serverless functions with a consolidated API structure:
 
 #### API Structure
 
 ```
 api/
-├── check-subscription.ts      # Verify subscription status
-├── create-checkout-session.ts  # Initiate Stripe checkout
-├── stripe-webhook.ts          # Handle Stripe events
-└── [Additional endpoints as needed]
+├── index.ts                   # Main API router with consolidated endpoints
+├── stripe-webhook.ts          # Handle Stripe webhook events
 ```
+
+The main API router (`index.ts`) handles multiple endpoint categories:
+- **admin**: User management, role assignment, admin utilities
+- **coupons**: Stripe coupon management
+- **users**: User operations (redirected to admin)
+- **subscription**: Subscription status verification
+- **stripe**: Stripe checkout and portal sessions
+- **email**: Email operations (placeholder)
+- **account**: Account operations (delete account)
 
 #### Database Schema
 
@@ -1398,37 +1405,32 @@ Features are gated based on role and subscription:
 
 ### Subscription Tiers
 
-AuraMind offers multiple subscription tiers:
+AuraMind offers two subscription tiers:
 
-#### Starter (Free)
-
-- **Features**: Basic flashcard creation and review
-- **Storage**: 100 cards
-- **AI Generation**: 10 generations per month
-- **Study Modes**: Flashcard review only
-- **Analytics**: Basic progress tracking
-- **Support**: Community support
-
-#### Pro (Monthly)
+#### Monthly Protocol
 
 - **Price**: $9.99/month
-- **Features**: All Starter features plus:
-- **Storage**: Unlimited cards
-- **AI Generation**: Unlimited generations
-- **Study Modes**: All study modes
-- **Analytics**: Advanced analytics
-- **Support**: Priority email support
-- **Export**: Full export capabilities
+- **Features**: 
+- **AI-powered flashcard generation**: Generate flashcards from notes, outlines, and study materials
+- **Aura Operator**: 4 study agent modes (Study From Anything, Study Buddy, Content Pipeline, Research Assistant)
+- **Deck creation & study sessions**: Create unlimited decks and study with spaced repetition
+- **Research assistant & content pipeline**: Convert PDFs, PowerPoint files, and text into study materials
+- **Full access**: Complete access to all platform features
 
-#### Scholar (Annual)
+#### Annual System
 
-- **Price**: $79.99/year (33% discount)
-- **Features**: All Pro features plus:
-- **Early Access**: New features before public release
-- **Beta Programs**: Access to beta features
-- **API Access**: API access for integrations
-- **Custom Branding**: Custom branding options
-- **Dedicated Support**: Dedicated support channel
+- **Price**: $3.99/month (billed annually at $47.88)
+- **Savings**: 60% discount compared to monthly
+- **Features**: All Monthly Protocol features
+- **Value**: Best value for committed learners
+
+#### Free Tier
+
+- **Features**: Basic access with limited functionality
+- **Storage**: Limited card storage
+- **AI Generation**: Limited AI generations
+- **Study Modes**: Basic flashcard review
+- **Support**: Community support
 
 ### Payment Processing
 
@@ -1597,9 +1599,8 @@ Free access is granted through:
 
 - **Vite**: Fast development server with HMR
 - **TypeScript**: Type checking and IDE support
-- **ESLint**: Code linting and quality checks
-- **Prettier**: Code formatting
-- **Git Hooks**: Pre-commit hooks for code quality
+- **Vitest**: Unit testing framework
+- **Git**: Version control
 
 ### Testing
 
@@ -1619,7 +1620,12 @@ Test coverage includes:
 - **AI Service**: AI integration
 - **Utilities**: Helper functions
 
-#### Integration Tests
+Current test files:
+- `auraAiService.test.ts`: AI service integration tests
+- `dbService.test.ts`: Database service tests
+- `srs.test.ts`: Spaced repetition algorithm tests
+
+#### Integration Tests (Planned)
 
 Integration tests for component interactions:
 
@@ -1628,9 +1634,9 @@ Integration tests for component interactions:
 - **Database Integration**: Database operation testing
 - **AI Integration**: AI service testing
 
-#### End-to-End Tests
+#### End-to-End Tests (Planned)
 
-Playwright for E2E testing:
+E2E testing framework to be implemented:
 
 - **Critical Paths**: Critical user journeys
 - **Cross-Browser**: Testing across browsers
@@ -1696,11 +1702,10 @@ Production environment variables:
 
 Production monitoring:
 
-- **Error Tracking**: Sentry for error tracking
 - **Performance Monitoring**: Vercel Analytics
-- **User Analytics**: PostHog for user analytics
-- **Uptime Monitoring**: Uptime monitoring services
-- **Log Aggregation**: Centralized log management
+- **User Analytics**: PostHog for user analytics (when configured)
+- **Uptime Monitoring**: Vercel built-in monitoring
+- **Log Aggregation**: Vercel logs
 
 ---
 
@@ -1710,17 +1715,17 @@ Production monitoring:
 
 #### Feature Enhancements
 
-- **Mobile Apps**: Native iOS and Android applications
-- **Offline Mode**: Offline functionality for studying without internet
+- **Enhanced Quiz Mode**: Dedicated quiz mode outside of chat interface
+- **Presentation AI Generation**: AI-powered presentation generation
 - **Advanced Analytics**: More detailed analytics and insights
-- **Collaboration Features**: Real-time collaboration on decks
 - **Improved AI**: Enhanced AI capabilities and accuracy
+- **Voice Features**: Enhanced voice interaction features
 
 #### Platform Improvements
 
 - **Performance**: Optimize application performance
 - **Accessibility**: Improve accessibility features
-- **Internationalization**: Support for more languages
+- **Internationalization**: Complete i18n implementation
 - **Dark Mode**: Enhanced dark mode experience
 - **Keyboard Shortcuts**: More keyboard shortcuts for power users
 
@@ -1728,19 +1733,19 @@ Production monitoring:
 
 #### New Features
 
+- **Collaboration Features**: Real-time collaboration on decks
 - **Study Groups**: Enhanced group study features
 - **Gamification**: More gamification elements
 - **Integration Hub**: Integrations with more learning platforms
 - **Advanced Import**: Support for more file formats
-- **Voice Features**: Enhanced voice interaction features
 
 #### Platform Expansion
 
+- **Mobile Apps**: Native iOS and Android applications
+- **Offline Mode**: Offline functionality for studying without internet
 - **API**: Public API for third-party integrations
 - **Webhooks**: Webhooks for automation
 - **Plugins**: Plugin system for extensions
-- **White Label**: White label options for organizations
-- **Enterprise Features**: Enterprise-grade features
 
 ### Long-Term Goals (Next 12 Months)
 
@@ -1754,11 +1759,10 @@ Production monitoring:
 
 #### Platform Evolution
 
-- **Decentralization**: Explore decentralized options
-- **Blockchain**: Potential blockchain integration for credentials
-- **VR/AR**: Virtual and augmented reality learning
-- **AI Research**: Conduct AI research for learning
+- **White Label**: White label options for organizations
+- **Enterprise Features**: Enterprise-grade features
 - **Global Expansion**: Expand to global markets
+- **AI Research**: Conduct AI research for learning
 
 ---
 
