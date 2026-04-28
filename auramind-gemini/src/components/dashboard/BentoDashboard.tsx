@@ -698,7 +698,7 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
 
           {nextDeck && (
             <button
-              onClick={() => onSelectDeck(nextDeck.id)}
+              onClick={() => onNavigate({ type: 'deck', deckId: nextDeck.id })}
               className="w-full mt-10 py-5 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-2xl flex items-center justify-center gap-3 text-black/ dark:text-white/ hover:bg-white hover:text-black hover:border-white transition-all duration-500 font-black uppercase text-[10px] tracking-[0.3em] group/btn"
             >
               <Zap size={14} className="group-hover/btn:fill-current" />
@@ -1001,7 +1001,7 @@ const BentoDashboard: React.FC<BentoDashboardProps> = ({
               {leaderboard.map((entry, i) => (
                 <button
                   key={entry.id}
-                  onClick={() => onSelectDeck(entry.id)}
+                  onClick={() => onNavigate({ type: 'deck', deckId: entry.id })}
                   className="w-full flex items-center justify-between gap-4 px-6 py-4 hover:bg-black/5 dark:bg-white/ transition-all group rounded-3xl"
                 >
                   <div className="flex items-center gap-4">
