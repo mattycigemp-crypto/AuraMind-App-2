@@ -1,49 +1,73 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
+import { Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
+import { AnimatePresence, motion, useAnimation } from 'framer-motion';
 import { Deck, Card, Rating, UserProfile, UserRole } from './types';
 import { calculateSRS, getInitialCardState } from './services/study/srs';
-import { generateDeckFromTopic, GeneratedCard } from './services/api/deepseekService';
+import { generateDeckFromTopic, GeneratedCard } from './services/api/groqService';
 import { dbService } from './services/database/dbService';
-import { PREMADE_CARDS, PREMADE_DECKS } from './data/premadeContent';
 import { createMetadataTemplates, mergeCardMetadata, persistCardMetadata } from './services/study/roadmapService';
+import { syncCurrentUser } from './services/database/syncUser';
 import { analyticsService } from './services/analytics/analyticsService';
 import { getPermissions, getDefaultRole } from './utils/permissions';
-import './i18n/config';
+import { userService } from './services/api';
 
-import AuraLandingPage from './components/landing/AuraLandingPage';
-import BentoDashboard from './components/dashboard/BentoDashboard';
-import AppLayout from './components/shared/AppLayout';
-import AuthPage from './components/auth/AuthPage';
+// The Engineering of Awe: Elite Animation System
+import { initializeAweSystem, EASING_PRESETS, SPRING_PRESETS, checkReducedMotion } from './styles/animations/awe';
+import { useScrollAnimations } from './hooks/useScrollAnimations';
+import { useMagneticButton } from './hooks/useMagneticButton';
+import './styles/design-tokens.css';
+// import './i18n/config';
 
-import DashboardInsightsPage from './pages/dashboard/InsightsPage';
-import DashboardPlannerPage from './pages/dashboard/PlannerPage';
-import ProfessorDashboardPage from './pages/dashboard/ProfessorDashboardPage';
-import DeckDetailRoute from './pages/deck/DeckDetailRoute';
-import GenerateCardsRoute from './pages/deck/GenerateCardsPage';
-import StudyModeRoute from './pages/study/StudyModePage';
-import ChatRoute from './pages/chat/ChatPage';
-import SettingsPage from './pages/auth/SettingsPage';
-import AdminConsolePage from './pages/auth/AdminConsolePage';
-import DocsPage from './pages/legal/DocsPage';
-import PrivacyPolicyPage from './pages/legal/PrivacyPolicyPage';
-import TermsOfServicePage from './pages/legal/TermsOfServicePage';
-import ResetPasswordPage from './pages/auth/ResetPasswordPage';
-import RestoreAccountPage from './pages/auth/RestoreAccountPage';
-import CallbackPage from './pages/auth/CallbackPage';
-import NotFoundPage from './pages/NotFoundPage';
+// Polyfill for requestIdleCallback (not supported in Safari and older mobile browsers)
+if (typeof window !== 'undefined' && !window.requestIdleCallback) {
+  window.requestIdleCallback = function(callback: IdleRequestCallback, options?: { timeout?: number }) {
+    const start = Date.now();
+    return setTimeout(() => {
+      callback({
+        didTimeout: false,
+        timeRemaining: () => Math.max(0, 50 - (Date.now() - start))
+      });
+    }, options?.timeout || 1) as unknown as number;
+  };
+  window.cancelIdleCallback = function(id: number) {
+    clearTimeout(id);
+  };
+}
 
-import PaymentPage from './components/auth/PaymentPage';
-
+import { LayoutProvider } from './contexts/LayoutContext';
+import { AchievementProvider } from './components/achievements/AchievementUnlock';
+import QuizGenerationNotifier from './components/notifications/QuizGenerationNotifier';
 import AmbientPlayer from './components/shared/AmbientPlayer';
+import HmrRefreshNotice from './components/shared/HmrRefreshNotice';
 import { ErrorBoundary } from './components/shared/ErrorBoundary';
 import { ThemeProvider, useTheme } from './hooks/useTheme';
 import { supabase } from './services/database/supabase';
 
+// Lazy-loaded route pages
+const AuraLandingPage = React.lazy(() => import('./components/landing/ModernLandingPage'));
+const AuraMindComplete = React.lazy(() => import('./pages/AuraMindComplete'));
+const SimplePage = React.lazy(() => import('./pages/SimplePage'));
+const BrightDashboard = React.lazy(() => import('./pages/BrightDashboard'));
+const WorkingDashboard = React.lazy(() => import('./pages/WorkingDashboard'));
+const AuthPage = React.lazy(() => import('./components/auth/AuthPage'));
+const DeckDetailRoute = React.lazy(() => import('./pages/deck/DeckDetailRoute'));
+const StudyModeRoute = React.lazy(() => import('./pages/study/StudyModePage'));
+const AdminConsolePage = React.lazy(() => import('./pages/auth/AdminConsolePage'));
+const DocsPage = React.lazy(() => import('./pages/legal/DocsPage'));
+const PrivacyPolicyPage = React.lazy(() => import('./pages/legal/PrivacyPolicyPage'));
+const TermsOfServicePage = React.lazy(() => import('./pages/legal/TermsOfServicePage'));
+const ResetPasswordPage = React.lazy(() => import('./pages/auth/ResetPasswordPage'));
+const RestoreAccountPage = React.lazy(() => import('./pages/auth/RestoreAccountPage'));
+const CallbackPage = React.lazy(() => import('./pages/auth/CallbackPage'));
+const SchoologyCallbackPage = React.lazy(() => import('./pages/auth/SchoologyCallbackPage'));
+const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
+const PaymentPage = React.lazy(() => import('./components/auth/PaymentPage'));
+const DownloadPage = React.lazy(() => import('./pages/DownloadPage'));
+
 // Icons
 import {
-  ArrowDown, BrainCircuit
-} from 'lucide-react';
+  ArrowDownIcon as ArrowDown, BrainCircuitIcon as BrainCircuit
+} from './components/icons/CustomIcons';
 
 // --- PREMIUM COMPONENTS ---
 
@@ -116,11 +140,15 @@ const ScrollTopButton = () => {
 const ProtectedRoute = ({ 
   user, 
   status, 
-  onLogout 
+  onLogout,
+  useLayout = true,
+  children
 }: { 
   user: UserProfile | null; 
   status: 'active' | 'trialing' | 'canceled' | 'past_due' | 'none' | 'loading';
   onLogout: () => void;
+  useLayout?: boolean;
+  children?: React.ReactNode;
 }) => {
   if (status === 'loading') {
     return <LoadingOverlay />;
@@ -140,32 +168,117 @@ const ProtectedRoute = ({
     return <Navigate to="/subscribe" replace />;
   }
 
-  return <AppLayout user={user} onLogout={onLogout} />;
+  if (useLayout) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-zinc-950">
+        {children ?? <Outlet />}
+      </div>
+    );
+  }
+
+  return <Outlet />;
 };
 
-const PageTransition = ({ children }: { children: React.ReactNode }) => (
-  <motion.div 
-    initial={{ opacity: 0, y: 10 }} 
-    animate={{ opacity: 1, y: 0 }} 
-    exit={{ opacity: 0, y: -10 }} 
-    transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-    className="min-h-screen"
-  >
-    {children}
-  </motion.div>
-);
+const PageTransition = ({ children }: { children: React.ReactNode }) => {
+  // Check for reduced motion preference
+  const shouldReduceMotion = checkReducedMotion();
+  
+  const animationConfig = shouldReduceMotion
+    ? {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 },
+        transition: { duration: 0.2 }
+      }
+    : {
+        initial: { opacity: 0, y: 20, scale: 0.95 },
+        animate: { 
+          opacity: 1, 
+          y: 0, 
+          scale: 1,
+          transition: {
+            duration: 0.6,
+            ease: [0.23, 1, 0.32, 1] as const
+          }
+        }, 
+        exit: { 
+          opacity: 0, 
+          y: -20, 
+          scale: 0.95,
+          transition: {
+            duration: 0.4,
+            ease: [0.23, 1, 0.32, 1] as const
+          }
+        }
+      };
 
-const AppContent = () => {
+  return (
+    <motion.div 
+      {...animationConfig}
+      className="min-h-screen gpu-accelerated relative"
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) => void }) => {
   const location = useLocation();
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
   const [decks, setDecks] = useState<Deck[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<'active' | 'trialing' | 'canceled' | 'past_due' | 'none' | 'loading'>('loading');
+  const [isAweInitialized, setIsAweInitialized] = useState(false);
+
+  // Initialize scroll animations at the top level (follows Rules of Hooks)
+  const scrollAnimations = useScrollAnimations();
+
+  // Detect mobile for performance optimization
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    analyticsService.init();
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  useEffect(() => {
+    // Skip heavy animation system on mobile
+    if (isMobile) {
+      setIsAweInitialized(true);
+      return;
+    }
+
+    if (!isAweInitialized) {
+      requestIdleCallback(() => {
+        initializeAweSystem();
+        setIsAweInitialized(true);
+      });
+    }
+
+    // Initialize real analytics service with elite performance
+    analyticsService.init();
+
+    // Add performance monitoring (deferred)
+    if (typeof window !== 'undefined') {
+      requestIdleCallback(() => {
+        const perfObserver = new PerformanceObserver(() => {});
+
+        perfObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+      });
+    }
+  }, [isAweInitialized, isMobile]);
+
+  // Cleanup scroll animations on unmount
+  useEffect(() => {
+    return () => {
+      scrollAnimations.cleanup();
+    };
+  }, [scrollAnimations]);
 
   const checkSubscription = async (userId: string, email: string) => {
     try {
@@ -201,6 +314,9 @@ const AppContent = () => {
     const role = (metadata.role as UserRole) || getDefaultRole(authUser.email);
     const permissions = getPermissions(role);
     
+    // Update role in parent component
+    onUserRoleChange(role);
+    
     return {
       id: authUser.id,
       name: metadata.full_name || authUser.email?.split('@')[0] || 'User',
@@ -208,6 +324,7 @@ const AppContent = () => {
       avatar: metadata.avatar_url,
       plan: metadata.plan || 'Starter',
       streak: typeof metadata.streak === 'number' ? metadata.streak : 0,
+      streakFreezes: typeof metadata.streak_freezes === 'number' ? metadata.streak_freezes : 2,
       joinedDate: metadata.joined_date ? Number(metadata.joined_date) : Date.now(),
       isAdmin: permissions.canAccessAdminPanel,
       role: role,
@@ -241,6 +358,9 @@ const AppContent = () => {
         await checkSubscription(session.user.id, session.user.email || '');
       }
 
+      // Ensure user is synced to database first
+      await syncCurrentUser();
+      
       const [fetchedDecks, fetchedCards] = await Promise.all([
         dbService.fetchDecks(session.user.id),
         dbService.fetchCards(session.user.id)
@@ -287,6 +407,11 @@ const AppContent = () => {
     setCards(fetchedCards);
   };
 
+  // Invalidate cache after deck deletion to ensure fresh data
+  const invalidateDeckCache = () => {
+    dbService.clearCache();
+  };
+
   const saveDeckWithCards = async (
     title: string,
     description: string,
@@ -296,18 +421,19 @@ const AppContent = () => {
   ) => {
     if (!user) return null;
     const deck = await dbService.createDeck(user.id, title, description);
-    const seededCards = cardsToSave.map((card) => getInitialCardState(deck.id, card.question, card.answer));
+    const seededCards = cardsToSave.map((card) => getInitialCardState(deck.id, (card as any).front || card.question, (card as any).back || card.answer));
     const cardsWithMetadata = cardsToSave.map(card => ({
-      question: card.question,
-      answer: card.answer,
+      front: (card as any).front || card.question,
+      back: (card as any).back || card.answer,
       citations: [],
       sourceLabel,
       sourceType
     }));
-    const templates = createMetadataTemplates(cardsWithMetadata, sourceLabel, sourceType);
+    const templates = createMetadataTemplates(cardsWithMetadata as any, sourceLabel, sourceType);
     const savedCards = mergeCardMetadata(await dbService.saveCards(user.id, seededCards), templates);
     persistCardMetadata(savedCards);
-    await dbService.updateDeck(deck.id, { cardCount: savedCards.length });
+    // Skip deck update since cardCount column doesn't exist in database
+    // await dbService.updateDeck(deck.id, { cardCount: savedCards.length });
     const hydratedDeck = { ...deck, cardCount: savedCards.length, sourceLabel };
     setDecks((prev) => [...prev, hydratedDeck]);
     setCards((prev) => [...prev, ...savedCards]);
@@ -315,9 +441,15 @@ const AppContent = () => {
   };
 
   const deleteDeck = async (id: string) => {
-    await dbService.deleteDeck(id);
-    setDecks(prev => prev.filter(d => d.id !== id));
-    setCards(prev => prev.filter(c => c.deckId !== id));
+    try {
+      await dbService.deleteDeck(id);
+      invalidateDeckCache();
+      setDecks(prev => prev.filter(d => d.id !== id));
+      setCards(prev => prev.filter(c => c.deckId !== id));
+    } catch (err) {
+      console.error('Failed to delete deck:', err);
+      throw err;
+    }
   };
 
   const deleteCard = async (id: string) => {
@@ -337,7 +469,17 @@ const AppContent = () => {
     const card = cards.find(c => c.id === id);
     if (!card) return;
     const res = calculateSRS(card, rating);
-    const updates = { ...res, nextReview: Date.now() + res.interval * 86400000 };
+    const updates: any = {
+      interval: res.interval,
+      repetition: res.repetition,
+      easeFactor: res.easeFactor,
+      nextReview: Date.now() + res.interval * 86400000,
+      lastReviewed: Date.now(),
+    };
+    // Save FSRS state if available
+    if ((res as any).fsrsState) {
+      updates.fsrsState = (res as any).fsrsState;
+    }
     await dbService.updateCard(id, updates);
     setCards(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
 
@@ -347,8 +489,25 @@ const AppContent = () => {
         const previous = user.lastStudyDate ? new Date(`${user.lastStudyDate}T00:00:00`) : null;
         const current = new Date(`${today}T00:00:00`);
         const diffDays = previous ? Math.round((current.getTime() - previous.getTime()) / 86400000) : 0;
-        const nextStreak = diffDays === 1 ? (user.streak || 0) + 1 : 1;
-        await updateUserProfile({ streak: nextStreak, lastStudyDate: today });
+        
+        let nextStreak = user.streak || 0;
+        let nextFreezes = user.streakFreezes ?? 2;
+        
+        if (diffDays === 1) {
+          nextStreak += 1;
+        } else if (diffDays > 1) {
+          const missedDays = diffDays - 1;
+          if (nextFreezes >= missedDays) {
+            nextFreezes -= missedDays;
+            nextStreak += 1;
+          } else {
+            nextStreak = 1;
+          }
+        } else {
+          nextStreak = nextStreak === 0 ? 1 : nextStreak;
+        }
+        
+        await updateUserProfile({ streak: nextStreak, streakFreezes: nextFreezes, lastStudyDate: today });
       }
     }
   };
@@ -376,6 +535,19 @@ const AppContent = () => {
     )));
   };
 
+  const addCardsToDeck = async (deckId: string, newCards: any[]) => {
+    if (!user) return;
+    const s = newCards.map(c => getInitialCardState(deckId, c.front || c.question, c.back || c.answer));
+    const templates = createMetadataTemplates(newCards, 'AuraMind AI', 'ai');
+    const saved = mergeCardMetadata(await dbService.saveCards(user.id, s), templates);
+    persistCardMetadata(saved);
+    setCards(prev => [...prev, ...saved]);
+    setDecks(prev => prev.map((deck) => (
+      deck.id === deckId ? { ...deck, cardCount: deck.cardCount + saved.length } : deck
+    )));
+    return saved.length;
+  };
+
   const createGeneratedDeck = async (topic: string) => {
     const generated = await generateDeckFromTopic(topic);
     const created = await saveDeckWithCards(
@@ -399,29 +571,8 @@ const AppContent = () => {
   const loadSampleDecks = async () => {
     if (!user) return;
 
-    const existingTitles = new Set(decks.map((deck) => deck.title.toLowerCase()));
-    const templateGroups = PREMADE_DECKS
-      .filter((deck) => !existingTitles.has(deck.title.toLowerCase()))
-      .map((deck) => ({
-        deck,
-        cards: PREMADE_CARDS.filter((card) => card.deckId === deck.id),
-      }));
-
-    for (const template of templateGroups) {
-      await saveDeckWithCards(
-        template.deck.title,
-        template.deck.description,
-        template.cards.map((card) => ({
-          question: card.question,
-          answer: card.answer,
-          citations: card.citations,
-          sourceLabel: card.sourceLabel,
-          sourceType: card.sourceType,
-        })),
-        template.deck.sourceLabel || template.deck.title,
-        'sample'
-      );
-    }
+    console.log('Sample decks loading disabled - using real database data only');
+    // NO MOCK DATA - User will create their own real decks and cards
   };
 
   const updateUserProfile = async (updates: Partial<UserProfile>) => {
@@ -433,6 +584,7 @@ const AppContent = () => {
         avatar_url: nextProfile.avatar,
         plan: nextProfile.plan,
         streak: nextProfile.streak,
+        streak_freezes: nextProfile.streakFreezes,
         joined_date: nextProfile.joinedDate,
         is_admin: nextProfile.isAdmin ?? false,
         last_study_date: nextProfile.lastStudyDate,
@@ -442,14 +594,18 @@ const AppContent = () => {
     setUser(mapAuthUserToProfile(data.user ?? { ...user, user_metadata: {} }));
   };
 
-  const currentUser = user || { id: 'guest', name: 'Guest', email: '', plan: 'Starter', streak: 0, joinedDate: Date.now(), isAdmin: false, isEmailVerified: false, isPhoneVerified: false, lastStudyDate: undefined };
+  const currentUser = user || { id: 'guest', name: 'Guest', email: '', plan: 'Starter', streak: 0, streakFreezes: 2, joinedDate: Date.now(), isAdmin: false, isEmailVerified: false, isPhoneVerified: false, lastStudyDate: undefined };
   const onLogout = () => { supabase.auth.signOut(); };
 
   return (
     <div className="min-h-screen bg-background text-foreground font-body selection:bg-primary selection:text-primary-foreground">
       <AnimatePresence mode="wait">
-        <Routes location={location}>
+        <Suspense fallback={<LoadingOverlay />}>
+        <Routes location={location} key={location.pathname}>
           <Route path="/" element={<PageTransition><AuraLandingPage /></PageTransition>} />
+          <Route path="/simple" element={<PageTransition><SimplePage /></PageTransition>} />
+          <Route path="/bright" element={<PageTransition><BrightDashboard /></PageTransition>} />
+          <Route path="/working" element={<PageTransition><WorkingDashboard /></PageTransition>} />
           <Route path="/auth" element={<PageTransition><AuthPage /></PageTransition>} />
           <Route path="/subscribe" element={
             user && (subscriptionStatus === 'active' || subscriptionStatus === 'trialing')
@@ -458,50 +614,267 @@ const AppContent = () => {
           } />
           
           <Route element={<ProtectedRoute user={user} status={subscriptionStatus} onLogout={onLogout} />}>
-            <Route path="/dashboard" element={<PageTransition><BentoDashboard decks={decks} cards={cards} onDeleteDeck={deleteDeck} onGenerateDeck={createGeneratedDeck} onImportDeck={importDeckFromCards} onLoadDemoData={loadSampleDecks} onNavigate={(v)=>{}} user={currentUser} createDeck={createDeck} onLoadDecks={loadDecks} /></PageTransition>} />
-            <Route path="/dashboard/insights" element={<PageTransition><DashboardInsightsPage decks={decks} cards={cards} /></PageTransition>} />
-            <Route path="/dashboard/planner" element={<PageTransition><DashboardPlannerPage decks={decks} cards={cards} /></PageTransition>} />
-            <Route path="/dashboard/professor" element={<PageTransition><ProfessorDashboardPage decks={decks} cards={cards} user={currentUser} /></PageTransition>} />
-            <Route path="/deck/:id" element={<PageTransition><DeckDetailRoute decks={decks} cards={cards} deleteCard={deleteCard} setActiveDeckId={setActiveDeckId} saveCard={saveCard} /></PageTransition>} />
-            <Route path="/generate" element={<PageTransition><GenerateCardsRoute activeDeckId={activeDeckId} user={currentUser} saveGeneratedCards={saveGeneratedCards} /></PageTransition>} />
-            <Route path="/chat" element={<PageTransition><ChatRoute createGeneratedDeck={createGeneratedDeck} createDeckFromCards={createDeckFromCards} user={currentUser} decks={decks} cards={cards} /></PageTransition>} />
-            <Route path="/settings" element={<PageTransition><SettingsPage user={currentUser} onUpdateUser={updateUserProfile} /></PageTransition>} />
+            <Route path="/deck/:id" element={<PageTransition><DeckDetailRoute /></PageTransition>} />
             <Route path="/admin/vault" element={(() => {
               const permissions = getPermissions(currentUser.role || UserRole.USER);
               return permissions.canAccessAdminPanel ? (
-                <PageTransition><AdminConsolePage decks={decks} cards={cards} user={currentUser} /></PageTransition>
+                <PageTransition><AdminConsolePage /></PageTransition>
               ) : (
                 <Navigate to="/dashboard" replace />
               );
             })()} />
-            <Route path="/docs" element={<PageTransition><DocsPage /></PageTransition>} />
-            <Route path="/privacy" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
-            <Route path="/terms" element={<PageTransition><TermsOfServicePage /></PageTransition>} />
+          </Route>
+          <Route path="/docs" element={<PageTransition><DocsPage /></PageTransition>} />
+          <Route path="/privacy" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
+          <Route path="/terms" element={<PageTransition><TermsOfServicePage /></PageTransition>} />
+          <Route path="/download" element={<PageTransition><DownloadPage /></PageTransition>} />
+
+          <Route element={<ProtectedRoute user={user} status={subscriptionStatus} onLogout={onLogout} />}>
+            <Route
+              path="/dashboard"
+              element={
+                <PageTransition>
+                  {user ? (
+                    <AuraMindComplete
+                      user={user}
+                      decks={decks}
+                      cards={cards}
+                      createDeck={createDeck}
+                      deleteDeck={deleteDeck}
+                      addCardsToDeck={addCardsToDeck}
+                      onLogout={onLogout}
+                      initialPage="main"
+                    />
+                  ) : (
+                    <Navigate to="/auth" replace />
+                  )}
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/dashboard/decks"
+              element={
+                <PageTransition>
+                  {user ? (
+                    <AuraMindComplete
+                      user={user}
+                      decks={decks}
+                      cards={cards}
+                      createDeck={createDeck}
+                      deleteDeck={deleteDeck}
+                      addCardsToDeck={addCardsToDeck}
+                      onLogout={onLogout}
+                      initialPage="cards"
+                    />
+                  ) : (
+                    <Navigate to="/auth" replace />
+                  )}
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/dashboard/chat"
+              element={
+                <PageTransition>
+                  {user ? (
+                    <AuraMindComplete
+                      user={user}
+                      decks={decks}
+                      cards={cards}
+                      createDeck={createDeck}
+                      deleteDeck={deleteDeck}
+                      addCardsToDeck={addCardsToDeck}
+                      onLogout={onLogout}
+                      initialPage="chat"
+                    />
+                  ) : (
+                    <Navigate to="/auth" replace />
+                  )}
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/dashboard/analytics"
+              element={
+                <PageTransition>
+                  {user ? (
+                    <AuraMindComplete
+                      user={user}
+                      decks={decks}
+                      cards={cards}
+                      createDeck={createDeck}
+                      deleteDeck={deleteDeck}
+                      addCardsToDeck={addCardsToDeck}
+                      onLogout={onLogout}
+                      initialPage="analytics"
+                    />
+                  ) : (
+                    <Navigate to="/auth" replace />
+                  )}
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/dashboard/quiz"
+              element={<Navigate to="/dashboard/decks" replace />}
+            />
+            <Route
+              path="/dashboard/generator"
+              element={
+                <PageTransition>
+                  {user ? (
+                    <AuraMindComplete
+                      user={user}
+                      decks={decks}
+                      cards={cards}
+                      createDeck={createDeck}
+                      deleteDeck={deleteDeck}
+                      addCardsToDeck={addCardsToDeck}
+                      onLogout={onLogout}
+                      initialPage="generator"
+                    />
+                  ) : (
+                    <Navigate to="/auth" replace />
+                  )}
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/dashboard/paths"
+              element={
+                <PageTransition>
+                  {user ? (
+                    <AuraMindComplete
+                      user={user}
+                      decks={decks}
+                      cards={cards}
+                      createDeck={createDeck}
+                      deleteDeck={deleteDeck}
+                      addCardsToDeck={addCardsToDeck}
+                      onLogout={onLogout}
+                      initialPage="paths"
+                    />
+                  ) : (
+                    <Navigate to="/auth" replace />
+                  )}
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/dashboard/tutorial"
+              element={
+                <PageTransition>
+                  {user ? (
+                    <AuraMindComplete
+                      user={user}
+                      decks={decks}
+                      cards={cards}
+                      createDeck={createDeck}
+                      deleteDeck={deleteDeck}
+                      addCardsToDeck={addCardsToDeck}
+                      onLogout={onLogout}
+                      initialPage="tutorial"
+                    />
+                  ) : (
+                    <Navigate to="/auth" replace />
+                  )}
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/dashboard/admin"
+              element={
+                <PageTransition>
+                  {user ? (
+                    <AuraMindComplete
+                      user={user}
+                      decks={decks}
+                      cards={cards}
+                      createDeck={createDeck}
+                      deleteDeck={deleteDeck}
+                      addCardsToDeck={addCardsToDeck}
+                      onLogout={onLogout}
+                      initialPage="admin"
+                    />
+                  ) : (
+                    <Navigate to="/auth" replace />
+                  )}
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/dashboard/settings"
+              element={
+                <PageTransition>
+                  {user ? (
+                    <AuraMindComplete
+                      user={user}
+                      decks={decks}
+                      cards={cards}
+                      createDeck={createDeck}
+                      deleteDeck={deleteDeck}
+                      addCardsToDeck={addCardsToDeck}
+                      onLogout={onLogout}
+                      initialPage="settings"
+                    />
+                  ) : (
+                    <Navigate to="/auth" replace />
+                  )}
+                </PageTransition>
+              }
+            />
+            {/* Redirect old routes to new dashboard */}
+            <Route path="/generate" element={<Navigate to="/dashboard/generator" replace />} />
+            <Route path="/chat" element={<Navigate to="/dashboard/chat" replace />} />
+            <Route path="/settings" element={<Navigate to="/dashboard/settings" replace />} />
+            <Route path="/analytics" element={<Navigate to="/dashboard/analytics" replace />} />
+            <Route path="/schedule" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/decks" element={<Navigate to="/dashboard/decks" replace />} />
+            <Route path="/leaderboards" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/challenges" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard/planner" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard/insights" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard/professor" element={<Navigate to="/dashboard" replace />} />
           </Route>
 
           <Route path="/study/:deckId" element={
             subscriptionStatus === 'active' || subscriptionStatus === 'trialing' || subscriptionStatus === 'loading'
-              ? <PageTransition><StudyModeRoute decks={decks} cards={cards} setActiveDeckId={setActiveDeckId} rateCard={rateCard} /></PageTransition>
+              ? <PageTransition><StudyModeRoute /></PageTransition>
               : <Navigate to="/subscribe" replace />
           } />
           <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
           <Route path="/restore-account" element={<PageTransition><RestoreAccountPage /></PageTransition>} />
           <Route path="/auth/callback" element={<PageTransition><CallbackPage /></PageTransition>} />
+          <Route path="/auth/schoology/callback" element={<PageTransition><SchoologyCallbackPage /></PageTransition>} />
           <Route path="*" element={<PageTransition><NotFoundPage /></PageTransition>} />
         </Routes>
+        </Suspense>
       </AnimatePresence>
       {location.pathname.startsWith('/dashboard') && <AmbientPlayer />}
       <ScrollTopButton />
+      <HmrRefreshNotice />
+      <QuizGenerationNotifier />
     </div>
   );
 };
 
-const App = () => (
-  <ErrorBoundary>
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
-  </ErrorBoundary>
-);
+const App = () => {
+  const [userRole, setUserRole] = useState<UserRole>(UserRole.USER);
+  
+  return (
+    <ErrorBoundary>
+      <ThemeProvider>
+       <LayoutProvider role={userRole}>
+         <AchievementProvider>
+           <AppContent onUserRoleChange={setUserRole} />
+         </AchievementProvider>
+       </LayoutProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
+  );
+};
 
 export default App;
+
+
+
