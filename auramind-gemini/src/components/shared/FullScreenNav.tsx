@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowUpRight } from 'lucide-react';
+import { XIcon as X, ArrowUpRightIcon as ArrowUpRight } from '../icons/CustomIcons';
 import AuraLogo from '../landing/AuraLogo';
 
 const navLinks = [
@@ -35,7 +35,7 @@ const FullScreenNav: React.FC<FullScreenNavProps> = ({ isOpen, onClose }) => {
               onClick={onClose}
               className="h-12 w-12 rounded-sm flex items-center justify-center text-primary-foreground hover:rotate-90 hover:bg-primary-foreground/10 transition-all duration-500"
             >
-              <X size={24} strokeWidth={2} />
+              <X size={24} />
             </button>
           </div>
 
@@ -93,3 +93,6 @@ const FullScreenNav: React.FC<FullScreenNavProps> = ({ isOpen, onClose }) => {
 };
 
 export default FullScreenNav;
+
+
+

@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { Check, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckIcon as Check, ChevronDownIcon as ChevronDown, ChevronUpIcon as ChevronUp } from "../icons/CustomIcons";
 
 import { cn } from "@/lib/utils";
 
@@ -141,3 +141,6 @@ export {
   SelectScrollUpButton,
   SelectScrollDownButton,
 };
+
+
+

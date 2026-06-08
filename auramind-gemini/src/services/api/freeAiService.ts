@@ -348,3 +348,6 @@ export const getFreeAIClient = (): FreeAIClient | OllamaClient => {
   }
   return ollamaClient;
 };
+
+
+

@@ -6,7 +6,7 @@
 export const notificationService = {
   requestPermission: async (): Promise<boolean> => {
     if (!('Notification' in window)) {
-      console.log('This browser does not support desktop notification');
+      // Browser does not support desktop notifications
       return false;
     }
 
@@ -38,3 +38,6 @@ export const notificationService = {
     }
   }
 };
+
+
+

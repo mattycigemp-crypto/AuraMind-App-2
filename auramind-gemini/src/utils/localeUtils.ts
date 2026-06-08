@@ -124,3 +124,6 @@ export const formatFileSize = (bytes: number, locale: string = 'en'): string => 
 
   return `${formatNumber(size, locale, { maximumFractionDigits: 1 })} ${units[unitIndex]}`;
 };
+
+
+

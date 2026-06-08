@@ -1,11 +1,10 @@
 import { Quiz } from "../../types";
 
-// Use existing OpenRouter setup instead of separate DeepSeek key
+// AI service using Groq for fast inference
 const getEnv = (key: string): string => {
     return (import.meta as any).env?.[key] || (process as any).env?.[key] || '';
 };
 
-const openRouterKey = getEnv('VITE_OPENROUTER_API_KEY');
 const groqKey = getEnv('VITE_GROQ_API_KEY');
 const useLocalAI = getEnv('VITE_USE_LOCAL_AI') === 'true';
 const customModel = getEnv('VITE_AI_MODEL');
@@ -24,7 +23,7 @@ const getCacheKey = (prefix: string, params: any): string => {
 const getCachedResponse = (key: string): any | null => {
     const cached = responseCache.get(key);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-        console.log('✅ Using cached response');
+        // Cache hit — skip API call
         return cached.data;
     }
     return null;
@@ -40,35 +39,24 @@ const setCachedResponse = (key: string, data: any): void => {
 };
 
 const getDeepSeekClient = () => {
-    // Try API keys in order of preference (Groq first for speed, then OpenRouter)
     let apiKey: string;
     let baseUrl: string;
     let defaultModel: string;
-    let apiKeySource: string;
 
     if (useLocalAI) {
         apiKey = 'not-needed';
         baseUrl = localBaseUrl;
         defaultModel = 'local-model';
-        apiKeySource = 'local';
     } else if (groqKey) {
-        // Groq is faster - use it first
         apiKey = groqKey;
         baseUrl = 'https://api.groq.com/openai/v1';
-        defaultModel = customModel || 'llama-3.3-70b-versatile'; // Use faster, more capable model
-        apiKeySource = 'groq';
-    } else if (openRouterKey) {
-        apiKey = openRouterKey;
-        baseUrl = 'https://openrouter.ai/api/v1';
-        defaultModel = customModel || 'deepseek/deepseek-r1-0528:free';
-        apiKeySource = 'openrouter';
+        defaultModel = customModel || 'llama-3.3-70b-versatile';
     } else {
-        throw new Error('No valid API key found. Please set VITE_GROQ_API_KEY, VITE_OPENROUTER_API_KEY, or enable VITE_USE_LOCAL_AI=true');
+        throw new Error('No valid API key found. Please set VITE_GROQ_API_KEY in your .env file or enable VITE_USE_LOCAL_AI=true');
     }
 
     if (!apiKey && !useLocalAI) {
-        const source = apiKeySource === 'groq' ? 'VITE_GROQ_API_KEY' : 'VITE_OPENROUTER_API_KEY';
-        throw new Error(`API Key is missing. Please set ${source} in your .env file.`);
+        throw new Error('API Key is missing. Please set VITE_GROQ_API_KEY in your .env file.');
     }
     
     return {
@@ -78,8 +66,6 @@ const getDeepSeekClient = () => {
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${apiKey || 'not-needed'}`,
-                    "HTTP-Referer": typeof window !== 'undefined' ? window.location.href : 'http://localhost:3000',
-                    "X-Title": typeof document !== 'undefined' ? (document.title || 'AuraMind') : 'AuraMind App',
                 },
                 body: JSON.stringify({
                     model,
@@ -107,7 +93,7 @@ export interface GeneratedCard {
 
 export interface FlashcardGenerationOptions {
     cardStyle?: 'definition' | 'conceptual' | 'multiple_choice';
-    difficulty?: 'easy' | 'medium' | 'hard';
+    difficulty?: 'easy' | 'medium' | 'hard' | 'mixed';
     includeExplanations?: boolean;
     useThinking?: boolean;
     userContext?: string;
@@ -147,6 +133,10 @@ export const generateFlashcards = async (
         userContext = '',
     } = options;
 
+    const diffPrompt = difficulty === 'mixed'
+      ? '- Include a balanced mix of easy, medium, and hard difficulty flashcards'
+      : `- Target difficulty: ${difficulty}`;
+
     const prompt = `You are an expert study assistant specializing in creating effective flashcards for learning.
 Analyze the following text and create high-quality flashcards (Question and Answer pairs).
 
@@ -154,7 +144,7 @@ Analyze the following text and create high-quality flashcards (Question and Answ
 - Focus on key concepts, definitions, relationships, and important facts
 - Create questions that test understanding, not just memorization
 - Use this flashcard style: ${cardStyle}
-- Target difficulty: ${difficulty}
+${diffPrompt}
 ${cardStyle === 'multiple_choice'
         ? '- For multiple choice cards, write the question so the answer contains the correct option plus a short explanation'
         : ''}
@@ -301,7 +291,7 @@ export const generateSummaryFromTopic = async (topic: string, userContext?: stri
 export const generateQuizFromContent = async (
     content: string,
     topic: string,
-    difficulty: 'easy' | 'medium' | 'hard' = 'medium',
+    difficulty: 'easy' | 'medium' | 'hard' | 'mixed' = 'medium',
     userContext?: string
 ): Promise<Quiz> => {
     const cacheKey = getCacheKey('quiz', { content, topic, difficulty, userContext });
@@ -311,11 +301,12 @@ export const generateQuizFromContent = async (
     const client = getDeepSeekClient();
     
     const contextStr = userContext ? `\n\nStudent Context:\n${userContext}\nAdjust questions based on their demonstrated proficiency/mastery in these topics.` : "";
+    const diffLabel = difficulty === 'mixed' ? 'a mix of easy, medium, and hard' : difficulty;
 
     const prompt = `You are an expert educational assessment creator. Create a comprehensive study quiz about "${topic}" using the provided source content.
 
 ## Instructions:
-- Create 5-8 multiple choice questions
+- Create 5-8 multiple choice questions at ${diffLabel} difficulty
 - Ensure questions test understanding, not just recall
 - Include clear, plausible distractors (wrong answers)
 - Provide explanations for why the correct answer is right
@@ -331,7 +322,7 @@ Respond with ONLY a valid JSON object. No conversational text, no markdown code 
     "id": "unique-quiz-id",
     "title": "Quiz Title",
     "topic": "${topic}",
-    "difficulty": "${difficulty}",
+    "difficulty": "${difficulty === 'mixed' ? ('medium') : difficulty}",
     "questions": [
         {
             "id": "q1",
@@ -393,14 +384,24 @@ export const generateStudyBuddyResponse = async (
     
     const contextStr = userContext ? `\nStudent Context:\n${userContext}\nIf you know their mastery level, tailor your tone and explanations to their skill.` : "";
 
-    const fullPrompt = `You are AuraMind Companion, an elite but clear study tutor.
+    const fullPrompt = `You are AuraMind Companion, an elite study tutor that uses the Socratic method.
+
+TEACHING APPROACH:
+- Guide the student to answers through questions rather than giving direct answers
+- Break complex topics into smaller, digestible steps
+- Use analogies and real-world examples
+- Ask the student to explain their reasoning
+- Provide hints before answers — only give direct answers after they've attempted
+- Praise correct reasoning and gently correct misconceptions
+- Adapt explanations to the student's skill level
+
 User request: ${prompt}
 ${sourceText ? `Primary source material:\n${sourceText}` : 'No source material was provided. Use general knowledge.'}${contextStr}
 
 Respond with a JSON object containing:
 {
-    "response": "Your tutoring answer",
-    "followUpQuestions": ["Question 1", "Question 2", "Question 3"],
+    "response": "Your tutoring answer using Socratic method — ask guiding questions, give hints, use analogies",
+    "followUpQuestions": ["Question to deepen understanding", "Question to test comprehension", "Question to connect to broader concepts"],
     "flashcards": [
         {
             "question": "Question text",
@@ -436,14 +437,15 @@ Respond with a JSON object containing:
 
 export const generateResearchPack = async (
     topic: string,
-    difficulty: 'easy' | 'medium' | 'hard' = 'medium',
+    difficulty: 'easy' | 'medium' | 'hard' | 'mixed' = 'medium',
     userContext?: string
 ): Promise<ResearchPack> => {
     const client = getDeepSeekClient();
     
     const contextStr = userContext ? `\nStudent Context:\n${userContext}\nAdapt content depth and vocabulary to fit their known metrics/weaknesses if applicable.` : "";
+    const diffDesc = difficulty === 'mixed' ? 'a mix of easy, medium, and hard' : `a ${difficulty}`;
 
-    const prompt = `Research "${topic}" and build a study pack for a ${difficulty} learner.${contextStr}
+    const prompt = `Research "${topic}" and build a study pack for ${diffDesc} learner.${contextStr}
 
 Generate a comprehensive JSON response with this structure:
 {
@@ -514,4 +516,7 @@ export const transcribeAudio = async (base64Audio: string, mimeType: string = 'a
 export const generateSpeech = async (text: string): Promise<AudioBuffer | null> => {
     throw new Error("Text-to-speech is not supported with DeepSeek. Please use a different TTS service.");
 };
+
+
+
 

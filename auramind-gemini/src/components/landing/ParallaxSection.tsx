@@ -24,7 +24,7 @@ const ParallaxSection: FC<ParallaxSectionProps> = ({
   const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.6, 1, 1, 0.6]);
 
   return (
-    <div ref={ref} id={id} className={className}>
+    <div ref={ref} id={id} className={`${className} relative`}>
       <motion.div style={{ y, opacity }}>
         {children}
       </motion.div>
@@ -33,3 +33,6 @@ const ParallaxSection: FC<ParallaxSectionProps> = ({
 };
 
 export default ParallaxSection;
+
+
+

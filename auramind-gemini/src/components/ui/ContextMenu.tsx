@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Copy, 
-  Edit, 
-  Trash2, 
-  Share, 
-  Download, 
-  Star, 
-  Archive,
-  MoreHorizontal,
-  Eye,
-  EyeOff,
-  Lock,
-  Unlock
-} from 'lucide-react';
+  CopyIcon as Copy, 
+  EditIcon as Edit, 
+  Trash2Icon as Trash2, 
+  ShareIcon as Share, 
+  DownloadIcon as Download, 
+  StarIcon as Star, 
+  ArchiveIcon as Archive,
+  MoreHorizontalIcon as MoreHorizontal,
+  EyeIcon as Eye,
+  EyeOffIcon as EyeOff,
+  LockIcon as Lock,
+  UnlockIcon as Unlock
+} from '../icons/CustomIcons';
 
 export interface ContextMenuItem {
   id: string;
@@ -207,3 +207,6 @@ export const useContextMenu = () => {
 };
 
 export default ContextMenu;
+
+
+

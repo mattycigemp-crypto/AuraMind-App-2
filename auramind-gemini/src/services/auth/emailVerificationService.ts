@@ -36,3 +36,6 @@ export const emailVerificationService = {
     return user?.email_confirmed_at != null;
   },
 };
+
+
+

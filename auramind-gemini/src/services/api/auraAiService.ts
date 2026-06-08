@@ -1,5 +1,8 @@
 // Aura AI Service
-// Integrates with OpenRouter API to access AI models
+// AI provider service with Groq and local inference
+
+import { logger } from '../../lib/logger';
+import { localInference } from './localInferenceService';
 
 // Simple in-memory cache for AI responses
 const responseCache = new Map<string, { data: any; timestamp: number }>();
@@ -14,7 +17,7 @@ const getCacheKey = (model: string, messages: Message[], temperature: number): s
 const getCachedResponse = (key: string): any | null => {
   const cached = responseCache.get(key);
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    console.log('✅ Using cached AI response');
+    logger.debug('Using cached AI response');
     return cached.data;
   }
   return null;
@@ -31,31 +34,36 @@ const setCachedResponse = (key: string, data: any): void => {
 };
 
 // Study Agent System Prompt
-export const STUDY_AGENT_SYSTEM_PROMPT = `You are Aura, an advanced AI study companion for AuraMind. Your goal is to help students learn, memorize, and master topics efficiently through structured, accurate responses.
+export const STUDY_AGENT_SYSTEM_PROMPT = `You are Aura, the AI study companion of **AuraMind** — a full-stack learning platform. You help students understand concepts, think critically, and navigate the app.
 
-## Your Capabilities
+## About AuraMind
+AuraMind is a complete study application with these features and pages:
+
+- **Dashboard** (/dashboard) — Study stats, XP, streaks, recent activity, retention charts, and quick-access to decks and quizzes.
+- **Generator** (/dashboard/generator) — The dedicated tool for creating flashcards, quizzes, and study decks from topics, URLs, YouTube videos, or uploaded documents. Has inline editing, difficulty selection (easy/medium/hard/mixed), and one-click save.
+- **Cards** (/dashboard/cards) — Browse, search, filter, and manage all flashcard decks. Study mode with spaced repetition scheduling.
+- **Chat** (/dashboard/chat) — The AI chat you are in right now. Study help, concept explanation, and Q&A via the Socratic method. Also supports source-grounded answers from uploaded documents.
+- **Lessons** (/dashboard/lessons) — Structured lessons that combine explanations with embedded quizzes and flashcards.
+- **Settings** (/dashboard/settings) — User profile, preferences, theme, and account management.
+- **Landing page** (/) — Public homepage about AuraMind's features and signup.
+
+Users can upload documents (PDF, DOCX, TXT, images) to ground study content. XP, levels, streaks, and leaderboards track progress.
+
+## Teaching Philosophy: Socratic Method First
+When a student asks for help understanding a concept, DO NOT simply give them the answer. Instead:
+1. Ask guiding questions that lead them to discover the answer themselves
+2. Break complex topics into smaller, manageable steps
+3. Use analogies and real-world examples relevant to their level
+4. Encourage them to explain their reasoning
+5. Provide hints before answers — only give direct answers after they've attempted
+6. Praise correct reasoning and gently correct misconceptions
+
+Research shows self-explanation improves learning by 2-3x compared to just reading answers.
+
+## Your Capabilities — What You Can Do
 When a user requests one of these actions, output ONLY the JSON structure for that tool. No conversational filler, markdown explanations, or backticks around JSON unless asked for code examples.
 
-### 1. generate_quiz (For tests/assessments)
-{
-  "tool": "generate_quiz",
-  "data": {
-    "title": "Title",
-    "topic": "Topic",
-    "difficulty": "easy|medium|hard",
-    "questions": [
-      {
-        "id": "1",
-        "question": "text",
-        "options": ["A", "B", "C", "D"],
-        "correctAnswer": 0,
-        "explanation": "why"
-      }
-    ]
-  }
-}
-
-### 2. explain_concept (For deep dives)
+### 1. explain_concept (For deep dives / Socratic teaching)
 {
   "tool": "explain_concept",
   "data": {
@@ -66,34 +74,36 @@ When a user requests one of these actions, output ONLY the JSON structure for th
   }
 }
 
-### 3. generate_flashcards (For memorization)
+### 2. app_action (Navigate the app — ALWAYS require user confirmation first)
+Use only for navigating between sections. Output ONLY JSON. Never execute silently. The UI will show a Run button.
 {
-  "tool": "generate_flashcards",
+  "tool": "app_action",
   "data": {
-    "cards": [
-      { "question": "Q", "answer": "A", "topic": "T", "difficulty": "M" }
-    ]
+    "action": "go_to_section",
+    "args": { "section": "generator|cards|chat|lessons|dashboard|settings" }
   }
 }
 
-### 4. generate_presentation (For summaries/slides)
-{
-  "tool": "generate_presentation",
-  "data": {
-    "title": "Title",
-    "slides": [
-      { "title": "S1", "bullets": ["B1"], "script": "Narrative" }
-    ]
-  }
-}
+## What You CANNOT Do — Redirect to Generator
+You do NOT have the ability to create flashcards, quizzes, decks, or study content. If a user asks you to:
+- "Make me flashcards about..."
+- "Create a quiz on..."
+- "Build a deck for..."
+- "Generate study cards about..."
+
+You MUST politely tell them to use the **Generator page** at /dashboard/generator, which has dedicated AI-powered tools for creating flashcards, quizzes, and full decks with inline editing, difficulty choices, and one-click save. Explain that your role in this chat is teaching and explanation, not content generation.
 
 ## Core Rules
-1. If a tool is requested (quiz, flashcard, slide, explanation), output ONLY the raw JSON structure. No conversational text, preamble ("Sure", "I have generated"), or postscript.
+1. If a tool is requested (explanation, navigation), output ONLY the raw JSON structure. No conversational text, preamble ("Sure", "I have generated"), or postscript.
 2. If the user asks a general question NOT covered by tools, provide a friendly, academic text response.
-3. For "Explain X then Y", prioritize the "explain_concept" tool which contains a rich explanation field.
-4. Always respond as AuraMind AI. Be accurate, concise, and academic.
-5. Never mention "DeepSeek", "Model", or internal technical details in the output.
-6. Ensure all JSON output is valid and properly formatted.`;
+3. Always respond as Aura, the AuraMind AI. Be accurate, concise, and academic.
+4. Never mention "DeepSeek", "Groq", "Model", "OpenAI", or internal technical details in the output.
+5. Ensure all JSON output is valid and properly formatted.
+6. Never propose destructive actions (delete data, change billing, etc.).
+7. When a student is struggling, break the problem into smaller steps and ask them to attempt each step before moving on.
+8. When a student answers correctly, ask them to explain their reasoning to deepen understanding.
+9. Adapt your explanations to the student's level — use simpler language for beginners, more technical depth for advanced learners.
+10. If asked about your own identity, you are Aura, built for AuraMind. Do not mention any underlying model or provider.`;
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -129,10 +139,13 @@ interface ChatCompletionResponse {
 
 // Create and export a singleton instance
 const getEnv = (key: string): string => {
-  return (import.meta as any).env?.[key] || (process as any).env?.[key] || '';
+  try {
+    return (import.meta as any).env?.[key] || '';
+  } catch {
+    return '';
+  }
 };
 
-const openRouterKey = getEnv('VITE_OPENROUTER_API_KEY');
 const groqKey = getEnv('VITE_GROQ_API_KEY');
 const useLocalAI = getEnv('VITE_USE_LOCAL_AI') === 'true';
 const customModel = getEnv('VITE_AI_MODEL');
@@ -145,43 +158,44 @@ export class AuraAiClient {
   private readonly apiKeySource: string;
 
   constructor(apiKey?: string, baseUrl?: string, model?: string) {
-    // Try API keys in order of preference (Groq first for speed, then OpenRouter)
     if (useLocalAI) {
       this.apiKey = 'not-needed';
       this.baseUrl = localBaseUrl;
       this.defaultModel = model || 'local-model';
       this.apiKeySource = 'local';
     } else if (groqKey) {
-      // Groq is faster - use it first
       this.apiKey = groqKey;
       this.baseUrl = 'https://api.groq.com/openai/v1';
-      this.defaultModel = model || 'llama-3.3-70b-versatile'; // Use faster model
+      this.defaultModel = model || 'llama-3.3-70b-versatile';
       this.apiKeySource = 'groq';
-    } else if (openRouterKey) {
-      this.apiKey = openRouterKey;
-      this.baseUrl = baseUrl || 'https://openrouter.ai/api/v1';
-      this.defaultModel = model || customModel || 'deepseek/deepseek-r1-0528:free';
-      this.apiKeySource = 'openrouter';
     } else {
-      throw new Error('No valid API key found. Please set VITE_GROQ_API_KEY, VITE_OPENROUTER_API_KEY, or enable VITE_USE_LOCAL_AI=true');
+      throw new Error('No valid API key found. Please set VITE_GROQ_API_KEY in your .env file or enable VITE_USE_LOCAL_AI=true');
     }
   }
 
   private checkApiKey() {
-    // Local servers like LM Studio often don't require an API key
     if (!this.apiKey && !this.baseUrl.includes('local-ai')) {
-      const source = this.apiKeySource === 'groq' ? 'VITE_GROQ_API_KEY' : 'VITE_OPENROUTER_API_KEY';
-      throw new Error(`API key is missing. Please set ${source} in your .env file.`);
+      throw new Error('API key is missing. Please set VITE_GROQ_API_KEY in your .env file.');
+    }
+    
+    if (this.apiKey && (this.apiKey.includes('your_') || this.apiKey.includes('placeholder'))) {
+      throw new Error(`Invalid API key. Please replace the placeholder VITE_GROQ_API_KEY in your .env file with a real API key from https://groq.com/.`);
     }
   }
 
-  async chatCompletion(options: ChatCompletionOptions, useCache: boolean = true): Promise<ChatCompletionResponse> {
+  async chatCompletion(options: ChatCompletionOptions & Record<string, any>, useCache: boolean = true): Promise<ChatCompletionResponse> {
     const {
       model = this.defaultModel,
       messages,
       temperature = 0.7,
       max_tokens = 2000,
+      ...extraOptions
     } = options;
+
+    // If USE_LOCAL_AI is set, use WebLLM in-browser inference
+    if (useLocalAI) {
+      return localInference.chatCompletion({ messages, temperature, max_tokens, ...extraOptions });
+    }
 
     this.checkApiKey();
 
@@ -194,13 +208,13 @@ export class AuraAiClient {
       }
     }
 
-    // Debug logging
-    console.log('🔍 API Debug Info:');
-    console.log('  - Base URL:', this.baseUrl);
-    console.log('  - Model:', this.defaultModel);
-    console.log('  - API Key Source:', this.apiKeySource);
-    console.log('  - Has API Key:', !!this.apiKey);
-    console.log('  - Messages Count:', messages.length);
+    logger.debug('API Debug Info:', {
+      baseUrl: this.baseUrl,
+      model: this.defaultModel,
+      apiKeySource: this.apiKeySource,
+      hasApiKey: !!this.apiKey,
+      messagesCount: messages.length,
+    });
 
     // Retry logic for transient failures
     const maxRetries = 3;
@@ -221,6 +235,7 @@ export class AuraAiClient {
             messages,
             temperature,
             max_tokens,
+            ...extraOptions,
           }),
         });
 
@@ -228,27 +243,43 @@ export class AuraAiClient {
           const errorText = await response.text();
           let errorMessage = 'Failed to fetch from AI API';
           
-          console.log('❌ API Error Details:');
-          console.log('  - Status:', response.status);
-          console.log('  - Status Text:', response.statusText);
-          console.log('  - Error Text:', errorText);
-          console.log('  - Base URL:', this.baseUrl);
-          console.log('  - API Key Source:', this.apiKeySource);
+          logger.error('API Error Details:', {
+            status: response.status,
+            statusText: response.statusText,
+            errorText,
+            baseUrl: this.baseUrl,
+            apiKeySource: this.apiKeySource,
+          });
           
           try {
             const jsonError = JSON.parse(errorText);
             errorMessage = jsonError.error?.message || jsonError.message || errorMessage;
-            console.log('  - Parsed Error:', jsonError);
+            logger.error('Parsed API error:', jsonError);
           } catch (e) {
             errorMessage = `API Error (${response.status}): ${errorText || response.statusText}`;
-            console.log('  - Raw Error Message:', errorMessage);
+            logger.error('Raw error message:', errorMessage);
           }
 
           if (this.baseUrl.includes('local-ai')) {
             errorMessage = `Local AI Connection Failed: Please ensure your local model server (e.g. LM Studio) is running on ${this.baseUrl.replace('/local-ai', 'localhost')}. Detail: ${errorMessage}`;
           }
 
-          // Don't retry on client errors (4xx)
+          // On 429 (rate limit), fall back to local inference
+          if (response.status === 429) {
+            logger.info('Rate limited by cloud API, falling back to local inference...');
+            try {
+              const localResult = await localInference.chatCompletion({ messages, temperature, max_tokens });
+              if (useCache) {
+                setCachedResponse(cacheKey, localResult);
+              }
+              return localResult;
+            } catch (localErr) {
+              logger.error('Local inference also failed:', localErr);
+              throw new Error('Rate limited and local inference unavailable. Please wait or enable a local model.');
+            }
+          }
+
+          // Don't retry on other client errors (4xx)
           if (response.status >= 400 && response.status < 500) {
             throw new Error(errorMessage);
           }
@@ -256,7 +287,7 @@ export class AuraAiClient {
           // Retry on server errors (5xx) or network issues
           lastError = new Error(errorMessage);
           if (attempt < maxRetries - 1) {
-            console.log(`🔄 Retrying... (${attempt + 1}/${maxRetries})`);
+            logger.debug(`Retrying... (${attempt + 1}/${maxRetries})`);
             await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))); // Exponential backoff
             continue;
           }
@@ -272,11 +303,11 @@ export class AuraAiClient {
         
         return data;
       } catch (error) {
-        console.error(`Error in AI API call (attempt ${attempt + 1}/${maxRetries}):`, error);
+        logger.error(`Error in AI API call (attempt ${attempt + 1}/${maxRetries}):`, error);
         lastError = error as Error;
         
         if (attempt < maxRetries - 1) {
-          console.log(`🔄 Retrying... (${attempt + 1}/${maxRetries})`);
+          logger.debug(`Retrying... (${attempt + 1}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
           continue;
         }
@@ -285,6 +316,76 @@ export class AuraAiClient {
     }
 
     throw lastError || new Error('Failed to complete AI API call');
+  }
+
+  // Fallback method for when API keys are invalid
+  private getFallbackResponse(userMessage: string): ChatCompletionResponse {
+    const lastUserMessage = userMessage.toLowerCase();
+    let responseContent = "I'm Aura, your AI study companion! I'm currently in demo mode because the API keys need to be configured. Here's what I can help you with:\n\n";
+    
+    if (lastUserMessage.includes('quiz') || lastUserMessage.includes('test')) {
+      responseContent += JSON.stringify({
+        tool: "generate_quiz",
+        data: {
+          title: "Demo Quiz",
+          topic: "General Knowledge",
+          difficulty: "easy",
+          questions: [
+            {
+              id: "1",
+              question: "What is the capital of France?",
+              options: ["London", "Paris", "Berlin", "Madrid"],
+              correctAnswer: 1,
+              explanation: "Paris is the capital and largest city of France."
+            }
+          ]
+        }
+      }, null, 2);
+    } else if (lastUserMessage.includes('flashcard') || lastUserMessage.includes('card')) {
+      responseContent += JSON.stringify({
+        tool: "generate_flashcards",
+        data: {
+          cards: [
+            { question: "What is React?", answer: "A JavaScript library for building user interfaces", topic: "Programming", difficulty: "Easy" }
+          ]
+        }
+      }, null, 2);
+    } else if (lastUserMessage.includes('explain') || lastUserMessage.includes('concept')) {
+      responseContent += JSON.stringify({
+        tool: "explain_concept",
+        data: {
+          concept: "Demo Concept",
+          explanation: "This is a demonstration of the explain_concept tool. In production, this would provide detailed explanations of academic concepts.",
+          examples: ["Example 1", "Example 2"],
+          keyPoints: ["Key point 1", "Key point 2"]
+        }
+      }, null, 2);
+    } else {
+      responseContent += "To get real AI responses, please configure a valid API key in your .env file:\n";
+      responseContent += "- Get a free Groq API key from https://groq.com/\n";
+      responseContent += "- Or enable local AI with VITE_USE_LOCAL_AI=true\n\n";
+      responseContent += "Try asking me to create a quiz, flashcards, or explain a concept to see the demo features!";
+    }
+
+    return {
+      id: 'demo-response-' + Date.now(),
+      object: 'chat.completion',
+      created: Math.floor(Date.now() / 1000),
+      model: this.defaultModel,
+      choices: [{
+        index: 0,
+        message: {
+          role: 'assistant',
+          content: responseContent
+        },
+        finish_reason: 'stop'
+      }],
+      usage: {
+        prompt_tokens: 100,
+        completion_tokens: 200,
+        total_tokens: 300
+      }
+    };
   }
 
   // Helper method for simple user messages
@@ -297,13 +398,19 @@ export class AuraAiClient {
 
     messages.push({ role: 'user', content: question });
 
-    const response = await this.chatCompletion({
-      messages,
-      temperature: 0.7,
-      max_tokens: 2000,
-    });
+    try {
+      const response = await this.chatCompletion({
+        messages,
+        temperature: 0.7,
+        max_tokens: 2000,
+      });
 
-    return response.choices[0]?.message?.content || 'No response from model';
+      return response.choices[0]?.message?.content || 'No response from model';
+    } catch (error) {
+      logger.warn('API call failed, using fallback response:', error);
+      const fallbackResponse = this.getFallbackResponse(question);
+      return fallbackResponse.choices[0]?.message?.content || 'No response available';
+    }
   }
 
   // Method specifically for Study Agent interactions
@@ -400,7 +507,7 @@ export const auraAiClient = new AuraAiClient();
 export type { Message, ChatCompletionOptions, ChatCompletionResponse };
 
 // Example usage:
-// import { deepseekClient } from './services/deepseekService';
+// import { groqClient } from './groqService';
 //
 // // Simple Q&A
 // const answer = await deepseekClient.ask('What is the meaning of life?');
@@ -422,3 +529,6 @@ export type { Message, ChatCompletionOptions, ChatCompletionResponse };
 // })) {
 //   console.log(chunk);
 // }
+
+
+

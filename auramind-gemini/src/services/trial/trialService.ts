@@ -49,7 +49,7 @@ export const trialService = {
           trialEnds: trialEnd.toLocaleDateString(),
           daysRemaining,
         });
-        console.log(`Sent trial reminder to ${user.email} (${daysRemaining} days remaining)`);
+        // Trial reminder sent
       }
     }
   },
@@ -88,3 +88,6 @@ export const trialService = {
     return new Date(data.trial_end) < new Date();
   },
 };
+
+
+

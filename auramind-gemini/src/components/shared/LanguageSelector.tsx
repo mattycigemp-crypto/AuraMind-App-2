@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Globe, Check } from 'lucide-react';
+import { GlobeIcon as Globe, CheckIcon as Check } from '../icons/CustomIcons';
 import { SUPPORTED_LANGUAGES } from '../../i18n/config';
 
 const LanguageSelector = () => {
@@ -69,3 +69,6 @@ const LanguageSelector = () => {
 };
 
 export default LanguageSelector;
+
+
+

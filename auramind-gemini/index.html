@@ -2,87 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/src/assets/favicon-32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/src/assets/favicon-16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/src/assets/favicon-180.png" />
-    <link rel="shortcut icon" href="/src/assets/favicon.ico" />
-    <title>AuraMind | AI Flashcards & Spaced Repetition Study Tool</title>
-    <meta name="description" content="AuraMind is an AI flashcards and spaced repetition study tool for focused exam prep and daily review." />
-    <meta name="keywords" content="AI flashcards, spaced repetition, study tool" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://app.lemonsqueezy.com/js/lemon.js" defer></script>
-    <style>
-      body {
-        font-family: 'Inter', sans-serif;
-      }
-      /* Custom scrollbar for better aesthetics */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent; 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1; 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8; 
-      }
-      .dark ::-webkit-scrollbar-thumb {
-        background: #475569;
-      }
-      .dark ::-webkit-scrollbar-thumb:hover {
-        background: #64748b;
-      }
-      
-      .card-flip-container {
-        perspective: 1000px;
-      }
-      .card-flip-inner {
-        position: relative;
-        width: 100%;
-        height: 100%;
-        text-align: center;
-        transition: transform 0.6s;
-        transform-style: preserve-3d;
-      }
-      .card-flip-inner.flipped {
-        transform: rotateY(180deg);
-      }
-      .card-front, .card-back {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        -webkit-backface-visibility: hidden;
-        backface-visibility: hidden;
-      }
-      .card-back {
-        transform: rotateY(180deg);
-      }
-
-      .delay-100 { animation-delay: 100ms; }
-      .delay-200 { animation-delay: 200ms; }
-      .delay-300 { animation-delay: 300ms; }
-      .delay-400 { animation-delay: 400ms; }
-      .delay-500 { animation-delay: 500ms; }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3"
-  }
-}
-</script>
-<link rel="stylesheet" href="/src/index.css">
-</head>
-  <body class="bg-white dark:bg-black transition-colors duration-300">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>AuraMind - AI-Powered Study Companion</title>
+    <meta name="description" content="AI flashcards powered by FSRS spaced repetition — learn anything in half the time. Turn notes and PDFs into smart decks that adapt to your memory." />
+    <!-- Blocking theme script: applies light/dark class before first paint to prevent flash -->
+    <script>
+      (function() {
+        try {
+          var stored = localStorage.getItem('auramind-theme');
+          var theme = stored === 'light' || stored === 'dark' ? stored
+            : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.classList.add(theme);
+        } catch (e) {}
+      })();
+    </script>
+    <link rel="stylesheet" href="/src/index.css">
+  </head>
+  <body>
     <div id="root"></div>
     <script type="module" src="./src/index.tsx"></script>
   </body>

@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  X,
-  ArrowRight,
-  ArrowLeft,
-  Check,
-  Play,
-  BookOpen,
-  BrainCircuit,
-  Target,
-  Sparkles,
-  Lightbulb,
-  Award,
-  ChevronRight,
-} from 'lucide-react';
+  XIcon as X,
+  ArrowRightIcon as ArrowRight,
+  ArrowLeftIcon as ArrowLeft,
+  CheckIcon as Check,
+  PlayIcon as Play,
+  BookOpenIcon as BookOpen,
+  BrainCircuitIcon as BrainCircuit,
+  TargetIcon as Target,
+  SparklesIcon as Sparkles,
+  LightbulbIcon as Lightbulb,
+  AwardIcon as Award,
+  ChevronRightIcon as ChevronRight,
+} from '../icons/CustomIcons';
 
 export interface TutorialStep {
   id: string;
@@ -334,10 +334,25 @@ const TutorialSystem: React.FC<TutorialSystemProps> = ({
   );
 };
 
-// Hook for managing tutorial state
+// Hook for managing tutorial state with localStorage persistence
 export const useTutorial = () => {
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
-  const [completedTutorials, setCompletedTutorials] = useState<Set<string>>(new Set());
+  const [completedTutorials, setCompletedTutorials] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('auramind:completedTutorials');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return new Set<string>(parsed);
+      }
+    } catch {}
+    return new Set<string>();
+  });
+
+  const persistTutorials = (updated: Set<string>) => {
+    try {
+      localStorage.setItem('auramind:completedTutorials', JSON.stringify([...updated]));
+    } catch {}
+  };
 
   const startTutorial = (tutorialId: string) => {
     setIsTutorialOpen(true);
@@ -348,7 +363,11 @@ export const useTutorial = () => {
   };
 
   const completeTutorial = (tutorialId: string) => {
-    setCompletedTutorials(prev => new Set([...prev, tutorialId]));
+    setCompletedTutorials(prev => {
+      const updated = new Set([...prev, tutorialId]);
+      persistTutorials(updated);
+      return updated;
+    });
     setIsTutorialOpen(false);
   };
 
@@ -367,3 +386,6 @@ export const useTutorial = () => {
 };
 
 export default TutorialSystem;
+
+
+

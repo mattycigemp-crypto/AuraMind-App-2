@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { auraAiClient, STUDY_AGENT_SYSTEM_PROMPT } from '../../services/api/auraAiService';
-import { ChevronLeft, Bot, Music, X, Send, Sparkles, BrainCircuit, History, Target, Cpu, Activity, Globe } from 'lucide-react';
-import { StudyToolAction, ChatMessage, Quiz, FlashcardData, Deck, Card } from '../../types';
+import { ChevronLeftIcon as ChevronLeft, BotIcon as Bot, MusicIcon as Music, XIcon as X, SendIcon as Send, SparklesIcon as Sparkles, BrainCircuitIcon as BrainCircuit, HistoryIcon as History, TargetIcon as Target, CpuIcon as Cpu, ActivityIcon as Activity, GlobeIcon as Globe } from '../icons/CustomIcons';
+import { StudyToolAction, ChatMessage, Quiz, FlashcardData, Deck, Card, Presentation } from '../../types';
 import ChatQuiz from './ChatQuiz';
 import ChatFlashcardPreview from './ChatFlashcardPreview';
-import PresentationViewer from '../study/PresentationViewer';
+import ChatPresentation from './ChatPresentation';
 import { getInitialCardState } from '../../services/study/srs';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -99,6 +99,10 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
     setIsLoading(true);
     setError(null);
 
+    streamAIResponse(assistantId, input);
+  };
+
+  const streamAIResponse = async (assistantId: string, messageContent: string) => {
     let fullContent = '';
     let thinkingContent = '';
     let isThinking = false;
@@ -108,7 +112,7 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
         messages: [
           { role: 'system', content: STUDY_AGENT_SYSTEM_PROMPT },
           ...messages.map(m => ({ role: m.role as any, content: m.content })),
-          { role: 'user', content: input }
+          { role: 'user', content: messageContent }
         ]
       });
 
@@ -333,7 +337,7 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
                               <ChatFlashcardPreview cards={message.toolAction.data.cards as FlashcardData[]} onSaveCards={(c, d) => {}} />
                             )}
                             {message.toolAction.tool === 'generate_presentation' && (
-                              <PresentationViewer title={message.toolAction.data.title} slides={message.toolAction.data.slides} />
+                              <ChatPresentation presentation={message.toolAction.data as Presentation} />
                             )}
                           </div>
                         )}
@@ -415,3 +419,6 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
 };
 
 export default AuraChat;
+
+
+

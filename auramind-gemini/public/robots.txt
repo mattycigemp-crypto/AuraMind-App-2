@@ -1,0 +1,18 @@
+# AuraMind robots.txt
+# https://auramind.app/robots.txt
+
+User-agent: *
+Allow: /
+Allow: /landing
+Allow: /pricing
+Allow: /features
+
+# Disallow authenticated areas
+Disallow: /dashboard
+Disallow: /study
+Disallow: /chat
+Disallow: /settings
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://auramind.app/sitemap.xml

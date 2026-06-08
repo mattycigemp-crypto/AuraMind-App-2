@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AuraMind Admin | User Directory</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neural-grid {
+            background-image: 
+                linear-gradient(to right, #121212 1px, transparent 1px),
+                linear-gradient(to bottom, #121212 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .scan-line {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.2), transparent);
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .glass-card {
+            backdrop-filter: blur(12px);
+            border: 1px solid #262626;
+            background: linear-gradient(180deg, rgba(25, 33, 34, 0.4) 0%, rgba(13, 21, 21, 0.8) 100%);
+        }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #0d1515; }
+        ::-webkit-scrollbar-thumb { background: #262626; }
+        ::-webkit-scrollbar-thumb:hover { background: #00F0FF; }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-fixed": "#e9ddff",
+                      "error-container": "#93000a",
+                      "inverse-surface": "#dce4e5",
+                      "status-retention-high": "#10B981",
+                      "primary-fixed": "#7df4ff",
+                      "border-brutal": "#262626",
+                      "on-tertiary": "#67001b",
+                      "on-secondary-fixed": "#23005c",
+                      "on-tertiary-fixed": "#40000d",
+                      "on-tertiary-fixed-variant": "#92002a",
+                      "outline-variant": "#3b494b",
+                      "tertiary-fixed-dim": "#ffb2b7",
+                      "tertiary-container": "#ffcdcf",
+                      "background": "#0d1515",
+                      "surface": "#0d1515",
+                      "on-secondary-container": "#c4abff",
+                      "on-error-container": "#ffdad6",
+                      "secondary-container": "#571bc1",
+                      "bg-neural": "#050505",
+                      "surface-container": "#192122",
+                      "on-primary-container": "#006970",
+                      "surface-tint": "#00dbe9",
+                      "on-secondary": "#3c0091",
+                      "surface-glass": "rgba(15, 15, 20, 0.7)",
+                      "outline": "#849495",
+                      "surface-dim": "#0d1515",
+                      "on-background": "#dce4e5",
+                      "status-retention-low": "#F59E0B",
+                      "secondary-fixed-dim": "#d0bcff",
+                      "on-surface-variant": "#b9cacb",
+                      "error": "#ffb4ab",
+                      "surface-variant": "#2e3637",
+                      "inverse-on-surface": "#2a3233",
+                      "surface-container-high": "#232b2c",
+                      "on-error": "#690005",
+                      "primary-container": "#00f0ff",
+                      "surface-bright": "#333b3b",
+                      "surface-container-low": "#151d1e",
+                      "inverse-primary": "#006970",
+                      "primary-fixed-dim": "#00dbe9",
+                      "on-surface": "#dce4e5",
+                      "on-primary": "#00363a",
+                      "primary": "#dbfcff",
+                      "surface-container-lowest": "#080f10",
+                      "secondary": "#d0bcff",
+                      "on-secondary-fixed-variant": "#5516be",
+                      "accent-neural-grid": "#121212",
+                      "surface-container-highest": "#2e3637",
+                      "on-primary-fixed-variant": "#004f54",
+                      "on-primary-fixed": "#002022",
+                      "tertiary": "#fff3f2",
+                      "tertiary-fixed": "#ffdadb",
+                      "on-tertiary-container": "#bc0b3b"
+              },
+              "fontFamily": {
+                      "mono-label": ["Space Grotesk"],
+                      "eyebrow": ["Space Grotesk"],
+                      "impact-lg": ["Space Grotesk"],
+                      "body-main": ["Inter"]
+              }
+            },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-background font-body-main selection:bg-primary-container selection:text-on-primary-container">
+<!-- Neural Grid Background Overlay -->
+<div class="fixed inset-0 neural-grid opacity-20 pointer-events-none z-0"></div>
+<!-- SideNavBar Shell -->
+<aside class="fixed left-0 top-0 h-screen w-[280px] border-r border-zinc-800 bg-zinc-950 flex flex-col py-6 z-50">
+<div class="px-6 mb-10">
+<div class="text-cyan-400 font-black text-xl tracking-widest font-mono-label">AuraMind Admin</div>
+<div class="text-zinc-500 text-[10px] font-mono-label tracking-widest mt-1">Terminal Access v1.0.4</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 border-l-2 border-cyan-400 bg-cyan-900/10 text-cyan-400 font-bold transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-mono-label text-sm uppercase tracking-tighter">User Directory</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-cyan-200 hover:bg-zinc-900 transition-all font-mono-label text-sm uppercase tracking-tighter" href="#">
+<span class="material-symbols-outlined" data-icon="shield_person">shield_person</span>
+                Role Management
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-cyan-200 hover:bg-zinc-900 transition-all font-mono-label text-sm uppercase tracking-tighter" href="#">
+<span class="material-symbols-outlined" data-icon="monitoring">monitoring</span>
+                System Analytics
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-cyan-200 hover:bg-zinc-900 transition-all font-mono-label text-sm uppercase tracking-tighter" href="#">
+<span class="material-symbols-outlined" data-icon="policy">policy</span>
+                Audit Logs
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-zinc-500 hover:text-cyan-200 hover:bg-zinc-900 transition-all font-mono-label text-sm uppercase tracking-tighter" href="#">
+<span class="material-symbols-outlined" data-icon="settings_applications">settings_applications</span>
+                Admin Settings
+            </a>
+</nav>
+<div class="mt-auto px-4 space-y-4">
+<button class="w-full py-3 bg-cyan-400 text-black font-black font-mono-label uppercase tracking-widest text-xs hover:bg-cyan-300 transition-colors">
+                Deploy Patch
+            </button>
+<div class="pt-6 border-t border-zinc-800">
+<a class="flex items-center gap-3 px-4 py-2 text-zinc-500 hover:text-cyan-200 transition-colors font-mono-label text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+                    Terminal
+                </a>
+<a class="flex items-center gap-3 px-4 py-2 text-zinc-500 hover:text-cyan-200 transition-colors font-mono-label text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+                    Sign Out
+                </a>
+</div>
+</div>
+</aside>
+<!-- TopAppBar Shell -->
+<header class="fixed top-0 right-0 w-[calc(100%-280px)] h-16 z-40 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-800 flex items-center justify-between px-8">
+<div class="flex items-center gap-4 flex-1 max-w-xl">
+<div class="relative w-full group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-cyan-400 transition-colors">search</span>
+<input class="w-full bg-zinc-900/50 border border-zinc-800 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 text-cyan-400 font-mono-label text-xs tracking-widest px-10 py-2 placeholder:text-zinc-600 transition-all" placeholder="QUERY USER DATABASE..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4 border-r border-zinc-800 pr-6">
+<span class="material-symbols-outlined text-zinc-400 hover:text-cyan-400 cursor-pointer" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-zinc-400 hover:text-cyan-400 cursor-pointer" data-icon="memory">memory</span>
+<span class="material-symbols-outlined text-zinc-400 hover:text-cyan-400 cursor-pointer" data-icon="account_tree">account_tree</span>
+</div>
+<div class="flex items-center gap-3 cursor-pointer">
+<div class="text-right">
+<div class="text-on-background font-mono-label text-xs font-bold">ADMIN_SYS</div>
+<div class="text-cyan-500 font-mono-label text-[10px] tracking-tighter">NODE_0041</div>
+</div>
+<div class="w-8 h-8 rounded-sm bg-cyan-900/30 border border-cyan-400/30 flex items-center justify-center overflow-hidden">
+<img alt="Admin Session" class="w-full h-full object-cover grayscale brightness-110 contrast-125" data-alt="A portrait of a futuristic high-tech administrator with cybernetic glowing cyan accents on their skin. The background is a dark, minimalist digital control room with holographic data interfaces. The lighting is cold and clinical, emphasizing the clean, brutalist aesthetic of the AuraMind system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMXoSjRHQu90skYmIwDw3aFVdzPchnN9lDSFgtX8V_CU9AJ4nl5mNXlGOkb4CG_0mudgYxAB17sJnqUsZeIeth8W-FfCmCs5ymZMjubsQW3GfEVunw1p4jzNaH6fplFXwsEzr2kjtI9b5rroWlTcB1zz9CCjl-ZhoDJ0aCOeJwpaIE3Gq6D6BhKRNrjYP15iCjjfpOdmZ-bUoQxaLKqfN1DoWVNdDcrutESmbc3f3TCmL_930CPat9qPiWs5BLhcvbTGb13aZiY-uC"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[280px] pt-24 pb-12 px-8 relative z-10">
+<!-- Dashboard Header & Metrics -->
+<div class="grid grid-cols-12 gap-6 mb-8">
+<div class="col-span-8">
+<div class="mb-2 flex items-center gap-2">
+<div class="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+<span class="text-eyebrow font-eyebrow text-cyan-400 uppercase">System Active | User Management</span>
+</div>
+<h1 class="text-impact-lg font-impact-lg text-on-background uppercase mb-4">User Directory</h1>
+<p class="text-body-main text-zinc-400 max-w-2xl">Manage neural link permissions, audit access logs, and monitor real-time user engagement across the AuraMind ecosystem.</p>
+</div>
+<div class="col-span-4 flex justify-end items-end gap-3 pb-4">
+<button class="px-6 py-2 border border-zinc-800 text-zinc-400 font-mono-label text-xs uppercase hover:border-cyan-400 hover:text-cyan-400 transition-all flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="cloud_download">cloud_download</span>
+                    Export DB
+                </button>
+<button class="px-6 py-2 bg-primary-container text-on-primary-container font-mono-label text-xs font-black uppercase hover:bg-cyan-300 transition-all">
+                    + Provision User
+                </button>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-6">
+<!-- Table Section -->
+<div class="col-span-9 space-y-6">
+<!-- Quick Stats Row -->
+<div class="grid grid-cols-3 gap-4">
+<div class="glass-card p-5 relative overflow-hidden group">
+<div class="scan-line group-hover:top-full transition-all duration-1000"></div>
+<div class="text-eyebrow text-zinc-500 uppercase mb-1">Total Entities</div>
+<div class="text-3xl font-mono-label font-black text-on-background">12,842</div>
+<div class="flex items-center gap-1 text-[10px] text-cyan-400 mt-2 font-mono-label">
+<span class="material-symbols-outlined text-xs" data-icon="trending_up">trending_up</span>
+                            +12% GROWTH VS PREV_CYC
+                        </div>
+</div>
+<div class="glass-card p-5 relative overflow-hidden group">
+<div class="scan-line group-hover:top-full transition-all duration-1000"></div>
+<div class="text-eyebrow text-zinc-500 uppercase mb-1">Active Sessions</div>
+<div class="text-3xl font-mono-label font-black text-cyan-400">2,109</div>
+<div class="flex items-center gap-1 text-[10px] text-zinc-500 mt-2 font-mono-label">
+                            STABLE LOAD @ 42.1 MS LATENCY
+                        </div>
+</div>
+<div class="glass-card p-5 relative overflow-hidden group">
+<div class="scan-line group-hover:top-full transition-all duration-1000"></div>
+<div class="text-eyebrow text-zinc-500 uppercase mb-1">Retention Index</div>
+<div class="text-3xl font-mono-label font-black text-status-retention-high">94.2%</div>
+<div class="flex items-center gap-1 text-[10px] text-status-retention-high mt-2 font-mono-label">
+                            PEAK OPTIMIZATION REACHED
+                        </div>
+</div>
+</div>
+<!-- Filters Bar -->
+<div class="flex items-center justify-between glass-card px-4 py-3">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 px-3 py-1 bg-zinc-900 border border-zinc-800 text-zinc-400 text-[10px] font-mono-label uppercase">
+                            Role: <span class="text-cyan-400">All Entities</span>
+<span class="material-symbols-outlined text-xs" data-icon="expand_more">expand_more</span>
+</div>
+<div class="flex items-center gap-2 px-3 py-1 bg-zinc-900 border border-zinc-800 text-zinc-400 text-[10px] font-mono-label uppercase">
+                            Status: <span class="text-cyan-400">Active Only</span>
+<span class="material-symbols-outlined text-xs" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div class="flex items-center gap-2 text-zinc-500 font-mono-label text-[10px]">
+                        SORT BY: <span class="text-cyan-400 cursor-pointer">LAST_SYNCED (DESC)</span>
+</div>
+</div>
+<!-- Main User Table -->
+<div class="glass-card overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead class="bg-zinc-900/50 border-b border-zinc-800">
+<tr class="text-zinc-500 text-[10px] font-mono-label uppercase tracking-widest">
+<th class="p-4 w-10">
+<input class="bg-zinc-900 border-zinc-700 rounded-none checked:bg-cyan-400" type="checkbox"/>
+</th>
+<th class="p-4 font-medium">User Entity</th>
+<th class="p-4 font-medium">Classification</th>
+<th class="p-4 font-medium">Link Status</th>
+<th class="p-4 font-medium">Last Uplink</th>
+<th class="p-4 font-medium text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-zinc-800/50">
+<!-- Row 1 -->
+<tr class="hover:bg-cyan-900/5 transition-colors group">
+<td class="p-4"><input class="bg-zinc-900 border-zinc-700 rounded-none checked:bg-cyan-400" type="checkbox"/></td>
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-zinc-800 border border-zinc-700 overflow-hidden">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="Close-up portrait of a male user in a dark tech-wear outfit. The image has a blue and cyan tint with slight digital noise effects. The lighting is dramatic, highlighting sharp features and a focused expression in a dark futuristic environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAixpjMawjn8b5LFBA1EtQ0ZMO8pG6N1U26g4XyAYhT2QClfqhVyXzVYnY3QZeloYfVW91MYt6SFnb00LSJo05z7B1eFBskviQhY1oqD9Yk_ooRm77x_o_SWTIj3_u4wY18GdRD1Lmj8x3bX0vv8ySPeHSXH9UplpiVPdv1gJlZq4K3_7sk5y9IGYGlgp6DCChbeVoBcUpU0JoejC8dMdGJYfeOwXK1rdm7pRglAWYrJ5k-CTWZPLtLlmTavrflr9yBBOVhQcELJA6y"/>
+</div>
+<div>
+<div class="text-xs font-mono-label font-bold text-on-background">Erik Vonderhause</div>
+<div class="text-[10px] text-zinc-500 font-mono-label">erik.v@auramind.tech</div>
+</div>
+</div>
+</td>
+<td class="p-4">
+<span class="px-2 py-0.5 border border-cyan-900/50 bg-cyan-950/30 text-cyan-400 text-[9px] font-mono-label uppercase tracking-tighter">Researcher</span>
+</td>
+<td class="p-4">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-1.5 bg-status-retention-high rounded-full"></div>
+<span class="text-[10px] font-mono-label text-zinc-300">ACTIVE</span>
+</div>
+</td>
+<td class="p-4">
+<span class="text-[10px] font-mono-label text-zinc-500">2 MINS AGO</span>
+</td>
+<td class="p-4 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1 hover:text-cyan-400 text-zinc-500" title="Edit Role"><span class="material-symbols-outlined text-sm" data-icon="shield">shield</span></button>
+<button class="p-1 hover:text-cyan-400 text-zinc-500" title="View Analytics"><span class="material-symbols-outlined text-sm" data-icon="bar_chart">bar_chart</span></button>
+<button class="p-1 hover:text-cyan-400 text-zinc-500" title="Reset Password"><span class="material-symbols-outlined text-sm" data-icon="key">key</span></button>
+<button class="p-1 hover:text-error text-zinc-500" title="Suspend"><span class="material-symbols-outlined text-sm" data-icon="block">block</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-cyan-900/5 transition-colors group">
+<td class="p-4"><input class="bg-zinc-900 border-zinc-700 rounded-none checked:bg-cyan-400" type="checkbox"/></td>
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-zinc-800 border border-zinc-700 overflow-hidden">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A portrait of a female professional with a high-tech minimalist headset. The background is a soft-focus laboratory setting with cyan and violet light gradients. Her expression is calm and analytical, reflecting the high-performance intellectual nature of AuraMind users." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBN8dOKXx9PMt1qnMf_vKja3HSEPXc8y13IGLg406vsZ7UON_YKCmCK_Jda0ugJ9Rw8UCuxGaZDsGZcLVczxJQdDVT9IMXjK3_ZNwUxhtVbIrwk2oCpYmI2qlqEfltZow3CnZJeHLxcZhYEplVy-Wos3O0zsVqb8iWNferCHW7IPtuIhIHK4_rqgXopKXbJwVWskfhkP13xzEV3tWmS8kAOJA07RMlQZBEidGBnjSuB-Y-wCK9BMhohalDq6EMMTQWS73zIjcXSTmu"/>
+</div>
+<div>
+<div class="text-xs font-mono-label font-bold text-on-background">Serafina Cho</div>
+<div class="text-[10px] text-zinc-500 font-mono-label">s.cho@neuro-labs.io</div>
+</div>
+</div>
+</td>
+<td class="p-4">
+<span class="px-2 py-0.5 border border-secondary-container/50 bg-secondary-container/10 text-secondary text-[9px] font-mono-label uppercase tracking-tighter">Contributor</span>
+</td>
+<td class="p-4">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-1.5 bg-status-retention-low rounded-full"></div>
+<span class="text-[10px] font-mono-label text-zinc-300">IDLE</span>
+</div>
+</td>
+<td class="p-4">
+<span class="text-[10px] font-mono-label text-zinc-500">14 MINS AGO</span>
+</td>
+<td class="p-4 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1 hover:text-cyan-400 text-zinc-500" title="Edit Role"><span class="material-symbols-outlined text-sm" data-icon="shield">shield</span></button>
+<button class="p-1 hover:text-cyan-400 text-zinc-500" title="View Analytics"><span class="material-symbols-outlined text-sm" data-icon="bar_chart">bar_chart</span></button>
+<button class="p-1 hover:text-cyan-400 text-zinc-500" title="Reset Password"><span class="material-symbols-outlined text-sm" data-icon="key">key</span></button>
+<button class="p-1 hover:text-error text-zinc-500" title="Suspend"><span class="material-symbols-outlined text-sm" data-icon="block">block</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-cyan-900/5 transition-colors group">
+<td class="p-4"><input class="bg-zinc-900 border-zinc-700 rounded-none checked:bg-cyan-400" type="checkbox"/></td>
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-zinc-800 border border-zinc-700 overflow-hidden">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="Portrait of a young male software developer in a dimly lit workstation. Cyan code reflects on his glasses. The scene is framed with brutalist structural lines and a grainy cinematic texture, consistent with a high-density data management interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYNwM3GkzEq1G2RpAiqeCfohbAppDvia_AM3v7ON7TsUGb9EfKgiV-sCrZ5c1XMygTuyMvRQKDw92jySQxzmaaZbdXxybylpwHDmHOLlvRY5zA8gkHjjIChWzGKdzFBhpB77IuatrPoa7X2CWPSBP8QMJAKDDjQZQnjELgGqWT1UTKVcqd3g4j5wZ4zwwmfYI2pbg827bteRZ6YPSaZZnCFFB7_nalXVOTCfATnFeVaxKYuSJfIho39qoAUNFcB4qJ7fDKnOslPwH3"/>
+</div>
+<div>
+<div class="text-xs font-mono-label font-bold text-on-background">Marcus Thorne</div>
+<div class="text-[10px] text-zinc-500 font-mono-label">m.thorne@vanguard.sys</div>
+</div>
+</div>
+</td>
+<td class="p-4">
+<span class="px-2 py-0.5 border border-primary-container/50 bg-primary-container/10 text-primary-container text-[9px] font-mono-label uppercase tracking-tighter">Superuser</span>
+</td>
+<td class="p-4">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-1.5 bg-status-retention-high rounded-full"></div>
+<span class="text-[10px] font-mono-label text-zinc-300">ACTIVE</span>
+</div>
+</td>
+<td class="p-4">
+<span class="text-[10px] font-mono-label text-zinc-500">NOW</span>
+</td>
+<td class="p-4 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1 hover:text-cyan-400 text-zinc-500" title="Edit Role"><span class="material-symbols-outlined text-sm" data-icon="shield">shield</span></button>
+<button class="p-1 hover:text-cyan-400 text-zinc-500" title="View Analytics"><span class="material-symbols-outlined text-sm" data-icon="bar_chart">bar_chart</span></button>
+<button class="p-1 hover:text-cyan-400 text-zinc-500" title="Reset Password"><span class="material-symbols-outlined text-sm" data-icon="key">key</span></button>
+<button class="p-1 hover:text-error text-zinc-500" title="Suspend"><span class="material-symbols-outlined text-sm" data-icon="block">block</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-cyan-900/5 transition-colors group">
+<td class="p-4"><input class="bg-zinc-900 border-zinc-700 rounded-none checked:bg-cyan-400" type="checkbox"/></td>
+<td class="p-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-zinc-800 border border-zinc-700 overflow-hidden">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="Portrait of a female user with a stern expression, set against a background of blurred servers and blue light. The composition uses high contrast and deep blacks, with subtle neon cyan outlines around her form to represent the digital neural link." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCq9qmRB-BxLommQyyBnwCZmLLWgPqu6v5qk6VBXNInTnSkg-E-dospYfeMF8zfkhwigu797m2Tu9GxkpNCqi7EGHW_hMDxv3aSY5KTYUk3YLPjesyZRocTEqe4nHl9ENvInBgRnHDDAWuuJQ5MqhE_gBo8GiiPYutirFYX0RVLuD6sSTC_u-SoKyHQSNyzMU4eQ-GbMSbe2p7HyZ067z3jto2ZcMj_b06cuYOyKqK8ZXJqenFQH6BB5e1td-Vf2jHGJqYT1rduj658"/>
+</div>
+<div>
+<div class="text-xs font-mono-label font-bold text-on-background">Elena Kozlov</div>
+<div class="text-[10px] text-zinc-500 font-mono-label">kozlov@red-sector.com</div>
+</div>
+</div>
+</td>
+<td class="p-4">
+<span class="px-2 py-0.5 border border-error-container bg-error-container/10 text-error text-[9px] font-mono-label uppercase tracking-tighter">Banned</span>
+</td>
+<td class="p-4">
+<div class="flex items-center gap-2">
+<div class="w-1.5 h-1.5 bg-error-container rounded-full"></div>
+<span class="text-[10px] font-mono-label text-zinc-500">OFFLINE</span>
+</div>
+</td>
+<td class="p-4">
+<span class="text-[10px] font-mono-label text-zinc-500">3 DAYS AGO</span>
+</td>
+<td class="p-4 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1 hover:text-cyan-400 text-zinc-500" title="Revoke Ban"><span class="material-symbols-outlined text-sm" data-icon="undo">undo</span></button>
+<button class="p-1 hover:text-cyan-400 text-zinc-500" title="Audit History"><span class="material-symbols-outlined text-sm" data-icon="history">history</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Bulk Actions Bar (Simulated Active) -->
+<div class="fixed bottom-8 left-[312px] right-8 bg-cyan-400 text-black px-6 py-3 flex items-center justify-between z-50 animate-in slide-in-from-bottom-4 duration-500">
+<div class="flex items-center gap-4">
+<span class="font-mono-label font-black text-xs uppercase">3 ENTITIES SELECTED</span>
+<div class="h-4 w-px bg-black/20"></div>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-1 text-[10px] font-mono-label uppercase font-bold hover:underline">
+<span class="material-symbols-outlined text-sm" data-icon="shield">shield</span> Mass Role Update
+                            </button>
+<button class="flex items-center gap-1 text-[10px] font-mono-label uppercase font-bold hover:underline">
+<span class="material-symbols-outlined text-sm" data-icon="delete">delete</span> Delete
+                            </button>
+<button class="flex items-center gap-1 text-[10px] font-mono-label uppercase font-bold hover:underline">
+<span class="material-symbols-outlined text-sm" data-icon="output">output</span> Export
+                            </button>
+</div>
+</div>
+<button class="text-xs font-mono-label uppercase font-bold px-2 py-1 border border-black/20 hover:bg-black hover:text-cyan-400 transition-colors">Clear Selection</button>
+</div>
+</div>
+<!-- Sidebar / Side-Panel Stats -->
+<div class="col-span-3 space-y-6">
+<div class="glass-card p-6">
+<div class="text-eyebrow text-cyan-400 uppercase mb-4 tracking-widest flex items-center justify-between">
+                        Real-time Stats
+                        <span class="material-symbols-outlined text-sm animate-spin" style="animation-duration: 4s;">sync</span>
+</div>
+<div class="space-y-6">
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="text-zinc-500 text-[10px] font-mono-label">NEW_SIGNUPS_TODAY</span>
+<span class="text-on-background font-mono-label text-sm font-bold">+142</span>
+</div>
+<div class="h-1 bg-zinc-900 w-full overflow-hidden flex gap-0.5">
+<div class="h-full bg-cyan-400 w-[70%]"></div>
+<div class="h-full bg-cyan-400 w-[5%] opacity-40"></div>
+<div class="h-full bg-cyan-400 w-[2%] opacity-20"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-end mb-2">
+<span class="text-zinc-500 text-[10px] font-mono-label">CONCURRENT_CONNECTIONS</span>
+<span class="text-on-background font-mono-label text-sm font-bold">2,109</span>
+</div>
+<div class="h-1 bg-zinc-900 w-full overflow-hidden flex gap-0.5">
+<div class="h-full bg-status-retention-high w-[45%]"></div>
+<div class="h-full bg-status-retention-high w-[5%] opacity-40"></div>
+</div>
+</div>
+<div class="pt-4 border-t border-zinc-800">
+<div class="text-zinc-500 text-[10px] font-mono-label mb-3 uppercase">Growth_Trajectory_24H</div>
+<div class="h-24 w-full flex items-end gap-1">
+<div class="flex-1 bg-zinc-800 h-[20%]"></div>
+<div class="flex-1 bg-zinc-800 h-[35%]"></div>
+<div class="flex-1 bg-zinc-800 h-[45%]"></div>
+<div class="flex-1 bg-zinc-800 h-[40%]"></div>
+<div class="flex-1 bg-cyan-900/50 h-[55%]"></div>
+<div class="flex-1 bg-cyan-900/50 h-[70%]"></div>
+<div class="flex-1 bg-cyan-400 h-[90%]"></div>
+<div class="flex-1 bg-cyan-400 h-[85%]"></div>
+<div class="flex-1 bg-cyan-400 h-[100%]"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="glass-card p-6 border-cyan-900/30">
+<div class="text-eyebrow text-cyan-400 uppercase mb-4 tracking-widest">Admin_Alerts</div>
+<div class="space-y-4">
+<div class="flex gap-3 items-start">
+<span class="material-symbols-outlined text-status-retention-low text-lg" data-icon="warning">warning</span>
+<div>
+<div class="text-[10px] font-bold font-mono-label text-on-background uppercase">Unauthorized Link Attempt</div>
+<div class="text-[9px] text-zinc-500 font-mono-label">Source: 192.168.1.41 | 12:44:02</div>
+</div>
+</div>
+<div class="flex gap-3 items-start">
+<span class="material-symbols-outlined text-cyan-400 text-lg" data-icon="info">info</span>
+<div>
+<div class="text-[10px] font-bold font-mono-label text-on-background uppercase">System Patch Available</div>
+<div class="text-[9px] text-zinc-500 font-mono-label">Version v1.0.5 ready for deployment.</div>
+</div>
+</div>
+</div>
+<button class="w-full mt-6 py-2 border border-zinc-800 text-zinc-500 font-mono-label text-[10px] uppercase hover:text-cyan-400 hover:border-cyan-400 transition-all">View All Events</button>
+</div>
+<!-- Role Management Flyout Concept (Pinned) -->
+<div class="glass-card p-6 bg-cyan-950/10 border-cyan-400/20">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-cyan-400" data-icon="manage_accounts">manage_accounts</span>
+<div class="text-eyebrow text-cyan-400 uppercase tracking-widest">Quick Role Switch</div>
+</div>
+<p class="text-[11px] text-zinc-400 mb-4 leading-relaxed font-body-main">Select an entity from the directory to modify uplink permissions and classification status instantly.</p>
+<div class="space-y-2">
+<div class="px-3 py-2 bg-zinc-900/80 border border-zinc-800 text-zinc-500 font-mono-label text-[10px] cursor-not-allowed">
+                            NO ENTITY SELECTED
+                        </div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -20,7 +20,7 @@ const MouseOrbs: React.FC<MouseOrbsProps> = ({ theme }) => {
   const { mousePosition } = useMouseTracking();
   const [orbs, setOrbs] = useState<Orb[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
-  const frameRef = useRef<number>();
+  const frameRef = useRef<number | null>(null);
 
   // Initialize orbs
   useEffect(() => {
@@ -156,3 +156,5 @@ const MouseOrbs: React.FC<MouseOrbsProps> = ({ theme }) => {
 };
 
 export default MouseOrbs;
+
+

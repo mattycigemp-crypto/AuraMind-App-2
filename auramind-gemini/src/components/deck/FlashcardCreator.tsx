@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Type, CheckCircle2 } from 'lucide-react';
+import { PlusIcon as Plus, TypeIcon as Type, CheckCircle2Icon as CheckCircle2 } from '../icons/CustomIcons';
 
 interface FlashcardCreatorProps {
     onAddCard: (question: string, answer: string) => Promise<void>;
@@ -97,3 +97,6 @@ const FlashcardCreator: React.FC<FlashcardCreatorProps> = ({ onAddCard, classNam
 };
 
 export default FlashcardCreator;
+
+
+

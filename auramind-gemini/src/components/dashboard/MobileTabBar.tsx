@@ -141,7 +141,7 @@ export const MobileTabBar: React.FC<MobileTabBarProps> = ({
         <div className="px-4 pb-4">
           <button
             onClick={() => {
-              impact('medium');
+              impact();
               onTabChange('generator');
             }}
             className={cn(

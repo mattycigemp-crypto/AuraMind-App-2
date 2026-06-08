@@ -232,7 +232,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const currency = session.currency?.toUpperCase() || 'USD';
 
         if (userId && session.subscription) {
-          const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+          const sub = await stripe.subscriptions.retrieve(session.subscription as string);
+          const subscription = 'current_period_end' in sub ? sub as Stripe.Subscription : sub;
 
           await supabase.auth.admin.updateUserById(userId, {
             user_metadata: {
@@ -286,7 +287,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription;
+        const subscription = event.data.object as Stripe.Subscription & Record<string, any>;
         const userId = subscription.metadata?.supabase_user_id;
 
         if (userId) {

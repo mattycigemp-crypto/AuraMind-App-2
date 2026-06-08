@@ -4,7 +4,11 @@
  */
 
 const getEnv = (key: string): string => {
-  return (import.meta as any).env?.[key] || (process as any).env?.[key] || '';
+  try {
+    return (import.meta as any).env?.[key] || '';
+  } catch {
+    return '';
+  }
 };
 
 const RESEND_API_KEY = getEnv('RESEND_API_KEY');
@@ -104,7 +108,7 @@ async function sendEmail(options: EmailOptions): Promise<{ success: boolean; err
     }
 
     const data = await response.json();
-    console.log('Email sent successfully:', data);
+    // Email sent successfully
     return { success: true };
   } catch (error) {
     console.error('Email send error:', error);
@@ -523,3 +527,6 @@ export const emailService = {
   sendPasswordResetEmail,
   sendEmailVerificationEmail,
 };
+
+
+

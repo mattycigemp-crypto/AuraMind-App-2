@@ -16,7 +16,7 @@ export const useMouseTracking = () => {
     x: 0, y: 0, velocityX: 0, velocityY: 0 
   });
   const [isMouseMoving, setIsMouseMoving] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     const newPosition = { x: e.clientX, y: e.clientY };
@@ -66,3 +66,5 @@ export const useMouseTracking = () => {
     isMouseMoving
   };
 };
+
+

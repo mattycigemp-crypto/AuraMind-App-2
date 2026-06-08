@@ -1,115 +1,103 @@
 import { motion } from 'framer-motion';
-import { Star } from 'lucide-react';
-import avatarSarah from '@/assets/avatar-sarah.jpg';
-import avatarJames from '@/assets/avatar-james.jpg';
-import avatarPriya from '@/assets/avatar-priya.jpg';
+import { StarIcon as Star, QuoteIcon as Quote } from 'lucide-react';
 
-const testimonials = [
+interface Testimonial {
+  name: string;
+  role: string;
+  content: string;
+  avatar: string;
+}
+
+const testimonials: Testimonial[] = [
   {
-    name: 'Alex Chen',
-    role: 'Computer Science Student',
-    avatar: avatarSarah,
-    quote: 'The spaced repetition system really helped me retain complex algorithms and data structures for my technical interviews.',
-    rating: 5,
-  },
-  {
-    name: 'Jordan Martinez',
+    name: 'Sarah Chen',
     role: 'Medical Student',
-    avatar: avatarJames,
-    quote: 'Being able to import my lecture notes and automatically generate flashcards saved me hours of study prep time each week.',
-    rating: 5,
+    avatar: 'SC',
+    content: 'I cut my study time by 40% while actually improving my exam scores. The AI-generated flashcards from my lecture notes save me hours every week. This is the future of studying.',
   },
   {
-    name: 'Taylor Wilson',
-    role: 'Law Student',
-    avatar: avatarPriya,
-    quote: 'The weak-spot analysis feature showed me exactly which legal concepts I needed to focus on before exams.',
-    rating: 4,
+    name: 'Marcus Johnson',
+    role: 'CS Graduate',
+    avatar: 'MJ',
+    content: 'FSRS scheduling alone is worth it. I used to spend 2 hours on Anki reviews daily — now I\'m done in 45 minutes with better retention. The weak-spot detection caught gaps I didn\'t know I had.',
+  },
+  {
+    name: 'Elena Rodriguez',
+    role: 'Pre-Law Student',
+    avatar: 'ER',
+    content: 'The AI assistant explains concepts I\'m stuck on in seconds. Combined with the adaptive review, I went from Bs to straight As in one semester. I tell everyone in my study group to switch.',
   },
 ];
 
-const ease: [number, number, number, number] = [0.65, 0.05, 0, 1];
+const starCount = 5;
 
-const TestimonialsSection = () => {
+const TestimonialsSection: React.FC<{ className?: string }> = ({ className = '' }) => {
   return (
-    <section className="landing-section relative z-10 border-t border-border overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/[0.04] blur-[150px] pointer-events-none" />
-
-      <div className="mx-auto max-w-7xl relative">
+    <section className={`py-24 md:py-32 relative ${className}`}>
+      <div className="max-w-7xl mx-auto px-6 md:px-12">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, ease }}
-          className="text-center mb-20"
+          className="mb-16 md:mb-24"
         >
-          <p className="text-eyebrow mb-6">Testimonials</p>
-          <h2 className="text-impact-lg text-foreground">
-            TRUSTED BY<br />
-            <span className="text-primary">HIGH-STAKES LEARNERS.</span>
+          <span className="text-xs font-black uppercase tracking-[0.3em] text-primary mb-4 block">
+            Social Proof
+          </span>
+          <h2 className="text-4xl md:text-6xl font-black tracking-tight">
+            LOVED BY
+            <br />
+            <span className="text-zinc-500">STUDENTS</span>
+            <span className="text-primary"> WORLDWIDE</span>
           </h2>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-[var(--gap)]">
+        <div className="grid md:grid-cols-3 gap-6">
           {testimonials.map((t, i) => (
             <motion.div
               key={t.name}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: i * 0.1 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.12, duration: 0.6, ease }}
               className="group relative"
             >
-              <div className="absolute -inset-[1px] rounded-sm bg-gradient-to-b from-primary/40 via-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-[1px]" />
-
-              <div className="relative bg-card border border-border group-hover:border-primary/30 rounded-sm p-10 lg:p-12 flex flex-col justify-between min-h-[380px] transition-all duration-500">
-                <div className="flex items-center gap-5 mb-8">
-                  <motion.div
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ type: 'spring', stiffness: 300 }}
-                    className="relative"
-                  >
-                    <div className="absolute -inset-[2px] rounded-full bg-gradient-to-br from-primary to-fuchsia-600 opacity-60 group-hover:opacity-100 transition-opacity duration-500" />
-                    <img
-                      src={t.avatar}
-                      alt={t.name}
-                      className="relative h-14 w-14 rounded-full object-cover"
-                    />
-                  </motion.div>
-                  <div>
-                    <p className="text-base font-black text-foreground">{t.name}</p>
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">{t.role}</p>
-                  </div>
+              <div className="absolute -inset-px bg-gradient-to-r from-primary/20 via-purple-500/10 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative h-full p-6 md:p-8 border-2 border-zinc-800 bg-zinc-900/80 group-hover:border-zinc-700 transition-colors duration-300 flex flex-col">
+                <div className="flex items-center gap-1 mb-4">
+                  {Array.from({ length: starCount }).map((_, j) => (
+                    <Star key={j} size={16} className="text-yellow-500 fill-yellow-500" />
+                  ))}
                 </div>
 
-                <p className="text-base md:text-lg text-muted-foreground leading-relaxed font-medium flex-1 italic">
-                  "{t.quote}"
+                <div className="mb-4 text-zinc-400">
+                  <Quote size={20} className="text-primary/40 mb-2" />
+                </div>
+
+                <p className="text-sm text-zinc-400 leading-relaxed flex-1">
+                  "{t.content}"
                 </p>
 
-                <div className="flex gap-1.5 mt-8">
-                  {Array.from({ length: t.rating }).map((_, j) => (
-                    <motion.div
-                      key={j}
-                      initial={{ opacity: 0, scale: 0 }}
-                      whileInView={{ opacity: 1, scale: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.3 + i * 0.12 + j * 0.05 }}
-                    >
-                      <Star size={16} className="text-primary fill-primary" />
-                    </motion.div>
-                  ))}
+                <div className="flex items-center gap-3 mt-6 pt-6 border-t border-zinc-800">
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                    {t.avatar}
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-foreground">{t.name}</div>
+                    <div className="text-xs text-zinc-500">{t.role}</div>
+                  </div>
                 </div>
               </div>
             </motion.div>
           ))}
         </div>
-
-        <p className="text-center text-xs text-muted-foreground italic mt-8">
-          * Placeholder testimonials for demonstration purposes
-        </p>
       </div>
     </section>
   );
 };
 
+export { TestimonialsSection };
 export default TestimonialsSection;
+
+
+

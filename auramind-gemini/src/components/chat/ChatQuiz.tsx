@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Quiz, QuizQuestion } from '../../types';
-import { CheckCircle, XCircle, RotateCcw } from 'lucide-react';
+import { CheckCircleIcon as CheckCircle, XCircleIcon as XCircle, RotateCcwIcon as RotateCcw } from '../icons/CustomIcons';
 import MathRichText from '../shared/MathRichText';
 
 interface ChatQuizProps {
@@ -130,6 +130,11 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
       </div>
 
       <div className="p-6">
+        {currentQ.header && (
+          <div className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2 uppercase tracking-wide">
+            {currentQ.header}
+          </div>
+        )}
         <div className="text-lg font-medium mb-4 text-gray-900 dark:text-white">
           <MathRichText text={currentQ.question} />
         </div>
@@ -231,3 +236,6 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
 };
 
 export default ChatQuiz;
+
+
+

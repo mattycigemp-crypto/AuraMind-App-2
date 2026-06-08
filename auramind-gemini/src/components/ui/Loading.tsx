@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
-import { Loader2 } from 'lucide-react';
+import { Loader2Icon as Loader2 } from '../icons/CustomIcons';
 
 interface LoadingProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -101,3 +101,6 @@ const Loading: React.FC<LoadingProps> = ({
 };
 
 export default Loading;
+
+
+

@@ -84,3 +84,5 @@ export const isAdminOrHigher = (role: UserRole): boolean => {
 export const isEmployeeOrHigher = (role: UserRole): boolean => {
   return ROLE_HIERARCHY[role] >= ROLE_HIERARCHY[UserRole.EMPLOYEE];
 };
+
+

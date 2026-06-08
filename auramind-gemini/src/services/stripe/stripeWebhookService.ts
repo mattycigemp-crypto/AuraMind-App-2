@@ -1,5 +1,6 @@
 import { emailService } from '../email/emailService';
 import { supabase } from '../database/supabase';
+import { logger } from '@/lib/logger';
 
 /**
  * Stripe Webhook Service
@@ -14,7 +15,7 @@ export interface WebhookEvent {
 }
 
 export const handleStripeWebhook = async (event: WebhookEvent): Promise<{ success: boolean; message: string }> => {
-  console.log('Processing Stripe webhook:', event.type);
+  logger.info('Processing Stripe webhook:', event.type);
 
   switch (event.type) {
     case 'checkout.session.completed':
@@ -26,7 +27,7 @@ export const handleStripeWebhook = async (event: WebhookEvent): Promise<{ succes
     case 'customer.subscription.deleted':
       return handleSubscriptionCancelled(event);
     default:
-      console.log('Unhandled webhook event:', event.type);
+      logger.debug('Unhandled webhook event:', event.type);
       return { success: true, message: 'Event acknowledged' };
   }
 };
@@ -111,3 +112,6 @@ async function handleSubscriptionCancelled(event: WebhookEvent) {
 
   return { success: true, message: 'Subscription cancelled email sent' };
 }
+
+
+

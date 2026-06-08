@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AuraMind Admin - Audit Logs</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neural-grid {
+            background-image: 
+                linear-gradient(to right, #121212 1px, transparent 1px),
+                linear-gradient(to bottom, #121212 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        .glass-card {
+            backdrop-filter: blur(12px);
+            border: 1px solid #262626;
+            background: linear-gradient(180deg, rgba(25, 33, 34, 0.7) 0%, rgba(13, 21, 21, 0.8) 100%);
+        }
+        .glitch-alert {
+            position: relative;
+            color: #ffb4ab;
+            text-shadow: 1px 0 #00f0ff, -1px 0 #ffb4ab;
+        }
+        .scan-line {
+            width: 100%;
+            height: 1px;
+            background: rgba(0, 240, 255, 0.1);
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d1515;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #262626;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f0ff;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "border-brutal": "#262626",
+                      "on-error-container": "#ffdad6",
+                      "status-retention-low": "#F59E0B",
+                      "on-primary": "#00363a",
+                      "primary-fixed-dim": "#00dbe9",
+                      "secondary-container": "#571bc1",
+                      "error": "#ffb4ab",
+                      "on-secondary-fixed-variant": "#5516be",
+                      "inverse-on-surface": "#2a3233",
+                      "on-secondary": "#3c0091",
+                      "on-surface-variant": "#b9cacb",
+                      "secondary-fixed": "#e9ddff",
+                      "surface-container-lowest": "#080f10",
+                      "secondary-fixed-dim": "#d0bcff",
+                      "primary-container": "#00f0ff",
+                      "inverse-surface": "#dce4e5",
+                      "on-primary-container": "#006970",
+                      "surface-container": "#192122",
+                      "on-background": "#dce4e5",
+                      "on-tertiary": "#67001b",
+                      "surface-container-high": "#232b2c",
+                      "on-tertiary-container": "#bc0b3b",
+                      "outline-variant": "#3b494b",
+                      "tertiary-container": "#ffcdcf",
+                      "tertiary": "#fff3f2",
+                      "surface-container-low": "#151d1e",
+                      "error-container": "#93000a",
+                      "on-secondary-fixed": "#23005c",
+                      "on-surface": "#dce4e5",
+                      "on-secondary-container": "#c4abff",
+                      "inverse-primary": "#006970",
+                      "background": "#0d1515",
+                      "surface": "#0d1515",
+                      "secondary": "#d0bcff",
+                      "surface-variant": "#2e3637",
+                      "surface-dim": "#0d1515",
+                      "surface-bright": "#333b3b",
+                      "on-primary-fixed-variant": "#004f54",
+                      "status-retention-high": "#10B981",
+                      "on-error": "#690005",
+                      "on-tertiary-fixed-variant": "#92002a",
+                      "tertiary-fixed": "#ffdadb",
+                      "primary": "#dbfcff",
+                      "tertiary-fixed-dim": "#ffb2b7",
+                      "accent-neural-grid": "#121212",
+                      "outline": "#849495",
+                      "surface-glass": "rgba(15, 15, 20, 0.7)",
+                      "on-primary-fixed": "#002022",
+                      "on-tertiary-fixed": "#40000d",
+                      "surface-container-highest": "#2e3637",
+                      "surface-tint": "#00dbe9",
+                      "bg-neural": "#050505",
+                      "primary-fixed": "#7df4ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "fontFamily": {
+                      "mono-label": ["Space Grotesk"],
+                      "body-main": ["Inter"],
+                      "eyebrow": ["Space Grotesk"],
+                      "impact-lg": ["Space Grotesk"]
+              },
+              "fontSize": {
+                      "mono-label": ["14px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                      "body-main": ["16px", {"lineHeight": "1.6", "letterSpacing": "0em", "fontWeight": "400"}],
+                      "eyebrow": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.2em", "fontWeight": "600"}],
+                      "impact-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700"}]
+              }
+            }
+          }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-main selection:bg-primary-container selection:text-on-primary-container">
+<!-- Neural Grid Base Layer -->
+<div class="fixed inset-0 neural-grid opacity-30 pointer-events-none"></div>
+<!-- SideNavBar -->
+<aside class="w-[280px] h-screen border-r border-slate-800 fixed left-0 top-0 bg-slate-950 flex flex-col py-6 z-50 font-['Space_Grotesk'] tracking-tight antialiased">
+<div class="px-8 mb-10">
+<h1 class="text-2xl font-bold tracking-tighter text-cyan-400 uppercase">AURAMIND</h1>
+<p class="text-[10px] text-slate-500 font-mono tracking-[0.3em]">CORE_ADMIN_v1.0</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-8 py-3 text-slate-500 font-medium hover:text-slate-300 transition-all hover:bg-slate-900 duration-200" href="#">
+<span class="material-symbols-outlined text-xl">admin_panel_settings</span>
+<span class="text-sm">Role Management</span>
+</a>
+<a class="flex items-center gap-3 px-8 py-3 text-slate-500 font-medium hover:text-slate-300 transition-all hover:bg-slate-900 duration-200" href="#">
+<span class="material-symbols-outlined text-xl">query_stats</span>
+<span class="text-sm">System Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-8 py-3 text-cyan-400 bg-cyan-950/20 border-l-2 border-cyan-400 font-bold active:scale-[0.98] transition-transform duration-150" href="#">
+<span class="material-symbols-outlined text-xl">security</span>
+<span class="text-sm">Audit Logs</span>
+</a>
+<a class="flex items-center gap-3 px-8 py-3 text-slate-500 font-medium hover:text-slate-300 transition-all hover:bg-slate-900 duration-200" href="#">
+<span class="material-symbols-outlined text-xl">settings_input_component</span>
+<span class="text-sm">Admin Settings</span>
+</a>
+</nav>
+<div class="px-6 mb-8">
+<button class="w-full py-3 bg-cyan-400 text-slate-950 font-bold text-xs uppercase tracking-widest active:scale-[0.95] transition-transform">
+                Generate Report
+            </button>
+</div>
+<div class="mt-auto px-8 space-y-4">
+<div class="flex items-center gap-4 py-2 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-lg">menu_book</span>
+<span class="text-xs uppercase tracking-wider">Documentation</span>
+</div>
+<div class="flex items-center gap-4 py-2 text-slate-500 hover:text-slate-300 transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-lg">terminal</span>
+<span class="text-xs uppercase tracking-wider">System Status</span>
+</div>
+</div>
+</aside>
+<!-- TopAppBar -->
+<header class="h-16 border-b border-slate-800 fixed top-0 right-0 left-[280px] z-40 bg-slate-950/60 backdrop-blur-xl flex items-center justify-between px-8 w-full font-['Space_Grotesk'] font-medium text-sm uppercase tracking-wider">
+<div class="flex items-center gap-4 flex-1">
+<span class="material-symbols-outlined text-slate-400">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-cyan-400 placeholder-slate-600 text-xs w-64 font-mono" placeholder="SEARCH LOGS / ADDR / HASH" type="text"/>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4 border-r border-slate-800 pr-6">
+<span class="material-symbols-outlined text-slate-400 hover:text-cyan-400 cursor-pointer transition-colors" title="Notifications">notifications_active</span>
+<span class="material-symbols-outlined text-slate-400 hover:text-cyan-400 cursor-pointer transition-colors" title="DNS Status">dns</span>
+<span class="material-symbols-outlined text-slate-400 hover:text-cyan-400 cursor-pointer transition-colors" title="System Tree">account_tree</span>
+</div>
+<button class="text-xs font-black text-white hover:text-cyan-400 transition-colors border border-slate-800 px-4 py-2 hover:border-cyan-400">
+                Deploy Update
+            </button>
+<div class="w-8 h-8 rounded-full border border-cyan-400/50 p-0.5">
+<img alt="Administrator Profile" class="w-full h-full rounded-full grayscale hover:grayscale-0 transition-all cursor-pointer" data-alt="A close-up, high-detail professional headshot of a futuristic system administrator with subtle digital interface reflections on their skin. The lighting is moody and technical, with cyan and slate tones dominating the palette. The style is hyper-realistic and authoritative, aligning with the Neo-Brutalist and glassmorphic aesthetic of an advanced AI management platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCIiI4eWUWq8U79vYUwU5hDQd8ncngj-BNxRjpkDGUBevYT0PmTp6A7CT5BGngm16Ueumi7UzWRhhX4XNNEqkN9epgqmdxTT7NXbkVL_rgVJDInXYbGWeR7OWj_V7pMIlnPJqg7X7_v_UXi5nQvjXvaoGR92mT15fZeoUrC_GDu4Jf3_5sMNtdBB3JhvyTim_DybThWLPpbd6oVPKqhk0T3jlSNBMnliDM-nEHC6hGk7T7VOljSIa32KmDzd7pxOy6Saf1zPRwjnj47"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-[280px] pt-16 min-h-screen p-8 bg-background relative overflow-hidden">
+<!-- Header Section -->
+<section class="mb-12">
+<div class="flex items-end justify-between">
+<div>
+<h2 class="font-impact-lg text-impact-lg text-primary uppercase mb-2">Audit Logs</h2>
+<p class="text-slate-500 font-mono-label text-mono-label tracking-widest">REAL-TIME SYSTEM LEDGER // ENCRYPTED_CHANNEL_04</p>
+</div>
+<div class="flex gap-4">
+<div class="glass-card px-4 py-2 flex items-center gap-3">
+<div class="w-2 h-2 bg-status-retention-high rounded-full animate-pulse"></div>
+<span class="font-mono-label text-[10px] text-on-surface-variant">GATEWAY: ACTIVE</span>
+</div>
+<div class="glass-card px-4 py-2 flex items-center gap-3">
+<span class="font-mono-label text-[10px] text-on-surface-variant">UPTIME: 99.998%</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Stats Bento Grid -->
+<div class="grid grid-cols-4 gap-4 mb-8">
+<div class="glass-card p-6 border-l-2 border-l-cyan-400">
+<p class="text-eyebrow font-eyebrow text-slate-500 mb-2 uppercase">Total Events (24h)</p>
+<p class="text-3xl font-impact-lg text-white">42,891</p>
+<div class="mt-4 h-1 w-full bg-slate-900 overflow-hidden">
+<div class="h-full bg-cyan-400 w-3/4"></div>
+</div>
+</div>
+<div class="glass-card p-6 border-l-2 border-l-error">
+<p class="text-eyebrow font-eyebrow text-slate-500 mb-2 uppercase">Security Alerts</p>
+<p class="text-3xl font-impact-lg text-error">12</p>
+<p class="text-[10px] font-mono text-error/50 mt-2 tracking-tighter">CRITICAL INTERFERENCE DETECTED</p>
+</div>
+<div class="glass-card p-6 border-l-2 border-l-status-retention-low">
+<p class="text-eyebrow font-eyebrow text-slate-500 mb-2 uppercase">Auth Failures</p>
+<p class="text-3xl font-impact-lg text-status-retention-low">156</p>
+<p class="text-[10px] font-mono text-slate-500 mt-2 tracking-tighter">IP_RESTR_BYPASS_ATTEMPTS</p>
+</div>
+<div class="glass-card p-6 border-l-2 border-l-primary-fixed">
+<p class="text-eyebrow font-eyebrow text-slate-500 mb-2 uppercase">Node Efficiency</p>
+<p class="text-3xl font-impact-lg text-primary-fixed-dim">94.2%</p>
+<div class="mt-4 flex gap-1">
+<div class="h-3 w-1 bg-cyan-400"></div>
+<div class="h-3 w-1 bg-cyan-400"></div>
+<div class="h-3 w-1 bg-cyan-400"></div>
+<div class="h-3 w-1 bg-cyan-400"></div>
+<div class="h-3 w-1 bg-cyan-400/20"></div>
+</div>
+</div>
+</div>
+<!-- Audit Table Section -->
+<div class="glass-card relative overflow-hidden">
+<div class="scan-line"></div>
+<div class="p-4 border-b border-border-brutal flex justify-between items-center bg-slate-900/40">
+<div class="flex gap-4">
+<button class="text-xs font-mono-label px-3 py-1 bg-cyan-950/40 text-cyan-400 border border-cyan-400/30">ALL_TRAFFIC</button>
+<button class="text-xs font-mono-label px-3 py-1 text-slate-500 hover:text-slate-300 transition-colors">ERRORS_ONLY</button>
+<button class="text-xs font-mono-label px-3 py-1 text-slate-500 hover:text-slate-300 transition-colors">SYS_EVENTS</button>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-[10px] font-mono text-slate-600">FILTER BY RANGE: 24H_UTC</span>
+<button class="flex items-center gap-2 text-xs font-bold text-cyan-400 hover:text-white transition-colors">
+<span class="material-symbols-outlined text-sm">download</span>
+                        EXPORT CSV
+                    </button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse font-mono text-xs">
+<thead class="bg-slate-950/50 text-slate-500 uppercase tracking-widest border-b border-border-brutal">
+<tr>
+<th class="px-6 py-4 font-medium">Timestamp</th>
+<th class="px-6 py-4 font-medium">Admin Entity</th>
+<th class="px-6 py-4 font-medium">Action Type</th>
+<th class="px-6 py-4 font-medium">Status</th>
+<th class="px-6 py-4 font-medium">IP Address</th>
+<th class="px-6 py-4 font-medium">Trace ID</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-brutal">
+<tr class="hover:bg-cyan-400/5 transition-colors group">
+<td class="px-6 py-4 text-slate-400">2023-10-24 14:22:01.442</td>
+<td class="px-6 py-4 text-white">root_admin_01</td>
+<td class="px-6 py-4">
+<span class="text-cyan-400">CORE_SYNC_INITIATED</span>
+</td>
+<td class="px-6 py-4">
+<span class="bg-status-retention-high/10 text-status-retention-high px-2 py-0.5 border border-status-retention-high/20 uppercase text-[10px]">Success</span>
+</td>
+<td class="px-6 py-4 text-slate-500">192.168.1.104</td>
+<td class="px-6 py-4 text-slate-600">ax-992-f01</td>
+</tr>
+<tr class="bg-error-container/10 group">
+<td class="px-6 py-4 text-error font-bold glitch-alert">2023-10-24 14:20:55.102</td>
+<td class="px-6 py-4 text-white">EXTERNAL_PROXY</td>
+<td class="px-6 py-4">
+<span class="text-error font-bold uppercase">Unauthorized_SQL_Inject_Attempt</span>
+</td>
+<td class="px-6 py-4">
+<span class="bg-error/10 text-error px-2 py-0.5 border border-error/20 uppercase text-[10px]">Blocked</span>
+</td>
+<td class="px-6 py-4 text-error underline decoration-dotted">45.22.190.11</td>
+<td class="px-6 py-4 text-error/60">critical-err-0x0</td>
+</tr>
+<tr class="hover:bg-cyan-400/5 transition-colors">
+<td class="px-6 py-4 text-slate-400">2023-10-24 14:18:22.990</td>
+<td class="px-6 py-4 text-white">system_internal</td>
+<td class="px-6 py-4">
+<span class="text-slate-300">LOG_ROTATION_COMPLETE</span>
+</td>
+<td class="px-6 py-4">
+<span class="bg-slate-800 text-slate-400 px-2 py-0.5 border border-slate-700 uppercase text-[10px]">Routine</span>
+</td>
+<td class="px-6 py-4 text-slate-500">localhost</td>
+<td class="px-6 py-4 text-slate-600">sys-441-rot</td>
+</tr>
+<tr class="hover:bg-cyan-400/5 transition-colors">
+<td class="px-6 py-4 text-slate-400">2023-10-24 14:15:10.001</td>
+<td class="px-6 py-4 text-white">dev_ops_sarah</td>
+<td class="px-6 py-4">
+<span class="text-cyan-400">NODE_SCALING_X2</span>
+</td>
+<td class="px-6 py-4">
+<span class="bg-status-retention-high/10 text-status-retention-high px-2 py-0.5 border border-status-retention-high/20 uppercase text-[10px]">Success</span>
+</td>
+<td class="px-6 py-4 text-slate-500">10.0.4.22</td>
+<td class="px-6 py-4 text-slate-600">node-up-772</td>
+</tr>
+<tr class="hover:bg-cyan-400/5 transition-colors">
+<td class="px-6 py-4 text-slate-400">2023-10-24 14:12:44.218</td>
+<td class="px-6 py-4 text-white">auth_service</td>
+<td class="px-6 py-4">
+<span class="text-status-retention-low">MFA_TOKEN_INVALID</span>
+</td>
+<td class="px-6 py-4">
+<span class="bg-status-retention-low/10 text-status-retention-low px-2 py-0.5 border border-status-retention-low/20 uppercase text-[10px]">Warning</span>
+</td>
+<td class="px-6 py-4 text-slate-500">88.192.4.55</td>
+<td class="px-6 py-4 text-slate-600">auth-mfa-401</td>
+</tr>
+<tr class="hover:bg-cyan-400/5 transition-colors">
+<td class="px-6 py-4 text-slate-400">2023-10-24 14:10:05.112</td>
+<td class="px-6 py-4 text-white">root_admin_01</td>
+<td class="px-6 py-4">
+<span class="text-cyan-400">API_KEY_REVOKED</span>
+</td>
+<td class="px-6 py-4">
+<span class="bg-status-retention-high/10 text-status-retention-high px-2 py-0.5 border border-status-retention-high/20 uppercase text-[10px]">Success</span>
+</td>
+<td class="px-6 py-4 text-slate-500">192.168.1.104</td>
+<td class="px-6 py-4 text-slate-600">sec-rev-901</td>
+</tr>
+<tr class="hover:bg-cyan-400/5 transition-colors">
+<td class="px-6 py-4 text-slate-400">2023-10-24 14:05:33.921</td>
+<td class="px-6 py-4 text-white">system_internal</td>
+<td class="px-6 py-4">
+<span class="text-slate-300">DB_BACKUP_SNAPSHOT</span>
+</td>
+<td class="px-6 py-4">
+<span class="bg-slate-800 text-slate-400 px-2 py-0.5 border border-slate-700 uppercase text-[10px]">Routine</span>
+</td>
+<td class="px-6 py-4 text-slate-500">10.0.0.1</td>
+<td class="px-6 py-4 text-slate-600">bkp-snap-22</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 border-t border-border-brutal bg-slate-950/30 flex justify-between items-center text-slate-500 text-[10px] font-mono">
+<div class="flex gap-6">
+<span>SHOWING 50 OF 42,891 ENTRIES</span>
+<span class="text-cyan-400/40">LATENCY: 14ms</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-1 hover:text-cyan-400"><span class="material-symbols-outlined text-sm">chevron_left</span></button>
+<span class="px-2 text-white border border-cyan-400/30">1</span>
+<span class="px-2">2</span>
+<span class="px-2">3</span>
+<span class="px-2">...</span>
+<span class="px-2">857</span>
+<button class="p-1 hover:text-cyan-400"><span class="material-symbols-outlined text-sm">chevron_right</span></button>
+</div>
+</div>
+</div>
+<!-- Terminal Output Section -->
+<div class="mt-8 grid grid-cols-3 gap-8">
+<div class="col-span-2 glass-card p-6 min-h-[300px] flex flex-col">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-eyebrow text-eyebrow uppercase text-cyan-400 tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">terminal</span> Live Action Monitor
+                    </h3>
+<div class="flex gap-1">
+<div class="w-2 h-2 rounded-full bg-red-500/20"></div>
+<div class="w-2 h-2 rounded-full bg-yellow-500/20"></div>
+<div class="w-2 h-2 rounded-full bg-green-500/20"></div>
+</div>
+</div>
+<div class="flex-1 bg-black/40 p-4 font-mono text-[11px] text-cyan-400/80 space-y-1 overflow-y-auto border border-border-brutal">
+<p class="text-slate-500">[14:25:01] <span class="text-white">INFO:</span> Establishing connection to Cluster_B_Shard_03...</p>
+<p class="text-slate-500">[14:25:02] <span class="text-cyan-400">SYNC:</span> Heartbeat received from 12 edge nodes.</p>
+<p class="text-slate-500">[14:25:03] <span class="text-status-retention-low">WARN:</span> Late response from US-EAST-1 (240ms).</p>
+<p class="text-slate-500">[14:25:05] <span class="text-white">INFO:</span> Re-routing traffic through EU-CENTRAL-01.</p>
+<p class="text-slate-500">[14:25:08] <span class="text-error font-bold italic animate-pulse">ALRT: EX_PROXY_ATTACHED_TO_GATEWAY_V1</span></p>
+<p class="text-slate-500">[14:25:09] <span class="text-white">INFO:</span> Initializing trace protocol 0x882...</p>
+<p class="text-slate-500">[14:25:10] <span class="text-cyan-400">SYNC:</span> Payload verification successful.</p>
+<p class="text-slate-500">[14:25:12] <span class="text-slate-400 cursor-default">_ (waiting for system response)</span></p>
+</div>
+</div>
+<div class="glass-card p-6">
+<h3 class="font-eyebrow text-eyebrow uppercase text-slate-500 mb-6 tracking-widest">Compliance Overview</h3>
+<div class="space-y-6">
+<div class="flex flex-col gap-2">
+<div class="flex justify-between text-[10px] font-mono">
+<span>SOC2_TYPE_II</span>
+<span class="text-cyan-400">98% READY</span>
+</div>
+<div class="h-2 bg-slate-900 border border-border-brutal">
+<div class="h-full bg-cyan-400" style="width: 98%"></div>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<div class="flex justify-between text-[10px] font-mono">
+<span>GDPR_ENFORCEMENT</span>
+<span class="text-status-retention-high">COMPLIANT</span>
+</div>
+<div class="h-2 bg-slate-900 border border-border-brutal">
+<div class="h-full bg-status-retention-high" style="width: 100%"></div>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<div class="flex justify-between text-[10px] font-mono">
+<span>ISO_27001_AUDIT</span>
+<span class="text-status-retention-low">DUE_IN_12D</span>
+</div>
+<div class="h-2 bg-slate-900 border border-border-brutal">
+<div class="h-full bg-status-retention-low" style="width: 65%"></div>
+</div>
+</div>
+<div class="mt-8 pt-6 border-t border-border-brutal">
+<button class="w-full py-2 border border-cyan-400 text-cyan-400 font-mono-label text-[10px] hover:bg-cyan-400 hover:text-slate-950 transition-all uppercase tracking-widest">
+                            Run Full Audit Scan
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Background Decoration -->
+<div class="fixed top-0 right-0 w-[500px] h-[500px] bg-cyan-400/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none z-0"></div>
+<div class="fixed bottom-0 left-[280px] w-[300px] h-[300px] bg-secondary-container/5 blur-[100px] rounded-full translate-y-1/4 -translate-x-1/4 pointer-events-none z-0"></div>
+</body></html>

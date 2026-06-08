@@ -1,5 +1,5 @@
 import React from 'react'
-import { Sun, Moon } from 'lucide-react'
+import { SunIcon as Sun, MoonIcon as Moon } from '../components/icons/CustomIcons'
 import { useTheme } from './useTheme'
 
 interface ThemeToggleProps {
@@ -85,3 +85,5 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
     </button>
   )
 }
+
+

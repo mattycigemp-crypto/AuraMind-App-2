@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HelpCircle } from 'lucide-react';
+import { CircleIcon as HelpCircle } from '../icons/CustomIcons';
 
 interface HelpTooltipProps {
   content: string;
@@ -39,3 +39,6 @@ const HelpTooltip: React.FC<HelpTooltipProps> = ({ content, position = 'top' }) 
 };
 
 export default HelpTooltip;
+
+
+

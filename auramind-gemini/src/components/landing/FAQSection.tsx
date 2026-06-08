@@ -1,83 +1,127 @@
-import { motion } from 'framer-motion';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDownIcon as ChevronDown } from '../../components/icons/CustomIcons';
 
-const faqs = [
+interface FAQItem {
+  q: string;
+  a: string;
+}
+
+const faqs: FAQItem[] = [
   {
-    q: 'How is AuraMind different from regular flashcard apps?',
-    a: 'AuraMind is built for high-stakes exam prep. It combines source-backed flashcards, weak-spot analysis, and adaptive review timing so you can focus on material you are actually at risk of forgetting.',
+    q: 'Is it really free?',
+    a: 'Yes — the free plan includes unlimited AI-generated flashcards from notes and PDFs, FSRS adaptive reviews, and retention tracking. Paid plans unlock advanced AI features like the assistant and priority generation.',
   },
   {
-    q: 'Is my data private and secure?',
-    a: 'Yes. Your study data is stored securely, we do not sell it, and you can export or delete your materials whenever you want. The product is designed as a private study workspace.',
+    q: 'How does the AI generate flashcards?',
+    a: 'Upload your notes, PDF, or lecture recording. Our AI extracts key concepts and generates question-answer pairs that link back to the source material. You review and edit before studying.',
   },
   {
-    q: 'Who is AuraMind best for?',
-    a: 'AuraMind is best for medical students, law students, and professional certification candidates who need to retain dense material under deadline pressure.',
+    q: 'What is FSRS and why does it matter?',
+    a: 'FSRS (Free Spaced Repetition Scheduler) is the ML algorithm that models your personal forgetting curve. Unlike older methods, it adapts to your memory so you review cards at the optimal moment — up to 30% fewer reviews with higher retention.',
   },
   {
-    q: 'What kinds of content can I use?',
-    a: 'You can use notes, PDFs, lecture slides, and plain text. AuraMind can turn that material into flashcards and study content with AI.',
+    q: 'Can I import my Anki decks?',
+    a: 'Yes — you can import .apkg files directly. Your cards, scheduling, and tags come over intact. We also support CSV and JSON imports.',
   },
   {
-    q: 'Is there a free plan?',
-    a: 'Yes. The free plan includes up to 500 active cards and access to the main study tools. Paid plans unlock more cards and more advanced features.',
+    q: 'Is my data private?',
+    a: 'Your study data is encrypted at rest and in transit. We never train AI models on your content. You can export or delete your data at any time.',
   },
   {
-    q: 'How long does it take to see results?',
-    a: 'Most users can create a first deck and begin reviewing within minutes. Recall quality usually improves after several sessions once the review schedule starts adapting.',
+    q: 'Which file formats are supported?',
+    a: 'PDF, Markdown, plain text, images (PNG/JPG), and audio (MP3/WAV). We extract content from PDFs and images to generate flashcards automatically.',
   },
 ];
 
-const ease: [number, number, number, number] = [0.65, 0.05, 0, 1];
+interface FAQCardProps {
+  faq: FAQItem;
+  index: number;
+  openIndex: number | null;
+  toggle: (i: number) => void;
+}
 
-const FAQSection = () => {
+const FAQCard: React.FC<FAQCardProps> = ({ faq, index, openIndex, toggle }) => {
+  const isOpen = openIndex === index;
+
   return (
-    <section className="landing-section relative z-10 border-t border-border">
-      <div className="mx-auto max-w-3xl">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, ease }}
-          className="text-center mb-16"
-        >
-          <p className="text-eyebrow mb-6">FAQ</p>
-          <h2 className="text-impact-md text-foreground">
-            COMMON QUESTIONS.
-          </h2>
-        </motion.div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: index * 0.05 }}
+      viewport={{ once: true }}
+      className="border-b border-zinc-800 last:border-b-0"
+    >
+      <button
+        onClick={() => toggle(index)}
+        className="w-full flex items-center justify-between py-6 text-left group"
+      >
+        <span className="text-lg font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-foreground transition-colors pr-4">
+          {faq.q}
+        </span>
+        <ChevronDown
+          size={18}
+          className={`text-zinc-500 shrink-0 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="content"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+            className="overflow-hidden"
+          >
+            <p className="text-zinc-400 pb-6 leading-relaxed max-w-2xl">
+              {faq.a}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+};
 
+const FAQSection: React.FC<{ className?: string }> = ({ className = '' }) => {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const toggle = (i: number) => {
+    setOpenIndex(openIndex === i ? null : i);
+  };
+
+  return (
+    <section className={`py-24 md:py-32 relative ${className}`}>
+      <div className="max-w-3xl mx-auto px-6 md:px-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.2, ease }}
+          className="mb-16 text-center"
         >
-          <Accordion type="single" collapsible className="space-y-2">
-            {faqs.map((faq, i) => (
-              <AccordionItem
-                key={i}
-                value={`faq-${i}`}
-                className="bg-card border border-border rounded-sm px-6 data-[state=open]:border-primary/30 transition-colors duration-300"
-              >
-                <AccordionTrigger className="text-sm font-bold text-foreground hover:text-primary py-5 [&[data-state=open]]:text-primary">
-                  {faq.q}
-                </AccordionTrigger>
-                <AccordionContent className="text-sm text-muted-foreground leading-relaxed pb-5">
-                  {faq.a}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+          <span className="text-xs font-black uppercase tracking-[0.3em] text-primary mb-4 block">
+            Questions?
+          </span>
+          <h2 className="text-4xl md:text-6xl font-black tracking-tight">
+            <span className="text-zinc-500">YOU ASK</span>
+            <br />
+            <span className="text-primary">WE ANSWER</span>
+          </h2>
         </motion.div>
+
+        <div className="border-t border-zinc-800">
+          {faqs.map((faq, i) => (
+            <FAQCard key={i} faq={faq} index={i} openIndex={openIndex} toggle={toggle} />
+          ))}
+        </div>
       </div>
     </section>
   );
 };
 
+export { FAQSection };
 export default FAQSection;
+
+
+

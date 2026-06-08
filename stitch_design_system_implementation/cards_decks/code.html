@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "outline-variant": "#3b494b",
+                "primary-container": "#00f0ff",
+                "outline": "#849495",
+                "on-tertiary-fixed-variant": "#92002a",
+                "on-tertiary-fixed": "#40000d",
+                "on-primary-fixed-variant": "#004f54",
+                "inverse-primary": "#006970",
+                "on-secondary-container": "#c4abff",
+                "surface-glass": "rgba(15, 15, 20, 0.7)",
+                "secondary-container": "#571bc1",
+                "on-primary": "#00363a",
+                "tertiary-container": "#ffcdcf",
+                "tertiary": "#fff3f2",
+                "primary-fixed-dim": "#00dbe9",
+                "inverse-on-surface": "#2a3233",
+                "primary": "#dbfcff",
+                "secondary-fixed": "#e9ddff",
+                "tertiary-fixed-dim": "#ffb2b7",
+                "inverse-surface": "#dce4e5",
+                "tertiary-fixed": "#ffdadb",
+                "on-surface-variant": "#b9cacb",
+                "on-error-container": "#ffdad6",
+                "background": "#0d1515",
+                "secondary": "#d0bcff",
+                "on-background": "#dce4e5",
+                "surface-container-lowest": "#080f10",
+                "surface-tint": "#00dbe9",
+                "on-primary-container": "#006970",
+                "on-secondary": "#3c0091",
+                "surface-container-high": "#232b2c",
+                "border-brutal": "#262626",
+                "surface-bright": "#333b3b",
+                "error": "#ffb4ab",
+                "on-error": "#690005",
+                "on-secondary-fixed": "#23005c",
+                "on-secondary-fixed-variant": "#5516be",
+                "on-tertiary-container": "#bc0b3b",
+                "on-tertiary": "#67001b",
+                "status-retention-low": "#F59E0B",
+                "surface": "#0d1515",
+                "accent-neural-grid": "#121212",
+                "surface-container-low": "#151d1e",
+                "error-container": "#93000a",
+                "on-surface": "#dce4e5",
+                "secondary-fixed-dim": "#d0bcff",
+                "surface-variant": "#2e3637",
+                "status-retention-high": "#10B981",
+                "surface-dim": "#0d1515",
+                "surface-container": "#192122",
+                "bg-neural": "#050505",
+                "on-primary-fixed": "#002022",
+                "primary-fixed": "#7df4ff",
+                "surface-container-highest": "#2e3637"
+            },
+            "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+            },
+            "fontFamily": {
+                "impact-lg": ["Space Grotesk"],
+                "body-main": ["Inter"],
+                "mono-label": ["Space Grotesk"],
+                "eyebrow": ["Space Grotesk"]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body {
+            background-color: #050505;
+            background-image: 
+                linear-gradient(rgba(18, 18, 18, 0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(18, 18, 18, 0.5) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        .glass-card {
+            backdrop-filter: blur(12px);
+            background: rgba(15, 21, 21, 0.7);
+            border: 1px solid #262626;
+        }
+        .glass-card:hover {
+            border-color: #00f0ff;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #262626;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #00f0ff;
+        }
+    </style>
+</head>
+<body class="font-body-main text-on-surface overflow-hidden">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-0 h-full w-[280px] border-r border-[#00F0FF]/30 bg-zinc-950 flex flex-col py-8 px-0 z-50">
+<div class="px-6 mb-8">
+<h1 class="text-2xl font-black text-[#00F0FF] tracking-tighter font-impact-lg uppercase">AURAMIND</h1>
+<p class="font-mono-label text-[10px] tracking-widest text-[#00F0FF]/60 uppercase">NEURAL_LINK_ACTIVE</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-4 text-zinc-500 hover:text-zinc-200 pl-4 py-3 transition-all hover:bg-zinc-900 group" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="dashboard">dashboard</span>
+<span class="font-mono-label text-xs tracking-widest uppercase">Main Dashboard</span>
+</a>
+<a class="flex items-center gap-4 border-l-2 border-[#00F0FF] bg-[#00F0FF]/5 text-[#00F0FF] font-bold pl-4 py-3 transition-all" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="style">style</span>
+<span class="font-mono-label text-xs tracking-widest uppercase">Cards &amp; Decks</span>
+</a>
+<a class="flex items-center gap-4 text-zinc-500 hover:text-zinc-200 pl-4 py-3 transition-all hover:bg-zinc-900 group" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="smart_toy">smart_toy</span>
+<span class="font-mono-label text-xs tracking-widest uppercase">AI Chat</span>
+</a>
+<a class="flex items-center gap-4 text-zinc-500 hover:text-zinc-200 pl-4 py-3 transition-all hover:bg-zinc-900 group" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="auto_stories">auto_stories</span>
+<span class="font-mono-label text-xs tracking-widest uppercase">Lessons</span>
+</a>
+<a class="flex items-center gap-4 text-zinc-500 hover:text-zinc-200 pl-4 py-3 transition-all hover:bg-zinc-900 group" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="settings">settings</span>
+<span class="font-mono-label text-xs tracking-widest uppercase">Settings</span>
+</a>
+</nav>
+<div class="px-6 mt-auto space-y-6">
+<button class="w-full bg-[#00F0FF] text-zinc-950 font-bold py-4 text-xs tracking-widest uppercase flex items-center justify-center gap-2 transition-transform active:scale-95">
+<span class="material-symbols-outlined text-lg" data-icon="add_circle">add_circle</span>
+                NEW STUDY SESSION
+            </button>
+<div class="space-y-4 pt-6 border-t border-[#00F0FF]/10">
+<a class="flex items-center gap-3 text-zinc-500 hover:text-zinc-200 text-xs tracking-widest uppercase font-mono-label" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="sensors">sensors</span>
+                    System Status
+                </a>
+<a class="flex items-center gap-3 text-zinc-500 hover:text-zinc-200 text-xs tracking-widest uppercase font-mono-label" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="terminal">terminal</span>
+                    Documentation
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-[280px] h-screen overflow-y-auto custom-scrollbar flex flex-col">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-40 bg-zinc-950/50 backdrop-blur-md border-b border-[#00F0FF]/20 h-16 flex items-center justify-between px-8">
+<div class="flex items-center gap-6 flex-1">
+<div class="relative w-full max-w-md group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-[#00F0FF] text-sm" data-icon="search">search</span>
+<input class="w-full bg-zinc-900/50 border border-border-brutal px-10 py-2 text-xs font-mono-label tracking-widest focus:border-[#00F0FF] outline-none transition-all placeholder:text-zinc-600" placeholder="SEARCH DECKS OR SOURCES..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-zinc-400 hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-zinc-400 hover:text-[#00F0FF] hover:bg-[#00F0FF]/10 transition-colors">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+</button>
+<div class="h-8 w-8 rounded-full border border-[#00F0FF]/30 overflow-hidden">
+<img alt="Profile" class="w-full h-full object-cover" data-alt="A sophisticated close-up portrait of a high-tech digital entity. The face is partially obscured by shifting data streams and geometric light patterns in vibrant neon cyan. The lighting is moody and cinematic, highlighting sharp, brutalist angles in the background architecture. The overall aesthetic is clean, futuristic, and focused on neural interface technology." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDraZwqK7YCVO5JWqBFlWd9JVflyMI35ZmO9DSMxTZf5xcmpNkMJ056MJfU4YSKRcwS7U663BMzNNcO60WyvY16PuDvztEe5TIH_8VYWG8OszQlloU9l-TPhPNFEcuStm1S_uGEGtItP-T2G3YKWtg3K8VGpoVZdQ16yEhxIYMoSfQlBk9gGrKIpri6d3Ps3DjGqzNEpRwXevAe-Ts-yAcmu2pBgPhcHXmZOz5sdGdrjz84ACGHIpg2lCk9JJUc30kKlXB_aD0zBNhb"/>
+</div>
+</div>
+</header>
+<!-- Page Header Area -->
+<section class="p-8 pb-0">
+<div class="flex justify-between items-end mb-8">
+<div>
+<span class="font-eyebrow text-primary-container text-eyebrow uppercase">MEMORY ARCHIVE // 042</span>
+<h2 class="text-impact-lg font-impact-lg uppercase text-on-surface mt-2">FLASHCARD DECKS</h2>
+</div>
+<div class="flex gap-4">
+<button class="px-6 py-3 border border-border-brutal glass-card text-xs font-mono-label tracking-widest flex items-center gap-2 hover:bg-[#00F0FF]/10 transition-all uppercase">
+<span class="material-symbols-outlined text-sm" data-icon="upload_file">upload_file</span>
+                        Import Source
+                    </button>
+<button class="px-6 py-3 bg-primary-container text-on-primary font-bold text-xs font-mono-label tracking-widest flex items-center gap-2 hover:brightness-110 active:scale-95 transition-all uppercase">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                        New Deck
+                    </button>
+</div>
+</div>
+<!-- Tool Bar -->
+<div class="flex items-center gap-6 border-b border-border-brutal pb-4">
+<button class="text-primary-container font-bold text-xs tracking-widest uppercase pb-4 border-b-2 border-primary-container">Active Decks</button>
+<button class="text-zinc-500 font-mono-label text-xs tracking-widest uppercase pb-4 hover:text-zinc-200 transition-all">Archived</button>
+<button class="text-zinc-500 font-mono-label text-xs tracking-widest uppercase pb-4 hover:text-zinc-200 transition-all">Shared</button>
+<div class="flex-1"></div>
+<div class="flex items-center gap-2 bg-surface-container px-3 py-1 border border-border-brutal">
+<span class="text-[10px] font-mono-label text-zinc-500 uppercase">Sort by:</span>
+<select class="bg-transparent border-none text-[10px] font-mono-label text-on-surface focus:ring-0 uppercase cursor-pointer">
+<option>Recent Activity</option>
+<option>Retention Rate</option>
+<option>Deck Size</option>
+</select>
+</div>
+</div>
+</section>
+<!-- Grid Layout -->
+<section class="p-8 grid grid-cols-12 gap-6">
+<!-- Bento Grid - Left Column (Main Content) -->
+<div class="col-span-8 grid grid-cols-2 gap-6">
+<!-- Deck Card 1 -->
+<div class="glass-card p-6 flex flex-col group cursor-pointer">
+<div class="flex justify-between items-start mb-6">
+<div class="bg-primary-container/10 p-3 border border-primary-container/20">
+<span class="material-symbols-outlined text-primary-container" data-icon="neurology">neurology</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-mono-label text-[10px] text-status-retention-high">RETENTION: 92%</span>
+<div class="w-24 h-1 bg-zinc-800 mt-2 flex">
+<div class="h-full bg-status-retention-high w-[92%]"></div>
+</div>
+</div>
+</div>
+<h3 class="font-impact-lg text-lg uppercase mb-2">NEURAL ARCHITECTURES</h3>
+<p class="text-on-surface-variant text-sm mb-6 line-clamp-2">Comprehensive breakdown of transformer models, attention mechanisms, and gradient flow patterns.</p>
+<div class="mt-auto pt-6 border-t border-border-brutal flex justify-between items-center">
+<div class="flex items-center gap-4 text-xs font-mono-label text-zinc-500 uppercase">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm" data-icon="style">style</span> 124 CARDS</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span> 12M AGO</span>
+</div>
+<span class="material-symbols-outlined text-zinc-600 group-hover:text-primary-container transition-colors" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+<!-- Deck Card 2 -->
+<div class="glass-card p-6 flex flex-col group cursor-pointer border-dashed border-zinc-700 hover:border-solid">
+<div class="flex justify-between items-start mb-6">
+<div class="bg-secondary-container/10 p-3 border border-secondary-container/20">
+<span class="material-symbols-outlined text-secondary" data-icon="menu_book">menu_book</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-mono-label text-[10px] text-status-retention-low">RETENTION: 45%</span>
+<div class="w-24 h-1 bg-zinc-800 mt-2 flex">
+<div class="h-full bg-status-retention-low w-[45%]"></div>
+</div>
+</div>
+</div>
+<h3 class="font-impact-lg text-lg uppercase mb-2">SYSTEMS THERMODYNAMICS</h3>
+<p class="text-on-surface-variant text-sm mb-6 line-clamp-2">Entropy models, heat transfer dynamics, and open-loop system equilibrium principles.</p>
+<div class="mt-auto pt-6 border-t border-border-brutal flex justify-between items-center">
+<div class="flex items-center gap-4 text-xs font-mono-label text-zinc-500 uppercase">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm" data-icon="style">style</span> 82 CARDS</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span> 2H AGO</span>
+</div>
+<span class="material-symbols-outlined text-zinc-600 group-hover:text-primary-container transition-colors" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</div>
+<!-- Source Anchoring Editor Interface -->
+<div class="col-span-2 glass-card p-0 overflow-hidden flex flex-col h-[500px]">
+<div class="bg-zinc-900 border-b border-border-brutal p-4 flex justify-between items-center">
+<div class="flex items-center gap-4">
+<span class="font-mono-label text-xs uppercase tracking-widest text-primary-container">EDITOR: SOURCE_ANCHOR_V2</span>
+<div class="h-4 w-[1px] bg-border-brutal"></div>
+<span class="font-mono-label text-xs uppercase tracking-widest text-zinc-500">LEC_NOTES_TRANSFORMER.PDF</span>
+</div>
+<div class="flex gap-2">
+<button class="p-1 hover:text-[#00F0FF] text-zinc-500"><span class="material-symbols-outlined text-sm" data-icon="close">close</span></button>
+</div>
+</div>
+<div class="flex-1 flex overflow-hidden">
+<!-- Source Preview -->
+<div class="w-1/2 border-r border-border-brutal p-6 overflow-y-auto custom-scrollbar bg-zinc-950/30">
+<div class="space-y-4">
+<p class="text-xs font-mono-label text-zinc-600 uppercase mb-4">PAGE 04 / EXCERPT ANALYSIS</p>
+<div class="p-4 bg-zinc-900/50 border-l-2 border-primary-container">
+<p class="text-sm text-zinc-300 leading-relaxed">
+                                        The <span class="bg-primary-container/20 text-primary-container px-1">Attention Mechanism</span> allows the model to focus on specific parts of the input sequence while processing other parts. This is mathematically represented through the Query, Key, and Value vectors.
+                                    </p>
+</div>
+<p class="text-sm text-zinc-500 leading-relaxed">
+                                    In conventional RNNs, the bottleneck occurs because all information must be compressed into a single hidden state vector. Transformers bypass this by using parallelized attention heads.
+                                </p>
+</div>
+</div>
+<!-- Card Editor -->
+<div class="w-1/2 p-6 flex flex-col bg-zinc-900/10">
+<div class="mb-6">
+<label class="block font-mono-label text-[10px] text-zinc-500 uppercase mb-2">FRONT (CONCEPT)</label>
+<textarea class="w-full bg-transparent border border-border-brutal p-4 text-sm focus:border-primary-container outline-none h-24 resize-none">WHAT IS THE PRIMARY LIMITATION OF RECURRENT NEURAL NETWORKS COMPARED TO TRANSFORMERS?</textarea>
+</div>
+<div class="mb-6">
+<label class="block font-mono-label text-[10px] text-zinc-500 uppercase mb-2">BACK (DEFINITION)</label>
+<textarea class="w-full bg-transparent border border-border-brutal p-4 text-sm focus:border-primary-container outline-none h-32 resize-none">The sequential nature of RNNs creates a computational bottleneck. All data must be compressed into a single hidden state, whereas Transformers use parallelized attention mechanism.</textarea>
+</div>
+<div class="mt-auto flex gap-3">
+<button class="flex-1 py-3 border border-border-brutal font-mono-label text-xs uppercase tracking-widest hover:bg-zinc-800 transition-all">Discard</button>
+<button class="flex-1 py-3 bg-primary-container text-zinc-950 font-bold font-mono-label text-xs uppercase tracking-widest active:scale-95 transition-all">Create Card</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column (Stats & Quick Actions) -->
+<div class="col-span-4 space-y-6">
+<!-- Performance Glass Card -->
+<div class="glass-card p-6">
+<h4 class="font-mono-label text-xs uppercase tracking-widest text-primary-container mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="analytics">analytics</span>
+                        NEURAL RETENTION METRICS
+                    </h4>
+<div class="space-y-6">
+<div class="flex items-end justify-between gap-1 h-32 px-4">
+<div class="w-full bg-primary-container/20 relative group">
+<div class="absolute bottom-0 left-0 w-full bg-primary-container transition-all" style="height: 45%;"></div>
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-zinc-900 text-[10px] px-2 py-1 border border-primary-container whitespace-nowrap">MON: 45%</div>
+</div>
+<div class="w-full bg-primary-container/20 relative group">
+<div class="absolute bottom-0 left-0 w-full bg-primary-container transition-all" style="height: 65%;"></div>
+</div>
+<div class="w-full bg-primary-container/20 relative group">
+<div class="absolute bottom-0 left-0 w-full bg-primary-container transition-all" style="height: 55%;"></div>
+</div>
+<div class="w-full bg-primary-container/20 relative group">
+<div class="absolute bottom-0 left-0 w-full bg-primary-container transition-all" style="height: 85%;"></div>
+</div>
+<div class="w-full bg-primary-container/20 relative group">
+<div class="absolute bottom-0 left-0 w-full bg-primary-container transition-all" style="height: 92%;"></div>
+</div>
+<div class="w-full bg-primary-container/20 relative group">
+<div class="absolute bottom-0 left-0 w-full bg-primary-container transition-all" style="height: 78%;"></div>
+</div>
+<div class="w-full bg-primary-container/20 relative group">
+<div class="absolute bottom-0 left-0 w-full bg-primary-container transition-all" style="height: 88%;"></div>
+</div>
+</div>
+<div class="flex justify-between font-mono-label text-[10px] text-zinc-600">
+<span>MON</span>
+<span>TUE</span>
+<span>WED</span>
+<span>THU</span>
+<span>FRI</span>
+<span>SAT</span>
+<span>SUN</span>
+</div>
+</div>
+</div>
+<!-- Export/Quick Tasks -->
+<div class="glass-card p-6">
+<h4 class="font-mono-label text-xs uppercase tracking-widest text-zinc-400 mb-6">SYSTEM EXPORT</h4>
+<div class="space-y-3">
+<button class="w-full group p-4 border border-border-brutal flex items-center justify-between hover:bg-zinc-900 transition-all">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-zinc-500 group-hover:text-primary-container" data-icon="picture_as_pdf">picture_as_pdf</span>
+<span class="text-xs font-mono-label uppercase tracking-widest">Generate PDF Deck</span>
+</div>
+<span class="material-symbols-outlined text-xs text-zinc-700" data-icon="chevron_right">chevron_right</span>
+</button>
+<button class="w-full group p-4 border border-border-brutal flex items-center justify-between hover:bg-zinc-900 transition-all">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-zinc-500 group-hover:text-primary-container" data-icon="terminal">terminal</span>
+<span class="text-xs font-mono-label uppercase tracking-widest">Markdown Bundle</span>
+</div>
+<span class="material-symbols-outlined text-xs text-zinc-700" data-icon="chevron_right">chevron_right</span>
+</button>
+<button class="w-full group p-4 border border-border-brutal flex items-center justify-between hover:bg-zinc-900 transition-all">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-zinc-500 group-hover:text-primary-container" data-icon="database">database</span>
+<span class="text-xs font-mono-label uppercase tracking-widest">Anki Export (.apkg)</span>
+</div>
+<span class="material-symbols-outlined text-xs text-zinc-700" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Visual Anchor Image -->
+<div class="glass-card overflow-hidden h-48 relative">
+<img alt="Neural Visualization" class="w-full h-full object-cover" data-alt="A highly detailed and complex digital artwork illustrating an abstract neural network of light. Filaments of electric blue and sharp cyan pulse through a deep black void, connecting in crystalline junctions that suggest high-speed data transfer. The composition is brutalist, with geometric overlays and monospaced data labels floating in the periphery. The lighting is high-contrast and evokes a sense of deep machine learning and artificial consciousness." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAy8nh04giyd2cyutuGuUCC_Jlmb4GaV4-kW0JTmLpZ2dZnqOxFrPVML0AGYE6tq_MT5SBYyy5Felk6ce-golgnjdPTUXUmzkUuQyIqMU8YKWgQZodglFRs9Upw0aDrG-QfxYIPTu42RQoeHuSqPP_v87CpehJGAfaaXyNi3WuspRnnrrdo1emVLCrbX2StVHaMJlTo5MryVYBann5LyezezY-3VqDdJQmFQxvMwpeVZiW37LpSoHuu9N4jj2vIX-tYmGmK1Di_-y8P"/>
+<div class="absolute inset-0 bg-zinc-950/40 flex items-center justify-center p-6 text-center">
+<p class="font-impact-lg text-sm uppercase tracking-widest text-[#00F0FF]">Deep learning session active: 01:24:55</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+</body></html>

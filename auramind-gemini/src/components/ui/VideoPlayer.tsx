@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Pause, Volume2, VolumeX, Maximize, RotateCcw } from 'lucide-react';
+import { PlayIcon as Play, PauseIcon as Pause, Volume2Icon as Volume2, VolumeXIcon as VolumeX, Maximize2Icon as Maximize, RotateCcwIcon as RotateCcw } from '../icons/CustomIcons';
 import { cn } from '../../lib/utils';
 
 interface VideoPlayerProps {
@@ -32,7 +32,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressBarRef = useRef<HTMLDivElement>(null);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout>();
+  const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Demo video URL - replace with actual video
   const demoVideoUrl = src || "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
@@ -257,3 +257,5 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     </motion.div>
   );
 };
+
+

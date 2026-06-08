@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Zap, Shield, BrainCircuit, Infinity, ChevronLeft,
-  Sparkles, Check, Crown, Loader2, ArrowRight,
-  Clock, BookOpen, Bot, GraduationCap, Activity,
-  ShieldCheck, CreditCard, Lock
-} from 'lucide-react';
+  ZapIcon as Zap, ShieldIcon as Shield, BrainCircuitIcon as BrainCircuit, InfinityIcon as Infinity, ChevronLeftIcon as ChevronLeft,
+  SparklesIcon as Sparkles, CheckIcon as Check, CrownIcon as Crown, Loader2Icon as Loader2, ArrowRightIcon as ArrowRight,
+  ClockIcon as Clock, BookOpenIcon as BookOpen, BotIcon as Bot, GraduationCapIcon as GraduationCap, ActivityIcon as Activity,
+  ShieldCheckIcon as ShieldCheck, CreditCardIcon as CreditCard, LockIcon as Lock
+} from '../icons/CustomIcons';
 
 interface PaymentPageProps {
   user: { id: string; email: string; name: string };
@@ -18,7 +18,7 @@ const PLANS = [
     name: 'MONTHLY PROTOCOL',
     price: '$9.99',
     interval: '/MO',
-    priceId: import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY || 'price_1SNlszGhRq84JnUVyNTmKt3A',
+    priceId: import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY ?? '',
     badge: null,
     desc: 'Full access with flexible maintenance.'
   },
@@ -27,7 +27,7 @@ const PLANS = [
     name: 'ANNUAL SYSTEM',
     price: '$3.99',
     interval: '/MO',
-    priceId: import.meta.env.VITE_STRIPE_PRICE_ID_ANNUAL || 'price_1SedVnGhRq84JnUVctLWWuWJ',
+    priceId: import.meta.env.VITE_STRIPE_PRICE_ID_ANNUAL ?? '',
     badge: 'SAVE 60%',
     totalPrice: '$47.88 Billed Annually',
     desc: 'The complete cognitive upgrade.'
@@ -55,7 +55,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user }) => {
     setError('');
 
     try {
-      const response = await fetch('/api/stripe/checkout', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/stripe/checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -244,4 +244,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user }) => {
 };
 
 export default PaymentPage;
+
+
+
 

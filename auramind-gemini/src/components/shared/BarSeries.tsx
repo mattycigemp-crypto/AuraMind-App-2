@@ -19,3 +19,6 @@ const BarSeries: React.FC<BarSeriesProps> = ({ values, labels }) => (
 );
 
 export default BarSeries;
+
+
+

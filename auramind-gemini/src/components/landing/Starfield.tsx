@@ -1,9 +1,18 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useTheme } from '../../hooks/useTheme';
 
 const Starfield = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { resolvedTheme } = useTheme();
+  const [isDark, setIsDark] = useState(true);
 
   useEffect(() => {
+    setIsDark(resolvedTheme === 'dark');
+  }, [resolvedTheme]);
+
+  useEffect(() => {
+    if (!isDark) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -69,7 +78,9 @@ const Starfield = () => {
       cancelAnimationFrame(animationId);
       window.removeEventListener('resize', resize);
     };
-  }, []);
+  }, [isDark]);
+
+  if (!isDark) return null;
 
   return (
     <canvas
@@ -81,3 +92,6 @@ const Starfield = () => {
 };
 
 export default Starfield;
+
+
+

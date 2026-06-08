@@ -1,13 +1,13 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  LayoutGrid, 
-  Layers, 
-  Zap, 
-  Settings, 
-  Plus,
-  GraduationCap
-} from 'lucide-react';
+  LayoutGridIcon as LayoutGrid, 
+  LayersIcon as Layers, 
+  ZapIcon as Zap, 
+  SettingsIcon as Settings, 
+  PlusIcon as Plus,
+  GraduationCapIcon as GraduationCap
+} from '../icons/CustomIcons';
 
 const MobileNav: React.FC = () => {
   const navigate = useNavigate();
@@ -44,3 +44,6 @@ const MobileNav: React.FC = () => {
 };
 
 export default MobileNav;
+
+
+

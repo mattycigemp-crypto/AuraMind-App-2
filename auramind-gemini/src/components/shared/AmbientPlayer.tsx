@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-    Music, Volume2, VolumeX, SkipForward, SkipBack, Play, Pause,
-    Minimize2, List, Shuffle, Plus, X
-} from 'lucide-react';
+    MusicIcon as Music, Volume2Icon as Volume2, VolumeXIcon as VolumeX, SkipForwardIcon as SkipForward, SkipBackIcon as SkipBack, PlayIcon as Play, PauseIcon as Pause,
+    Minimize2Icon as Minimize2, ListIcon as List, ShuffleIcon as Shuffle, PlusIcon as Plus, XIcon as X
+} from '../icons/CustomIcons';
 
 interface Track {
     id: string;
@@ -375,3 +375,6 @@ const AmbientPlayer: React.FC = () => {
 };
 
 export default AmbientPlayer;
+
+
+

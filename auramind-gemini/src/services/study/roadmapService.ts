@@ -60,14 +60,16 @@ export const createCitation = (
 });
 
 export const createMetadataTemplates = (
-  cards: Array<Pick<FlashcardData, 'question' | 'answer' | 'citations' | 'sourceLabel' | 'sourceType'>>,
+  cards: Array<Pick<FlashcardData, 'question' | 'answer' | 'citations' | 'sourceLabel' | 'sourceType'> | { front?: string; back?: string; citations?: any; sourceLabel?: string; sourceType?: CardSourceType }>,
   sourceLabel: string,
   sourceType: CardSourceType
 ): CardMetadataTemplate[] =>
   cards.map((card, index) => {
+    const question = (card as any).front || (card as any).question;
+    const answer = (card as any).back || (card as any).answer;
     const citations = card.citations?.length
       ? card.citations
-      : [createCitation(card.sourceLabel || sourceLabel, card.sourceType || sourceType, `${card.question} ${card.answer}`, `Card ${index + 1}`)];
+      : [createCitation(card.sourceLabel || sourceLabel, card.sourceType || sourceType, `${question} ${answer}`, `Card ${index + 1}`)];
 
     return {
       citations,
@@ -287,52 +289,67 @@ const stripHtml = (value: string) =>
     .trim();
 
 export const parseApkgFile = async (file: File, fallbackTitle = 'Anki import'): Promise<ParsedImportDeck> => {
-  const zip = await JSZip.loadAsync(await file.arrayBuffer());
-  const collectionFile = zip.file('collection.anki21') || zip.file('collection.anki2');
-  if (!collectionFile) {
-    throw new Error('APKG does not contain a collection database.');
-  }
-
-  const SQL = await initSqlJs({ locateFile: () => sqlWasmUrl });
-  const db = new SQL.Database(new Uint8Array(await collectionFile.async('uint8array')));
-
-  const noteQuery = db.exec('SELECT flds FROM notes LIMIT 5000;');
-  const rows = noteQuery?.[0]?.values || [];
-  const cards = rows
-    .map((row: unknown, index: number) => {
-      const raw = Array.isArray(row) ? String(row[0] || '') : '';
-      if (!raw) return null;
-      const fields = raw.split('\x1f').map((entry) => stripHtml(entry));
-      const question = fields[0] || '';
-      const answer = fields.slice(1).join(' ').trim() || fields[1] || '';
-      if (!question || !answer) return null;
-      return makeImportedCard(question, answer, 'Anki APKG import', 'import', `Note ${index + 1}`);
-    })
-    .filter((card): card is FlashcardData => Boolean(card));
-
-  if (!cards.length) {
-    throw new Error('No valid cards found in APKG notes.');
-  }
-
-  const deckMeta = db.exec('SELECT decks FROM col LIMIT 1;');
-  const deckJson = String(deckMeta?.[0]?.values?.[0]?.[0] || '{}');
-  let detectedTitle = fallbackTitle;
-
   try {
-    const parsedDecks = JSON.parse(deckJson) as Record<string, { name?: string }>;
-    const meaningful = Object.values(parsedDecks).find((deck) => deck?.name && deck.name !== 'Default');
-    if (meaningful?.name) detectedTitle = meaningful.name;
-  } catch {
-    // Ignore malformed deck metadata and keep fallback title.
-  }
+    const zip = await JSZip.loadAsync(await file.arrayBuffer());
+    const collectionFile = zip.file('collection.anki21') || zip.file('collection.anki2');
+    if (!collectionFile) {
+      throw new Error('APKG does not contain a collection database. This may be a corrupted file or not a valid Anki package.');
+    }
 
-  db.close();
-  return {
-    title: detectedTitle,
-    description: `Imported from Anki APKG: ${file.name}`,
-    cards,
-    detectedFormat: 'anki',
-  };
+    const SQL = await initSqlJs({ locateFile: () => sqlWasmUrl });
+    const db = new SQL.Database(new Uint8Array(await collectionFile.async('uint8array')));
+
+    const noteQuery = db.exec('SELECT flds FROM notes LIMIT 5000;');
+    const rows = noteQuery?.[0]?.values || [];
+    
+    if (!rows.length) {
+      db.close();
+      throw new Error('No notes found in this APKG file. The package may be empty or only contain media.');
+    }
+
+    const cards = rows
+      .map((row: unknown, index: number) => {
+        const raw = Array.isArray(row) ? String(row[0] || '') : '';
+        if (!raw) return null;
+        const fields = raw.split('\x1f').map((entry) => stripHtml(entry));
+        const question = fields[0] || '';
+        const answer = fields.slice(1).join(' ').trim() || fields[1] || '';
+        if (!question || !answer) return null;
+        return makeImportedCard(question, answer, 'Anki APKG import', 'anki', `Note ${index + 1}`);
+      })
+      .filter((card): card is FlashcardData => Boolean(card));
+
+    if (!cards.length) {
+      db.close();
+      throw new Error('No valid cards could be extracted from the notes. The notes may not contain question/answer pairs.');
+    }
+
+    const deckMeta = db.exec('SELECT decks FROM col LIMIT 1;');
+    const deckJson = String(deckMeta?.[0]?.values?.[0]?.[0] || '{}');
+    let detectedTitle = fallbackTitle;
+
+    try {
+      const parsedDecks = JSON.parse(deckJson) as Record<string, { name?: string }>;
+      const meaningful = Object.values(parsedDecks).find((deck) => deck?.name && deck.name !== 'Default');
+      if (meaningful?.name) detectedTitle = meaningful.name;
+    } catch {
+      // Ignore malformed deck metadata and keep fallback title.
+    }
+
+    db.close();
+
+    return {
+      title: detectedTitle,
+      description: `Imported from Anki APKG: ${file.name}`,
+      cards,
+      detectedFormat: 'anki',
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to parse APKG file. Please ensure it is a valid Anki export package.');
+  }
 };
 
 export const getBetaChallenge = (userId: string): BetaChallengeState | null => {
@@ -373,3 +390,6 @@ export const getChallengeProgress = (challenge: BetaChallengeState | null, strea
     remainingDays: Math.max(0, challenge.targetDays - completedDays),
   };
 };
+
+
+

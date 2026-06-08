@@ -2,20 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ChevronLeft, 
-  ShieldCheck, 
-  Hash, 
-  User, 
-  MailCheck, 
-  Eye, 
-  EyeOff, 
-  Smartphone,
-  Sparkles,
-  ArrowRight,
-  Shield,
-  Zap,
-  Lock
-} from 'lucide-react';
+  ChevronLeftIcon as ChevronLeft, 
+  ShieldCheckIcon as ShieldCheck, 
+  HashIcon as Hash, 
+  UserIcon as User, 
+  MailCheckIcon as MailCheck, 
+  EyeIcon as Eye, 
+  EyeOffIcon as EyeOff, 
+  SmartphoneIcon as Smartphone,
+  SparklesIcon as Sparkles,
+  ArrowRightIcon as ArrowRight,
+  ShieldIcon as Shield,
+  ZapIcon as Zap,
+  LockIcon as Lock
+} from '../icons/CustomIcons';
 import { supabase } from '../../services/database/supabase';
 import { emailService } from '../../services/email/emailService';
 import { trialService } from '../../services/trial/trialService';
@@ -470,3 +470,6 @@ const AuthPage: React.FC = () => {
 };
 
 export default AuthPage;
+
+
+

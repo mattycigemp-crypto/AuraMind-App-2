@@ -21,7 +21,7 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ theme, count = 50 }) =>
   const { mousePosition } = useMouseTracking();
   const [particles, setParticles] = useState<Particle[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
-  const frameRef = useRef<number>();
+  const frameRef = useRef<number | null>(null);
 
   // Initialize particles
   useEffect(() => {
@@ -154,3 +154,5 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ theme, count = 50 }) =>
 };
 
 export default ParticleSystem;
+
+

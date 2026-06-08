@@ -2,17 +2,17 @@ import React from 'react';
 import { Card } from '../../types';
 import { useContextMenu, ContextMenuItem } from '../ui/ContextMenu';
 import {
-  Edit,
-  Copy,
-  Trash2,
-  Star,
-  Eye,
-  EyeOff,
-  RotateCcw,
-  Flag,
-  Bookmark,
-  Share,
-} from 'lucide-react';
+  EditIcon as Edit,
+  CopyIcon as Copy,
+  Trash2Icon as Trash2,
+  StarIcon as Star,
+  EyeIcon as Eye,
+  EyeOffIcon as EyeOff,
+  RotateCcwIcon as RotateCcw,
+  FlagIcon as Flag,
+  BookmarkIcon as Bookmark,
+  ShareIcon as Share,
+} from '../icons/CustomIcons';
 
 interface FlashcardContextMenuProps {
   card: Card;
@@ -27,7 +27,7 @@ interface FlashcardContextMenuProps {
   onDuplicateCard?: (cardId: string) => void;
 }
 
-export const FlashcardContextMenu: React.FC<FlashcardContextMenuProps> = ({
+export const FlashcardContextMenu = ({
   card,
   onEditCard,
   onDeleteCard,
@@ -38,7 +38,7 @@ export const FlashcardContextMenu: React.FC<FlashcardContextMenuProps> = ({
   onBookmarkCard,
   onShareCard,
   onDuplicateCard,
-}) => {
+}: FlashcardContextMenuProps) => {
   const { showContextMenu } = useContextMenu();
 
   const getFlashcardContextMenuItems = (): ContextMenuItem[] => [
@@ -133,3 +133,6 @@ export const FlashcardContextMenu: React.FC<FlashcardContextMenuProps> = ({
 };
 
 export default FlashcardContextMenu;
+
+
+

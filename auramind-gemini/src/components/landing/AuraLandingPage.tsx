@@ -1,27 +1,33 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import {
-  Activity,
-  ArrowRight,
-  Clock3,
-  Zap,
-  Cpu,
-  Fingerprint,
-  Dna,
-  ShieldCheck,
-  Menu,
-  Bot,
-  Sparkles,
-  Sun,
-  Moon,
-  CheckCircle2,
-  FileText,
-  ScanSearch,
-  Mic2,
-  LockKeyhole,
-  GraduationCap
-} from 'lucide-react';
+  ActivityIcon as Activity,
+  ArrowRightIcon as ArrowRight,
+  Clock3Icon as Clock3,
+  ZapIcon as Zap,
+  CpuIcon as Cpu,
+  FingerprintIcon as Fingerprint,
+  DnaIcon as Dna,
+  ShieldCheckIcon as ShieldCheck,
+  MenuIcon as Menu,
+  BotIcon as Bot,
+  SparklesIcon as Sparkles,
+  SunIcon as Sun,
+  MoonIcon as Moon,
+  CheckCircle2Icon as CheckCircle2,
+  FileTextIcon as FileText,
+  ScanSearchIcon as ScanSearch,
+  Mic2Icon as Mic2,
+  LockKeyholeIcon as LockKeyhole,
+  GraduationCapIcon as GraduationCap,
+  BrainIcon as Brain,
+  TargetIcon as Target,
+  TrendingUpIcon as TrendingUp,
+  UsersIcon as Users,
+  BookOpenIcon as BookOpen,
+  LightbulbIcon as Lightbulb
+} from '../../components/icons/CustomIcons';
 import { useTheme } from '../../hooks/useTheme';
 import AuraLogo from './AuraLogo';
 import MarqueeSection from './MarqueeSection';
@@ -34,12 +40,23 @@ import TestimonialsSection from './TestimonialsSection';
 import FAQSection from './FAQSection';
 import Starfield from './Starfield';
 import SmoothScroll from '../shared/SmoothScroll';
+import FloatingParticles from './FloatingParticles';
+import { AnimatedSection, useParallax } from './ScrollAnimations';
+import { GlowCard, TiltCard } from './MicroInteractions';
+import { StunningCard } from './StunningFeatureCard';
+import { AnimatedNumber, StatItem, CounterCircle } from './AnimatedStats';
+import { TextReveal } from './EnhancedHero';
 import heroNeuralBg from '@/assets/hero-neural-bg.jpg';
+import { TechGridBackground, GridDotPattern } from './TechGridBackground';
+import { ModernHero } from './ModernHero';
+import { BrutalistFeatures } from './BrutalistFeatures';
+import { MinimalStats } from './MinimalStats';
+import { BoldCTA } from './BoldCTA';
 
 type StudyMode = 'Foundation' | 'Exam' | 'Deep Work';
 
 const protocolV = "V4.8.2";
-const heroSignals = ['Built for med, law, and certification exams', 'Source-anchored flashcards', 'Weak-spot detection', 'Adaptive review flow'];
+const heroSignals = ['Built for every learner and subject', 'Source-anchored flashcards', 'Weak-spot detection', 'Adaptive review flow'];
 const proofCards = [
   {
     title: 'Flashcard Builder',
@@ -64,7 +81,7 @@ const proofCards = [
 const trustSignals = [
   'Private study workspace. We do not sell your data.',
   'Export or delete decks whenever you want.',
-  'Built for serious exam prep, not meditation or journaling.',
+  'Built for serious learning, not meditation or journaling.',
   'Transparent review logic with visible source context.',
 ];
 
@@ -85,7 +102,7 @@ const features = [
     icon: Dna,
     tag: 'SYSTEM-03',
     title: 'Adaptive Review Flow',
-    description: 'Study in a guided flow that adjusts timing and pressure for board exams, bar prep, and high-stakes certifications.'
+    description: 'Study in a guided flow that adjusts timing and pressure for exams, certifications, and any high-stakes learning goals.'
   }
 ];
 
@@ -182,7 +199,7 @@ const AuraLandingPage: React.FC = () => {
 
   return (
     <SmoothScroll>
-      <div className="auramind-landing">
+      <div className="auramind-landing landing-page">
         <AnimatePresence>
           {loading && <LoadingScreen />}
         </AnimatePresence>
@@ -242,6 +259,7 @@ const AuraLandingPage: React.FC = () => {
         {/* HERO SECTION */}
         <header ref={heroRef} className="hero-fullscreen relative z-10 px-6 overflow-hidden">
           <Starfield />
+          <FloatingParticles particleCount={40} />
           <motion.div
             style={{ y: heroImageY, scale: heroImageScale, opacity: heroOpacity }}
             className="absolute inset-0 z-0"
@@ -265,22 +283,22 @@ const AuraLandingPage: React.FC = () => {
                 <div className="hero-kicker-row mb-10">
                   <span className="signal-pill rounded-full">
                     <span className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />
-                    HIGH-STAKES EXAM PREP
+                    SMART LEARNING SYSTEM
                   </span>
                   <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.28em] text-primary">
                     <GraduationCap size={12} />
-                    MED / LAW / CERTS
+                    FOR EVERY LEARNER
                   </span>
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{protocolV}</span>
                 </div>
 
                 <h1 className="text-impact-hero text-foreground mb-8">
-                  FOR THOSE WITH<br />
-                  <span className="text-primary/70">BAD MEMORY.</span>
+                  REMEMBER EVERYTHING<br />
+                  <span className="text-primary">WITH THE POWER OF AI.</span>
                 </h1>
 
                 <p className="max-w-xl text-base md:text-lg text-muted-foreground mb-12 font-medium leading-relaxed">
-                  AuraMind is an exam-prep study app for medical students, law students, and certification candidates who need faster recall under pressure. Build source-backed flashcards, spot weak topics early, and follow a review flow designed for retention, not busywork.
+                  AuraMind is a smart learning app for students, professionals, and lifelong learners who need faster recall and deeper understanding. Build source-backed flashcards, spot weak topics early, and follow a review flow designed for retention, not busywork.
                 </p>
 
                 <div className="mb-10 grid gap-3 sm:grid-cols-3">
@@ -318,7 +336,7 @@ const AuraLandingPage: React.FC = () => {
                 <div className="flex flex-wrap items-center gap-4 mb-12 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                   <span className="inline-flex items-center gap-2"><LockKeyhole size={14} className="text-primary" /> Private workspace</span>
                   <span className="inline-flex items-center gap-2"><ShieldCheck size={14} className="text-primary" /> No data sold</span>
-                  <span className="inline-flex items-center gap-2"><CheckCircle2 size={14} className="text-primary" /> Built for exam prep, not wellness</span>
+                  <span className="inline-flex items-center gap-2"><CheckCircle2 size={14} className="text-primary" /> Built for learning, not wellness</span>
                 </div>
 
                 <div className="flex flex-wrap gap-3">
@@ -397,7 +415,7 @@ const AuraLandingPage: React.FC = () => {
                 <span className="text-primary">TOO MUCH TO REMEMBER.</span>
               </h2>
               <p className="mt-8 max-w-3xl text-base md:text-lg text-muted-foreground leading-relaxed font-medium">
-                AuraMind is for people studying for medical school exams, law school exams, and demanding professional certifications. If your material is dense, your deadlines are real, and forgetting details is expensive, this is the workflow we built for.
+                AuraMind is for students, professionals, and lifelong learners tackling any challenging subject. If your material is dense, your deadlines are real, and forgetting details is expensive, this is the workflow we built for.
               </p>
             </motion.div>
 
@@ -432,6 +450,44 @@ const AuraLandingPage: React.FC = () => {
             <StatsCounter />
           </div>
         </ParallaxSection>
+
+        {/* ENHANCED STATS SECTION */}
+        <section className="relative z-10 border-y border-border bg-card/20 py-20 overflow-hidden">
+          <div className="absolute inset-0 pattern-dots opacity-30" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-accent/5" />
+          <div className="mx-auto max-w-7xl relative z-10 px-6">
+            <AnimatedSection animation="fade-up" className="text-center mb-16">
+              <p className="text-eyebrow mb-4">By The Numbers</p>
+              <h2 className="text-impact-lg text-foreground">
+                PROVEN RESULTS<br />
+                <span className="text-primary">THAT SPEAK FOR THEMSELVES.</span>
+              </h2>
+            </AnimatedSection>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <AnimatedSection animation="scale-up" delay={0.1}>
+                <StatItem value={94} suffix="%" label="Retention Rate" />
+              </AnimatedSection>
+              <AnimatedSection animation="scale-up" delay={0.2}>
+                <StatItem value={3} suffix="x" label="Faster Learning" />
+              </AnimatedSection>
+              <AnimatedSection animation="scale-up" delay={0.3}>
+                <StatItem value={89} suffix="%" label="User Satisfaction" />
+              </AnimatedSection>
+              <AnimatedSection animation="scale-up" delay={0.4}>
+                <StatItem value={2} suffix="M+" label="Cards Created" />
+              </AnimatedSection>
+            </div>
+
+            <AnimatedSection animation="fade-up" delay={0.5} className="mt-16">
+              <div className="flex flex-wrap justify-center gap-8">
+                <CounterCircle value={85} label="Active Users" color="#a855f7" />
+                <CounterCircle value={72} label="Exam Pass Rate" color="#9333ea" />
+                <CounterCircle value={91} label="Weekly Retention" color="#7c3aed" />
+              </div>
+            </AnimatedSection>
+          </div>
+        </section>
 
         {/* HORIZONTAL SCROLL GALLERY */}
         <HorizontalScrollGallery />
@@ -489,26 +545,14 @@ const AuraLandingPage: React.FC = () => {
 
             <div className="brutalist-grid">
               {features.map((feature, i) => (
-                <motion.article
+                <StunningCard
                   key={feature.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1, duration: 0.6 }}
-                  className="glass-card-protocol clip-reveal-card p-10 group scan-line rounded-sm"
-                >
-                  <div className="relative z-10">
-                    <div className="flex justify-between items-start mb-10">
-                      <div className="h-12 w-12 bg-primary/5 border border-primary/20 rounded-sm flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500">
-                        <feature.icon size={24} />
-                      </div>
-                      <span className="text-[9px] font-black text-muted-foreground/20 uppercase tracking-[.4em]">{feature.tag}</span>
-                    </div>
-                    <h3 className="text-2xl font-black italic text-foreground mb-5 uppercase tracking-tight">{feature.title}</h3>
-                    <p className="text-muted-foreground text-sm leading-relaxed font-medium">
-                      {feature.description}
-                    </p>
-                  </div>
-                </motion.article>
+                  icon={<feature.icon size={24} />}
+                  title={feature.title}
+                  description={feature.description}
+                  tag={feature.tag}
+                  delay={i * 0.15}
+                />
               ))}
             </div>
           </div>
@@ -582,7 +626,7 @@ const AuraLandingPage: React.FC = () => {
                   <div className="grid gap-4 md:grid-cols-2">
                     <div className="rounded-sm border border-border bg-card p-5">
                       <p className="text-[8px] font-black text-muted-foreground/40 uppercase tracking-widest mb-3">Flashcard screenshot</p>
-                      <p className="text-sm font-black text-foreground">What is consideration in contract law?</p>
+                      <p className="text-sm font-black text-foreground">What is photosynthesis and why is it important?</p>
                       <div className="mt-4 rounded-sm border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
                         Source: Lecture 4 outline, section 2.2
                       </div>
@@ -636,11 +680,11 @@ const AuraLandingPage: React.FC = () => {
                   <span className="text-[10px] font-black uppercase tracking-[0.28em]">Brand clarity</span>
                 </div>
                 <p className="text-base text-muted-foreground leading-relaxed font-medium">
-                  AuraMind is the study-focused product in this category. We are not a meditation app, mood tracker, or general “mindfulness” tool. The product is designed around recall, review scheduling, flashcards, citations, and exam preparation.
+                  AuraMind is the learning-focused product in this category. We are not a meditation app, mood tracker, or general “mindfulness” tool. The product is designed around recall, review scheduling, flashcards, citations, and effective learning.
                 </p>
                 <div className="mt-6 rounded-sm border border-border bg-background/40 p-5">
                   <p className="text-[9px] font-black uppercase tracking-[0.24em] text-primary">Best fit</p>
-                  <p className="mt-3 text-sm text-foreground font-medium">Medical students, law students, and certification candidates who need to retain dense material fast.</p>
+                  <p className="mt-3 text-sm text-foreground font-medium">Students, professionals, and lifelong learners who need to retain dense material fast.</p>
                 </div>
               </div>
             </div>
@@ -678,7 +722,7 @@ const AuraLandingPage: React.FC = () => {
               </div>
               <div className="mt-8 flex flex-wrap justify-center gap-6 text-[10px] font-bold uppercase tracking-[0.16em] text-primary-foreground/60">
                 <span>Privacy-first study data</span>
-                <span>Built for exam recall</span>
+                <span>Built for learning</span>
                 <span>Source-backed flashcards</span>
               </div>
             </motion.div>
@@ -693,9 +737,9 @@ const AuraLandingPage: React.FC = () => {
               <p className="text-[10px] font-black tracking-[.4em] uppercase m-0 leading-none">AURAMIND © 2025</p>
             </div>
             <div className="flex gap-10 text-[10px] font-black tracking-widest uppercase">
-              <a href="#" className="hover:text-primary transition-colors duration-300">Privacy</a>
-              <a href="#" className="hover:text-primary transition-colors duration-300">Status</a>
-              <a href="#" className="hover:text-primary transition-colors duration-300">Terms</a>
+              <Link to="/privacy" className="hover:text-primary transition-colors duration-300">Privacy</Link>
+              <Link to="/docs" className="hover:text-primary transition-colors duration-300">Docs</Link>
+              <Link to="/terms" className="hover:text-primary transition-colors duration-300">Terms</Link>
             </div>
           </div>
         </footer>
@@ -705,3 +749,6 @@ const AuraLandingPage: React.FC = () => {
 };
 
 export default AuraLandingPage;
+
+
+

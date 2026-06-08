@@ -102,3 +102,5 @@ export const useParallax = (baseSpeed: number = 0.5) => {
     updateLayer
   };
 };
+
+

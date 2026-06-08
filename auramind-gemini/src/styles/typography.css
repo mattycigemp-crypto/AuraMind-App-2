@@ -1,0 +1,436 @@
+/* The Engineering of Awe: Variable Fonts & Kinetic Typography CSS */
+/* 2026 elite typography system with dynamic font variation and text animations */
+
+/* Variable Font Imports - Using Google Fonts Variable Font Collection */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&family=Space+Grotesk:wght@300..700&display=swap');
+
+/* CSS Custom Properties for Variable Fonts */
+:root {
+  /* Variable Font Axes */
+  --font-weight-min: 100;
+  --font-weight-max: 900;
+  --font-slant-min: -10;
+  --font-slant-max: 10;
+  --font-width-min: 62.5;
+  --font-width-max: 100;
+  --font-optical-size-min: 8;
+  --font-optical-size-max: 96;
+  
+  /* Typography Scale */
+  --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+  --text-sm: clamp(0.875rem, 0.8rem + 0.375vw, 1rem);
+  --text-base: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+  --text-lg: clamp(1.125rem, 1rem + 0.625vw, 1.25rem);
+  --text-xl: clamp(1.25rem, 1.1rem + 0.75vw, 1.5rem);
+  --text-2xl: clamp(1.5rem, 1.3rem + 1vw, 2rem);
+  --text-3xl: clamp(1.875rem, 1.6rem + 1.375vw, 2.5rem);
+  --text-4xl: clamp(2.25rem, 1.9rem + 1.75vw, 3.5rem);
+  --text-5xl: clamp(3rem, 2.5rem + 2.5vw, 5rem);
+  --text-6xl: clamp(3.75rem, 3rem + 3.75vw, 6.5rem);
+  --text-7xl: clamp(4.5rem, 3.5rem + 5vw, 8rem);
+  --text-8xl: clamp(6rem, 4.5rem + 7.5vw, 10rem);
+  --text-9xl: clamp(8rem, 5rem + 15vw, 12rem);
+  
+  /* Line Heights */
+  --leading-tight: 1.1;
+  --leading-snug: 1.2;
+  --leading-normal: 1.4;
+  --leading-relaxed: 1.6;
+  --leading-loose: 1.8;
+  
+  /* Letter Spacing */
+  --tracking-tighter: -0.05em;
+  --tracking-tight: -0.025em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.025em;
+  --tracking-wider: 0.05em;
+  --tracking-widest: 0.1em;
+  
+  /* Animation Speeds */
+  --typography-duration-fast: 0.3s;
+  --typography-duration-normal: 0.6s;
+  --typography-duration-slow: 1s;
+  
+  /* Font Families */
+  --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-source-code: 'Source Code Pro', 'Courier New', monospace;
+  --font-space-grotesk: 'Space Grotesk', 'Inter', sans-serif;
+}
+
+/* Variable Font Base Classes */
+.variable-font {
+  font-variation-settings: 
+    "wght" var(--font-weight, 400),
+    "slnt" var(--font-slant, 0),
+    "wdth" var(--font-width, 100),
+    "opsz" var(--font-optical-size, 16);
+  transition: font-variation-settings var(--typography-duration-normal) cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.variable-font-weight {
+  font-variation-settings: "wght" var(--font-weight, 400);
+}
+
+.variable-font-slant {
+  font-variation-settings: "slnt" var(--font-slant, 0);
+}
+
+.variable-font-width {
+  font-variation-settings: "wdth" var(--font-width, 100);
+}
+
+.variable-font-optical-size {
+  font-variation-settings: "opsz" var(--font-optical-size, 16);
+}
+
+/* Fluid Typography Classes */
+.fluid-typo-xs {
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-wide);
+}
+
+.fluid-typo-sm {
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-normal);
+}
+
+.fluid-typo-base {
+  font-size: var(--text-base);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-normal);
+}
+
+.fluid-typo-lg {
+  font-size: var(--text-lg);
+  line-height: var(--leading-normal);
+  letter-spacing: var(--tracking-normal);
+}
+
+.fluid-typo-xl {
+  font-size: var(--text-xl);
+  line-height: var(--leading-relaxed);
+  letter-spacing: var(--tracking-tight);
+}
+
+.fluid-typo-2xl {
+  font-size: var(--text-2xl);
+  line-height: var(--leading-relaxed);
+  letter-spacing: var(--tracking-tight);
+}
+
+.fluid-typo-3xl {
+  font-size: var(--text-3xl);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-tighter);
+}
+
+.fluid-typo-4xl {
+  font-size: var(--text-4xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tighter);
+}
+
+.fluid-typo-5xl {
+  font-size: var(--text-5xl);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tighter);
+}
+
+/* Font Family Classes */
+.font-inter {
+  font-family: var(--font-inter);
+}
+
+.font-source-code {
+  font-family: var(--font-source-code);
+}
+
+.font-space-grotesk {
+  font-family: var(--font-space-grotesk);
+}
+
+/* Weight Classes using Variable Fonts */
+.font-thin { --font-weight: 100; }
+.font-extralight { --font-weight: 200; }
+.font-light { --font-weight: 300; }
+.font-regular { --font-weight: 400; }
+.font-medium { --font-weight: 500; }
+.font-semibold { --font-weight: 600; }
+.font-bold { --font-weight: 700; }
+.font-extrabold { --font-weight: 800; }
+.font-black { --font-weight: 900; }
+
+/* Slant Classes */
+.font-upright { --font-slant: 0; }
+.font-italic { --font-slant: 10; }
+.font-back-slant { --font-slant: -10; }
+
+/* Width Classes */
+.font-condensed { --font-width: 75; }
+.font-normal-width { --font-width: 100; }
+.font-expanded { --font-width: 125; }
+
+/* Optical Size Classes */
+.font-caption-size { --font-optical-size: 12; }
+.font-body-size { --font-optical-size: 16; }
+.font-subheading-size { --font-optical-size: 24; }
+.font-heading-size { --font-optical-size: 32; }
+.font-display-size { --font-optical-size: 48; }
+.font-massive-size { --font-optical-size: 96; }
+
+/* Kinetic Typography Animation Classes */
+@keyframes weight-morph {
+  0%, 100% { --font-weight: 400; }
+  50% { --font-weight: 700; }
+}
+
+@keyframes slant-dance {
+  0%, 100% { --font-slant: 0; }
+  25% { --font-slant: 5; }
+  75% { --font-slant: -5; }
+}
+
+@keyframes width-breathe {
+  0%, 100% { --font-width: 100; }
+  50% { --font-width: 90; }
+}
+
+.animate-weight-morph {
+  animation: weight-morph 2s ease-in-out infinite;
+}
+
+.animate-slant-dance {
+  animation: slant-dance 3s ease-in-out infinite;
+}
+
+.animate-width-breathe {
+  animation: width-breathe 4s ease-in-out infinite;
+}
+
+/* Text Reveal Animations */
+.text-reveal-up {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: revealUp 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.text-reveal-down {
+  opacity: 0;
+  transform: translateY(-30px);
+  animation: revealDown 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.text-reveal-left {
+  opacity: 0;
+  transform: translateX(30px);
+  animation: revealLeft 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+.text-reveal-right {
+  opacity: 0;
+  transform: translateX(-30px);
+  animation: revealRight 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes revealUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes revealDown {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes revealLeft {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes revealRight {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Glitch Text Effect */
+.glitch-text {
+  position: relative;
+  animation: glitch 0.3s ease-in-out infinite;
+}
+
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.glitch-text::before {
+  animation: glitch-1 0.3s ease-in-out infinite;
+  color: #ff00ff;
+  z-index: -1;
+}
+
+.glitch-text::after {
+  animation: glitch-2 0.3s ease-in-out infinite;
+  color: #00ffff;
+  z-index: -2;
+}
+
+@keyframes glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-1px, 1px); }
+  40% { transform: translate(-1px, -1px); }
+  60% { transform: translate(1px, 1px); }
+  80% { transform: translate(1px, -1px); }
+}
+
+@keyframes glitch-1 {
+  0%, 100% { transform: translate(0); opacity: 1; }
+  20% { transform: translate(2px, -2px); opacity: 0.8; }
+  40% { transform: translate(-2px, 2px); opacity: 0.6; }
+  60% { transform: translate(2px, 2px); opacity: 0.8; }
+  80% { transform: translate(-2px, -2px); opacity: 0.6; }
+}
+
+@keyframes glitch-2 {
+  0%, 100% { transform: translate(0); opacity: 1; }
+  20% { transform: translate(-2px, 2px); opacity: 0.8; }
+  40% { transform: translate(2px, -2px); opacity: 0.6; }
+  60% { transform: translate(-2px, -2px); opacity: 0.8; }
+  80% { transform: translate(2px, 2px); opacity: 0.6; }
+}
+
+/* Typewriter Effect */
+.typewriter {
+  overflow: hidden;
+  border-right: 2px solid currentColor;
+  white-space: nowrap;
+  animation: typing 3s steps(40, end), blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: currentColor; }
+}
+
+/* Magnetic Text Effect */
+.magnetic-text {
+  display: inline-block;
+  transition: transform 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+  cursor: pointer;
+}
+
+.magnetic-text:hover {
+  transform: scale(1.05);
+  --font-weight: 600;
+}
+
+/* Responsive Typography */
+@media (max-width: 640px) {
+  :root {
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.25rem;
+    --text-2xl: 1.5rem;
+    --text-3xl: 1.875rem;
+    --text-4xl: 2.25rem;
+    --text-5xl: 3rem;
+    --text-6xl: 3.75rem;
+    --text-7xl: 4.5rem;
+    --text-8xl: 6rem;
+    --text-9xl: 8rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  :root {
+    --text-xs: 0.875rem;
+    --text-sm: 1rem;
+    --text-base: 1.125rem;
+    --text-lg: 1.25rem;
+    --text-xl: 1.5rem;
+    --text-2xl: 2rem;
+    --text-3xl: 2.5rem;
+    --text-4xl: 3.5rem;
+    --text-5xl: 5rem;
+    --text-6xl: 6.5rem;
+    --text-7xl: 8rem;
+    --text-8xl: 10rem;
+    --text-9xl: 12rem;
+  }
+}
+
+/* Accessibility - Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .variable-font {
+    transition: none;
+  }
+  
+  .animate-weight-morph,
+  .animate-slant-dance,
+  .animate-width-breathe,
+  .glitch-text,
+  .typewriter {
+    animation: none;
+  }
+  
+  .magnetic-text {
+    transition: none;
+  }
+  
+  .magnetic-text:hover {
+    transform: none;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .glitch-text::before,
+  .glitch-text::after {
+    display: none;
+  }
+  
+  .typewriter {
+    border-right-width: 3px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .variable-font {
+    font-variation-settings: "wght" 400;
+  }
+  
+  .animate-weight-morph,
+  .animate-slant-dance,
+  .animate-width-breathe,
+  .glitch-text,
+  .typewriter {
+    animation: none;
+  }
+  
+  .magnetic-text {
+    transform: none;
+  }
+}

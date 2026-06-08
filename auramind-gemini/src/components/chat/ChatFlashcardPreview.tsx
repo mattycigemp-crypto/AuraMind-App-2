@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FlashcardData } from '../../types';
-import { Eye, EyeOff, Plus, FolderOpen } from 'lucide-react';
+import { EyeIcon as Eye, EyeOffIcon as EyeOff, PlusIcon as Plus, FolderOpenIcon as FolderOpen } from '../icons/CustomIcons';
 import MathRichText from '../shared/MathRichText';
 
 interface ChatFlashcardPreviewProps {
@@ -84,6 +84,11 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
         </div>
 
         <div className="p-6">
+          {currentCard.header && (
+            <div className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2 uppercase tracking-wide">
+              {currentCard.header}
+            </div>
+          )}
           <div className="mb-4">
             <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Question:</div>
             <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg min-h-[80px] flex items-center">
@@ -202,3 +207,6 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
 };
 
 export default ChatFlashcardPreview;
+
+
+

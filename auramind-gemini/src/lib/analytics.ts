@@ -19,3 +19,6 @@ export const normalizeSeries = (values: number[], fallback = 12) =>
   (values.length ? values : [fallback, fallback, fallback, fallback, fallback, fallback, fallback]).slice(0, 7).concat(
     Array(Math.max(0, 7 - values.length)).fill(fallback)
   ).slice(0, 7);
+
+
+

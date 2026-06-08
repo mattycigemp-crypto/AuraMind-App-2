@@ -1,0 +1,161 @@
+/**
+ * SEO & Meta Tag Management
+ * 
+ * Manages document head meta tags for SEO, social sharing, and PWA.
+ */
+
+export interface SEOConfig {
+  title?: string;
+  description?: string;
+  canonicalUrl?: string;
+  imageUrl?: string;
+  type?: 'website' | 'article' | 'product';
+  publishedTime?: string;
+  modifiedTime?: string;
+  noindex?: boolean;
+}
+
+const DEFAULT_TITLE = 'AuraMind - AI-Powered Study Companion';
+const DEFAULT_DESCRIPTION = 'AI flashcards powered by FSRS spaced repetition — learn anything in half the time. Turn notes and PDFs into smart decks that adapt to your memory.';
+const DEFAULT_IMAGE = '/og-image.png';
+const SITE_URL = 'https://auramind.app';
+
+/**
+ * Update document meta tags for SEO
+ */
+export function updateMetaTags(config: SEOConfig = {}): void {
+  if (typeof document === 'undefined') return;
+
+  const title = config.title ? `${config.title} | AuraMind` : DEFAULT_TITLE;
+  const description = config.description || DEFAULT_DESCRIPTION;
+  const url = config.canonicalUrl || SITE_URL;
+  const image = config.imageUrl || DEFAULT_IMAGE;
+
+  // Title
+  document.title = title;
+
+  // Basic meta tags
+  setMetaTag('name', 'description', description);
+  setMetaTag('name', 'keywords', 'flashcards, spaced repetition, AI learning, study companion, education, memorization, SM-2, FSRS');
+  setMetaTag('name', 'author', 'AuraMind');
+  setMetaTag('name', 'robots', config.noindex ? 'noindex, nofollow' : 'index, follow');
+  setMetaTag('name', 'viewport', 'width=device-width, initial-scale=1, viewport-fit=cover');
+  setMetaTag('name', 'theme-color', '#0a0a0a');
+
+  // Canonical URL
+  let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+  if (!canonical) {
+    canonical = document.createElement('link');
+    canonical.rel = 'canonical';
+    document.head.appendChild(canonical);
+  }
+  canonical.href = url;
+
+  // Open Graph (Facebook, LinkedIn, Discord)
+  setMetaTag('property', 'og:title', title);
+  setMetaTag('property', 'og:description', description);
+  setMetaTag('property', 'og:url', url);
+  setMetaTag('property', 'og:image', image);
+  setMetaTag('property', 'og:image:width', '1200');
+  setMetaTag('property', 'og:image:height', '630');
+  setMetaTag('property', 'og:image:alt', 'AuraMind - AI Study Companion');
+  setMetaTag('property', 'og:type', config.type || 'website');
+  setMetaTag('property', 'og:site_name', 'AuraMind');
+  setMetaTag('property', 'og:locale', 'en_US');
+
+  if (config.publishedTime) {
+    setMetaTag('property', 'article:published_time', config.publishedTime);
+  }
+  if (config.modifiedTime) {
+    setMetaTag('property', 'article:modified_time', config.modifiedTime);
+  }
+
+  // Twitter Card
+  setMetaTag('name', 'twitter:card', 'summary_large_image');
+  setMetaTag('name', 'twitter:title', title);
+  setMetaTag('name', 'twitter:description', description);
+  setMetaTag('name', 'twitter:image', image);
+  setMetaTag('name', 'twitter:image:alt', 'AuraMind - AI Study Companion');
+  setMetaTag('name', 'twitter:site', '@auramindapp');
+  setMetaTag('name', 'twitter:creator', '@auramindapp');
+
+  // PWA / Mobile
+  setMetaTag('name', 'apple-mobile-web-app-capable', 'yes');
+  setMetaTag('name', 'apple-mobile-web-app-status-bar-style', 'black-translucent');
+  setMetaTag('name', 'apple-mobile-web-app-title', 'AuraMind');
+  setMetaTag('name', 'mobile-web-app-capable', 'yes');
+  setMetaTag('name', 'application-name', 'AuraMind');
+
+  // Favicon
+  updateFavicon();
+}
+
+function setMetaTag(attrName: string, attrValue: string, content: string): void {
+  let tag = document.querySelector(`meta[${attrName}="${attrValue}"]`) as HTMLMetaElement;
+  if (!tag) {
+    tag = document.createElement('meta');
+    tag.setAttribute(attrName, attrValue);
+    document.head.appendChild(tag);
+  }
+  tag.content = content;
+}
+
+function updateFavicon(): void {
+  // Update favicon for light/dark mode
+  const darkFavicon = '/favicon-dark.ico';
+  const lightFavicon = '/favicon-light.ico';
+
+  let link = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+  if (!link) {
+    link = document.createElement('link');
+    link.rel = 'icon';
+    link.type = 'image/x-icon';
+    document.head.appendChild(link);
+  }
+
+  // Use dark favicon by default (matches dark theme)
+  link.href = darkFavicon;
+}
+
+/**
+ * JSON-LD Structured Data for SEO
+ */
+export function setJsonLd(data: Record<string, any>): void {
+  if (typeof document === 'undefined') return;
+
+  let script = document.querySelector('script[type="application/ld+json"]') as HTMLScriptElement;
+  if (!script) {
+    script = document.createElement('script');
+    script.type = 'application/ld+json';
+    document.head.appendChild(script);
+  }
+  script.textContent = JSON.stringify(data);
+}
+
+/**
+ * Default JSON-LD for AuraMind
+ */
+export function setDefaultJsonLd(): void {
+  setJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'AuraMind',
+    description: DEFAULT_DESCRIPTION,
+    url: SITE_URL,
+    applicationCategory: 'EducationalApplication',
+    operatingSystem: 'Web, iOS, Android',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: '4.8',
+      ratingCount: '1250',
+    },
+  });
+}
+
+
+

@@ -4,13 +4,28 @@
   "private": true,
   "description": "AuraMind - AI-powered learning platform",
   "scripts": {
-    "dev": "cd auramind-gemini && npm run dev",
+    "dev": "concurrently -n \"vite,api\" -c \"cyan,yellow\" \"cd auramind-gemini && npm run dev\" \"cd api && npx tsx server.js\"",
+    "dev:frontend": "cd auramind-gemini && npm run dev",
+    "dev:api": "cd api && npx tsx server.js",
     "build": "cd auramind-gemini && npm run build",
     "preview": "cd auramind-gemini && npm run preview",
     "test": "cd auramind-gemini && npm run test",
-    "api": "cd api && node server.js"
+    "api": "cd api && npx tsx server.js",
+    "start": "npm run build && cd api && npx tsx server.js"
   },
-  "keywords": ["learning", "flashcards", "ai", "education"],
+  "keywords": [
+    "learning",
+    "flashcards",
+    "ai",
+    "education"
+  ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "react-responsive": "^10.0.1",
+    "recharts": "^3.8.1"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.0"
+  }
 }

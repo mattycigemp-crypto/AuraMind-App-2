@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, ChevronRight, ChevronLeft, Volume2, Maximize2, Minimize2, RotateCcw } from 'lucide-react';
-
-interface Slide {
-    title: string;
-    bullets: string[];
-    script: string;
-}
+import { PlayIcon as Play, PauseIcon as Pause, ChevronRightIcon as ChevronRight, ChevronLeftIcon as ChevronLeft, Volume2Icon as Volume2, Maximize2Icon as Maximize2, Minimize2Icon as Minimize2, RotateCcwIcon as RotateCcw } from '../icons/CustomIcons';
+import type { Slide } from '../../types';
 
 interface PresentationViewerProps {
     title: string;
@@ -172,3 +167,6 @@ const PresentationViewer: React.FC<PresentationViewerProps> = ({ title, slides }
 };
 
 export default PresentationViewer;
+
+
+

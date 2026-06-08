@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { App } from '@capacitor/app';
@@ -123,17 +123,17 @@ export function useHaptics() {
 
   const success = useCallback(async () => {
     if (!Capacitor.isNativePlatform()) return;
-    await Haptics.notification({ type: 'success' });
+    await Haptics.notification({ type: NotificationType.Success });
   }, []);
 
   const warning = useCallback(async () => {
     if (!Capacitor.isNativePlatform()) return;
-    await Haptics.notification({ type: 'warning' });
+    await Haptics.notification({ type: NotificationType.Warning });
   }, []);
 
   const error = useCallback(async () => {
     if (!Capacitor.isNativePlatform()) return;
-    await Haptics.notification({ type: 'error' });
+    await Haptics.notification({ type: NotificationType.Error });
   }, []);
 
   return { impact, selection, success, warning, error };
@@ -146,7 +146,7 @@ export function usePushNotifications() {
   const requestPermissions = useCallback(async () => {
     if (!Capacitor.isNativePlatform()) return;
     const perm = await PushNotifications.requestPermissions();
-    setPermission(perm.receive);
+    setPermission(perm.receive as 'granted' | 'denied' | 'prompt');
     if (perm.receive === 'granted') {
       await PushNotifications.register();
     }
@@ -215,8 +215,13 @@ export function useAppLifecycle() {
       setState(isActive ? 'active' : 'background');
     };
 
-    App.addListener('appStateChange', handleStateChange);
-    return () => App.removeAllListeners();
+    const setup = async () => {
+      await App.addListener('appStateChange', handleStateChange);
+    };
+    setup();
+    return () => {
+      App.removeAllListeners();
+    };
   }, []);
 
   return state;
@@ -252,18 +257,23 @@ export function useKeyboard() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
-    const showListener = Keyboard.addListener('keyboardWillShow', () => setIsOpen(true));
-    const hideListener = Keyboard.addListener('keyboardWillHide', () => setIsOpen(false));
-
+    const setup = async () => {
+      const showListener = await Keyboard.addListener('keyboardWillShow', () => setIsOpen(true));
+      const hideListener = await Keyboard.addListener('keyboardWillHide', () => setIsOpen(false));
+      return () => {
+        showListener.remove();
+        hideListener.remove();
+      };
+    };
+    const cleanup = setup();
     return () => {
-      showListener.remove();
-      hideListener.remove();
+      cleanup.then(fn => fn());
     };
   }, []);
 
-  const setResizeMode = useCallback(async (mode: 'body' | 'ionic' | 'native') => {
+  const setResizeMode = useCallback(async (mode: string) => {
     if (!Capacitor.isNativePlatform()) return;
-    await Keyboard.setResizeMode({ mode });
+    await Keyboard.setResizeMode({ mode: mode as any });
   }, []);
 
   return { isOpen, setResizeMode };

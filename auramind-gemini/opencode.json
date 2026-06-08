@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai",
+  "watcher.ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.vite/**",
+    "**/public/models/**",
+    "**/*.{glb,gltf,fbx,obj,png,jpg,svg}"
+  ]
+}

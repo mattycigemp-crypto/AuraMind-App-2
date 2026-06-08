@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { Sparkles, Layers, Target, Radar, Orbit } from 'lucide-react';
+import { SparklesIcon as Sparkles, LayersIcon as Layers, TargetIcon as Target, RadarIcon as Radar, OrbitIcon as Orbit } from '../icons/CustomIcons';
 
 const galleryItems = [
   {
@@ -108,3 +108,6 @@ const HorizontalScrollGallery = () => {
 };
 
 export default HorizontalScrollGallery;
+
+
+

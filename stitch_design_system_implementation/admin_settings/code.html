@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AuraMind Admin - System Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "border-brutal": "#262626",
+                        "on-error-container": "#ffdad6",
+                        "status-retention-low": "#F59E0B",
+                        "on-primary": "#00363a",
+                        "primary-fixed-dim": "#00dbe9",
+                        "secondary-container": "#571bc1",
+                        "error": "#ffb4ab",
+                        "on-secondary-fixed-variant": "#5516be",
+                        "inverse-on-surface": "#2a3233",
+                        "on-secondary": "#3c0091",
+                        "on-surface-variant": "#b9cacb",
+                        "secondary-fixed": "#e9ddff",
+                        "surface-container-lowest": "#080f10",
+                        "secondary-fixed-dim": "#d0bcff",
+                        "primary-container": "#00f0ff",
+                        "inverse-surface": "#dce4e5",
+                        "on-primary-container": "#006970",
+                        "surface-container": "#192122",
+                        "on-background": "#dce4e5",
+                        "on-tertiary": "#67001b",
+                        "surface-container-high": "#232b2c",
+                        "on-tertiary-container": "#bc0b3b",
+                        "outline-variant": "#3b494b",
+                        "tertiary-container": "#ffcdcf",
+                        "tertiary": "#fff3f2",
+                        "surface-container-low": "#151d1e",
+                        "error-container": "#93000a",
+                        "on-secondary-fixed": "#23005c",
+                        "on-surface": "#dce4e5",
+                        "on-secondary-container": "#c4abff",
+                        "inverse-primary": "#006970",
+                        "background": "#0d1515",
+                        "surface": "#0d1515",
+                        "secondary": "#d0bcff",
+                        "surface-variant": "#2e3637",
+                        "surface-dim": "#0d1515",
+                        "surface-bright": "#333b3b",
+                        "on-primary-fixed-variant": "#004f54",
+                        "status-retention-high": "#10B981",
+                        "on-error": "#690005",
+                        "on-tertiary-fixed-variant": "#92002a",
+                        "tertiary-fixed": "#ffdadb",
+                        "primary": "#dbfcff",
+                        "tertiary-fixed-dim": "#ffb2b7",
+                        "accent-neural-grid": "#121212",
+                        "outline": "#849495",
+                        "surface-glass": "rgba(15, 15, 20, 0.7)",
+                        "on-primary-fixed": "#002022",
+                        "on-tertiary-fixed": "#40000d",
+                        "surface-container-highest": "#2e3637",
+                        "surface-tint": "#00dbe9",
+                        "bg-neural": "#050505",
+                        "primary-fixed": "#7df4ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "sidebar-width": "280px",
+                        "gutter": "24px",
+                        "card-padding": "20px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "mono-label": ["Space Grotesk"],
+                        "body-main": ["Inter"],
+                        "eyebrow": ["Space Grotesk"],
+                        "impact-lg": ["Space Grotesk"]
+                    },
+                    "fontSize": {
+                        "mono-label": ["14px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-main": ["16px", {"lineHeight": "1.6", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "eyebrow": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.2em", "fontWeight": "600"}],
+                        "impact-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #0d1515;
+            background-image: 
+                linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        .glass-card {
+            backdrop-filter: blur(12px);
+            background: rgba(13, 21, 21, 0.7);
+            border: 1px solid #262626;
+        }
+        .glass-card:hover {
+            border-color: #00f0ff;
+            transition: border-color 0.3s ease;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="font-body-main text-on-surface antialiased">
+<!-- SideNavBar -->
+<aside class="w-[280px] h-screen border-r border-slate-800 fixed left-0 top-0 bg-slate-950 flex flex-col py-6 z-[60]">
+<div class="px-6 mb-10">
+<h1 class="text-2xl font-bold tracking-tighter text-cyan-400 uppercase font-mono-label">AURAMIND</h1>
+<p class="text-[10px] tracking-widest text-slate-500 font-mono-label mt-1">CORE_ADMIN_v1.0</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 font-medium hover:text-slate-300 transition-all hover:bg-slate-900 mx-2 rounded" href="#">
+<span class="material-symbols-outlined" data-icon="admin_panel_settings">admin_panel_settings</span>
+<span class="font-mono-label text-mono-label">Role Management</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 font-medium hover:text-slate-300 transition-all hover:bg-slate-900 mx-2 rounded" href="#">
+<span class="material-symbols-outlined" data-icon="query_stats">query_stats</span>
+<span class="font-mono-label text-mono-label">System Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-500 font-medium hover:text-slate-300 transition-all hover:bg-slate-900 mx-2 rounded" href="#">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+<span class="font-mono-label text-mono-label">Audit Logs</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-cyan-400 bg-cyan-950/20 border-l-2 border-cyan-400 font-bold mx-2 rounded-r" href="#">
+<span class="material-symbols-outlined" data-icon="settings_input_component">settings_input_component</span>
+<span class="font-mono-label text-mono-label">Admin Settings</span>
+</a>
+</nav>
+<div class="px-4 mb-6">
+<button class="w-full bg-cyan-400 text-slate-950 py-3 font-mono-label text-xs font-bold uppercase tracking-widest active:scale-[0.98] transition-transform">
+                Generate Report
+            </button>
+</div>
+<div class="mt-auto pt-6 border-t border-slate-800">
+<a class="flex items-center gap-3 px-6 py-3 text-slate-500 hover:text-slate-300 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+<span class="font-mono-label text-mono-label">Documentation</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 text-slate-500 hover:text-slate-300 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span class="font-mono-label text-mono-label">System Status</span>
+</a>
+</div>
+</aside>
+<!-- TopAppBar -->
+<header class="h-16 border-b border-slate-800 fixed top-0 right-0 left-[280px] z-50 bg-slate-950/60 backdrop-blur-xl flex items-center justify-between px-8">
+<div class="flex items-center gap-6">
+<span class="text-lg font-black text-white font-mono-label">AuraMind Admin</span>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">search</span>
+<input class="bg-slate-900/50 border border-slate-800 text-[10px] font-mono-label tracking-widest px-10 py-2 w-64 focus:border-cyan-400 outline-none transition-colors" placeholder="SEARCH_CONFIG..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-slate-400 hover:text-cyan-300 cursor-pointer" data-icon="notifications_active">notifications_active</span>
+<span class="material-symbols-outlined text-slate-400 hover:text-cyan-300 cursor-pointer" data-icon="dns">dns</span>
+<span class="material-symbols-outlined text-slate-400 hover:text-cyan-300 cursor-pointer" data-icon="account_tree">account_tree</span>
+</div>
+<button class="bg-transparent border border-cyan-400/30 text-cyan-400 px-4 py-2 text-[10px] font-mono-label font-bold uppercase tracking-widest hover:bg-cyan-400/10 transition-colors">
+                Deploy Update
+            </button>
+<div class="flex items-center gap-3 pl-6 border-l border-slate-800">
+<div class="text-right">
+<p class="text-[10px] font-mono-label font-bold text-white leading-none">SYS_ADMIN_01</p>
+<p class="text-[8px] font-mono-label text-cyan-400 leading-none mt-1">SUPERUSER</p>
+</div>
+<img alt="Administrator Profile" class="w-8 h-8 rounded-full border border-cyan-400/50" data-alt="A professional, high-contrast close-up portrait of a technology executive with a focused expression. The lighting is dramatic and cool-toned, with cyan neon highlights reflecting off the side of their face. The background is a blurred server room with flickering data lights, maintaining a sleek, corporate-tech aesthetic in a dark mode environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzEWeZ1TcaIpTbjB2G-XIKqUBmDDZknq_fk-7wLs4CQv7KMooNvLA-p47eTD7VPWMTAS1lj6lwWEhbAsWd4Bwql-91nyjLul1bANkVXzneeGo6w1E2Pr1BPUBJOfjVUSit7HxtfWHEIQ2jok9E77PhbT3EUtrhkL1aOVxyFe939G86Bl33XK2SqjFlpe3uRUi2KDRObdjvnTLE9X4zsQ4eYqSwZ1PH5meZd-dWezgC8AZAoxN3suM_8mn-UkQcmJhMR1D1K_-ZF_6A"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="ml-[280px] pt-16 min-h-screen">
+<div class="max-w-[1440px] mx-auto p-8">
+<!-- Page Header -->
+<div class="mb-12">
+<h2 class="font-impact-lg text-impact-lg text-white mb-2">SYSTEM_CONFIG</h2>
+<div class="flex items-center gap-2 text-cyan-400/60 font-mono-label text-xs tracking-widest">
+<span>ROOT</span>
+<span class="material-symbols-outlined text-[10px]">chevron_right</span>
+<span>SETTINGS</span>
+<span class="material-symbols-outlined text-[10px]">chevron_right</span>
+<span class="text-cyan-400">ADMIN_PANEL_v1.0</span>
+</div>
+</div>
+<!-- Bento Grid Settings -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Security Card -->
+<div class="col-span-12 md:col-span-8 glass-card p-6 rounded-lg relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-cyan-400/5 blur-[60px] pointer-events-none"></div>
+<div class="flex justify-between items-start mb-8">
+<div>
+<h3 class="font-mono-label text-lg font-bold text-white flex items-center gap-2">
+<span class="material-symbols-outlined text-cyan-400" data-icon="shield">shield</span>
+                                SECURITY_PROTOCOLS
+                            </h3>
+<p class="text-slate-500 text-sm mt-1">Manage encryption levels and authentication barriers.</p>
+</div>
+<span class="text-[10px] font-mono-label bg-cyan-950 text-cyan-400 px-2 py-1 border border-cyan-400/30">ENCRYPTED_AES_256</span>
+</div>
+<div class="space-y-6">
+<div class="flex items-center justify-between p-4 bg-slate-900/40 border border-border-brutal">
+<div>
+<p class="font-mono-label text-sm text-white">Multi-Factor Authentication (MFA)</p>
+<p class="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Required for all root access</p>
+</div>
+<div class="relative inline-flex h-5 w-10 items-center rounded-full bg-cyan-400 transition-colors">
+<span class="inline-block h-3 w-3 translate-x-6 transform rounded-full bg-slate-950 transition-transform"></span>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-slate-900/40 border border-border-brutal">
+<div>
+<p class="font-mono-label text-sm text-white">Automated Session Expiry</p>
+<p class="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Force logout after 15 minutes of inactivity</p>
+</div>
+<div class="relative inline-flex h-5 w-10 items-center rounded-full bg-slate-800 transition-colors">
+<span class="inline-block h-3 w-3 translate-x-1 transform rounded-full bg-slate-500 transition-transform"></span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block font-mono-label text-[10px] text-slate-500 uppercase tracking-widest mb-2">Allowed IPs</label>
+<input class="w-full bg-slate-950 border border-border-brutal text-sm font-mono-label text-cyan-400 px-4 py-2 focus:border-cyan-400 outline-none" type="text" value="192.168.1.1, 10.0.0.45"/>
+</div>
+<div>
+<label class="block font-mono-label text-[10px] text-slate-500 uppercase tracking-widest mb-2">Firewall Level</label>
+<select class="w-full bg-slate-950 border border-border-brutal text-sm font-mono-label text-cyan-400 px-4 py-2 focus:border-cyan-400 outline-none appearance-none">
+<option>AGGRESSIVE_STRICT</option>
+<option>STANDARD_BALANCED</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+<!-- API Management Card -->
+<div class="col-span-12 md:col-span-4 glass-card p-6 rounded-lg border-l-2 border-l-cyan-400">
+<h3 class="font-mono-label text-lg font-bold text-white mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-cyan-400" data-icon="api">api</span>
+                        GATEWAY_KEYS
+                    </h3>
+<div class="space-y-6">
+<div>
+<label class="block font-mono-label text-[10px] text-slate-500 uppercase tracking-widest mb-2">Production API Key</label>
+<div class="relative">
+<input class="w-full bg-slate-950 border border-border-brutal text-sm font-mono-label text-slate-400 px-4 py-3 focus:border-cyan-400 outline-none" readonly="" type="password" value="sk-auramind-••••••••••••••••"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-600 hover:text-cyan-400">visibility</button>
+</div>
+</div>
+<div>
+<label class="block font-mono-label text-[10px] text-slate-500 uppercase tracking-widest mb-2">Neural Engine ID</label>
+<div class="relative">
+<input class="w-full bg-slate-950 border border-border-brutal text-sm font-mono-label text-slate-400 px-4 py-3 focus:border-cyan-400 outline-none" readonly="" type="password" value="engine-x92-••••••••"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-600 hover:text-cyan-400">content_copy</button>
+</div>
+</div>
+<div class="pt-4">
+<button class="w-full bg-transparent border border-slate-800 text-slate-400 py-3 font-mono-label text-[10px] font-bold uppercase tracking-widest hover:text-white hover:border-slate-600 transition-all">
+                                Rotate Secret Keys
+                            </button>
+</div>
+</div>
+</div>
+<!-- Interface & Aesthetics -->
+<div class="col-span-12 md:col-span-4 glass-card p-6 rounded-lg">
+<h3 class="font-mono-label text-lg font-bold text-white mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-cyan-400" data-icon="palette">palette</span>
+                        UI_ARCHITECTURE
+                    </h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<span class="font-mono-label text-xs text-slate-300">Glassmorphism Intensity</span>
+<span class="font-mono-label text-xs text-cyan-400">70%</span>
+</div>
+<div class="h-1 bg-slate-900 w-full relative">
+<div class="absolute h-full bg-cyan-400 w-[70%]"></div>
+</div>
+<div class="grid grid-cols-3 gap-2 mt-6">
+<div class="aspect-square bg-slate-950 border-2 border-cyan-400 flex items-center justify-center">
+<div class="w-4 h-4 bg-cyan-400 rounded-sm"></div>
+</div>
+<div class="aspect-square bg-slate-900 border border-border-brutal hover:border-slate-600 cursor-pointer"></div>
+<div class="aspect-square bg-slate-900 border border-border-brutal hover:border-slate-600 cursor-pointer"></div>
+</div>
+<p class="text-[10px] font-mono-label text-slate-500 text-center mt-2 uppercase tracking-tighter">Selected Theme: NEURAL_DARK_CYAN</p>
+</div>
+</div>
+<!-- Experimental Features -->
+<div class="col-span-12 md:col-span-4 glass-card p-6 rounded-lg">
+<h3 class="font-mono-label text-lg font-bold text-white mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-cyan-400" data-icon="biotech">biotech</span>
+                        LABS_EXPERIMENTAL
+                    </h3>
+<div class="space-y-4">
+<div class="flex items-start gap-4 p-3 bg-cyan-400/5 border border-cyan-400/20">
+<div class="relative inline-flex h-4 w-8 mt-1 shrink-0 items-center rounded-full bg-cyan-400">
+<span class="inline-block h-2 w-2 translate-x-5 transform rounded-full bg-slate-950"></span>
+</div>
+<div>
+<p class="font-mono-label text-xs text-cyan-400 leading-tight">Neural Sync Beta</p>
+<p class="text-[10px] text-slate-500 mt-1">Direct memory bus integration for faster query resolving.</p>
+</div>
+</div>
+<div class="flex items-start gap-4 p-3 bg-slate-950 border border-border-brutal">
+<div class="relative inline-flex h-4 w-8 mt-1 shrink-0 items-center rounded-full bg-slate-800">
+<span class="inline-block h-2 w-2 translate-x-1 transform rounded-full bg-slate-500"></span>
+</div>
+<div>
+<p class="font-mono-label text-xs text-slate-300 leading-tight">Dark Matter Mode</p>
+<p class="text-[10px] text-slate-500 mt-1">Extreme low-power UI profile for critical battery levels.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Danger Zone -->
+<div class="col-span-12 md:col-span-4 glass-card p-6 rounded-lg border-2 border-error-container/30">
+<h3 class="font-mono-label text-lg font-bold text-error mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+                        CRITICAL_TERMINATION
+                    </h3>
+<p class="text-slate-500 text-xs mb-6 leading-relaxed">
+                        Proceed with extreme caution. These actions are irreversible and will wipe all synchronized neural data.
+                    </p>
+<button class="w-full bg-error-container/20 border border-error text-error py-4 font-mono-label text-[10px] font-bold uppercase tracking-widest hover:bg-error hover:text-on-error transition-all active:scale-95">
+                        PURGE_SYSTEM_DATABASE
+                    </button>
+<p class="text-[8px] text-slate-600 font-mono-label text-center mt-3 uppercase tracking-widest">Authorized level 5 only</p>
+</div>
+</div>
+<!-- Advanced Integrations Section -->
+<div class="mt-12">
+<h3 class="font-mono-label text-xl font-bold text-white mb-6 uppercase tracking-widest">SYSTEM_INTEGRATIONS</h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="glass-card p-6 flex flex-col justify-between group">
+<div class="flex items-center justify-between mb-4">
+<img alt="Slack Integration Logo" class="w-10 h-10 grayscale group-hover:grayscale-0 transition-all border border-border-brutal p-1" data-alt="A stylized, minimalist Slack logo rendered in a futuristic 3D glass style with neon blue and purple accents. The background is a deep, matte black texture that allows the glowing logo to pop, creating a modern SaaS integration aesthetic in a high-tech dark mode environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAoGzkLQaD8LilSJa3ODWep-tOE0JEt2k-tD86kgLHRAMI-jmMCtk8guAszIRPKLTHd0SFaNEhtoo5c66jS0iWFD-dLCQmVvJZT8a0YfeZlP2Ww4Nx_-X6crz8CKZQxI-y4dCcsMDnbN5SjEbrSe_sERvZki42MVxCJeYJICulY_FTzS9GITF-I-4J5-siSbjkb-0XFp3ykTMDmxIxDOmNuJ7iuRqeoqA-gHB4VRpuR2ExipApw1vgbAq0s-KoK0HCCvV324aSQrrjs"/>
+<span class="text-[10px] font-mono-label text-status-retention-high flex items-center gap-1">
+<span class="w-1 h-1 rounded-full bg-status-retention-high"></span> ACTIVE
+                            </span>
+</div>
+<div>
+<h4 class="font-mono-label text-sm text-white font-bold mb-1">Slack Enterprise</h4>
+<p class="text-[10px] text-slate-500">Relay system alerts and neural activity directly to dev channels.</p>
+</div>
+<button class="mt-6 border border-slate-800 py-2 text-[9px] font-mono-label uppercase tracking-widest hover:border-cyan-400/50 transition-colors">Configure Webhook</button>
+</div>
+<div class="glass-card p-6 flex flex-col justify-between group">
+<div class="flex items-center justify-between mb-4">
+<img alt="AWS Integration Logo" class="w-10 h-10 grayscale group-hover:grayscale-0 transition-all border border-border-brutal p-1" data-alt="A glowing, orange neon Amazon Web Services (AWS) logo floating in a dark, digital space. The background is filled with faint, interconnected node lines resembling a global network. The style is aggressive and tech-focused, utilizing sharp edges and high-contrast lighting to signify power and connectivity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBEW_ZMPSoECixtf82n6S-kMEKaCrqlWe1ekMW0gutXOxDmlvzNa4XKW7TqpG_99bpYAb_Yn62d-cGcBWyv2UWkVckmwxnEZCc__TH6g8gk16Qc-Iz_tBbsirIAi_yT0FoSW-cKVsTKFrueGzGr50RnAZs-u2nz3UAuWPoYV50Ur9wBiPuBjkUwclUl2oJ5vDAke2Sr3UUQ5Xgn_fqw_15Cm0NIz4QZrON_ws2XQGXxiyZK5QKgoxrTrPAsAtP3krR91-4lVBvU4ZS"/>
+<span class="text-[10px] font-mono-label text-slate-500 flex items-center gap-1">
+<span class="w-1 h-1 rounded-full bg-slate-500"></span> INACTIVE
+                            </span>
+</div>
+<div>
+<h4 class="font-mono-label text-sm text-white font-bold mb-1">AWS S3 Archival</h4>
+<p class="text-[10px] text-slate-500">Automated cold storage for legacy neural snapshots over 90 days.</p>
+</div>
+<button class="mt-6 border border-slate-800 py-2 text-[9px] font-mono-label uppercase tracking-widest hover:border-cyan-400/50 transition-colors">Connect Service</button>
+</div>
+<div class="glass-card p-6 flex flex-col justify-between group">
+<div class="flex items-center justify-between mb-4">
+<img alt="React Integration Logo" class="w-10 h-10 grayscale group-hover:grayscale-0 transition-all border border-border-brutal p-1" data-alt="A futuristic React JS atomic logo rendered with neon cyan plasma filaments instead of solid lines. The core of the atom pulses with a bright white light, casting shadows across a dark metallic surface. The aesthetic is purely digital and brutally technical, evoking advanced AI engineering." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMbDX5mpSuwH8WwGvDMcpxp9tmNoahiIjuzBwQOAYF3ijnTFp7dmkkfj1X4rr8-4FqoO3cgBfp940y2U2Vg7Ws1fra9Ik91vAMfM1_3EilFh70783INTLtgufhiXBeaLhCRPZxLJVEmax6qUlEM9gd4fPHDdJEC7-L0BljIe9HRD6KkUNMflaSnHevwFBbjWbENA48-w_qU1pvN8TetVbnvQwPe2-l8_LuB8dTU2kZs_BhHb0dcWzi7bdp7q9wGJzTph-82kzvAgZJ"/>
+<span class="text-[10px] font-mono-label text-status-retention-high flex items-center gap-1">
+<span class="w-1 h-1 rounded-full bg-status-retention-high"></span> ACTIVE
+                            </span>
+</div>
+<div>
+<h4 class="font-mono-label text-sm text-white font-bold mb-1">Runtime SDK</h4>
+<p class="text-[10px] text-slate-500">Direct injection of neural processing into frontend components.</p>
+</div>
+<button class="mt-6 border border-slate-800 py-2 text-[9px] font-mono-label uppercase tracking-widest hover:border-cyan-400/50 transition-colors">View Documentation</button>
+</div>
+</div>
+</div>
+<!-- Footer Meta -->
+<footer class="mt-24 border-t border-slate-900 pt-8 flex justify-between items-center text-slate-600 font-mono-label text-[10px] tracking-widest">
+<div>© 2024 AURAMIND_CORE_SYSTEMS // ALL RIGHTS RESERVED</div>
+<div class="flex gap-8">
+<span>SERVER_REGION: US-EAST-1_NODE_A</span>
+<span>UPTIME: 99.9992%</span>
+</div>
+</footer>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AuraMind Admin - System Analytics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "border-brutal": "#262626",
+                        "on-error-container": "#ffdad6",
+                        "status-retention-low": "#F59E0B",
+                        "on-primary": "#00363a",
+                        "primary-fixed-dim": "#00dbe9",
+                        "secondary-container": "#571bc1",
+                        "error": "#ffb4ab",
+                        "on-secondary-fixed-variant": "#5516be",
+                        "inverse-on-surface": "#2a3233",
+                        "on-secondary": "#3c0091",
+                        "on-surface-variant": "#b9cacb",
+                        "secondary-fixed": "#e9ddff",
+                        "surface-container-lowest": "#080f10",
+                        "secondary-fixed-dim": "#d0bcff",
+                        "primary-container": "#00f0ff",
+                        "inverse-surface": "#dce4e5",
+                        "on-primary-container": "#006970",
+                        "surface-container": "#192122",
+                        "on-background": "#dce4e5",
+                        "on-tertiary": "#67001b",
+                        "surface-container-high": "#232b2c",
+                        "on-tertiary-container": "#bc0b3b",
+                        "outline-variant": "#3b494b",
+                        "tertiary-container": "#ffcdcf",
+                        "tertiary": "#fff3f2",
+                        "surface-container-low": "#151d1e",
+                        "error-container": "#93000a",
+                        "on-secondary-fixed": "#23005c",
+                        "on-surface": "#dce4e5",
+                        "on-secondary-container": "#c4abff",
+                        "inverse-primary": "#006970",
+                        "background": "#0d1515",
+                        "surface": "#0d1515",
+                        "secondary": "#d0bcff",
+                        "surface-variant": "#2e3637",
+                        "surface-dim": "#0d1515",
+                        "surface-bright": "#333b3b",
+                        "on-primary-fixed-variant": "#004f54",
+                        "status-retention-high": "#10B981",
+                        "on-error": "#690005",
+                        "on-tertiary-fixed-variant": "#92002a",
+                        "tertiary-fixed": "#ffdadb",
+                        "primary": "#dbfcff",
+                        "tertiary-fixed-dim": "#ffb2b7",
+                        "accent-neural-grid": "#121212",
+                        "outline": "#849495",
+                        "surface-glass": "rgba(15, 15, 20, 0.7)",
+                        "on-primary-fixed": "#002022",
+                        "on-tertiary-fixed": "#40000d",
+                        "surface-container-highest": "#2e3637",
+                        "surface-tint": "#00dbe9",
+                        "bg-neural": "#050505",
+                        "primary-fixed": "#7df4ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "sidebar-width": "280px",
+                        "gutter": "24px",
+                        "card-padding": "20px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "mono-label": ["Space Grotesk"],
+                        "body-main": ["Inter"],
+                        "eyebrow": ["Space Grotesk"],
+                        "impact-lg": ["Space Grotesk"]
+                    },
+                    "fontSize": {
+                        "mono-label": ["14px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "body-main": ["16px", {"lineHeight": "1.6", "letterSpacing": "0em", "fontWeight": "400"}],
+                        "eyebrow": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.2em", "fontWeight": "600"}],
+                        "impact-lg": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #050505;
+            background-image: 
+                linear-gradient(rgba(18, 18, 18, 0.5) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(18, 18, 18, 0.5) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        .glass-card {
+            backdrop-filter: blur(12px);
+            border: 1px solid #262626;
+            background: linear-gradient(180deg, rgba(46, 54, 55, 0.2) 0%, rgba(13, 21, 21, 0.1) 100%);
+        }
+        .segmented-progress {
+            display: flex;
+            gap: 2px;
+        }
+        .segment {
+            height: 8px;
+            flex: 1;
+            background: #192122;
+        }
+        .segment-active {
+            background: #00dbe9;
+        }
+    </style>
+</head>
+<body class="font-body-main text-on-surface antialiased">
+<!-- SideNavBar -->
+<aside class="w-[280px] h-screen border-r border-slate-800 fixed left-0 top-0 bg-slate-950 flex flex-col h-full py-6 font-['Space_Grotesk'] tracking-tight antialiased">
+<div class="px-6 mb-8">
+<h1 class="text-2xl font-bold tracking-tighter text-cyan-400 uppercase">AURAMIND</h1>
+<p class="text-[10px] text-slate-500 font-mono tracking-widest mt-1">CORE_ADMIN_v1.0</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-6 py-3 text-slate-500 font-medium hover:text-slate-300 transition-all hover:bg-slate-900" href="#">
+<span class="material-symbols-outlined" data-icon="admin_panel_settings">admin_panel_settings</span>
+<span class="text-mono-label font-mono-label">Role Management</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 text-cyan-400 bg-cyan-950/20 border-l-2 border-cyan-400 font-bold hover:bg-slate-900 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="query_stats">query_stats</span>
+<span class="text-mono-label font-mono-label">System Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 text-slate-500 font-medium hover:text-slate-300 transition-all hover:bg-slate-900" href="#">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+<span class="text-mono-label font-mono-label">Audit Logs</span>
+</a>
+<a class="flex items-center gap-3 px-6 py-3 text-slate-500 font-medium hover:text-slate-300 transition-all hover:bg-slate-900" href="#">
+<span class="material-symbols-outlined" data-icon="settings_input_component">settings_input_component</span>
+<span class="text-mono-label font-mono-label">Admin Settings</span>
+</a>
+</nav>
+<div class="px-6 mt-auto space-y-6">
+<button class="w-full bg-primary-container text-on-primary-container py-3 font-bold text-mono-label active:scale-[0.98] transition-transform duration-150 uppercase tracking-widest">
+                Generate Report
+            </button>
+<div class="space-y-1">
+<a class="flex items-center gap-3 px-2 py-2 text-slate-500 font-medium hover:text-slate-300 transition-all text-sm" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="menu_book">menu_book</span>
+<span>Documentation</span>
+</a>
+<a class="flex items-center gap-3 px-2 py-2 text-slate-500 font-medium hover:text-slate-300 transition-all text-sm" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="terminal">terminal</span>
+<span>System Status</span>
+</a>
+</div>
+<div class="flex items-center gap-3 pt-4 border-t border-slate-800">
+<img alt="Admin User Avatar" class="w-10 h-10 rounded-full border border-slate-700" data-alt="A professional headshot of a senior system administrator in a high-tech corporate environment. The lighting is dramatic and moody, with cool blue and cyan rim lighting that emphasizes a futuristic, technical aesthetic. The background is softly blurred, showing hints of server racks and glowing digital interfaces. The subject has a confident and focused expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuSxV9j-V1IcowoHJxixI0JiEsXkgha2QTgt4v9EtyHxx6F29UCJH2nx4KSsb_5RG_pOnqeGwjG8tVtfJgdwtCTJTdcgLVxE6r0VnSZWiyVi7akotjyyUC4Ey-IljtXNbPf5deGEad81NZVFRto5TqYw2cynb3L0Fca5rh4tpe9_mnR2YCmeKR_DEEHx2nzahFGklp75nvN5kxiARkHEKsEl_5g5EvdwXy38VWln6gkMg_kOEmPc5t-iouDB9u-9R9Tnz_SXPpC5nQ"/>
+<div>
+<p class="text-xs font-bold text-white uppercase">Admin_Root</p>
+<p class="text-[10px] text-slate-500">Access Level: 0</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- TopAppBar -->
+<header class="h-16 border-b border-slate-800 fixed top-0 right-0 left-[280px] z-50 bg-slate-950/60 backdrop-blur-xl flex items-center justify-between px-8 w-full">
+<div class="flex items-center gap-6">
+<span class="text-lg font-black text-white font-eyebrow uppercase tracking-widest">System Analytics</span>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500 text-sm">search</span>
+<input class="bg-slate-900/50 border border-slate-800 text-slate-300 text-[10px] py-1.5 pl-10 pr-4 w-64 focus:ring-1 focus:ring-cyan-400 outline-none transition-all uppercase tracking-widest font-mono-label" placeholder="QUERY METRICS..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-4 text-slate-400">
+<span class="material-symbols-outlined hover:text-cyan-300 cursor-pointer transition-colors" data-icon="notifications_active">notifications_active</span>
+<span class="material-symbols-outlined hover:text-cyan-300 cursor-pointer transition-colors" data-icon="dns">dns</span>
+<span class="material-symbols-outlined hover:text-cyan-300 cursor-pointer transition-colors" data-icon="account_tree">account_tree</span>
+</div>
+<button class="bg-transparent border border-cyan-400 text-cyan-400 px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-cyan-400/10 transition-colors">
+                Deploy Update
+            </button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[280px] pt-16 min-h-screen">
+<div class="max-w-[1440px] mx-auto p-gutter space-y-12">
+<!-- Live Monitor Header -->
+<section class="flex justify-between items-end">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="w-2 h-2 rounded-full bg-status-retention-high animate-pulse"></span>
+<span class="font-eyebrow text-eyebrow text-status-retention-high uppercase">Live Monitor: Operational</span>
+</div>
+<h2 class="font-impact-lg text-impact-lg text-primary tracking-tighter">PLATFORM_HEALTH_DEEP_DIVE</h2>
+</div>
+<div class="flex gap-4">
+<div class="glass-card px-6 py-4 flex flex-col items-end">
+<span class="text-eyebrow text-slate-500 uppercase">Uptime (24h)</span>
+<span class="text-2xl font-mono-label text-cyan-400">99.998%</span>
+</div>
+<div class="glass-card px-6 py-4 flex flex-col items-end">
+<span class="text-eyebrow text-slate-500 uppercase">Avg Latency</span>
+<span class="text-2xl font-mono-label text-cyan-400">42ms</span>
+</div>
+</div>
+</section>
+<!-- Bento Grid - Financial & Usage -->
+<div class="grid grid-cols-12 gap-unit">
+<!-- Financial Dashboard: Revenue Line Chart -->
+<div class="col-span-8 glass-card p-card-padding">
+<div class="flex justify-between items-start mb-8">
+<div>
+<span class="font-eyebrow text-eyebrow text-slate-500 uppercase">Revenue stream</span>
+<h3 class="text-xl font-bold text-white uppercase tracking-tight">Financial_Trajectory</h3>
+</div>
+<div class="flex gap-2">
+<button class="px-3 py-1 bg-slate-900 border border-slate-800 text-[10px] text-slate-400 hover:text-cyan-400 transition-colors">1D</button>
+<button class="px-3 py-1 bg-slate-900 border border-cyan-400 text-[10px] text-cyan-400">7D</button>
+<button class="px-3 py-1 bg-slate-900 border border-slate-800 text-[10px] text-slate-400 hover:text-cyan-400 transition-colors">30D</button>
+</div>
+</div>
+<div class="h-64 flex items-end gap-1">
+<!-- Mock Data Visualization: Financial Line Chart Area -->
+<div class="relative w-full h-full border-b border-l border-slate-800 overflow-hidden">
+<!-- Background Neural Grid -->
+<div class="absolute inset-0 grid grid-cols-6 grid-rows-4 opacity-10">
+<div class="border border-slate-700"></div><div class="border border-slate-700"></div><div class="border border-slate-700"></div>
+<div class="border border-slate-700"></div><div class="border border-slate-700"></div><div class="border border-slate-700"></div>
+<div class="border border-slate-700"></div><div class="border border-slate-700"></div><div class="border border-slate-700"></div>
+<div class="border border-slate-700"></div><div class="border border-slate-700"></div><div class="border border-slate-700"></div>
+<div class="border border-slate-700"></div><div class="border border-slate-700"></div><div class="border border-slate-700"></div>
+<div class="border border-slate-700"></div><div class="border border-slate-700"></div><div class="border border-slate-700"></div>
+<div class="border border-slate-700"></div><div class="border border-slate-700"></div><div class="border border-slate-700"></div>
+<div class="border border-slate-700"></div><div class="border border-slate-700"></div><div class="border border-slate-700"></div>
+</div>
+<!-- Actual Chart Line Path (SVG) -->
+<svg class="absolute bottom-0 left-0 w-full h-full" preserveaspectratio="none" viewbox="0 0 100 100">
+<path d="M0,80 Q20,60 40,75 T80,30 T100,20" fill="none" stroke="#00dbe9" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+<path d="M0,80 Q20,60 40,75 T80,30 T100,20 L100,100 L0,100 Z" fill="url(#gradient-cyan)" opacity="0.1"></path>
+<defs>
+<lineargradient id="gradient-cyan" x1="0%" x2="0%" y1="0%" y2="100%">
+<stop offset="0%" stop-color="#00dbe9"></stop>
+<stop offset="100%" stop-color="transparent"></stop>
+</lineargradient>
+</defs>
+</svg>
+<!-- Interaction Point -->
+<div class="absolute left-3/4 top-1/3 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-cyan-400 rounded-full shadow-[0_0_15px_rgba(0,219,233,0.8)]"></div>
+</div>
+</div>
+</div>
+<!-- Churn Analytics -->
+<div class="col-span-4 glass-card p-card-padding">
+<span class="font-eyebrow text-eyebrow text-slate-500 uppercase">Retention Score</span>
+<h3 class="text-xl font-bold text-white uppercase tracking-tight mb-8">User_Churn_Rate</h3>
+<div class="flex flex-col items-center justify-center py-6">
+<div class="relative w-40 h-40">
+<!-- Circular Gauge Chart -->
+<svg class="w-full h-full" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="none" r="45" stroke="#192122" stroke-width="8"></circle>
+<circle cx="50" cy="50" fill="none" r="45" stroke="#00dbe9" stroke-dasharray="210 283" stroke-linecap="round" stroke-width="8" transform="rotate(-90 50 50)"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-3xl font-black text-white">2.4%</span>
+<span class="text-[10px] text-status-retention-high uppercase">Stable</span>
+</div>
+</div>
+</div>
+<div class="space-y-4 mt-4">
+<div class="flex justify-between items-center text-xs">
+<span class="text-slate-500 font-mono">NEW_ACCOUNTS</span>
+<span class="text-white">+1,284</span>
+</div>
+<div class="flex justify-between items-center text-xs">
+<span class="text-slate-500 font-mono">DORMANT_USERS</span>
+<span class="text-white">412</span>
+</div>
+<div class="segmented-progress mt-2">
+<div class="segment segment-active"></div><div class="segment segment-active"></div><div class="segment segment-active"></div><div class="segment segment-active"></div><div class="segment segment-active"></div><div class="segment segment-active"></div><div class="segment segment-active"></div><div class="segment segment-active"></div><div class="segment"></div><div class="segment"></div>
+</div>
+</div>
+</div>
+<!-- AI API Usage Monitoring: Bar Chart -->
+<div class="col-span-12 glass-card p-card-padding">
+<div class="flex justify-between items-center mb-8">
+<div>
+<span class="font-eyebrow text-eyebrow text-slate-500 uppercase">Resource allocation</span>
+<h3 class="text-xl font-bold text-white uppercase tracking-tight">AI_API_Throughput</h3>
+</div>
+<div class="text-right">
+<span class="text-xs text-slate-500 font-mono">TOTAL_TOKENS_24H: 14.8M</span>
+</div>
+</div>
+<div class="grid grid-cols-24 h-48 items-end gap-1">
+<!-- Bar Chart Grid -->
+<div class="h-[20%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[45%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[30%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[60%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[80%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors shadow-[0_-5px_15px_rgba(0,219,233,0.2)]"></div>
+<div class="h-[55%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[40%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[30%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[90%] bg-cyan-400 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors shadow-[0_-5px_15px_rgba(0,219,233,0.3)]"></div>
+<div class="h-[75%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[60%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[50%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[45%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[70%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[85%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[100%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors shadow-[0_-5px_15px_rgba(0,219,233,0.1)]"></div>
+<div class="h-[65%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[40%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[35%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[55%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[80%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[95%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[60%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+<div class="h-[40%] bg-cyan-950/40 border-t border-cyan-400/30 hover:bg-cyan-400 transition-colors"></div>
+</div>
+<div class="flex justify-between mt-4 text-[10px] text-slate-500 font-mono uppercase tracking-widest">
+<span>00:00</span>
+<span>04:00</span>
+<span>08:00</span>
+<span>12:00</span>
+<span>16:00</span>
+<span>20:00</span>
+<span>23:59</span>
+</div>
+</div>
+<!-- System Node Status Monitoring -->
+<div class="col-span-12 glass-card overflow-hidden">
+<div class="px-card-padding py-4 border-b border-slate-800 bg-slate-900/30 flex justify-between items-center">
+<h4 class="text-sm font-bold text-white uppercase tracking-wider">Node_Infrastructure_Cluster</h4>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-status-retention-high"></div>
+<span class="text-[10px] text-slate-500 uppercase">Healthy</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-status-retention-low"></div>
+<span class="text-[10px] text-slate-500 uppercase">Throttled</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-2 h-2 rounded-full bg-error"></div>
+<span class="text-[10px] text-slate-500 uppercase">Critical</span>
+</div>
+</div>
+</div>
+<table class="w-full text-left">
+<thead>
+<tr class="text-[10px] text-slate-500 uppercase font-mono bg-slate-950/50">
+<th class="px-6 py-3 font-medium">Node_ID</th>
+<th class="px-6 py-3 font-medium">Region</th>
+<th class="px-6 py-3 font-medium">CPU_Load</th>
+<th class="px-6 py-3 font-medium">Memory</th>
+<th class="px-6 py-3 font-medium">Status</th>
+<th class="px-6 py-3 font-medium">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-800/50">
+<tr class="hover:bg-cyan-400/5 transition-colors group">
+<td class="px-6 py-4 font-mono text-xs text-white">US-EAST-01</td>
+<td class="px-6 py-4 text-xs text-slate-400">N. Virginia</td>
+<td class="px-6 py-4">
+<div class="w-32 segmented-progress">
+<div class="segment segment-active"></div><div class="segment segment-active"></div><div class="segment segment-active"></div><div class="segment"></div><div class="segment"></div>
+</div>
+</td>
+<td class="px-6 py-4 text-xs text-slate-300">42.8 GB / 64 GB</td>
+<td class="px-6 py-4"><span class="px-2 py-0.5 bg-status-retention-high/10 text-status-retention-high text-[10px] uppercase font-bold border border-status-retention-high/20">Operational</span></td>
+<td class="px-6 py-4"><span class="material-symbols-outlined text-slate-500 cursor-pointer group-hover:text-cyan-400">terminal</span></td>
+</tr>
+<tr class="hover:bg-cyan-400/5 transition-colors group">
+<td class="px-6 py-4 font-mono text-xs text-white">EU-WEST-04</td>
+<td class="px-6 py-4 text-xs text-slate-400">Frankfurt</td>
+<td class="px-6 py-4">
+<div class="w-32 segmented-progress">
+<div class="segment segment-active"></div><div class="segment segment-active"></div><div class="segment segment-active"></div><div class="segment segment-active"></div><div class="segment segment-active"></div>
+</div>
+</td>
+<td class="px-6 py-4 text-xs text-slate-300">118 GB / 128 GB</td>
+<td class="px-6 py-4"><span class="px-2 py-0.5 bg-status-retention-low/10 text-status-retention-low text-[10px] uppercase font-bold border border-status-retention-low/20">Throttled</span></td>
+<td class="px-6 py-4"><span class="material-symbols-outlined text-slate-500 cursor-pointer group-hover:text-cyan-400">terminal</span></td>
+</tr>
+<tr class="hover:bg-cyan-400/5 transition-colors group">
+<td class="px-6 py-4 font-mono text-xs text-white">AP-SOUTH-01</td>
+<td class="px-6 py-4 text-xs text-slate-400">Singapore</td>
+<td class="px-6 py-4">
+<div class="w-32 segmented-progress">
+<div class="segment segment-active"></div><div class="segment"></div><div class="segment"></div><div class="segment"></div><div class="segment"></div>
+</div>
+</td>
+<td class="px-6 py-4 text-xs text-slate-300">12.1 GB / 64 GB</td>
+<td class="px-6 py-4"><span class="px-2 py-0.5 bg-status-retention-high/10 text-status-retention-high text-[10px] uppercase font-bold border border-status-retention-high/20">Operational</span></td>
+<td class="px-6 py-4"><span class="material-symbols-outlined text-slate-500 cursor-pointer group-hover:text-cyan-400">terminal</span></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Footer Stats Grid -->
+<section class="grid grid-cols-4 gap-6 pt-12 pb-24 border-t border-slate-800">
+<div class="space-y-1">
+<span class="text-eyebrow text-slate-500 uppercase">System Integrity</span>
+<p class="text-xl font-bold text-white font-mono-label">SECURE_99.2</p>
+</div>
+<div class="space-y-1">
+<span class="text-eyebrow text-slate-500 uppercase">Active Sessions</span>
+<p class="text-xl font-bold text-white font-mono-label">12,408</p>
+</div>
+<div class="space-y-1">
+<span class="text-eyebrow text-slate-500 uppercase">API Error Rate</span>
+<p class="text-xl font-bold text-status-retention-high font-mono-label">0.02%</p>
+</div>
+<div class="space-y-1">
+<span class="text-eyebrow text-slate-500 uppercase">Memory Leakage</span>
+<p class="text-xl font-bold text-white font-mono-label">NOMINAL</p>
+</div>
+</section>
+</div>
+</main>
+<!-- Global Visual Overlay (Scanline effect) -->
+<div class="fixed inset-0 pointer-events-none opacity-[0.03] z-[100] bg-[linear-gradient(transparent_50%,#00dbe9_50%)] bg-[length:100%_4px]"></div>
+</body></html>

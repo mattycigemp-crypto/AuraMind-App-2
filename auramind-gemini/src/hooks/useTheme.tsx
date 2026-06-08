@@ -15,6 +15,14 @@ interface ThemeProviderProps {
   children: React.ReactNode
 }
 
+/** Resolve a Theme value to an actual 'light' | 'dark' value. */
+function resolveThemeValue(t: Theme): 'light' | 'dark' {
+  if (t === 'system') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  }
+  return t
+}
+
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
@@ -23,26 +31,26 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     return 'system'
   })
 
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light')
+  // Initialize resolvedTheme synchronously so the first render is already correct.
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = (localStorage.getItem('auramind-theme') as Theme) || 'system'
+      return resolveThemeValue(stored)
+    }
+    return 'light'
+  })
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-
-    const resolveTheme = () => {
-      if (theme === 'system') {
-        setResolvedTheme(mediaQuery.matches ? 'dark' : 'light')
-      } else {
-        setResolvedTheme(theme as 'light' | 'dark')
-      }
-    }
-
-    resolveTheme()
 
     const handleChange = () => {
       if (theme === 'system') {
         setResolvedTheme(mediaQuery.matches ? 'dark' : 'light')
       }
     }
+
+    // Sync resolved value whenever `theme` changes.
+    setResolvedTheme(resolveThemeValue(theme))
 
     mediaQuery.addEventListener('change', handleChange)
     return () => mediaQuery.removeEventListener('change', handleChange)
@@ -59,11 +67,20 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light')
   }
 
+  const cycleTheme = () => {
+    setTheme(prev => {
+      if (prev === 'light') return 'dark'
+      if (prev === 'dark') return 'system'
+      return 'light'
+    })
+  }
+
   const value: ThemeContextType = {
     theme,
     setTheme,
     resolvedTheme,
-    toggleTheme
+    toggleTheme,
+    cycleTheme
   }
 
   return (
@@ -72,3 +89,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     </ThemeContext.Provider>
   )
 }
+
+
+

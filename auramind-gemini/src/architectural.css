@@ -12,6 +12,15 @@
   --color-arch-accent: var(--accent-hex);
 }
 
+.light {
+  --color-arch-bg: hsl(var(--bg-core));
+  --color-arch-fg: hsl(var(--foreground));
+  --color-arch-border: hsla(var(--foreground) / 0.08);
+  --color-arch-border-bold: hsla(var(--foreground) / 0.55);
+  --color-arch-muted: hsla(var(--foreground) / 0.40);
+  --color-arch-accent: var(--accent-hex);
+}
+
 .dark {
   --color-arch-bg: hsl(var(--bg-core));
   --color-arch-fg: hsl(var(--foreground));

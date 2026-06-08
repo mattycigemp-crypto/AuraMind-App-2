@@ -1,5 +1,5 @@
 import * as React from "react";
-import { GripVertical } from "lucide-react";
+import { GripVerticalIcon as GripVertical } from "../icons/CustomIcons";
 import * as ResizablePrimitive from "react-resizable-panels";
 
 import { cn } from "@/lib/utils";
@@ -36,3 +36,6 @@ const ResizableHandle = ({
 );
 
 export { ResizablePanelGroup, ResizablePanel, ResizableHandle };
+
+
+

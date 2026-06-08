@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Timer, Play, Pause, RotateCcw, Coffee, Brain, Volume2, VolumeX, Settings2, X } from 'lucide-react';
+import { TimerIcon as Timer, PlayIcon as Play, PauseIcon as Pause, RotateCcwIcon as RotateCcw, CoffeeIcon as Coffee, BrainIcon as Brain, Volume2Icon as Volume2, VolumeXIcon as VolumeX, Settings2Icon as Settings2, XIcon as X } from '../icons/CustomIcons';
 
 interface PomodoroTimerProps {
     onSessionComplete?: (type: 'work' | 'break') => void;
@@ -186,3 +186,6 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onSessionComplete }) => {
 };
 
 export default PomodoroTimer;
+
+
+

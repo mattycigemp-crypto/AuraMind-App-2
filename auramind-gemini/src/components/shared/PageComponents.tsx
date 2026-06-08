@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity } from 'lucide-react';
+import { ActivityIcon as Activity } from '../icons/CustomIcons';
 import { Deck, Card } from '../../types';
 import HelpTooltip from './HelpTooltip';
 
@@ -97,3 +97,5 @@ const CitationStack = ({ card }: { card: Card }) => {
 };
 
 export { PageHeader, MetricTile, BarSeries, getDeckAnalytics, normalizeSeries, CitationStack, HelpTooltip };
+
+

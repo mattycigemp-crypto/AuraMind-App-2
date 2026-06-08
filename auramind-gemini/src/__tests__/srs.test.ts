@@ -8,8 +8,8 @@ describe('srs helpers', () => {
     const card = getInitialCardState('deck-1', 'Question?', 'Answer.');
 
     expect(card.deckId).toBe('deck-1');
-    expect(card.question).toBe('Question?');
-    expect(card.answer).toBe('Answer.');
+    expect(card.front).toBe('Question?');
+    expect(card.back).toBe('Answer.');
     expect(card.interval).toBe(0);
     expect(card.repetition).toBe(0);
     expect(card.easeFactor).toBe(2.5);
@@ -24,3 +24,6 @@ describe('srs helpers', () => {
     expect(result.easeFactor).toBe(2.5);
   });
 });
+
+
+

@@ -10,8 +10,7 @@ describe('AuraAiClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Set test environment variables
-    process.env.VITE_OPENROUTER_API_KEY = 'test-key';
-    process.env.VITE_GROQ_API_KEY = '';
+    process.env.VITE_GROQ_API_KEY = 'test-key';
     process.env.VITE_USE_LOCAL_AI = 'false';
     client = new AuraAiClient();
   });
@@ -214,3 +213,5 @@ describe('AuraAiClient', () => {
     });
   });
 });
+
+

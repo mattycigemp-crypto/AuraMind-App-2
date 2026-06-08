@@ -9,15 +9,20 @@ type MathRichTextProps = {
 
 const PlainTextSegment = ({ text, block = false }: MathRichTextProps) => {
   const Wrapper = block ? 'div' : 'span';
-  return <Wrapper className="whitespace-pre-wrap">{text}</Wrapper>;
+  return <Wrapper className="whitespace-pre-wrap text-current">{text}</Wrapper>;
 };
 
 const MathRichText = ({ text, block = false }: MathRichTextProps) => {
+  if (!text) {
+    const Wrapper = block ? 'div' : 'span';
+    return <Wrapper className="whitespace-pre-wrap text-current"></Wrapper>;
+  }
+  
   const segments = text.split(/(\$\$[\s\S]+?\$\$|\$[^$\n]+\$)/g).filter(Boolean);
   const Wrapper = block ? 'div' : 'span';
 
   return (
-    <Wrapper className="whitespace-pre-wrap">
+    <Wrapper className="whitespace-pre-wrap text-current">
       {segments.map((segment, index) => {
         if (segment.startsWith('$$') && segment.endsWith('$$')) {
           const expr = segment.slice(2, -2).trim();
@@ -48,3 +53,6 @@ const MathRichText = ({ text, block = false }: MathRichTextProps) => {
 };
 
 export default MathRichText;
+
+
+

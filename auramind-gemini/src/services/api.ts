@@ -1,8 +1,6 @@
-// Centralized API service for all backend calls
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-
+// Core API service
 export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${import.meta.env.VITE_API_BASE_URL || ''}${endpoint}`;
   
   const defaultOptions: RequestInit = {
     headers: {
@@ -36,3 +34,10 @@ export const authenticatedApiFetch = async (endpoint: string, options: RequestIn
     },
   });
 };
+
+// Re-export specific services for backward compatibility
+export { userService } from './user/userService';
+export { systemMetricsService as analyticsService } from './analytics/systemMetricsService';
+
+
+

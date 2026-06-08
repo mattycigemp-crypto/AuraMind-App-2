@@ -1,6 +1,7 @@
 # AuraMind: AI-Powered Learning Platform - Comprehensive Guide
 
 ## Table of Contents
+
 1. [Introduction](#introduction)
 2. [Core Philosophy](#core-philosophy)
 3. [Platform Overview](#platform-overview)
@@ -49,7 +50,7 @@ AuraMind addresses these challenges through an integrated, intelligent platform 
 AuraMind serves a diverse range of learners:
 
 - **Students**: From high school to postgraduate level, needing to master complex subjects across disciplines
-- **Professionals**: Seeking to acquire new skills, maintain certifications, or stay current in rapidly evolving fields
+- **Professionals**: Seeking to acquire new skills, maintain professional credentials, or stay current in rapidly evolving fields
 - **Language Learners**: Requiring systematic vocabulary building and grammar practice
 - **Researchers**: Managing large volumes of information and maintaining knowledge across multiple domains
 - **Educators**: Creating and distributing study materials to students with personalized learning paths
@@ -103,21 +104,45 @@ The user interface is built as a React 19 application using TypeScript for type 
 
 - **React 19**: Latest version of React with improved performance and developer experience
 - **TypeScript**: Static typing for robust code and better IDE support
-- **Vite**: Fast build tool and development server
-- **Tailwind CSS**: Utility-first CSS framework for rapid UI development
-- **Framer Motion**: Production-ready animation library for smooth transitions
+- **Vite**: Fast build tool and development server with proxy for local AI
+- **Tailwind CSS**: Utility-first CSS framework with architectural design system
+- **Framer Motion**: Advanced animation system with "The Engineering of Awe" framework
 - **Radix UI**: Unstyled, accessible component library for building custom UI components
-- **React Router**: Client-side routing for single-page application navigation
+- **React Router DOM**: Client-side routing for single-page application navigation
 - **Lucide React**: Beautiful, consistent icon library
+- **Supabase**: Authentication and real-time database integration
+- **Recharts**: Data visualization for analytics
+- **PostHog**: User analytics and product insights
+- **Zod**: Runtime type validation and schema definitions
 
 ### Backend Infrastructure
 
-The backend is built using Vercel's serverless functions, providing:
+The backend uses Vercel serverless functions with a consolidated API structure:
 
-- **API Endpoints**: RESTful APIs for data operations and integrations
-- **Webhook Handling**: Real-time event processing from payment providers
-- **Authentication**: Secure user authentication and session management
-- **Database Operations**: Structured data storage and retrieval
+#### API Structure
+
+``` 
+api/
+├── index.ts                   # Main API router with consolidated endpoints
+├── stripe-webhook.ts          # Handle Stripe webhook events
+```
+
+The main API router (`index.ts`) handles multiple endpoint categories:
+- **admin**: User management, role assignment, admin utilities
+- **coupons**: Stripe coupon management
+- **users**: User operations (redirected to admin)
+- **subscription**: Subscription status verification
+- **stripe**: Stripe checkout and portal sessions
+- **email**: Email operations (placeholder)
+- **account**: Account operations (delete account)
+
+#### Server Configuration
+
+- **Vercel Functions**: Serverless deployment with automatic scaling
+- **Node.js Runtime**: Latest Node.js version with ES modules
+- **Environment Variables**: Secure configuration management
+- **CORS Handling**: Proper cross-origin resource sharing
+- **Error Handling**: Comprehensive error logging and user feedback
 
 ### Database & Storage
 
@@ -300,6 +325,40 @@ Learning is often a social activity. AuraMind plans to include:
 - **Shared Progress**: Track group learning objectives
 - **Discussion Forums**: Discuss topics and share insights
 
+### Learning Paths
+
+AuraMind now includes structured, course-based learning paths that guide users through comprehensive curricula:
+
+#### Course Catalog (6 Courses, 86 Lessons)
+
+- **JavaScript Mastery**: From ES5 basics through ES2025/2026 features (Temporal API, Iterator Helpers, Set Methods, Decorators)
+- **React & Modern Frontend**: Component patterns through React 19 hooks (`use()`, `useActionState`, `useOptimistic`, React Compiler)
+- **Database & SQL**: Fundamentals through PostgreSQL 18 (UUID v7, B-Tree Skip Scan, pgvector, io_uring)
+- **Machine Learning & AI**: Foundations through Agentic AI, LLMOps, RAG architectures, and MCP
+- **Data Structures & Algorithms**: Pattern-based interview preparation with complexity analysis
+- **TypeScript Deep Dive**: Types through TypeScript 6.0 (strict mode, Go-based compiler, erasableSyntaxOnly)
+
+#### Lesson Experience
+
+Each lesson includes a structured popup with:
+- **Breadcrumb Navigation**: Module title, estimated duration, lesson position indicator
+- **Description Box**: Highlighted summary of the lesson's learning objectives
+- **Full Markdown Content**: Rich educational content rendered with syntax-highlighted code blocks, tables, and interactive elements via `react-markdown` and `remark-gfm`
+- **Progress Navigation**: Previous/Next lesson buttons with dot-based progress indicator
+- **Module Organization**: Lessons grouped into modules within each course
+
+#### Enrollment System
+
+- **Local-First**: Enrollments stored in `localStorage` for instant access
+- **Supabase Sync**: Best-effort background persistence to Supabase with deterministic UUID generation
+- **Progress Tracking**: Track enrolled courses and completed lessons per user
+
+#### Data Architecture
+
+- **Static Content**: All 86 lessons stored in `learningPathsData.ts` with educational markdown content
+- **Local Rendering**: Course structure and content served entirely from local data — no database dependency for core content
+- **Enrollment Persistence**: Hybrid model — localStorage as primary store, Supabase as secondary sync target
+
 ---
 
 ## Technical Architecture
@@ -310,40 +369,74 @@ The React application follows a component-based architecture with clear separati
 
 #### Component Structure
 
-```
+``` 
 src/
 ├── components/
+│   ├── achievements/      # Achievement system and unlock animations
 │   ├── auth/              # Authentication-related components
-│   ├── background/        # Visual effects and animations
-│   ├── chat/             # AI chat interfaces
-│   ├── dashboard/        # Main dashboard components
+│   ├── background/        # Visual effects and neural grid animations
+│   ├── challenges/        # Gamification challenges system
+│   ├── chat/             # AI chat interfaces and study buddy
+│   ├── dashboard/        # Main dashboard components (Dashboard2026, LearningPaths)
 │   ├── deck/             # Flashcard deck management
 │   ├── landing/          # Marketing and onboarding pages
+│   ├── layout/           # Layout components and providers
 │   ├── shared/           # Reusable UI components
-│   ├── study/            # Study mode components
+│   ├── study/            # Study mode components and SRS
 │   └── ui/               # Base UI components (Radix UI)
 ├── pages/                # Route-level components
-│   ├── auth/            # Authentication pages
+│   ├── analytics/        # Analytics and insights pages
+│   ├── auth/            # Authentication and admin console
+│   ├── challenges/      # Challenge management
 │   ├── chat/            # Chat interface pages
 │   ├── dashboard/       # Dashboard variants
 │   ├── deck/            # Deck management pages
+│   ├── decks/           # Deck collection pages
+│   ├── insights/        # Learning insights
 │   ├── legal/           # Legal pages (terms, privacy)
-│   └── study/           # Study mode pages
+│   ├── planner/         # Study planner
+│   ├── professor/       # Professor mode
+│   ├── schedule/        # Study schedule
+│   ├── study/           # Study mode pages
+│   └── leaderboards/    # Gamification leaderboards
 ├── services/            # Business logic and API calls
-│   ├── api/            # External API integrations
-│   ├── analytics/      # Analytics and tracking
-│   ├── database/       # Database operations
-│   ├── import/         # File import processing
-│   └── study/          # Study algorithms (SRS)
+│   ├── analytics/       # Analytics and tracking service
+│   ├── api/             # External API integrations (AI, Stripe)
+│   ├── auth/            # Authentication services
+│   ├── database/        # Database operations (Supabase)
+│   ├── email/           # Email services
+│   ├── import/          # File import processing
+│   ├── integrations/    # Third-party integrations (Anki, Notion)
+│   ├── stripe/          # Payment processing
+│   ├── learningPaths/   # Learning path data and enrollment services
+│   ├── study/            # Study algorithms (SRS, roadmap)
+│   ├── supabase/        # Supabase client
+│   └── trial/           # Trial management
+├── contexts/            # React contexts
+│   └── LayoutContext.tsx # Layout management context
 ├── hooks/              # Custom React hooks
+│   ├── useTheme.tsx     # Theme management
+│   ├── useScrollAnimations.ts # Scroll animations
+│   ├── useMagneticButton.ts # Magnetic button effects
+│   ├── useToast.ts      # Toast notifications
+│   └── use-mobile.tsx   # Mobile detection
+├── styles/             # Styling and animations
+│   ├── animations/      # Animation system (awe)
+│   ├── design/          # Design system (bento-2-0)
+│   └── architectural.css # Base architectural styles
 ├── types/              # TypeScript type definitions
 ├── utils/              # Utility functions
-└── data/               # Static data and constants
+│   ├── permissions.ts   # Role-based permissions
+│   └── localeUtils.ts   # Localization utilities
+├── data/               # Static data and constants
+│   ├── premadeContent.ts # Sample content
+│   └── learningPathsData.ts # 86 lessons across 6 courses
+└── i18n/               # Internationalization
+    ├── config.ts        # i18n configuration
+    └── locales/         # Translation files
 ```
 
-#### State Management
-
-The application uses React's built-in state management with hooks:
+#### Custom Hooks
 
 - **useState**: Local component state
 - **useEffect**: Side effects and data fetching
@@ -353,10 +446,10 @@ The application uses React's built-in state management with hooks:
 
 #### Routing
 
-React Router handles client-side routing with protected routes:
+React Router DOM handles client-side routing with protected routes:
 
 - **Public Routes**: Landing page, authentication
-- **Protected Routes**: Dashboard, study modes, settings
+- **Protected Routes**: Dashboard, Learning Paths, study modes, settings
 - **Role-Based Routes**: Admin console with permission checks
 - **Route Guards**: Subscription status verification
 
@@ -383,19 +476,30 @@ The main API router (`index.ts`) handles multiple endpoint categories:
 
 #### Database Schema
 
+ 
+
 Supabase PostgreSQL database with the following main tables:
 
+ 
+
 **decks**
+
+ 
+
 - id (UUID, Primary Key)
 - user_id (UUID, Foreign Key to auth.users)
 - title (Text)
 - description (Text)
-- card_count (Integer)
 - created_at (Timestamp)
 - source_label (Text)
 - is_sample (Boolean)
 
+ 
+
 **cards**
+
+ 
+
 - id (UUID, Primary Key)
 - user_id (UUID, Foreign Key to auth.users)
 - deck_id (UUID, Foreign Key to decks)
@@ -406,26 +510,41 @@ Supabase PostgreSQL database with the following main tables:
 - ease_factor (Numeric)
 - repetition (Integer)
 - last_reviewed (Timestamp)
-- source_type (Enum)
+- source_type (Enum: 'manual', 'ai', 'import', 'research')
 - source_label (Text)
 - citations (JSONB)
 - trust_score (Numeric)
+
+ 
+
+**user_profiles** (Extended auth.users metadata)
+
+ 
+
+- id (UUID, Primary Key)
+- user_id (UUID, Foreign Key to auth.users)
+- role (Enum: USER, EMPLOYEE, ADMIN, CEO, OWNER)
+- plan (Text)
+- streak (Integer)
+- joined_date (Timestamp)
+- last_study_date (Timestamp)
 
 **Row Level Security (RLS)** policies ensure data isolation:
 - Users can only access their own data
 - Admins have elevated access based on role permissions
 - Public decks have appropriate read permissions
+- Role-based access to admin functions
 
 ### AI Integration Architecture
 
-The AI service layer supports multiple providers:
+The AI service layer supports multiple providers with intelligent fallback:
 
 #### Provider Selection
 
 ```typescript
-// Priority order: Local AI > Groq > OpenRouter
+// Priority order: Local AI > Groq > OpenRouter > DeepSeek
 1. Local AI (if VITE_USE_LOCAL_AI=true)
-   - Base URL: /local-ai/v1
+   - Base URL: /local-ai/v1 (proxied via Vite)
    - Model: Configurable via VITE_AI_MODEL
    
 2. Groq (if VITE_GROQ_API_KEY available)
@@ -437,6 +556,11 @@ The AI service layer supports multiple providers:
    - Base URL: https://openrouter.ai/api/v1
    - Model: deepseek/deepseek-r1-0528:free (default)
    - Advantage: Multiple model options
+   
+4. DeepSeek (fallback)
+   - Base URL: Configurable via environment
+   - Model: deepseek-chat (default)
+   - Advantage: Cost-effective alternative
 ```
 
 #### Response Caching
@@ -544,12 +668,13 @@ Inspired by bento box design, the dashboard uses a modular grid:
 - **Progress Metrics**: Activity heatmap, retention rate, study time
 - **Recent Activity**: Recently studied decks, generated content
 - **Recommendations**: AI-suggested study topics and times
+- **Learning Paths Card**: Quick-access tile showing enrolled courses and next lesson
 
 #### Cosmic Sidebar
 
 Navigation sidebar with visual flair:
 
-- **Section Navigation**: Dashboard, Decks, Study, Chat, Settings
+- **Section Navigation**: Dashboard, Paths, Decks, Study, Chat, Settings
 - **Quick Access**: Frequently used decks and features
 - **Visual Indicators**: Unread notifications, due cards
 - **Collapsible**: Expandable for more screen real estate
@@ -561,6 +686,31 @@ Adapts seamlessly to different screen sizes:
 - **Desktop**: Full-featured experience with all panels visible
 - **Tablet**: Optimized layout with collapsible sections
 - **Mobile**: Bottom navigation, simplified interface, touch-optimized
+
+### Learning Paths Experience
+
+Structured curricula designed for systematic learning from beginner to advanced:
+
+#### Course Selection
+
+- **Browse Courses**: Six curated courses displayed as interactive cards with progress indicators
+- **Course Details**: Each card shows lesson count, estimated duration, difficulty level, and module breakdown
+- **Enrollment**: One-click enrollment stored locally with background Supabase sync
+- **Progress Tracking**: Visual progress ring per course and per-user enrollment status
+
+#### Lesson Navigation
+
+- **Module Structure**: Courses organized into logical modules (e.g., "JavaScript Fundamentals", "Asynchronous JavaScript")
+- **Sequential Flow**: Lessons ordered from foundational to advanced within each module
+- **Popup Interface**: Lesson content opens as an overlaid popup with smooth animations
+- **Breadcrumb**: Module title, duration estimate, and "Lesson X of Y" for spatial awareness
+
+#### Lesson Content
+
+- **Rich Markdown Rendering**: Full GFM support including tables, code blocks with syntax highlighting, task lists, and strikethrough via `react-markdown` + `remark-gfm`
+- **Tailwind Typography**: `prose` class styling ensures readable, well-spaced educational content
+- **Description Highlight**: Each lesson opens with an introductory description box summarizing learning objectives
+- **Navigation Controls**: Previous/Next buttons with dot-based progress indicator for linear progression
 
 ### Study Session Experience
 
@@ -873,15 +1023,13 @@ Track how well information is retained over time:
 - **Decay Curves**: Individual forgetting curves for each user
 - **Optimal Review Timing**: Identify when reviews are most effective
 
-#### Performance Metrics
+#### Performance Analysis
 
-Calculate various performance metrics:
-
-- **Accuracy Rate**: Percentage of correct answers
-- **Review Speed**: Average time per card
-- **Session Quality**: Average quality rating per session
-- **Consistency**: Regularity of study sessions
-- **Improvement Rate**: Rate of performance improvement over time
+- **Accuracy Rates**: Measure of correct answers across different topics
+- **Response Times**: Analysis of how quickly users respond to cards
+- **Difficulty Progression**: Track how user performance changes with difficulty
+- **Learning Velocity**: Speed of acquiring new knowledge
+- **Mastery Levels**: Progress toward full mastery of content
 
 #### Predictive Analytics
 
@@ -1590,17 +1738,25 @@ Free access is granted through:
    # Edit .env with your credentials
    ```
 
-4. **Start Development Server**
+4. **Database Setup** (if needed)
+   ```bash
+   cd auramind-gemini
+   node run-migration.js
+   ```
+
+5. **Start Development Server**
    ```bash
    npm run dev
    ```
 
 #### Development Tools
 
-- **Vite**: Fast development server with HMR
+- **Vite**: Fast development server with HMR and proxy support
 - **TypeScript**: Type checking and IDE support
-- **Vitest**: Unit testing framework
+- **Vitest**: Unit testing framework with jsdom environment
 - **Git**: Version control
+- **ESLint**: Code linting (configured)
+- **PostCSS**: CSS processing with Tailwind
 
 ### Testing
 
@@ -1711,15 +1867,25 @@ Production monitoring:
 
 ## Future Roadmap
 
+### ✅ Recently Completed
+
+- **Learning Paths**: Shipped 6 structured courses with 86 lessons covering JavaScript, React, Databases, Machine Learning, DSA, and TypeScript — with markdown rendering, lesson navigation, and local-first enrollment
+- **Dashboard Redesign**: Updated dashboard layout with bento grid, learning paths card, and improved sidebar navigation
+- **Quiz Lab**: Standalone quiz page (`/quiz`) with deck selection, AI-generated multiple-choice quizzes, score tracking, and sidebar navigation — accessible from dashboard sidebar
+- **Chat Presentations**: AI-generated presentations render inline in AuraChat via new `ChatPresentation` component; shared `Slide`/`Presentation` types extracted to `types/index.ts`
+- **Advanced Analytics**: Card Maturity Timeline (stacked area chart) and Rating Distribution (donut chart) wired into AnalyticsPage with real card data — no more mock data
+- **Voice Hook**: `useSpeechRecognition()` custom hook for Web Speech API speech-to-text with start/stop/reset and transcript/interim support
+- **Character Avatar in TopBar**: Mii/DiceBear character or uploaded image replaces user initials in TopAppBar
+
 ### Short-Term Goals (Next 3 Months)
 
 #### Feature Enhancements
 
-- **Enhanced Quiz Mode**: Dedicated quiz mode outside of chat interface
-- **Presentation AI Generation**: AI-powered presentation generation
-- **Advanced Analytics**: More detailed analytics and insights
-- **Improved AI**: Enhanced AI capabilities and accuracy
-- **Voice Features**: Enhanced voice interaction features
+- **Enhanced Quiz Mode**: ✅ Completed — dedicated Quiz Lab page with AI-generated quizzes from any deck, session history, sidebar access
+- **Presentation AI Generation**: ✅ Completed — ChatPresentation component renders presentations from AI tool actions in chat
+- **Advanced Analytics**: ✅ Completed — Maturity Timeline and Button Distribution charts added with live data
+- **Improved AI**: Enhanced AI capabilities and accuracy — service consolidation planned
+- **Voice Features**: Enhanced voice interaction features — `useSpeechRecognition` hook ready for integration
 
 #### Platform Improvements
 

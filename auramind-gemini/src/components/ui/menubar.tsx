@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as MenubarPrimitive from "@radix-ui/react-menubar";
-import { Check, ChevronRight, Circle } from "lucide-react";
+import { CheckIcon as Check, ChevronRightIcon as ChevronRight, CircleIcon as Circle } from "../icons/CustomIcons";
 
 import { cn } from "@/lib/utils";
 
@@ -205,3 +205,6 @@ export {
   MenubarSub,
   MenubarShortcut,
 };
+
+
+

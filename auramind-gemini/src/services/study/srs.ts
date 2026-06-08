@@ -1,44 +1,62 @@
 import { Card, Rating, SRSResult } from '../../types';
+import { scheduleFSRS, fsrsToCardResult, createInitialFSRSState, getFSRSState } from './fsrs';
 
 /**
- * SuperMemo-2 (SM-2) Algorithm implementation
+ * FSRS (Free Spaced Repetition Scheduler) Algorithm - Primary SRS Engine
  * 
- * @param card Current card state
- * @param quality User rating (0-5)
- * @returns New SRS state
+ * FSRS v5 replaces SM-2 as the default algorithm. It provides up to 30% better
+ * retention efficiency by modeling the forgetting curve with optimized parameters.
+ * 
+ * Backward compatibility: Existing cards using SM-2 values are automatically
+ * converted to FSRS state on first review.
  */
-export const calculateSRS = (card: Card, quality: Rating): SRSResult => {
-  let { interval, repetition, easeFactor } = card;
 
-  if (quality >= 3) {
-    if (repetition === 0) {
-      interval = 1;
-    } else if (repetition === 1) {
-      interval = 6;
-    } else {
-      interval = Math.round(interval * easeFactor);
-    }
-    repetition += 1;
-  } else {
-    repetition = 0;
-    interval = 1;
-  }
-
-  easeFactor = easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
-  if (easeFactor < 1.3) easeFactor = 1.3;
-
-  return { interval, repetition, easeFactor };
-};
-
-export const getInitialCardState = (deckId: string, question: string, answer: string): Card => {
+export const calculateSRS = (card: Card, quality: Rating): SRSResult & { fsrsState?: any } => {
+  // Use FSRS as the primary algorithm
+  const fsrsResult = scheduleFSRS(card, quality);
+  const cardResult = fsrsToCardResult(fsrsResult);
+  
   return {
-    id: crypto.randomUUID(),
-    deckId,
-    question,
-    answer,
-    nextReview: Date.now(),
-    interval: 0,
-    easeFactor: 2.5,
-    repetition: 0,
+    interval: cardResult.interval,
+    repetition: cardResult.repetition,
+    easeFactor: cardResult.easeFactor,
+    fsrsState: cardResult.fsrsState,
   };
 };
+
+export const getInitialCardState = (deckId: string, front: string, back: string): Card => {
+  const fsrsState = createInitialFSRSState();
+  
+  // FSRS initial interval is 0 (card is due immediately)
+  // We set a small interval for the first review
+  const initialInterval = 0;
+  
+  return {
+    id: '',
+    deckId,
+    front,
+    back,
+    nextReview: Date.now(),
+    interval: initialInterval,
+    easeFactor: 2.5, // Default for backward compatibility
+    repetition: 0,
+  } as Card;
+};
+
+/**
+ * Get the current FSRS state for a card (for analytics/debugging)
+ */
+export const getCardFSRSState = (card: Card) => {
+  return getFSRSState(card);
+};
+
+/**
+ * Check if a card has been migrated to FSRS
+ */
+export const isFSRSMigrated = (card: Card): boolean => {
+  const fsrsState = (card as any).fsrsState;
+  return fsrsState !== undefined && fsrsState.stability > 0;
+};
+
+
+

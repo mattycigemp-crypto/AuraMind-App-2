@@ -1,4 +1,4 @@
-export type CardSourceType = 'sample' | 'import' | 'ai' | 'lecture' | 'notes' | 'research' | 'manual';
+export type CardSourceType = 'sample' | 'import' | 'ai' | 'lecture' | 'notes' | 'research' | 'manual' | 'notion' | 'anki' | 'obsidian' | 'quizlet' | 'schoology';
 
 export interface CardCitation {
   id: string;
@@ -8,23 +8,36 @@ export interface CardCitation {
   sourceType: CardSourceType;
 }
 
+export interface FSRSState {
+  stability: number;     // Memory stability in days
+  difficulty: number;    // Card difficulty (0-10 scale)
+  elapsedDays: number;   // Days since last review
+  scheduledDays: number; // Days until next review
+  repetitions: number;   // Number of reviews
+  lapses: number;        // Number of times forgotten
+  lastReview: number;    // Timestamp of last review
+}
+
 export interface Card {
   id: string;
-  question: string;
-  answer: string;
+  front: string;
+  back: string;
   deckId: string;
   image?: string; // Optional image URL
   citations?: CardCitation[];
   sourceLabel?: string;
   sourceType?: CardSourceType;
   trustScore?: number;
-  // Spaced Repetition System (SRS) data
-  nextReview: number; // Timestamp
-  interval: number; // Days
-  easeFactor: number;
-  repetition: number;
+  verified?: boolean; // AI fact-check verification status
+  // Spaced Repetition System (SRS) data - optional since not all in database schema
+  nextReview?: number; // Timestamp
+  interval?: number; // Days
+  easeFactor?: number;
+  repetition?: number;
   understandingLevel?: number;
   lastReviewed?: number; // Timestamp of last review
+  // FSRS state (optional, for cards migrated to FSRS)
+  fsrsState?: FSRSState;
 }
 
 export interface Deck {
@@ -35,6 +48,19 @@ export interface Deck {
   cardCount: number;
   isSample?: boolean;
   sourceLabel?: string;
+}
+
+export interface StudySession {
+  id: string;
+  userId: string;
+  deckId?: string;
+  startTime: number;
+  endTime?: number;
+  cardsStudied?: number;
+  correctAnswers?: number;
+  totalAnswers?: number;
+  accuracy?: number;
+  duration?: number;
 }
 
 export enum ViewState {
@@ -61,6 +87,7 @@ export interface SRSResult {
   interval: number;
   repetition: number;
   easeFactor: number;
+  fsrsState?: FSRSState;
 }
 
 export type Theme = 'light' | 'dark' | 'system'
@@ -70,11 +97,13 @@ export interface ThemeContextType {
   setTheme: (theme: Theme) => void
   resolvedTheme: 'light' | 'dark'
   toggleTheme: () => void
+  cycleTheme: () => void
 }
 
 // Study Agent Types
 export interface QuizQuestion {
   id: string;
+  header?: string;
   question: string;
   options: string[];
   correctAnswer: number;
@@ -90,6 +119,7 @@ export interface Quiz {
 }
 
 export interface FlashcardData {
+  header?: string;
   question: string;
   answer: string;
   topic?: string;
@@ -99,9 +129,45 @@ export interface FlashcardData {
   sourceType?: CardSourceType;
 }
 
+export interface Slide {
+  title: string;
+  bullets: string[];
+  script: string;
+}
+
+export interface Presentation {
+  title: string;
+  slides: Slide[];
+}
+
 export interface StudyToolAction {
-  tool: 'generate_quiz' | 'explain_concept' | 'generate_flashcards' | 'create_cards' | 'schedule_review' | 'track_progress';
+  tool: 'generate_quiz' | 'explain_concept' | 'generate_flashcards' | 'create_cards' | 'schedule_review' | 'track_progress' | 'generate_presentation';
   data: any;
+}
+
+export interface SourceDocument {
+  id: string;
+  name: string;
+  type: 'pdf' | 'pptx' | 'text' | 'doc' | 'markdown';
+  content: string;
+  excerpt: string;
+  contentHash: string;
+  wordCount: number;
+  addedAt: number;
+  processingStatus: 'complete' | 'processing' | 'error';
+  error?: string;
+}
+
+export interface SourceGroundedCard extends FlashcardData {
+  sourceExcerpt?: string;
+  sourceDocumentId?: string;
+  sourceDocumentName?: string;
+}
+
+export interface SourceGroundedQuestion extends QuizQuestion {
+  sourceExcerpt?: string;
+  sourceDocumentId?: string;
+  sourceDocumentName?: string;
 }
 
 export interface ChatMessage {
@@ -111,6 +177,7 @@ export interface ChatMessage {
   thinking?: string;
   toolAction?: StudyToolAction;
   timestamp: number;
+  sourceIds?: string[];
 }
 
 export enum UserRole {
@@ -128,6 +195,7 @@ export interface UserProfile {
   avatar?: string;
   plan: 'Starter' | 'Pro' | 'Scholar';
   streak: number;
+  streakFreezes: number;
   joinedDate: number;
   isAdmin?: boolean;
   role?: UserRole;
@@ -135,4 +203,50 @@ export interface UserProfile {
   isPhoneVerified: boolean;
   phone?: string;
   lastStudyDate?: string;
+  integrations?: UserIntegrations;
 }
+
+export interface UserIntegrations {
+  notion?: NotionIntegration;
+  anki?: AnkiIntegration;
+  obsidian?: ObsidianIntegration;
+  quizlet?: QuizletIntegration;
+  schoology?: SchoologyIntegration;
+}
+
+export interface NotionIntegration {
+  connected: boolean;
+  accessToken?: string;
+  workspaceId?: string;
+  workspaceName?: string;
+  connectedAt?: number;
+}
+
+export interface AnkiIntegration {
+  connected: boolean;
+  lastImportAt?: number;
+  importCount?: number;
+}
+
+export interface ObsidianIntegration {
+  connected: boolean;
+  vaultPaths?: string[];
+  lastImportAt?: number;
+}
+
+export interface QuizletIntegration {
+  connected: boolean;
+  username?: string;
+  connectedAt?: number;
+}
+
+export interface SchoologyIntegration {
+  connected: boolean;
+  consumerKey?: string;
+  accessToken?: string;
+  connectedAt?: number;
+  disconnectedAt?: number;
+}
+
+
+
