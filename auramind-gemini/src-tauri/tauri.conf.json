@@ -68,30 +68,13 @@
       "open": true
     },
     "fs": {
-      "scope": {
-        "allow": [
-          "$APPDATA/*",
-          "$APPCONFIG/*",
-          "$DOWNLOAD/*",
-          "$DESKTOP/*",
-          "$DOCUMENT/*"
-        ]
-      }
+      "requireLiteralLeadingDot": false
     },
-    "dialog": {
-      "open": true,
-      "save": true
-    },
-    "notification": {},
     "updater": {
       "active": false,
       "endpoints": ["https://api.auramind.app/updates/{{target}}/{{current_version}}"],
       "dialog": true,
       "pubkey": ""
-    },
-    "store": {},
-    "clipboardManager": {},
-    "os": {},
-    "http": {}
+    }
   }
 }
