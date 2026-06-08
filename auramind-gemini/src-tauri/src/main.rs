@@ -3,6 +3,7 @@
   windows_subsystem = "windows"
 )]
 
+#[cfg(debug_assertions)]
 use tauri::Manager;
 
 fn main() {
@@ -17,10 +18,11 @@ fn main() {
     .plugin(tauri_plugin_os::init())
     .plugin(tauri_plugin_http::init())
     .setup(|app| {
-      let window = app.get_webview_window("main").unwrap();
-      window.show()?;
       #[cfg(debug_assertions)]
-      window.open_devtools();
+      {
+        let window = app.get_webview_window("main").unwrap();
+        window.open_devtools();
+      }
       Ok(())
     })
     .run(tauri::generate_context!())
