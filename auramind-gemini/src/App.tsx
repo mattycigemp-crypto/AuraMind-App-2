@@ -274,15 +274,15 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
       });
     }
 
-    // Initialize real analytics service with elite performance
-    analyticsService.init();
+    analyticsService.init().catch(() => {});
 
     // Add performance monitoring (deferred)
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && typeof PerformanceObserver !== 'undefined') {
       requestIdleCallback(() => {
-        const perfObserver = new PerformanceObserver(() => {});
-
-        perfObserver.observe({ entryTypes: ["largest-contentful-paint"] });
+        try {
+          const perfObserver = new PerformanceObserver(() => {});
+          perfObserver.observe({ entryTypes: ["largest-contentful-paint"] });
+        } catch {}
       });
     }
   }, [isAweInitialized, isMobile]);
@@ -352,37 +352,40 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
 
   useEffect(() => {
     const syncSession = async (session: any) => {
-      if (!session?.user) {
-        setUser(null);
-        setDecks([]);
-        setCards([]);
-        setActiveDeckId(null);
-        setSubscriptionStatus("none");
-        analyticsService.reset();
-        return;
+      try {
+        if (!session?.user) {
+          setUser(null);
+          setDecks([]);
+          setCards([]);
+          setActiveDeckId(null);
+          setSubscriptionStatus("none");
+          analyticsService.reset().catch(() => {});
+          return;
+        }
+
+        const profile = mapAuthUserToProfile(session.user);
+        setUser(profile);
+        analyticsService.identify(profile.id, { email: profile.email, plan: profile.plan }).catch(() => {});
+
+        const permissions = getPermissions(profile.role || UserRole.USER);
+        if (permissions.hasFreeAccess) {
+          setSubscriptionStatus("active");
+        } else {
+          await checkSubscription(session.user.id, session.user.email || "");
+        }
+
+        await syncCurrentUser();
+
+        const [fetchedDecks, fetchedCards] = await Promise.all([
+          dbService.fetchDecks(session.user.id),
+          dbService.fetchCards(session.user.id),
+        ]);
+
+        setDecks(fetchedDecks);
+        setCards(fetchedCards);
+      } catch (err) {
+        console.error('Failed to sync session:', err);
       }
-
-      const profile = mapAuthUserToProfile(session.user);
-      setUser(profile);
-      analyticsService.identify(profile.id, { email: profile.email, plan: profile.plan });
-
-      const permissions = getPermissions(profile.role || UserRole.USER);
-      if (permissions.hasFreeAccess) {
-        setSubscriptionStatus("active");
-      } else {
-        await checkSubscription(session.user.id, session.user.email || "");
-      }
-
-      // Ensure user is synced to database first
-      await syncCurrentUser();
-
-      const [fetchedDecks, fetchedCards] = await Promise.all([
-        dbService.fetchDecks(session.user.id),
-        dbService.fetchCards(session.user.id),
-      ]);
-
-      setDecks(fetchedDecks);
-      setCards(fetchedCards);
     };
 
     let subscription: { unsubscribe: () => void } | null = null;
@@ -402,7 +405,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
 
     supabase?.auth.getSession().then(({ data: { session } }) => {
       syncSession(session);
-    });
+    }).catch(err => console.error('Failed to get session:', err));
 
     return () => subscription?.unsubscribe();
   }, []);

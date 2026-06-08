@@ -23,21 +23,20 @@ function resolveThemeValue(t: Theme): 'light' | 'dark' {
   return t
 }
 
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
+function getStoredTheme(): Theme {
+  try {
     if (typeof window !== 'undefined') {
       return (localStorage.getItem('auramind-theme') as Theme) || 'system'
     }
-    return 'system'
-  })
+  } catch {}
+  return 'system'
+}
 
-  // Initialize resolvedTheme synchronously so the first render is already correct.
+export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+  const [theme, setTheme] = useState<Theme>(getStoredTheme)
+
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(() => {
-    if (typeof window !== 'undefined') {
-      const stored = (localStorage.getItem('auramind-theme') as Theme) || 'system'
-      return resolveThemeValue(stored)
-    }
-    return 'light'
+    return resolveThemeValue(getStoredTheme())
   })
 
   useEffect(() => {
@@ -60,7 +59,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const root = document.documentElement
     root.classList.remove('light', 'dark')
     root.classList.add(resolvedTheme)
-    localStorage.setItem('auramind-theme', theme)
+    try { localStorage.setItem('auramind-theme', theme) } catch {}
   }, [theme, resolvedTheme])
 
   const toggleTheme = () => {

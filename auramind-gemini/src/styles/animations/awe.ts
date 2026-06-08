@@ -6,7 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { MotionValue, useSpring, useTransform } from 'framer-motion';
 
 // Register GSAP plugins
-gsap.registerPlugin(ScrollTrigger);
+try { gsap.registerPlugin(ScrollTrigger) } catch {}
 
 // Physics-based spring constants for premium feel
 export const SPRING_PRESETS = {

@@ -7,7 +7,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SCROLL_CONFIG, checkReducedMotion } from '../styles/animations/awe';
 
 // Register ScrollTrigger
-gsap.registerPlugin(ScrollTrigger);
+try { gsap.registerPlugin(ScrollTrigger) } catch {}
 
 export interface ScrollAnimationConfig {
   trigger?: string;
