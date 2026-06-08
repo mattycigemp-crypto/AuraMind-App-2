@@ -17,10 +17,10 @@ fn main() {
     .plugin(tauri_plugin_clipboard_manager::init())
     .plugin(tauri_plugin_os::init())
     .plugin(tauri_plugin_http::init())
-    .setup(|app| {
+    .setup(|_app| {
       #[cfg(debug_assertions)]
       {
-        let window = app.get_webview_window("main").unwrap();
+        let window = _app.get_webview_window("main").unwrap();
         window.open_devtools();
       }
       Ok(())
