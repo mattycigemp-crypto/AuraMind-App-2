@@ -9,13 +9,26 @@ build/
 .next/
 out/
 
-# Environment variables
+# Environment variables (match in any directory, including subprojects)
 .env
+**/.env
 .env.local
+**/.env.local
 .env.development.local
 .env.test.local
 .env.production.local
 .env.*.local
+**/.env.*.local
+
+# Secrets / credentials — never commit
+*.pem
+*.key
+*.p12
+*.pfx
+secrets.*
+credentials.*
+service*role*key*
+**/google-service-account*.json
 
 # Logs
 *.log
@@ -60,3 +73,6 @@ openswarm/
 
 # Rust build artifacts
 auramind-gemini/src-tauri/target/
+
+# Stakpak session files
+.stakpak/session*
