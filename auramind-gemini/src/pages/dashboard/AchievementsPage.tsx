@@ -1,6 +1,7 @@
 import { Trophy, Star, Zap, Target, Flame, Crown, Award } from 'lucide-react';
 import PageShell from '../../components/dashboard/PageShell';
 import { ACHIEVEMENTS, type Achievement } from '../../components/achievements/AchievementUnlock';
+import { getUserStats } from '../../services/gamification/gamificationService';
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   trophy: Trophy, award: Award, star: Star, flame: Flame, zap: Zap, target: Target, crown: Crown, medal: Award,
@@ -21,7 +22,8 @@ function SectionHeader({ icon: Icon, title, subtitle }: { icon: React.ComponentT
 }
 
 export default function AchievementsPage() {
-  const earned = new Set<string>([]); // TODO: load from user_metadata.achievements via API
+  const stats = getUserStats();
+  const earned = new Set<string>(stats.earnedAchievements);
   const achievements = Object.values(ACHIEVEMENTS);
   const unlockedCount = achievements.filter(a => earned.has(a.id)).length;
 

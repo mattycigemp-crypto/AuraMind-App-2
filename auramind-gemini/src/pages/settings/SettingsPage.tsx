@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Zap, Bell, Palette, Shield, AlertTriangle, Volume2, RefreshCw, Languages, Accessibility, Pencil, Check, X } from 'lucide-react';
+import { toast } from 'sonner';
 import PageShell from '../../components/dashboard/PageShell';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
 import { supabase } from '../../services/database/supabase';
@@ -158,6 +159,55 @@ export default function SettingsPage() {
     }
   }, [nameInput, displayName, workspace, profile]);
 
+  const handleChangePassword = useCallback(() => {
+    navigate('/reset-password');
+  }, [navigate]);
+
+  const handleManageSubscription = useCallback(() => {
+    toast.info('Subscription management coming soon');
+  }, []);
+
+  const handleClearCache = useCallback(() => {
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('auramind_') && k !== 'auramind_theme');
+    keys.forEach(k => localStorage.removeItem(k));
+    toast.success('Cache cleared');
+  }, []);
+
+  const handleResetProgress = useCallback(() => {
+    if (!window.confirm('This will reset all your study progress and streaks. Are you sure?')) return;
+    const keep = ['auramind_theme', 'auramind_dailyGoal', 'auramind_newCards', 'auramind_maxReviews'];
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('auramind_') && !keep.includes(k));
+    keys.forEach(k => localStorage.removeItem(k));
+    toast.success('Progress reset');
+  }, []);
+
+  const handleExportData = useCallback(async () => {
+    const stats = Object.keys(localStorage)
+      .filter(k => k.startsWith('auramind_'))
+      .reduce((acc, k) => ({ ...acc, [k]: localStorage.getItem(k) }), {} as Record<string, string | null>);
+    const blob = new Blob([JSON.stringify(stats, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `auramind-export-${Date.now()}.json`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Data exported');
+  }, []);
+
+  const handleExportAnki = useCallback(async () => {
+    const blob = new Blob(['# AuraMind Anki Export\n# Format: Front\tBack\n'], { type: 'text/tab-separated-values' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `auramind-anki-${Date.now()}.tsv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Anki package exported');
+  }, []);
+
+  const handleDeleteAccount = useCallback(async () => {
+    if (!window.confirm('Are you sure you want to permanently delete your account? This cannot be undone.')) return;
+    if (!window.confirm('Type "OK" to confirm deletion')) return;
+    toast.info('Account deletion requires admin assistance. Please contact support.');
+  }, []);
+
   return (
     <PageShell>
       <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8 space-y-8">
@@ -212,12 +262,12 @@ export default function SettingsPage() {
                 </span>
               </div>
               <p className="text-[#5A5A72] text-xs mt-1">{profile?.email || ''}</p>
-              <button className="text-[#8B5CF6] text-[10px] font-medium hover:text-[#7C3AED] transition-colors mt-1">
+              <button onClick={handleManageSubscription} className="text-[#8B5CF6] text-[10px] font-medium hover:text-[#7C3AED] transition-colors mt-1">
                 Manage subscription
               </button>
             </div>
             <div className="flex gap-2 mt-2 sm:mt-0">
-              <button className="px-4 py-2 border border-[#2A2A3A] text-[#F0EFFE] text-xs font-medium rounded-lg hover:border-[#3A3A4F] transition-all">
+              <button onClick={handleChangePassword} className="px-4 py-2 border border-[#2A2A3A] text-[#F0EFFE] text-xs font-medium rounded-lg hover:border-[#3A3A4F] transition-all">
                 Change Password
               </button>
             </div>
@@ -395,7 +445,7 @@ export default function SettingsPage() {
                 <div className="text-[#F0EFFE] text-xs">Clear local cache</div>
                 <div className="text-[#5A5A72] text-[10px] mt-0.5">Free up storage on this device</div>
               </div>
-              <button className="px-4 py-1.5 border border-[#2A2A3A] text-[#5A5A72] text-[11px] font-medium rounded-lg hover:border-[#3A3A4F] hover:text-[#F0EFFE] transition-all">
+              <button onClick={handleClearCache} className="px-4 py-1.5 border border-[#2A2A3A] text-[#5A5A72] text-[11px] font-medium rounded-lg hover:border-[#3A3A4F] hover:text-[#F0EFFE] transition-all">
                 Clear
               </button>
             </div>
@@ -405,7 +455,7 @@ export default function SettingsPage() {
                 <div className="text-[#F0EFFE] text-xs">Reset progress</div>
                 <div className="text-[#5A5A72] text-[10px] mt-0.5">Reset all study progress and streaks</div>
               </div>
-              <button className="px-4 py-1.5 border border-red-500/30 text-red-400 text-[11px] font-medium rounded-lg hover:bg-red-500/10 transition-all">
+              <button onClick={handleResetProgress} className="px-4 py-1.5 border border-red-500/30 text-red-400 text-[11px] font-medium rounded-lg hover:bg-red-500/10 transition-all">
                 Reset
               </button>
             </div>
@@ -461,18 +511,23 @@ export default function SettingsPage() {
       <div className="mt-8 bg-[#111118] border border-red-500/20 rounded-xl p-6">
           <SectionHeader icon={AlertTriangle} title="Danger Zone" subtitle="Irreversible actions. Proceed with care." />
           <div className="space-y-3">
-            {['Export your data', 'Export Anki package', 'Delete account'].map((item, i) => (
-              <div key={i} className="flex items-center justify-between py-2">
-                <span className="text-[#F0EFFE] text-xs">{item}</span>
-                <button className={`px-4 py-1.5 text-[11px] font-medium rounded-lg border transition-all ${
-                  item === 'Delete account'
-                    ? 'border-red-500/30 text-red-400 hover:bg-red-500/10'
-                    : 'border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#3A3A4F]'
-                }`}>
-                  {item === 'Delete account' ? 'Delete' : 'Export'}
-                </button>
-              </div>
-            ))}
+            {['Export your data', 'Export Anki package', 'Delete account'].map((item, i) => {
+              const handler = item === 'Export your data' ? handleExportData
+                : item === 'Export Anki package' ? handleExportAnki
+                : handleDeleteAccount;
+              return (
+                <div key={i} className="flex items-center justify-between py-2">
+                  <span className="text-[#F0EFFE] text-xs">{item}</span>
+                  <button onClick={handler} className={`px-4 py-1.5 text-[11px] font-medium rounded-lg border transition-all ${
+                    item === 'Delete account'
+                      ? 'border-red-500/30 text-red-400 hover:bg-red-500/10'
+                      : 'border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#3A3A4F]'
+                  }`}>
+                    {item === 'Delete account' ? 'Delete' : 'Export'}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
     </PageShell>

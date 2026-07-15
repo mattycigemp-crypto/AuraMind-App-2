@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../services/database/supabase';
-import { Loader2, Check, AlertTriangle } from 'lucide-react';
+import { Loader2, Check, AlertTriangle, KeyRound } from 'lucide-react';
 
 const CallbackPage: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +13,10 @@ const CallbackPage: React.FC = () => {
     let cancelled = false;
 
     const handleOAuthCallback = async () => {
+      // Check for recovery (password reset) flow
+      const hashParams = new URLSearchParams(location.hash.replace('#', ''));
+      const isRecovery = hashParams.get('type') === 'recovery';
+
       // Check for error in the URL hash or query (e.g. ?error=access_denied)
       const params = new URLSearchParams(
         location.hash.replace('#', '') + '&' + location.search.replace('?', ''),
@@ -37,6 +41,24 @@ const CallbackPage: React.FC = () => {
       }
 
       try {
+        // Handle password recovery flow
+        if (isRecovery) {
+          const accessToken = hashParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token');
+          if (accessToken) {
+            const { error: setError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken || '',
+            });
+            if (!setError && !cancelled) {
+              setStatus('success');
+              setTimeout(() => navigate('/reset-password?mode=update', { replace: true }), 800);
+              return;
+            }
+          }
+          // Fallback: try standard exchange
+        }
+
         // exchangeCodeForSession() is the recommended PKCE callback handler.
         // It parses the OAuth code from the URL hash/query and establishes a session.
         const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(
