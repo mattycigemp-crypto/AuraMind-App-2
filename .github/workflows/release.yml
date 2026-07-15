@@ -1,0 +1,145 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Frontend build (cached for Tauri jobs) ──
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: auramind-gemini
+    outputs:
+      version: ${{ steps.pkg.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: auramind-gemini/package-lock.json
+
+      - run: npm ci
+      - run: npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: auramind-gemini/dist
+          retention-days: 1
+
+      - id: pkg
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+  # ── Tauri build (per platform) ──
+  tauri:
+    needs: frontend
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            args: ""
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            args: ""
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            args: ""
+
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: auramind-gemini
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev \
+            librsvg2-dev patchelf libgtk-3-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: auramind-gemini/package-lock.json
+
+      - name: Install npm deps
+        run: npm ci
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: auramind-gemini/dist
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        with:
+          projectPath: auramind-gemini
+          args: ${{ matrix.args }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ matrix.os }}
+          path: auramind-gemini/src-tauri/target/release/bundle/**
+          retention-days: 7
+
+  # ── GitHub Release (only on tag push) ──
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: tauri
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bundle-*
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -lhR
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: AuraMind ${{ github.ref_name }}
+          body_path: CHANGELOG.md
+          draft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            **/*.msi
+            **/*.dmg
+            **/*.AppImage
+            **/*.deb
+            **/*.rpm
+            **/*.tar.gz
+            **/*.setup.exe
+            **/*.snap
