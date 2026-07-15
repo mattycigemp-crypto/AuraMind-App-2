@@ -1,11 +1,11 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { isTauri } from '@tauri-apps/api/core';
 import App from './App';
 import './index.css';
 
 declare global {
   interface Window {
-    __TAURI__?: any;
     __TAURI_INTERNALS__?: any;
     __TAURI_OS_PLUGIN_INTERNALS__?: {
       eol: string;
@@ -45,7 +45,7 @@ async function initApp() {
       document.documentElement.classList.add(`platform-${osPlatform}`);
     }
     // Priority 2: Tauri without OS plugin (UA fallback will handle)
-    else if (window.__TAURI__ || window.__TAURI_INTERNALS__) {
+    else if (isTauri()) {
       document.documentElement.classList.add('tauri-app');
       // Fall through to UA detection below
     }

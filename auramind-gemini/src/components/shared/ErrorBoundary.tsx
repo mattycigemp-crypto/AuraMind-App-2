@@ -64,6 +64,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         timestamp: Date.now(),
       });
     }
+    const { captureError } = await import('../../services/monitoring/sentryService');
+    captureError(error, { componentStack: errorInfo.componentStack });
   }
 
   handleReset = (): void => {
@@ -198,6 +200,9 @@ export function setupGlobalErrorHandler(): void {
         });
       }
     });
+    import('../../services/monitoring/sentryService').then(({ captureError }) => {
+      if (event.error) captureError(event.error, { type: 'uncaught' });
+    });
   });
 
   // Unhandled promise rejections
@@ -211,6 +216,10 @@ export function setupGlobalErrorHandler(): void {
           url: window.location.href,
         });
       }
+    });
+    import('../../services/monitoring/sentryService').then(({ captureError }) => {
+      const err = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
+      captureError(err, { type: 'unhandled_rejection' });
     });
   });
 }

@@ -13,8 +13,14 @@ import { ErrorBoundary, setupGlobalErrorHandler } from './components/shared/Erro
 // SEO
 import { updateMetaTags, setDefaultJsonLd } from './lib/seo';
 
+// Crash reporting
+import { initSentry } from './services/monitoring/sentryService';
+
 // Offline support
 import { isOnline, onConnectionChange } from './services/offline/offlineStudyService';
+
+// Initialize Sentry (no-op if DSN not configured)
+initSentry();
 
 // Validate environment at startup
 const envResult = validateEnv();

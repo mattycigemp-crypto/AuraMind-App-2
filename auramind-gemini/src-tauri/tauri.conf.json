@@ -32,10 +32,10 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://unpkg.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' http://localhost:* https://*.groq.com https://api.resend.com https://api.notion.com https://api.schoology.com https://*.schoology.com https://api.coingecko.com https://api.github.com https://app.posthog.com https://api.wordnik.com https://haveibeenpwned.com https://googleapis.com https://www.googleapis.com https://api.dicebear.com https://o*.ingest.sentry.io; media-src 'self' https:; font-src 'self' data:; frame-src 'self' https://js.stripe.com; object-src 'none'; base-uri 'self'"
     },
     "macOSPrivateApi": true,
-    "withGlobalTauri": true
+    "withGlobalTauri": false
   },
   "bundle": {
     "active": true,

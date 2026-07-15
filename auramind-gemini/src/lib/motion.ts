@@ -1,8 +1,10 @@
+import { isTauri } from '@tauri-apps/api/core';
+
 /** Web-only motion helpers — native apps (Tauri/Capacitor) are unchanged elsewhere. */
 
 export function isNativeShell(): boolean {
   if (typeof window === "undefined") return false;
-  return Boolean(window.__TAURI__ || window.Capacitor);
+  return Boolean(isTauri() || window.Capacitor);
 }
 
 export function prefersReducedMotion(): boolean {
