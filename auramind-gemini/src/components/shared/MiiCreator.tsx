@@ -199,10 +199,10 @@ const MiiCreator: React.FC<MiiCreatorProps> = ({ initialOptions, initialName = '
                 <button
                   key={cat.id}
                   onClick={() => setCategory(cat.id)}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
                     category === cat.id
                       ? 'bg-violet-500/20 text-violet-300'
-                      : 'text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                      : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800'
                   }`}
                 >
                   {cat.label}

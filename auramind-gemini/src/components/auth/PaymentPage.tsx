@@ -1,47 +1,43 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ZapIcon as Zap, ShieldIcon as Shield, BrainCircuitIcon as BrainCircuit, InfinityIcon as Infinity, ChevronLeftIcon as ChevronLeft,
-  SparklesIcon as Sparkles, CheckIcon as Check, CrownIcon as Crown, Loader2Icon as Loader2, ArrowRightIcon as ArrowRight,
-  ClockIcon as Clock, BookOpenIcon as BookOpen, BotIcon as Bot, GraduationCapIcon as GraduationCap, ActivityIcon as Activity,
-  ShieldCheckIcon as ShieldCheck, CreditCardIcon as CreditCard, LockIcon as Lock
-} from '../icons/CustomIcons';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Loader2, Check, Sparkles, ShieldCheck, Brain, Bot, BookOpen, Zap } from 'lucide-react';
 
 interface PaymentPageProps {
   user: { id: string; email: string; name: string };
+  cancelled?: boolean;
 }
 
 const PLANS = [
   {
     id: 'monthly',
-    name: 'MONTHLY PROTOCOL',
-    price: '$9.99',
-    interval: '/MO',
+    name: 'Monthly',
+    price: '$7.99',
+    interval: '/month',
     priceId: import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY ?? '',
     badge: null,
-    desc: 'Full access with flexible maintenance.'
+    desc: 'Full access, flexible billing.',
   },
   {
     id: 'annual',
-    name: 'ANNUAL SYSTEM',
+    name: 'Annual',
     price: '$3.99',
-    interval: '/MO',
+    interval: '/month',
     priceId: import.meta.env.VITE_STRIPE_PRICE_ID_ANNUAL ?? '',
-    badge: 'SAVE 60%',
-    totalPrice: '$47.88 Billed Annually',
-    desc: 'The complete cognitive upgrade.'
+    badge: 'Save 50%',
+    totalBilled: '$47.88 billed annually',
+    desc: 'The complete upgrade. Best value.',
   },
 ];
 
 const FEATURES = [
-  { icon: BrainCircuit, label: 'AI-powered flashcard generation', detail: 'Generate flashcards from your notes, outlines, and study materials with AI.' },
-  { icon: Bot, label: 'Aura Operator — 4 study agent modes', detail: 'Study From Anything, Study Buddy, Content Pipeline, and Research Assistant modes.' },
-  { icon: BookOpen, label: 'Deck creation & study sessions', detail: 'Create unlimited decks and study with spaced repetition.' },
-  { icon: Sparkles, label: 'Research assistant & content pipeline', detail: 'Convert PDFs, PowerPoint files, and text into study materials.' },
+  { icon: Brain, label: 'AI Flashcard Generation', detail: 'Turn notes, PDFs, and outlines into smart flashcards instantly.' },
+  { icon: Bot, label: '4 AI Study Agent Modes', detail: 'Study From Anything, Study Buddy, Content Pipeline, and Research Assistant.' },
+  { icon: BookOpen, label: 'Unlimited Decks & Cards', detail: 'Create as many decks as you need with spaced repetition scheduling.' },
+  { icon: Sparkles, label: 'Research & Content Tools', detail: 'Convert PowerPoint, PDFs, and text into structured study materials.' },
 ];
 
-const PaymentPage: React.FC<PaymentPageProps> = ({ user }) => {
+const PaymentPage: React.FC<PaymentPageProps> = ({ user, cancelled = false }) => {
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState('annual');
   const [loading, setLoading] = useState(false);
@@ -65,6 +61,11 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user }) => {
         }),
       });
 
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error(`Server error (${response.status}). Please try again or contact support.`);
+      }
+
       const data = await response.json();
 
       if (data.url) {
@@ -82,169 +83,188 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user }) => {
   };
 
   return (
-    <div className="min-h-screen bg-arch-bg text-arch-fg font-sans relative overflow-x-hidden p-6 md:p-12 lg:p-20">
-      {/* Background architectural elements */}
-      <div className="fixed inset-0 arch-grid-overlay opacity-10 pointer-events-none" />
-      <div className="fixed top-0 left-0 w-full h-[500px] bg-gradient-to-b from-arch-fg/[0.03] to-transparent pointer-events-none" />
+    <div className="min-h-screen bg-[#0A0A0F] flex flex-col relative overflow-hidden">
+      {/* Aurora glow background */}
+      <div className="fixed inset-0 pointer-events-none">
+        <img
+          src="/auramind/aurora-glow.png"
+          alt=""
+          className="w-full h-full object-cover"
+          style={{ opacity: 0.2 }}
+        />
+        <div
+          className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full opacity-[0.06]"
+          style={{ background: 'radial-gradient(circle, #7C3AED 0%, transparent 70%)', filter: 'blur(100px)' }}
+        />
+        <div
+          className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] rounded-full opacity-[0.04]"
+          style={{ background: 'radial-gradient(circle, #3B82F6 0%, transparent 70%)', filter: 'blur(80px)' }}
+        />
+      </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto">
+      {/* Back link */}
+      <div className="px-6 py-4 relative z-10">
         <button
           onClick={() => navigate('/')}
-          className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.4em] text-arch-muted hover:text-arch-fg transition-colors mb-20"
+          className="flex items-center gap-2 text-[#5A5A72] hover:text-[#F0EFFE] text-xs transition-colors"
         >
-          <ChevronLeft size={14} />
-          Terminal / Home
+          <ArrowLeft size={14} />
+          Back to home
         </button>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-20">
-          {/* Left Column: Mission Control */}
-          <div className="space-y-16">
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <div className="inline-flex items-center gap-3 px-3 py-1 bg-amber-400 text-black text-[8px] font-black uppercase tracking-[0.4em] mb-8">
-                <Crown size={10} />
-                Access Authorized: 7-Day Trial Mode
-              </div>
-              <h1 className="text-arch-impact text-arch-fg leading-[0.85] mb-8">UPGRADE YOUR<br /><span className="text-arch-muted">COGNITION.</span></h1>
-              <p className="text-arch-muted font-medium italic text-lg max-w-xl leading-relaxed">
-                Join the architectural study movement. AuraMind Pro is your study system, optimized for momentum and peak performance.
-              </p>
-            </motion.div>
+      <div className="flex-1 flex items-center justify-center px-6 pb-16 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-4xl"
+        >
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#7C3AED]/10 border border-[#7C3AED]/20 rounded-full text-[#8B5CF6] text-[10px] font-semibold uppercase tracking-wider mb-6">
+              <Zap size={12} />
+              7-Day Free Trial
+            </div>
+            <h1 className="text-[#F0EFFE] text-3xl font-light tracking-tight mb-3">
+              Upgrade your learning
+            </h1>
+            <p className="text-[#5A5A72] text-sm max-w-md mx-auto">
+              Unlock AI-powered study tools, unlimited decks, and accelerated learning. Cancel anytime.
+            </p>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6">
+            {/* Left: Features */}
+            <div className="order-2 lg:order-1 space-y-4">
               {FEATURES.map((feature, i) => (
                 <motion.div
                   key={feature.label}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.2 + i * 0.1 }}
-                  className="architectural-panel p-8 space-y-4 hover:bg-arch-fg/[0.01] transition-all group"
+                  transition={{ duration: 0.4, delay: 0.15 + i * 0.08 }}
+                  className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-4 flex gap-3 hover:border-[#3A3A4F] transition-colors"
                 >
-                  <div className="w-10 h-10 border border-arch-border flex items-center justify-center text-arch-muted group-hover:text-arch-fg group-hover:border-arch-fg transition-all">
-                    <feature.icon size={18} />
+                  <div className="w-9 h-9 rounded-lg bg-[#7C3AED]/10 flex items-center justify-center shrink-0">
+                    <feature.icon size={16} className="text-[#8B5CF6]" />
                   </div>
                   <div>
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-arch-fg mb-2">{feature.label}</h3>
-                    <p className="text-[10px] text-arch-muted leading-relaxed italic">{feature.detail}</p>
+                    <h3 className="text-sm font-medium text-[#F0EFFE] mb-0.5">{feature.label}</h3>
+                    <p className="text-[10px] text-[#5A5A72] leading-relaxed">{feature.detail}</p>
                   </div>
                 </motion.div>
               ))}
+
+              {/* Trust badges */}
+              <div className="flex items-center justify-center gap-6 pt-2 text-[#5A5A72]">
+                <div className="flex items-center gap-1.5 text-[10px] font-medium">
+                  <ShieldCheck size={14} className="text-[#10B981]" />
+                  Secure checkout
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] font-medium">
+                  <ShieldCheck size={14} className="text-[#10B981]" />
+                  Cancel anytime
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center gap-10 pt-8 border-t border-arch-border">
-               <div className="flex items-center gap-4 text-arch-muted italic text-[9px] font-bold uppercase tracking-widest">
-                  <ShieldCheck size={16} /> 100% SECURE UPGRADE
-               </div>
-               <div className="flex items-center gap-4 text-arch-muted italic text-[9px] font-bold uppercase tracking-widest">
-                  <Lock size={16} /> PCI COMPLIANT
-               </div>
+            {/* Right: Plans & CTA */}
+            <div className="order-1 lg:order-2">
+              <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl overflow-hidden">
+                {/* Plan selector */}
+                <div className="p-5 space-y-3">
+                  {PLANS.map((plan) => {
+                    const isSelected = selectedPlan === plan.id;
+                    return (
+                      <button
+                        key={plan.id}
+                        onClick={() => setSelectedPlan(plan.id)}
+                        className={`w-full text-left p-4 rounded-lg border transition-all duration-200 relative ${
+                          isSelected
+                            ? 'border-[#7C3AED] bg-[#7C3AED]/5 ring-1 ring-[#7C3AED]/20'
+                            : 'border-[#2A2A3A] bg-transparent hover:border-[#3A3A4F]'
+                        }`}
+                      >
+                        {plan.badge && (
+                          <div className="absolute -top-2.5 right-3 bg-[#10B981] text-black text-[9px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full">
+                            {plan.badge}
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-[#F0EFFE]">{plan.name}</span>
+                          <div
+                            className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors ${
+                              isSelected ? 'border-[#7C3AED] bg-[#7C3AED]' : 'border-[#3A3A4F]'
+                            }`}
+                          >
+                            {isSelected && <Check size={10} className="text-white" />}
+                          </div>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-2xl font-bold text-[#F0EFFE] tracking-tight">{plan.price}</span>
+                          <span className="text-xs text-[#5A5A72]">{plan.interval}</span>
+                        </div>
+                        {plan.totalBilled && (
+                          <p className="text-[10px] text-[#5A5A72] mt-1.5">{plan.totalBilled}</p>
+                        )}
+                        <p className="text-[10px] text-[#5A5A72] mt-1">{plan.desc}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* CTA */}
+                <div className="p-5 border-t border-[#2A2A3A] bg-[#0A0A0F]/50">
+                  {cancelled && (
+                    <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs">
+                      Payment was cancelled. No charges were made. You can try again whenever you're ready.
+                    </div>
+                  )}
+                  {error && (
+                    <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+                      {error}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleSubscribe}
+                    disabled={loading}
+                    className="w-full py-3 bg-[#7C3AED] text-white text-sm font-medium rounded-lg hover:bg-[#6D28D9] transition-all duration-300 shadow-[0_0_24px_rgba(124,58,237,0.25)] disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        Starting trial...
+                      </>
+                    ) : (
+                      <>
+                        <Zap size={14} />
+                        Start 7-Day Free Trial
+                      </>
+                    )}
+                  </button>
+
+                  <p className="text-center text-[10px] text-[#5A5A72] mt-4 leading-relaxed">
+                    No charge until your trial ends. By upgrading, you agree to our{' '}
+                    <span className="text-[#8B5CF6]">Terms</span> and{' '}
+                    <span className="text-[#8B5CF6]">Privacy Policy</span>.
+                  </p>
+                </div>
+              </div>
+
+              {/* Stripe badge */}
+              <div className="flex items-center justify-center gap-2 mt-4 text-[#5A5A72] text-[10px]">
+                <svg className="w-4 h-4 opacity-40" viewBox="0 0 24 24" fill="none">
+                  <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M2 10h20" stroke="currentColor" strokeWidth="1.5"/>
+                </svg>
+                Secured by Stripe
+              </div>
             </div>
           </div>
-
-          {/* Right Column: Pricing & Conversion */}
-          <div className="space-y-8">
-            <div className="architectural-panel p-0 overflow-hidden relative border-arch-fg/20">
-               <div className="p-8 border-b border-arch-border bg-arch-muted/5 flex items-center justify-between">
-                  <p className="text-arch-eyebrow">Selection Window</p>
-                  <CreditCard size={16} className="text-arch-muted" />
-               </div>
-               
-               <div className="p-8 space-y-6">
-                 {PLANS.map((plan) => {
-                   const isSelected = selectedPlan === plan.id;
-                   return (
-                     <button
-                       key={plan.id}
-                       onClick={() => setSelectedPlan(plan.id)}
-                       className={`w-full text-left p-8 border transition-all duration-300 relative group ${
-                         isSelected ? 'border-arch-fg bg-arch-fg/5 ring-1 ring-arch-fg/10' : 'border-arch-border bg-transparent hover:border-arch-muted'
-                       }`}
-                     >
-                       {plan.badge && (
-                         <div className="absolute -top-3 right-6 bg-blue-500 text-slate-900 dark:text-white px-3 py-1 text-[8px] font-black uppercase tracking-[0.2em]">
-                           {plan.badge}
-                         </div>
-                       )}
-                       <div className="flex items-center justify-between mb-6">
-                         <span className="text-[8px] font-black uppercase tracking-[0.3em] text-arch-muted group-hover:text-arch-fg transition-colors">
-                           {plan.name}
-                         </span>
-                         <div className={`w-3 h-3 rounded-full border border-arch-fg flex items-center justify-center ${isSelected ? 'bg-arch-fg' : ''}`} />
-                       </div>
-                       <div className="flex items-baseline gap-2">
-                         <span className="text-5xl font-black italic tracking-tighter text-arch-fg">{plan.price}</span>
-                         <span className="text-[10px] font-black text-arch-muted uppercase tracking-widest leading-none">{plan.interval}</span>
-                       </div>
-                       {plan.totalPrice && (
-                         <p className="text-[9px] text-arch-muted uppercase tracking-widest mt-4 italic font-bold">
-                           {plan.totalPrice}
-                         </p>
-                       )}
-                       <p className="text-[9px] text-arch-muted leading-relaxed mt-2 italic font-medium opacity-60 group-hover:opacity-100 transition-opacity">
-                         {plan.desc}
-                       </p>
-                     </button>
-                   )
-                 })}
-               </div>
-
-               <div className="p-8 bg-arch-fg/[0.02] border-t border-arch-border">
-                 {error && <p className="text-red-400 text-[10px] font-black uppercase tracking-widest mb-6">{error}</p>}
-                 
-                 <button
-                   onClick={handleSubscribe}
-                   disabled={loading}
-                   className="w-full btn-arch py-8 text-sm group"
-                 >
-                   {loading ? (
-                     <div className="flex items-center justify-center gap-4">
-                       <Loader2 size={18} className="animate-spin" />
-                       INITIALIZING...
-                     </div>
-                   ) : (
-                     <div className="flex items-center justify-center gap-4">
-                        <Zap size={18} />
-                        START 7-DAY FREE TRIAL
-                        <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                     </div>
-                   )}
-                 </button>
-
-                 <div className="mt-8 space-y-4">
-                   <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-[0.3em] text-arch-muted italic">
-                      <span>No charge until trial ends</span>
-                      <Activity size={10} />
-                   </div>
-                   <p className="text-[8px] text-center text-arch-muted/50 uppercase tracking-widest leading-relaxed">
-                     By upgrading, you agree to our Terms of Service and Privacy Policy. Cancellation is instant via your dashboard.
-                   </p>
-                 </div>
-               </div>
-            </div>
-
-            <div className="architectural-panel p-8 bg-arch-muted/5 flex items-center justify-center gap-12">
-               <div className="flex items-center gap-3 grayscale opacity-30 invert">
-                  <CreditCard size={14} className="text-white" />
-                  <span className="text-[8px] font-black text-slate-900 dark:text-white bg-black p-1">Stripe Secure</span>
-               </div>
-               <div className="w-px h-6 bg-arch-border" />
-               <div className="flex items-center gap-3 grayscale opacity-30 invert">
-                  <Shield size={14} className="text-white" />
-                  <span className="text-[12px] font-black text-slate-900 dark:text-white italic">Aura OS</span>
-               </div>
-            </div>
-          </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
 };
 
 export default PaymentPage;
-
-
-
-

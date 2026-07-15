@@ -28,12 +28,12 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({
   return (
     <button
       onClick={toggleTheme}
-      className={`
+className={`
         relative rounded-full flex items-center justify-center 
         transition-all duration-300 group shadow-sm hover:shadow-md
-        border bg-slate-100 dark:bg-slate-800
-        border-slate-200 dark:border-slate-700
-        hover:bg-slate-200 dark:hover:bg-slate-700
+        border bg-slate-800
+        border-slate-700
+        hover:bg-slate-700
         ${sizeClasses[size]}
         ${className}
       `}

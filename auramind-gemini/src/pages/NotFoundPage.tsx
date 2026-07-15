@@ -48,9 +48,9 @@ export default function NotFoundPage(): React.ReactElement {
 
           <Link
             to="/decks"
-            className="flex items-center justify-center gap-2 w-full px-6 py-3 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-xl hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+            className="flex items-center justify-center gap-2 w-full px-6 py-3 bg-zinc-800 text-zinc-300 rounded-xl hover:bg-zinc-700 transition-colors"
           >
-            <BookOpen className="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
+            <BookOpen className="h-5 w-5 text-zinc-300" />
             Browse Decks
           </Link>
 

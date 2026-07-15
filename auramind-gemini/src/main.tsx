@@ -6,8 +6,28 @@ import './index.css';
 declare global {
   interface Window {
     __TAURI__?: any;
+    __TAURI_INTERNALS__?: any;
+    __TAURI_OS_PLUGIN_INTERNALS__?: {
+      eol: string;
+      os_type: string;
+      platform: string;
+      family: string;
+      version: string;
+      arch: string;
+      exe_extension: string;
+    };
     Capacitor?: any;
   }
+}
+
+function getPlatformFromUA(): string {
+  const ua = navigator.userAgent;
+  if (/iPad|iPhone|iPod/.test(ua)) return 'ios';
+  if (/android/i.test(ua)) return 'android';
+  if (/Macintosh|MacIntel/.test(ua) && !/iPhone|iPad/.test(ua)) return 'macos';
+  if (/Windows NT/.test(ua)) return 'windows';
+  if (/Linux/.test(ua) && !/android/i.test(ua)) return 'linux';
+  return 'web';
 }
 
 async function initApp() {
@@ -16,27 +36,36 @@ async function initApp() {
 
   const root = createRoot(container);
   
-  // Initialize native platforms if available
+  // Detect platform and set CSS classes for platform-specific visuals
   if (typeof window !== 'undefined') {
-    // Check for Tauri
-    if (window.__TAURI__) {
+    // Priority 1: Tauri OS plugin (most accurate, works in desktop + mobile)
+    if (window.__TAURI_OS_PLUGIN_INTERNALS__) {
+      const osPlatform = window.__TAURI_OS_PLUGIN_INTERNALS__.platform;
       document.documentElement.classList.add('tauri-app');
+      document.documentElement.classList.add(`platform-${osPlatform}`);
+    }
+    // Priority 2: Tauri without OS plugin (UA fallback will handle)
+    else if (window.__TAURI__ || window.__TAURI_INTERNALS__) {
+      document.documentElement.classList.add('tauri-app');
+      // Fall through to UA detection below
     }
     
-    // Check for Capacitor
+    // Priority 3: Capacitor (iOS/Android/web)
     if (window.Capacitor) {
       document.documentElement.classList.add('capacitor-app');
-      
-      // Add platform class
-      const platform = window.Capacitor.getPlatform();
-      document.documentElement.classList.add(`platform-${platform}`);
-      
-      if (platform === 'ios') {
+      const capPlatform = window.Capacitor.getPlatform();
+      document.documentElement.classList.add(`platform-${capPlatform}`);
+      if (capPlatform === 'ios') {
         document.documentElement.classList.add('ios-app');
-      } else if (platform === 'android') {
+      } else if (capPlatform === 'android') {
         document.documentElement.classList.add('android-app');
       }
+      return; // Capacitor detection is authoritative—don't override with UA
     }
+    
+    // Fallback: UA detection (web, Tauri without OS plugin, etc.)
+    const uaPlatform = getPlatformFromUA();
+    document.documentElement.classList.add(`platform-${uaPlatform}`);
   }
 
   root.render(

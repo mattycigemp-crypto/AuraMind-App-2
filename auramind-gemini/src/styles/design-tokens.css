@@ -1,85 +1,205 @@
 /* AuraMind Design Tokens - Based on Stitch Design System */
+/* Platform-specific design tokens — each platform gets its own identity */
 
+/* ========================================
+   Default (Web) — AuraMind Cosmic Purple
+   ======================================== */
 :root {
-  /* Color Palette */
-  --color-surface: #0d1515;
-  --color-surface-dim: #0d1515;
-  --color-surface-bright: #333b3b;
-  --color-surface-container-lowest: #080f10;
-  --color-surface-container-low: #151d1e;
-  --color-surface-container: #192122;
-  --color-surface-container-high: #232b2c;
-  --color-surface-container-highest: #2e3637;
-  --color-on-surface: #dce4e5;
-  --color-on-surface-variant: #b9cacb;
-  --color-inverse-surface: #dce4e5;
-  --color-inverse-on-surface: #2a3233;
-  --color-outline: #849495;
-  --color-outline-variant: #3b494b;
-  --color-surface-tint: #8B5CF6;
-  --color-primary: #F5F3FF;
-  --color-on-primary: #4B0082;
-  --color-primary-container: #EDE9FE;
-  --color-on-primary-container: #6D28D9;
-  --color-inverse-primary: #6D28D9;
-  --color-secondary: #d0bcff;
-  --color-on-secondary: #3c0091;
-  --color-secondary-container: #571bc1;
-  --color-on-secondary-container: #c4abff;
-  --color-tertiary: #fff3f2;
-  --color-on-tertiary: #67001b;
-  --color-tertiary-container: #ffcdcf;
-  --color-on-tertiary-container: #bc0b3b;
-  --color-error: #ffb4ab;
-  --color-on-error: #690005;
-  --color-error-container: #93000a;
-  --color-on-error-container: #ffdad6;
-  --color-primary-fixed: #C4B5FD;
-  --color-primary-fixed-dim: #8B5CF6;
-  --color-on-primary-fixed: #2E1A47;
-  --color-on-primary-fixed-variant: #5D3FD3;
-  --color-secondary-fixed: #e9ddff;
-  --color-secondary-fixed-dim: #d0bcff;
-  --color-on-secondary-fixed: #23005c;
-  --color-on-secondary-fixed-variant: #5516be;
-  --color-tertiary-fixed: #ffdadb;
-  --color-tertiary-fixed-dim: #ffb2b7;
-  --color-on-tertiary-fixed: #40000d;
-  --color-on-tertiary-fixed-variant: #92002a;
-  --color-background: #0d1515;
-  --color-on-background: #dce4e5;
-  --color-surface-variant: #2e3637;
-   
-  /* Custom AuraMind Colors */
+  --platform-accent-hue: 270;
+  --platform-accent-sat: 85%;
+  --platform-accent-lit: 60%;
+  --platform-primary: #a855f7;
+  --platform-primary-tint: #9333ea;
+  --platform-secondary: #6366f1;
+  --platform-tertiary: #06b6d4;
+  --platform-primary-text: #F5F3FF;
+  --platform-on-primary: #4B0082;
+  --platform-primary-container: #EDE9FE;
+  --platform-surface-elevated: rgba(168, 85, 247, 0.08);
+  --platform-glass: rgba(15, 15, 20, 0.7);
+  --platform-glass-border: #262626;
+  --platform-nav-bg: rgba(5, 5, 5, 0.85);
+  --platform-card-radius: 0.75rem;
+  --platform-button-radius: 0.5rem;
+  --platform-font-ui: 'Inter', system-ui, sans-serif;
+  --platform-font-display: 'Space Grotesk', 'Inter', sans-serif;
+  --platform-border-width: 1px;
+  --platform-nav-height: 3.75rem;
+  --platform-blur-strength: 12px;
+  --platform-shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --platform-shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --platform-shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+  --platform-elevation: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+
+  /* Map to generic tokens for backward compat */
   --color-cosmic: #a855f7;
   --color-cosmic-glow: rgba(168, 85, 247, 0.25);
-  --color-bg-neural: #050505;
-  --color-surface-glass: rgba(15, 15, 20, 0.7);
-  --color-border-brutal: #262626;
   --color-accent-neural-grid: #121212;
   --color-status-retention-high: #8B5CF6;
   --color-status-retention-low: #A78BFA;
+  --color-bg-neural: #050505;
+  --color-surface-glass: rgba(15, 15, 20, 0.7);
+  --color-border-brutal: #262626;
+}
 
-  /* Typography */
-  --font-impact-lg: 'Space Grotesk';
-  --font-eyebrow: 'Space Grotesk';
-  --font-body-main: 'Inter';
-  --font-mono-label: 'Space Grotesk';
-   
-  /* Spacing */
-  --spacing-unit: 4px;
-  --spacing-gutter: 24px;
-  --spacing-sidebar-width: 280px;
-  --spacing-container-max: 1440px;
-  --spacing-card-padding: 20px;
-   
-  /* Border Radius */
-  --radius-sm: 0.125rem;
-  --radius-default: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.75rem;
-  --radius-full: 9999px;
+/* ========================================
+   iOS — Liquid Glass (Apple HIG)
+   Rounded, translucent, vibrant
+   ======================================== */
+.platform-ios {
+  --platform-accent-hue: 211;
+  --platform-accent-sat: 100%;
+  --platform-accent-lit: 50%;
+  --platform-primary: #007AFF;
+  --platform-primary-tint: #0066D6;
+  --platform-secondary: #5856D6;
+  --platform-tertiary: #AF52DE;
+  --platform-primary-text: #FFFFFF;
+  --platform-on-primary: #FFFFFF;
+  --platform-primary-container: rgba(0, 122, 255, 0.12);
+  --platform-surface-elevated: rgba(0, 122, 255, 0.08);
+  --platform-glass: rgba(30, 30, 35, 0.72);
+  --platform-glass-border: rgba(255, 255, 255, 0.12);
+  --platform-nav-bg: rgba(10, 10, 12, 0.8);
+  --platform-card-radius: 1rem;
+  --platform-button-radius: 0.75rem;
+  --platform-font-ui: -apple-system, 'Inter', system-ui, sans-serif;
+  --platform-font-display: -apple-system, 'Space Grotesk', sans-serif;
+  --platform-border-width: 0.5px;
+  --platform-nav-height: 3.5rem;
+  --platform-blur-strength: 30px;
+  --platform-shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+  --platform-shadow-md: 0 4px 14px rgba(0,0,0,0.25);
+  --platform-shadow-lg: 0 8px 40px rgba(0,0,0,0.3);
+  --platform-elevation: drop-shadow(0 2px 8px rgba(0,0,0,0.2));
+}
+
+/* ========================================
+   Android — Material Design 3 Expressive
+   Dynamic color, tonal surfaces, motion springs
+   ======================================== */
+.platform-android {
+  --platform-accent-hue: 265;
+  --platform-accent-sat: 85%;
+  --platform-accent-lit: 55%;
+  --platform-primary: #6750A4;
+  --platform-primary-tint: #7C62B8;
+  --platform-secondary: #625B71;
+  --platform-tertiary: #7D5260;
+  --platform-primary-text: #FFFFFF;
+  --platform-on-primary: #FFFFFF;
+  --platform-primary-container: rgba(103, 80, 164, 0.15);
+  --platform-surface-elevated: rgba(103, 80, 164, 0.1);
+  --platform-glass: rgba(30, 28, 34, 0.65);
+  --platform-glass-border: rgba(255, 255, 255, 0.08);
+  --platform-nav-bg: rgba(15, 14, 18, 0.9);
+  --platform-card-radius: 1.25rem;
+  --platform-button-radius: 1rem;
+  --platform-font-ui: 'Google Sans', 'Inter', system-ui, sans-serif;
+  --platform-font-display: 'Google Sans', 'Space Grotesk', sans-serif;
+  --platform-border-width: 1px;
+  --platform-nav-height: 4rem;
+  --platform-blur-strength: 20px;
+  --platform-shadow-sm: 0 1px 2px rgba(0,0,0,0.15);
+  --platform-shadow-md: 0 4px 8px rgba(0,0,0,0.2);
+  --platform-shadow-lg: 0 8px 24px rgba(0,0,0,0.25);
+  --platform-elevation: drop-shadow(0 1px 3px rgba(0,0,0,0.15));
+}
+
+/* ========================================
+   macOS — Liquid Glass Desktop
+   Edge-to-edge, uniform toolbars, colored icons
+   ======================================== */
+.platform-macos {
+  --platform-accent-hue: 211;
+  --platform-accent-sat: 100%;
+  --platform-accent-lit: 50%;
+  --platform-primary: #007AFF;
+  --platform-primary-tint: #0066D6;
+  --platform-secondary: #6366f1;
+  --platform-tertiary: #AF52DE;
+  --platform-primary-text: #FFFFFF;
+  --platform-on-primary: #FFFFFF;
+  --platform-primary-container: rgba(0, 122, 255, 0.1);
+  --platform-surface-elevated: rgba(255, 255, 255, 0.06);
+  --platform-glass: rgba(30, 30, 35, 0.65);
+  --platform-glass-border: rgba(255, 255, 255, 0.1);
+  --platform-nav-bg: rgba(20, 20, 22, 0.75);
+  --platform-card-radius: 0.625rem;
+  --platform-button-radius: 0.375rem;
+  --platform-font-ui: -apple-system, 'Inter', system-ui, sans-serif;
+  --platform-font-display: -apple-system, 'Space Grotesk', sans-serif;
+  --platform-border-width: 0.5px;
+  --platform-nav-height: 2.75rem;
+  --platform-blur-strength: 24px;
+  --platform-shadow-sm: 0 1px 2px rgba(0,0,0,0.25);
+  --platform-shadow-md: 0 4px 12px rgba(0,0,0,0.3);
+  --platform-shadow-lg: 0 8px 32px rgba(0,0,0,0.35);
+  --platform-elevation: drop-shadow(0 2px 6px rgba(0,0,0,0.2));
+}
+
+/* ========================================
+   Windows — Fluent 2 Design System
+   Mica backdrops, acrylic glass, layered hierarchy
+   ======================================== */
+.platform-windows {
+  --platform-accent-hue: 203;
+  --platform-accent-sat: 100%;
+  --platform-accent-lit: 42%;
+  --platform-primary: #0078D4;
+  --platform-primary-tint: #106EBE;
+  --platform-secondary: #5C5C5C;
+  --platform-tertiary: #10893E;
+  --platform-primary-text: #FFFFFF;
+  --platform-on-primary: #FFFFFF;
+  --platform-primary-container: rgba(0, 120, 212, 0.12);
+  --platform-surface-elevated: rgba(255, 255, 255, 0.04);
+  --platform-glass: rgba(40, 40, 44, 0.6);
+  --platform-glass-border: rgba(255, 255, 255, 0.06);
+  --platform-nav-bg: rgba(25, 25, 28, 0.85);
+  --platform-card-radius: 0.5rem;
+  --platform-button-radius: 0.25rem;
+  --platform-font-ui: 'Segoe UI', 'Inter', system-ui, sans-serif;
+  --platform-font-display: 'Segoe UI', 'Space Grotesk', sans-serif;
+  --platform-border-width: 1px;
+  --platform-nav-height: 3rem;
+  --platform-blur-strength: 40px;
+  --platform-shadow-sm: 0 1px 1px rgba(0,0,0,0.2);
+  --platform-shadow-md: 0 4px 8px rgba(0,0,0,0.25);
+  --platform-shadow-lg: 0 8px 24px rgba(0,0,0,0.3);
+  --platform-elevation: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+/* ========================================
+   Linux — GNOME Adwaita / KDE Plasma
+   Clean, intentional, floating elements, rounded
+   ======================================== */
+.platform-linux {
+  --platform-accent-hue: 207;
+  --platform-accent-sat: 76%;
+  --platform-accent-lit: 55%;
+  --platform-primary: #3584E4;
+  --platform-primary-tint: #2975D1;
+  --platform-secondary: #33D17A;
+  --platform-tertiary: #E66100;
+  --platform-primary-text: #FFFFFF;
+  --platform-on-primary: #FFFFFF;
+  --platform-primary-container: rgba(53, 132, 228, 0.12);
+  --platform-surface-elevated: rgba(255, 255, 255, 0.05);
+  --platform-glass: rgba(30, 30, 32, 0.6);
+  --platform-glass-border: rgba(255, 255, 255, 0.07);
+  --platform-nav-bg: rgba(20, 20, 22, 0.8);
+  --platform-card-radius: 0.75rem;
+  --platform-button-radius: 0.5rem;
+  --platform-font-ui: 'Inter', 'Cantarell', system-ui, sans-serif;
+  --platform-font-display: 'Inter', 'Space Grotesk', sans-serif;
+  --platform-border-width: 1px;
+  --platform-nav-height: 3rem;
+  --platform-blur-strength: 18px;
+  --platform-shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+  --platform-shadow-md: 0 4px 12px rgba(0,0,0,0.25);
+  --platform-shadow-lg: 0 8px 28px rgba(0,0,0,0.3);
+  --platform-elevation: drop-shadow(0 2px 4px rgba(0,0,0,0.15));
 }
 
 /* Dark theme specific styles */

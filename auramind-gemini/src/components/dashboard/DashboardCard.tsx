@@ -69,7 +69,7 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
           <div
             className={cn(
               'absolute -inset-px rounded-2xl opacity-0 transition-opacity duration-500 pointer-events-none',
-              'bg-gradient-to-r from-primary/20 via-purple-500/20 to-primary/20',
+              'bg-gradient-to-r from-[#8B5CF6]/20 via-[#7C3AED]/20 to-[#8B5CF6]/20',
               isHovered && 'opacity-100'
             )}
             style={{ transform: 'translateZ(-1px)' }}
@@ -82,5 +82,3 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
 };
 
 export { DashboardCard };
-
-

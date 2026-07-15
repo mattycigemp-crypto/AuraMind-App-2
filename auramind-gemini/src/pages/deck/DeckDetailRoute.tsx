@@ -393,8 +393,8 @@ export default function DeckDetailRoute() {
         </div>
 
         {showDeleteConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)}>
-            <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)}>
+            <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 bg-red-500/10 rounded-lg">
                   <AlertTriangleIcon className="h-6 w-6 text-red-400" />
@@ -407,9 +407,9 @@ export default function DeckDetailRoute() {
                 </div>
               </div>
               <div className="flex justify-end gap-3">
-                <button
+<button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="px-4 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors"
+                  className="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-300 text-sm font-medium hover:bg-zinc-700 transition-colors"
                 >
                   Cancel
                 </button>
@@ -432,22 +432,22 @@ export default function DeckDetailRoute() {
           <form onSubmit={handleAddCard} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1.5">Question</label>
-              <textarea
+<textarea
                 value={form.question}
                 onChange={(e) => setForm((p) => ({ ...p, question: e.target.value }))}
                 placeholder="What is the capital of France?"
                 rows={2}
-                className="w-full px-4 py-2.5 rounded-lg bg-zinc-100 dark:bg-zinc-900/70 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-y"
+                className="w-full px-4 py-2.5 rounded-lg bg-zinc-800/70 border border-zinc-700 text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-y"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-1.5">Answer</label>
-              <textarea
+<textarea
                 value={form.answer}
                 onChange={(e) => setForm((p) => ({ ...p, answer: e.target.value }))}
                 placeholder="Paris"
                 rows={2}
-                className="w-full px-4 py-2.5 rounded-lg bg-zinc-100 dark:bg-zinc-900/70 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-y"
+                className="w-full px-4 py-2.5 rounded-lg bg-zinc-800/70 border border-zinc-700 text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-y"
               />
             </div>
             <button
@@ -475,21 +475,21 @@ export default function DeckDetailRoute() {
                   <GlassCard key={card.id} variant="bordered" className="border-primary/30 space-y-3">
                     <div>
                       <label className="block text-xs font-medium text-zinc-500 mb-1">Question</label>
-                      <textarea
+<textarea
                         value={editForm.question}
                         onChange={(e) => setEditForm((p) => ({ ...p, question: e.target.value }))}
                         rows={2}
                         autoFocus
-                        className="w-full px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-900/70 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-y text-sm"
+                        className="w-full px-3 py-2 rounded-lg bg-zinc-800/70 border border-zinc-700 text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-y text-sm"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-zinc-500 mb-1">Answer</label>
-                      <textarea
+<textarea
                         value={editForm.answer}
                         onChange={(e) => setEditForm((p) => ({ ...p, answer: e.target.value }))}
                         rows={2}
-                        className="w-full px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-900/70 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-y text-sm"
+                        className="w-full px-3 py-2 rounded-lg bg-zinc-800/70 border border-zinc-700 text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary resize-y text-sm"
                       />
                     </div>
                     <div className="flex items-center gap-2 pt-1">
@@ -501,10 +501,10 @@ export default function DeckDetailRoute() {
                         <CheckIcon className="w-3.5 h-3.5" />
                         {editSaving ? 'Saving…' : 'Save'}
                       </button>
-                      <button
+<button
                         onClick={handleCancelEdit}
                         disabled={editSaving}
-                        className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-medium hover:bg-zinc-300 dark:hover:bg-zinc-700 disabled:opacity-50 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 text-sm font-medium hover:bg-zinc-700 disabled:opacity-50 transition-colors"
                       >
                         <XIcon className="w-3.5 h-3.5" />
                         Cancel

@@ -120,7 +120,7 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ onGenerateQuiz, onGenerateF
               onClick={() => setIsCollapsed(true)}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
-              className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-all"
+              className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-all"
             >
               <Minimize2 size={14} />
             </motion.button>
@@ -294,7 +294,7 @@ const SourcesPanel: React.FC<SourcesPanelProps> = ({ onGenerateQuiz, onGenerateF
                         {isActive && doc.excerpt && !isExpanded && (
                           <button
                             onClick={() => setExpandedDoc(doc.id)}
-                            className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-all"
+                            className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-all"
                           >
                             <Maximize2 size={12} />
                           </button>

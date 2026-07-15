@@ -1,130 +1,463 @@
-import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowRightIcon as ArrowRight, BotIcon as Bot, Loader2Icon as Loader2, PlayIcon as Play, 
-  SparklesIcon, Wand2Icon as Wand2, PlusIcon as Plus, MessageSquareIcon as MessageSquare, 
-  LayersIcon as Layers, BookOpenIcon as BookOpen, ChevronRightIcon as ChevronRight, XIcon as X, 
-  ClockIcon as Clock, ZapIcon as Zap, Maximize2Icon as Maximize2, 
-  Minimize2Icon as Minimize2, CommandIcon as Command, SendIcon as Send, StopCircleIcon as StopCircle, 
-  BookTextIcon as BookText, CheckCircle2Icon as CheckCircle, CircleIcon as Circle, ListIcon as List
-} from '../icons/CustomIcons';
+import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
-import GlassCard from '../shared/GlassCard';
+import {
+  BotIcon as Bot, SendIcon as Send, PlusIcon as Plus,
+  BookOpenIcon as BookOpen, LayersIcon as Layers, ZapIcon as Zap,
+  StopCircleIcon as StopCircle,
+  Loader2Icon as Loader2, SearchIcon as Search, MessageSquareIcon as MessageSquare,
+  Trash2Icon as Trash2, ChevronLeftIcon as ChevronLeft, ChevronDownIcon as ChevronDown,
+  CopyIcon as Copy, ThumbsUpIcon as ThumbsUp, ThumbsDownIcon as ThumbsDown,
+  RefreshCwIcon as RefreshCw, Mic2Icon as Mic, Volume2Icon as Volume2,
+  DownloadIcon as Download, CommandIcon as Keyboard, PencilIcon as Pencil,
+  XIcon as X, CheckIcon as Check, SparklesIcon as Sparkles,
+  BrainIcon as Brain, BookmarkIcon as Bookmark, SaveIcon as Save,
+  ShareIcon as Share, LightbulbIcon as Lightbulb, NetworkIcon as Network,
+} from '../icons/CustomIcons';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
 import { auraAiClient } from '../../services/api/auraAiService';
 import { analyticsService } from '../../services/analytics/analyticsService';
-import { wordnikService } from '../../services/wordnik/wordnikService';
-import { useSourceDocuments } from '../../contexts/SourceDocumentsContext';
-import { buildSourceContextForChat } from '../../services/generation/sourceGroundedService';
+import { generateConceptMap, ConceptMapData } from '../../services/ai/conceptMapService';
+import { ConceptMap } from '../study/ConceptMap';
+import { MnemonicGenerator } from '../study/MnemonicGenerator';
 
-interface PlanStep {
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
+
+// ── Types ───────────────────────────────────────────────────────────────
+
+type ChatMode = 'chat' | 'quiz' | 'flashcard' | 'map' | 'mnemonic';
+
+interface Toast {
   id: string;
-  label: string;
-  status: 'pending' | 'in_progress' | 'completed';
+  message: string;
+  type: 'success' | 'error' | 'info';
 }
 
-interface InteractionPlanProps {
+interface QuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  explanation: string;
+}
+
+interface Flashcard {
+  id: string;
+  front: string;
+  back: string;
+}
+
+interface Conversation {
+  id: string;
   title: string;
-  steps: PlanStep[];
-  onAction?: (actionId: string) => void;
-  actions?: Array<{ id: string; label: string; primary?: boolean }>;
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>;
 }
 
-const InteractionPlan: React.FC<InteractionPlanProps> = ({ title, steps, onAction, actions }) => {
+// ── Constants ───────────────────────────────────────────────────────────
+
+const SUGGESTIONS = [
+  'Quiz me on today\'s study material',
+  'Explain spaced repetition',
+  'Help me create a study schedule',
+  'Summarize active recall',
+];
+
+const COMMANDS = [
+  { id: '/define', label: 'Define a word', icon: Search },
+  { id: '/explain', label: 'Explain a concept', icon: Zap },
+  { id: '/quiz', label: 'Generate a quiz', icon: Layers },
+  { id: '/study', label: 'Start study session', icon: BookOpen },
+];
+
+const MODES: { id: ChatMode; label: string; icon: React.ElementType; color: string; description: string }[] = [
+  { id: 'chat', label: 'Chat', icon: MessageSquare, color: 'text-zinc-400', description: 'Ask questions, get explanations, discuss topics' },
+  { id: 'quiz', label: 'Quiz', icon: Layers, color: 'text-violet-400', description: 'Generate quiz questions from any topic' },
+  { id: 'flashcard', label: 'Flashcards', icon: Sparkles, color: 'text-amber-400', description: 'Create study flashcards automatically' },
+  { id: 'map', label: 'Concept Map', icon: Network, color: 'text-emerald-400', description: 'Generate interactive concept maps' },
+  { id: 'mnemonic', label: 'Memory', icon: Brain, color: 'text-rose-400', description: 'Generate mnemonics & memory palaces' },
+];
+
+const MODE_SYSTEM_PROMPTS: Record<ChatMode, string> = {
+  chat: '',
+  quiz: `You are a quiz generator. Write a short one-sentence intro, then raw JSON on the next line matching the format shown in the conversation examples. No backticks. No extra text. Include 4-5 questions.`,
+  flashcard: `You are a flashcard generator. Write a short one-sentence intro, then raw JSON on the next line matching the format shown in the conversation examples. No backticks. No extra text. Include 5-8 flashcards.`,
+  map: `You are a concept mapping assistant. Output ONLY valid JSON describing a concept map with nodes and edges. No markdown, no backticks, no commentary.`,
+  mnemonic: `You are a creative memory expert. Output ONLY valid JSON with acronyms, mnemonics, memoryPalace, and story. No markdown, no backticks, no commentary.`,
+};
+
+// ── Toast Context (simple inline) ───────────────────────────────────────
+
+let toastIdCounter = 0;
+
+// ── Code Block Component ────────────────────────────────────────────────
+
+const CodeBlock: React.FC<{ language: string; code: string; onToast: (msg: string, type?: Toast['type']) => void }> = ({ language, code, onToast }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      onToast('Code copied to clipboard', 'success');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  };
+
   return (
-    <motion.div 
-      className="mt-4 p-5 rounded-2xl border border-violet-500/20 bg-zinc-50 dark:bg-zinc-950/50 shadow-inner overflow-hidden relative group"
-      initial={{ opacity: 0, y: 10, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-    >
-      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-transparent pointer-events-none" />
-      
-      <div className="relative z-10">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="p-2 rounded-lg bg-violet-500/10 border border-violet-500/20">
-            <List className="w-4 h-4 text-violet-400" />
-          </div>
-          <h3 className="text-[13px] font-black uppercase tracking-[0.2em] text-zinc-900 dark:text-white italic">{title}</h3>
-        </div>
-
-        <div className="space-y-4 mb-6">
-          {steps.map((step, i) => (
-            <div key={step.id} className="flex items-start gap-4 group/step">
-              <div className="mt-0.5 shrink-0 relative">
-                {step.status === 'completed' ? (
-                  <CheckCircle className="w-4 h-4 text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.4)]" />
-                ) : step.status === 'in_progress' ? (
-                  <div className="w-4 h-4 rounded-full border-2 border-violet-400 border-t-transparent animate-spin" />
-                ) : (
-                  <Circle className="w-4 h-4 text-zinc-700 group-hover/step:text-zinc-500 transition-colors" />
-                )}
-              </div>
-              <div className="flex-1">
-                <p className={`text-xs font-bold tracking-wide uppercase transition-colors ${
-                  step.status === 'completed' ? 'text-zinc-400 line-through decoration-zinc-700' : 
-                  step.status === 'in_progress' ? 'text-violet-300' : 'text-zinc-500'
-                }`}>
-                  {step.label}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {actions && actions.length > 0 && (
-          <div className="flex flex-wrap gap-3 pt-4 border-t border-white/5">
-            {actions.map((action) => (
-              <motion.button
-                key={action.id}
-                onClick={() => onAction?.(action.id)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all ${
-                  action.primary 
-                    ? 'bg-violet-600 text-white hover:bg-violet-500 shadow-lg shadow-violet-600/20' 
-                    : 'bg-zinc-100 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-200 hover:border-zinc-400 dark:hover:border-zinc-700'
-                }`}
-              >
-                {action.label}
-              </motion.button>
-            ))}
-          </div>
-        )}
+    <div className="my-3 rounded-xl border border-zinc-800 bg-black/70 overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-1.5 border-b border-zinc-800/60 bg-zinc-900/40">
+        <span className="text-[11px] text-zinc-500 font-mono lowercase">{language || 'code'}</span>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1 text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors"
+        >
+          {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
+          {copied ? 'Copied' : 'Copy'}
+        </button>
       </div>
-    </motion.div>
+      <pre className="p-3 overflow-x-auto">
+        <code className="text-sm text-zinc-200 font-mono">{code}</code>
+      </pre>
+    </div>
   );
 };
 
+// ── Thinking Panel ──────────────────────────────────────────────────────
+
+const ThinkingPanel: React.FC<{ steps: string[] }> = ({ steps }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  if (steps.length === 0) return null;
+
+  return (
+    <div className="mb-3 rounded-xl border border-zinc-800/50 bg-zinc-900/30 overflow-hidden">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center gap-2 px-4 py-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+      >
+        <Brain size={13} className="text-zinc-600" />
+        <span>Thought process ({steps.length} steps)</span>
+        <ChevronDown size={13} className={`ml-auto transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
+      </button>
+      {expanded && (
+        <div className="px-4 pb-3 space-y-1.5 border-t border-zinc-800/30 pt-2">
+          {steps.map((step, i) => (
+            <div key={i} className="flex items-start gap-2 text-xs text-zinc-500">
+              <span className="text-zinc-700 font-mono mt-0.5">{i + 1}.</span>
+              <span>{step}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── Quiz Renderer ───────────────────────────────────────────────────────
+
+const QuizRenderer: React.FC<{
+  quiz: { title: string; topic: string; difficulty: string; questions: QuizQuestion[] };
+  onEdit: (questionIndex: number, field: string, value: string) => void;
+  onSave?: () => void;
+  mode: ChatMode;
+}> = ({ quiz, onEdit, onSave, mode }) => {
+  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [showResults, setShowResults] = useState(false);
+
+  if (mode !== 'quiz' || !quiz.questions?.length) return null;
+
+  const score = quiz.questions.filter((q, i) => answers[i] === q.correctAnswer).length;
+
+  return (
+    <div className="my-2 p-4 rounded-xl border border-violet-500/20 bg-violet-500/5 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-white">{quiz.title}</h3>
+          <p className="text-xs text-zinc-500">{quiz.topic} · {quiz.difficulty}</p>
+        </div>
+        <div className="flex gap-2">
+          {onSave && (
+            <button
+              onClick={onSave}
+              className="px-3 py-1.5 rounded-lg bg-green-500/20 text-green-300 text-xs font-medium hover:bg-green-500/30 transition-colors flex items-center gap-1"
+            >
+              <Save size={12} />
+              Save
+            </button>
+          )}
+          <button
+            onClick={() => setShowResults(!showResults)}
+            className="px-3 py-1.5 rounded-lg bg-violet-500/20 text-violet-300 text-xs font-medium hover:bg-violet-500/30 transition-colors"
+          >
+            {showResults ? `Score: ${score}/${quiz.questions.length}` : 'Check Answers'}
+          </button>
+        </div>
+      </div>
+
+      {quiz.questions.map((q, qi) => (
+        <div key={q.id} className="space-y-2">
+          <div className="flex items-start gap-2">
+            <span className="text-xs font-mono text-violet-400 mt-0.5">Q{qi + 1}</span>
+            <p className="text-sm text-zinc-200 flex-1">{q.question}</p>
+            <button
+              onClick={() => {
+                const newQ = prompt('Edit question:', q.question);
+                if (newQ) onEdit(qi, 'question', newQ);
+              }}
+              className="p-1 text-zinc-600 hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-all"
+              title="Edit"
+            >
+              <Pencil size={11} />
+            </button>
+          </div>
+          <div className="grid grid-cols-1 gap-1.5 ml-6">
+            {q.options.map((opt, oi) => {
+              const isAnswered = answers[qi] !== undefined;
+              const isSelected = answers[qi] === oi;
+              const isCorrect = oi === q.correctAnswer;
+              let cls = 'px-3 py-2 rounded-lg text-xs border transition-colors ';
+              if (showResults && isCorrect) cls += 'border-green-500/50 bg-green-500/10 text-green-300';
+              else if (showResults && isSelected && !isCorrect) cls += 'border-red-500/50 bg-red-500/10 text-red-300';
+              else if (isSelected) cls += 'border-violet-500/50 bg-violet-500/10 text-violet-300';
+              else cls += 'border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700 hover:text-zinc-300';
+
+              return (
+                <button
+                  key={oi}
+                  disabled={showResults}
+                  onClick={() => setAnswers(prev => ({ ...prev, [qi]: oi }))}
+                  className={cls}
+                >
+                  {String.fromCharCode(65 + oi)}) {opt}
+                </button>
+              );
+            })}
+          </div>
+          {showResults && q.explanation && (
+            <p className="ml-6 text-xs text-zinc-500 italic">{q.explanation}</p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ── Flashcard Renderer ──────────────────────────────────────────────────
+
+const FlashcardRenderer: React.FC<{
+  cards: Flashcard[];
+  onEdit: (cardIndex: number, field: string, value: string) => void;
+  onSave?: () => void;
+  mode: ChatMode;
+}> = ({ cards, onEdit, onSave, mode }) => {
+  const [flipped, setFlipped] = useState<Set<number>>(new Set());
+  const [currentIdx, setCurrentIdx] = useState(0);
+
+  if (mode !== 'flashcard' || !cards.length) return null;
+
+  const card = cards[currentIdx];
+  const isFlipped = flipped.has(currentIdx);
+
+  return (
+    <div className="my-2 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-zinc-500">{currentIdx + 1} / {cards.length}</span>
+        <div className="flex gap-1">
+          {onSave && (
+            <button
+              onClick={onSave}
+              className="px-2.5 py-1 rounded-lg bg-green-500/20 text-green-300 text-xs font-medium hover:bg-green-500/30 transition-colors flex items-center gap-1"
+            >
+              <Save size={11} />
+              Save
+            </button>
+          )}
+          <button
+            onClick={() => setCurrentIdx(Math.max(0, currentIdx - 1))}
+            disabled={currentIdx === 0}
+            className="px-2 py-1 rounded text-xs text-zinc-500 hover:text-zinc-300 disabled:opacity-30 transition-colors"
+          >
+            Prev
+          </button>
+          <button
+            onClick={() => setCurrentIdx(Math.min(cards.length - 1, currentIdx + 1))}
+            disabled={currentIdx === cards.length - 1}
+            className="px-2 py-1 rounded text-xs text-zinc-500 hover:text-zinc-300 disabled:opacity-30 transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
+      <div
+        onClick={() => setFlipped(prev => { const n = new Set(prev); n.has(currentIdx) ? n.delete(currentIdx) : n.add(currentIdx); return n; })}
+        className="cursor-pointer perspective-1000 h-44 group"
+      >
+        <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}>
+          {/* Front */}
+          <div className="absolute inset-0 backface-hidden rounded-2xl border border-amber-500/20 bg-amber-500/5 flex flex-col items-center justify-center p-6 text-center">
+            <span className="text-[10px] uppercase tracking-wider text-amber-500/60 mb-2">Question</span>
+            <p className="text-sm text-zinc-200">{card.front}</p>
+            <span className="text-[10px] text-zinc-600 mt-4">Click to flip</span>
+          </div>
+          {/* Back */}
+          <div className="absolute inset-0 backface-hidden [transform:rotateY(180deg)] rounded-2xl border border-amber-500/20 bg-amber-500/10 flex flex-col items-center justify-center p-6 text-center">
+            <span className="text-[10px] uppercase tracking-wider text-amber-500/60 mb-2">Answer</span>
+            <p className="text-sm text-zinc-200">{card.back}</p>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const newFront = prompt('Edit front:', card.front);
+                const newBack = prompt('Edit back:', card.back);
+                if (newFront) onEdit(currentIdx, 'front', newFront);
+                if (newBack) onEdit(currentIdx, 'back', newBack);
+              }}
+              className="absolute top-3 right-3 p-1.5 rounded-lg bg-zinc-800/60 text-zinc-500 hover:text-zinc-300 opacity-0 group-hover:opacity-100 transition-all"
+              title="Edit card"
+            >
+              <Pencil size={11} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-1.5 justify-center">
+        {cards.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrentIdx(i)}
+            className={`w-2 h-2 rounded-full transition-colors ${i === currentIdx ? 'bg-amber-400' : 'bg-zinc-800 hover:bg-zinc-700'}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ── Main Component ──────────────────────────────────────────────────────
+
 const AIChat: React.FC = () => {
-  const navigate = useNavigate();
-  const { decks, cards, createDeck, addCardsToDeck, goToDeck, startStudyForDeck } = useDashboardWorkspace();
-  const sourceCtx = (() => {
-    try { return useSourceDocuments(); }
-    catch { return null; }
-  })();
+  const { cards, createDeck, addCardsToDeck } = useDashboardWorkspace();
+
   const [input, setInput] = useState('');
-  const [conversations, setConversations] = useState<{ id: string; title: string; messages: Array<{ role: 'user' | 'assistant'; content: string; isStreaming?: boolean; editedCards?: any[] }> }[]>([
+  const [conversations, setConversations] = useState<Conversation[]>([
     { id: '1', title: 'New chat', messages: [] }
   ]);
   const [currentConversationId, setCurrentConversationId] = useState('1');
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [streamController, setStreamController] = useState<AbortController | null>(null);
-  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showCommands, setShowCommands] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showSuggestions, setShowSuggestions] = useState(true);
+  const [feedback, setFeedback] = useState<Record<string, 'up' | 'down'>>({});
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editText, setEditText] = useState('');
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [ttsPlaying, setTtsPlaying] = useState<Set<number>>(new Set());
+  const [followUps, setFollowUps] = useState<string[]>([]);
+  const [studyProgress, setStudyProgress] = useState({ reviewed: 0, total: 0 });
+
+  // New features state
+  const [mode, setMode] = useState<ChatMode>('chat');
+  const [streamingText, setStreamingText] = useState<Record<number, string>>({});
+  const [streamingDone, setStreamingDone] = useState<Set<number>>(new Set());
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [thinkingSteps, setThinkingSteps] = useState<Record<number, string[]>>({});
+  const [parsedQuizzes, setParsedQuizzes] = useState<Record<number, any>>({});
+  const [parsedFlashcards, setParsedFlashcards] = useState<Record<number, Flashcard[]>>({});
+  const [parsedConceptMaps, setParsedConceptMap] = useState<Record<number, ConceptMapData>>({});
+  const [showMnemonicGenerator, setShowMnemonicGenerator] = useState(false);
+  const [bookmarked, setBookmarked] = useState<Set<number>>(new Set());
+  const [showModeMenu, setShowModeMenu] = useState(false);
+  const [ghostSuggestion, setGhostSuggestion] = useState<string | null>(null);
+  const [showWelcome, setShowWelcome] = useState(true);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const commandsRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const modeMenuRef = useRef<HTMLDivElement>(null);
 
   const currentConversation = conversations.find(c => c.id === currentConversationId) || conversations[0];
   const messages = currentConversation?.messages || [];
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages]);
+  const dueCount = useMemo(() => cards.filter(c => c.nextReview <= Date.now()).length, [cards]);
 
+  // ── Effects ─────────────────────────────────────────────────────────
+
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
+    if (isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  }, [messages, streamingText]);
+
+  const conversationsRef = useRef(conversations);
+  const currentConversationIdRef = useRef(currentConversationId);
+  const messagesRef = useRef(messages);
+  const busyRef = useRef(busy);
+  const modeRef = useRef(mode);
+
+  useEffect(() => { conversationsRef.current = conversations; }, [conversations]);
+  useEffect(() => { currentConversationIdRef.current = currentConversationId; }, [currentConversationId]);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+  useEffect(() => { busyRef.current = busy; }, [busy]);
+  useEffect(() => { modeRef.current = mode; }, [mode]);
+
+  // Click outside handlers
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (commandsRef.current && !commandsRef.current.contains(e.target as Node)) {
+        setShowCommands(false);
+      }
+      if (modeMenuRef.current && !modeMenuRef.current.contains(e.target as Node)) {
+        setShowModeMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowShortcuts(p => !p);
+      }
+      if (e.key === 'Escape') {
+        setShowShortcuts(false);
+        setShowCommands(false);
+        setShowModeMenu(false);
+        setEditingIndex(null);
+      }
+      // Tab to accept ghost suggestion
+      if (e.key === 'Tab' && ghostSuggestion) {
+        e.preventDefault();
+        setInput(ghostSuggestion);
+        setGhostSuggestion(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [ghostSuggestion]);
+
+  // Auto-hide welcome after first message
+  useEffect(() => {
+    if (messages.length > 0) setShowWelcome(false);
+  }, [messages.length]);
+
+  // Textarea auto-resize
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -132,299 +465,258 @@ const AIChat: React.FC = () => {
     }
   }, [input]);
 
-  const conversationsRef = useRef(conversations);
-  const currentConversationIdRef = useRef(currentConversationId);
-  const messagesRef = useRef(messages);
-  const streamControllerRef = useRef<AbortController | null>(null);
-  const busyRef = useRef(busy);
+  // Ghost suggestions based on input
+  useEffect(() => {
+    const lower = input.toLowerCase();
+    if (lower.startsWith('explain') || lower.startsWith('what is')) {
+      setGhostSuggestion(input + ' with examples and analogies');
+    } else if (lower.startsWith('quiz') || lower.startsWith('test')) {
+      setGhostSuggestion(input + ' — 5 questions, medium difficulty');
+    } else if (lower.startsWith('flashcard') || lower.startsWith('cards')) {
+      setGhostSuggestion(input + ' — 8 cards covering key terms');
+    } else {
+      setGhostSuggestion(null);
+    }
+  }, [input]);
 
-  useEffect(() => { conversationsRef.current = conversations; }, [conversations]);
-  useEffect(() => { currentConversationIdRef.current = currentConversationId; }, [currentConversationId]);
-  useEffect(() => { messagesRef.current = messages; }, [messages]);
-  useEffect(() => { streamControllerRef.current = streamController; }, [streamController]);
-  useEffect(() => { busyRef.current = busy; }, [busy]);
+  // ── Helpers ─────────────────────────────────────────────────────────
+
+  const addToast = useCallback((message: string, type: Toast['type'] = 'info') => {
+    const id = `toast-${++toastIdCounter}`;
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+  }, []);
 
   const updateMessages = (updater: (msgs: any[]) => any[] | any[]) => {
     const cid = currentConversationIdRef.current;
-    setConversations(prev => prev.map(c => c.id === cid 
-      ? { ...c, messages: typeof updater === 'function' ? updater(c.messages) : updater } 
+    setConversations(prev => prev.map(c => c.id === cid
+      ? { ...c, messages: typeof updater === 'function' ? updater(c.messages) : updater }
       : c
     ));
   };
 
-  const deckOptions = useMemo(() => decks.map((d) => ({ id: d.id, title: d.title })), [decks]);
-
-  const extractFirstJsonObject = (text: string): { data: any, start: number, end: number } | null => {
-    const start = text.indexOf('{');
-    if (start === -1) return null;
-    for (let end = text.length - 1; end > start; end--) {
-      if (text[end] !== '}') continue;
-      const candidate = text.slice(start, end + 1);
-      try {
-        const data = JSON.parse(candidate);
-        return { data, start, end: end + 1 };
-      } catch {
-        // keep searching shorter candidates
+  const parseJsonFromResponse = (content: string): any | null => {
+    console.log('[parseJsonFromResponse] Raw content length:', content.length);
+    console.log('[parseJsonFromResponse] First 100 chars:', content.substring(0, 100));
+    // Strip markdown code fences
+    const stripped = content.replace(/```(?:json)?\s*/g, '').replace(/```\s*$/g, '').trim();
+    try {
+      const result = JSON.parse(stripped);
+      console.log('[parseJsonFromResponse] Parsed successfully, tool:', result.tool);
+      return result;
+    } catch (e) {
+      console.log('[parseJsonFromResponse] Direct parse failed:', (e as Error).message);
+      // Try to find JSON object in the text
+      const match = stripped.match(/\{[\s\S]*\}/);
+      if (match) {
+        try {
+          const result = JSON.parse(match[0]);
+          console.log('[parseJsonFromResponse] Found JSON via regex match, tool:', result.tool);
+          return result;
+        } catch {}
       }
+      // Try extracting JSON from between tool markers
+      const toolMatch = content.match(/"tool"\s*:\s*"generate_(quiz|flashcards)"[\s\S]*?\}/);
+      if (toolMatch) {
+        const toolStart = content.indexOf('{"tool"');
+        if (toolStart === -1) {
+          const toolStart2 = content.indexOf('{\n  "tool"');
+          if (toolStart2 !== -1) {
+            const jsonBlock = content.substring(toolStart2);
+            const braceMatch = jsonBlock.match(/\{[\s\S]*\}/);
+            if (braceMatch) {
+              try {
+                const result = JSON.parse(braceMatch[0]);
+                console.log('[parseJsonFromResponse] Found via tool marker, tool:', result.tool);
+                return result;
+              } catch {}
+            }
+          }
+        } else {
+          const jsonBlock = content.substring(toolStart);
+          const braceMatch = jsonBlock.match(/\{[\s\S]*\}/);
+          if (braceMatch) {
+            try {
+              const result = JSON.parse(braceMatch[0]);
+              console.log('[parseJsonFromResponse] Found via tool start, tool:', result.tool);
+              return result;
+            } catch {}
+          }
+        }
+      }
+      console.log('[parseJsonFromResponse] All parsing attempts failed');
     }
     return null;
   };
 
-  const runAppAction = async (tool: any) => {
-    if (tool?.tool !== 'app_action') return;
-    const action = tool?.data?.action as string | undefined;
-    const args = tool?.data?.args ?? {};
-    analyticsService.trackHeart('task_success', 'ai_operator_run', { action });
-
-    if (action === 'create_deck') {
-      try {
-        const title = String(args.title ?? 'Untitled deck');
-        const description = String(args.description ?? '');
-        const deck = await createDeck(title, description);
-        if (deck) {
-          goToDeck(deck.id);
-        }
-      } catch (err) {
-        console.error('[AIChat] Failed to create deck:', err);
-      }
-      return;
+  const extractThinkingSteps = (content: string): string[] => {
+    const steps: string[] = [];
+    const lines = content.split('\n');
+    let inThinking = false;
+    for (const line of lines) {
+      if (line.includes('<thinking>') || line.includes('[Thinking]')) { inThinking = true; continue; }
+      if (line.includes('</thinking>') || line.includes('[/Thinking]')) { inThinking = false; continue; }
+      if (inThinking && line.trim()) steps.push(line.replace(/^[-•*]\s*/, ''));
     }
-
-    if (action === 'add_cards_to_deck') {
-      try {
-        const deckId = String(args.deckId ?? '');
-        const cardsArg = Array.isArray(args.cards) ? args.cards : [];
-        if (!deckId || cardsArg.length === 0) return;
-        await addCardsToDeck(deckId, cardsArg);
-        navigate(`/deck/${deckId}`);
-      } catch (err) {
-        console.error('[AIChat] Failed to add cards to deck:', err);
-      }
-      return;
-    }
-
-    if (action === 'open_deck') {
-      const deckId = String(args.deckId ?? '');
-      if (!deckId) return;
-      goToDeck(deckId);
-      return;
-    }
-
-    if (action === 'start_study') {
-      const deckId = String(args.deckId ?? '');
-      if (!deckId) return;
-      startStudyForDeck(deckId);
-      return;
-    }
-
-    if (action === 'go_to_section') {
-      const section = String(args.section ?? '');
-      if (!section) return;
-      window.dispatchEvent(new CustomEvent('auramind:navigate-section', { detail: { section } }));
-    }
+    return steps;
   };
 
-  const stopGeneration = useCallback(() => {
-    if (streamControllerRef.current) {
-      streamControllerRef.current.abort();
-      streamControllerRef.current = null;
-      setStreamController(null);
-      setBusy(false);
-    }
-  }, []);
+  const systemPrompt = {
+    role: 'system' as const,
+    content: `You are Aura, a focused AI study companion for AuraMind. You answer concisely and use the Socratic method — guide, don't give direct answers.`
+  };
 
-  const send = async () => {
-    const q = input.trim();
-    if (!q || busyRef.current) return;
-    setInput('');
-    setError(null);
+  const getModeSystemPrompt = () => {
+    const modePrompt = MODE_SYSTEM_PROMPTS[modeRef.current];
+    if (modePrompt) return { role: 'system' as const, content: modePrompt };
+    return systemPrompt;
+  };
+
+  // ── Streaming ───────────────────────────────────────────────────────
+
+  const triggerAiStreaming = async (msgs: Conversation['messages']) => {
     setBusy(true);
-    
-    const userMessage = { role: 'user' as const, content: q };
-    
-    updateMessages(prev => [...prev, userMessage]);
-    analyticsService.trackCoreAction('chat_message', { source: 'dashboard_ai_chat' });
-    analyticsService.trackHeart('engagement', 'ai_chat_send', { length: q.length });
+    setFollowUps([]);
+    setError(null);
 
-    const currentConv = conversationsRef.current.find(c => c.id === currentConversationIdRef.current);
-    if (currentConv?.messages.length === 0) {
-      setConversations(prev => prev.map(c => 
-        c.id === currentConversationIdRef.current ? { ...c, title: q.slice(0, 40) + (q.length > 40 ? '...' : '') } : c
-      ));
-    }
+    const convoId = currentConversationIdRef.current;
 
-    // Check for /define command
-    if (q.toLowerCase().startsWith('/define ')) {
-      const word = q.slice(8).trim();
-      if (word) {
-        try {
-          const definition = await handleDefineWord(word);
-          updateMessages(prev => [...prev, { role: 'assistant' as const, content: definition }]);
-        } catch (error) {
-          console.error('Definition error:', error);
-          updateMessages(prev => [...prev, { 
-            role: 'assistant' as const, 
-            content: `Sorry, I couldn't find a definition for "${word}".` 
-          }]);
-        }
-      } else {
-        updateMessages(prev => [...prev, { 
-          role: 'assistant' as const, 
-          content: 'Please provide a word to define. Usage: /define [word]' 
-        }]);
-      }
-      setBusy(false);
-      return;
-    }
+    // Pre-add empty assistant message
+    updateMessages(prev => [...prev, { role: 'assistant' as const, content: '' }]);
+    setStreamingDone(prev => { const n = new Set(prev); n.delete(-1); return n; });
+
+    const effectivePrompt = modeRef.current !== 'chat' ? getModeSystemPrompt() : systemPrompt;
+
+    // Few-shot examples to teach the AI the output format
+    const quizExample = [
+      { role: 'user' as const, content: 'Make a quiz about biology' },
+      { role: 'assistant' as const, content: 'Here is your biology quiz.\n{"tool":"generate_quiz","data":{"title":"Biology Quiz","topic":"biology","difficulty":"medium","questions":[{"id":"1","question":"What is a cell?","options":["Tissue","Organ","Cell","Molecule"],"correctAnswer":2,"explanation":"The cell is the basic unit of life."}]}}' },
+    ];
+    const flashcardExample = [
+      { role: 'user' as const, content: 'Make flashcards about chemistry' },
+      { role: 'assistant' as const, content: 'Here are your chemistry flashcards.\n{"tool":"generate_flashcards","data":{"cards":[{"id":"1","front":"Proton","back":"Positively charged particle"},{"id":"2","front":"Neutron","back":"Neutral particle"}]}}' },
+    ];
+
+    const modeMessages = modeRef.current === 'quiz' ? quizExample : modeRef.current === 'flashcard' ? flashcardExample : [];
 
     try {
-      if (streamControllerRef.current) {
-        streamControllerRef.current.abort();
-      }
-      
-      const controller = new AbortController();
-      streamControllerRef.current = controller;
-      setStreamController(controller);
-      
-        const sourceContextStr = sourceCtx && sourceCtx.sources.length > 0 && sourceCtx.activeSourceIds.length > 0
-          ? buildSourceContextForChat(sourceCtx.sources, sourceCtx.activeSourceIds)
-          : '';
-
-        const systemPrompt = {
-          role: 'system' as const,
-          content: `You are Aura, the AI study companion of **AuraMind** — a full-stack learning platform. You help students understand concepts, think critically, and work with their uploaded source documents.
-
-## About AuraMind
-AuraMind is a complete study application with these pages:
-
-- **Dashboard** (/dashboard) — Study stats, XP, streaks, recent activity, retention charts, quick-access to decks and quizzes.
-- **Generator** (/dashboard/generator) — The dedicated tool for creating flashcards, quizzes, and study decks from topics, URLs, YouTube videos, or uploaded documents. Has inline editing, difficulty selection, and one-click save.
-- **Cards** (/dashboard/cards) — Browse, search, filter, manage all flashcard decks. Study mode with spaced repetition.
-- **Chat** (/dashboard/chat) — The AI chat you are in right now.
-- **Lessons** (/dashboard/lessons) — Structured lessons combining explanations with embedded quizzes and flashcards.
-- **Settings** (/dashboard/settings) — Profile, preferences, theme, account management.
-
-## TEACHING APPROACH (SOCRATIC METHOD)
-- NEVER give direct answers to study questions immediately.
-- Guide the student to the answer through probing questions.
-- Break complex topics into smaller, digestible steps.
-- Use analogies and real-world examples.
-- Praise correct reasoning and gently correct misconceptions.
-
-## CAPABILITIES
-- Answer questions and explain concepts using the Socratic method.
-- When the user asks about their uploaded documents, ALWAYS ground your answers in the provided source text. Do not use external knowledge for document-specific questions.
-
-## What You CANNOT Do
-You do NOT create flashcards, quizzes, decks, or study content in this chat. If a user asks you to generate any study material, politely redirect them to the **Generator page at /dashboard/generator**, which has dedicated AI tools for that purpose.
-
-INTERACTION PLANS (FOR COMPLEX TASKS):
-- When a user asks for something multi-step or complex that can be planned, you may propose a plan using an interaction_plan JSON tool.
-- Use the following JSON format to display a plan menu:
-  {
-    "tool": "interaction_plan",
-    "data": {
-      "title": "Short Descriptive Title",
-      "steps": [
-        { "id": "1", "label": "Step description", "status": "pending" | "in_progress" | "completed" }
-      ],
-      "actions": [
-        { "id": "proceed", "label": "Proceed/Generate", "primary": true },
-        { "id": "modify", "label": "Edit Scope" }
-      ]
-    }
-  }
-- ALWAYS wrap your response in normal text explaining the plan, then provide the JSON object at the end of your message.
-- When the user clicks an action, you will receive a message from them (e.g., "Proceed with plan: ...").${sourceContextStr}`
-        };
-      const conversationHistory = [systemPrompt, ...messagesRef.current, userMessage];
-      const response = await auraAiClient.chatCompletion({
-        messages: conversationHistory,
-        temperature: 0.7,
+      const fullContent = await auraAiClient.chatCompletion({
+        messages: [effectivePrompt, ...modeMessages, ...msgs],
+        temperature: modeRef.current !== 'chat' ? 0.8 : 0.7,
+        max_tokens: modeRef.current !== 'chat' ? 4096 : 2000,
       });
-      const aiResponse = response.choices[0]?.message?.content || 'No response';
-      updateMessages(prev => [...prev, { role: 'assistant' as const, content: aiResponse }]);
+
+      const content = fullContent.choices[0]?.message?.content || 'No response';
+
+      // Extract thinking steps
+      const steps = extractThinkingSteps(content);
+      if (steps.length > 0) {
+        setThinkingSteps(prev => ({ ...prev, [convoId]: steps }));
+      }
+
+      // Stream the text (only in chat mode - quiz/flashcard modes show generating animation)
+      const cleanContent = content.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '').replace(/\[Thinking\][\s\S]*?\[\/Thinking\]/gi, '');
+
+      if (modeRef.current === 'chat') {
+        let streamed = '';
+        const chars = cleanContent.split('');
+        for (let i = 0; i < chars.length; i++) {
+          streamed += chars[i];
+          setStreamingText(prev => ({ ...prev, [convoId]: streamed }));
+          if (i % 3 === 0) await new Promise(r => setTimeout(r, 8));
+        }
+      }
+
+      // Parse quiz/flashcard JSON for structured modes BEFORE finalizing
+      let parsedQuizData: any = null;
+      let parsedFlashcardData: Flashcard[] = [];
+      let parsedMapData: ConceptMapData | null = null;
+
+      if (modeRef.current === 'quiz') {
+        const parsed = parseJsonFromResponse(cleanContent);
+        if (parsed?.data?.questions) {
+          parsedQuizData = parsed.data;
+        }
+      } else if (modeRef.current === 'flashcard') {
+        const parsed = parseJsonFromResponse(cleanContent);
+        if (parsed?.data?.cards) {
+          parsedFlashcardData = parsed.data.cards.map((c: any, i: number) => ({
+            id: c.id || String(i),
+            front: c.front || c.question || '',
+            back: c.back || c.answer || '',
+          }));
+        }
+      } else if (modeRef.current === 'map') {
+        const parsed = parseJsonFromResponse(cleanContent);
+        if (parsed?.data?.nodes && parsed?.data?.edges) {
+          parsedMapData = parsed.data as ConceptMapData;
+        }
+      }
+
+      // Finalize — update messages and parsed data together
+      updateMessages(prev => prev.map((m, i) => i === prev.length - 1 ? { ...m, content: cleanContent } : m));
+      setStreamingDone(prev => new Set(prev).add(-1));
+      setStreamingText(prev => { const n = { ...prev }; delete n[convoId]; return n; });
+
+      if (parsedQuizData) {
+        setParsedQuizzes(prev => ({ ...prev, [convoId]: parsedQuizData }));
+      }
+      if (parsedFlashcardData.length > 0) {
+        setParsedFlashcards(prev => ({ ...prev, [convoId]: parsedFlashcardData }));
+      }
+      if (parsedMapData) {
+        setParsedConceptMap(prev => ({ ...prev, [convoId]: parsedMapData! }));
+      }
+
+      if (modeRef.current === 'chat') {
+        setFollowUps(FOLLOWUP_SUGGESTIONS.sort(() => Math.random() - 0.5).slice(0, 3));
+      }
     } catch (e) {
       if ((e as Error).name !== 'AbortError') {
         const msg = e instanceof Error ? e.message : 'AI request failed';
-        console.error('[AIChat] Error:', e);
         setError(msg);
-        updateMessages(prev => [...prev, { 
-          role: 'assistant' as const, 
-          content: `I hit an error: ${msg}` 
-        }]);
+        addToast(msg, 'error');
+        updateMessages(prev => prev.slice(0, -1));
       }
     } finally {
       setBusy(false);
-      streamControllerRef.current = null;
-      setStreamController(null);
     }
   };
 
-  const handleDefineWord = async (word: string): Promise<string> => {
-    const cleanText = (text: string): string => {
-      return text.replace(/<xref>(.*?)<\/xref>/g, '$1').replace(/<\/?xref>/g, '');
-    };
+  const send = async (text?: string) => {
+    const q = (text ?? input).trim();
+    if (!q || busyRef.current) return;
+    setInput('');
+    setError(null);
+    setShowSuggestions(false);
+    setGhostSuggestion(null);
 
-    try {
-      const wordInfo = await wordnikService.getWordInfo(word);
-      
-      let response = `## ${wordInfo.word}\n\n`;
-      
-      if (wordInfo.definitions.length > 0) {
-        response += `### Definitions\n`;
-        wordInfo.definitions.forEach((def, i) => {
-          response += `${i + 1}. ${cleanText(def.text)}\n`;
-          if (def.sourceDictionary) {
-            response += `   *Source: ${def.sourceDictionary}*\n`;
-          }
-          response += '\n';
-        });
-      }
-      
-      if (wordInfo.examples.length > 0) {
-        response += `### Examples\n`;
-        wordInfo.examples.forEach((ex, i) => {
-          response += `${i + 1}. "${cleanText(ex.text)}"\n`;
-          if (ex.title) {
-            response += `   — ${ex.title}\n`;
-          }
-          response += '\n';
-        });
-      }
-      
-      if (wordInfo.pronunciations.length > 0) {
-        response += `### Pronunciation\n`;
-        wordInfo.pronunciations.forEach((pron, i) => {
-          response += `${i + 1}. ${pron.raw}\n`;
-        });
-        response += '\n';
-      }
-      
-      if (wordInfo.relatedWords.length > 0) {
-        response += `### Related Words\n`;
-        wordInfo.relatedWords.forEach((rel) => {
-          if (rel.words.length > 0) {
-            response += `**${rel.relationshipType}:** ${rel.words.slice(0, 5).join(', ')}\n\n`;
-          }
-        });
-      }
-      
-      return response;
-    } catch (error) {
-      console.error('Word definition error:', error);
-      return `Sorry, I couldn't find information for "${word}".`;
+    const userMessage = { role: 'user' as const, content: q };
+    updateMessages(prev => [...prev, userMessage]);
+    analyticsService.trackCoreAction('chat_message', { source: 'dashboard_ai_chat', mode: modeRef.current });
+
+    const conv = conversationsRef.current.find(c => c.id === currentConversationIdRef.current);
+    if (conv?.messages.length === 0) {
+      setConversations(prev => prev.map(c =>
+        c.id === currentConversationIdRef.current
+          ? { ...c, title: q.slice(0, 40) + (q.length > 40 ? '...' : '') }
+          : c
+      ));
     }
+
+    await triggerAiStreaming([...messagesRef.current, userMessage]);
   };
 
   const startNewChat = () => {
-    const newId = Date.now().toString();
-    setConversations(prev => [{ id: newId, title: 'New chat', messages: [] }, ...prev]);
-    setCurrentConversationId(newId);
-  };
-
-  const selectConversation = (id: string) => {
+    const id = Date.now().toString();
+    setConversations(prev => [{ id, title: 'New chat', messages: [] }, ...prev]);
     setCurrentConversationId(id);
+    setShowSuggestions(true);
+    setFollowUps([]);
+    setParsedQuizzes({});
+    setParsedFlashcards({});
+    setThinkingSteps({});
+    addToast('New conversation started', 'info');
   };
 
   const deleteConversation = (id: string, e: React.MouseEvent) => {
@@ -437,449 +729,909 @@ INTERACTION PLANS (FOR COMPLEX TASKS):
       }
       return filtered;
     });
+    addToast('Conversation deleted', 'info');
   };
 
-  const quickActions = useMemo(() => {
-    const dueCards = cards.filter(c => c.nextReview <= Date.now());
-    return [
-      {
-        id: 'study',
-        icon: <BookOpen className="w-5 h-5" />,
-        label: 'Study Due Cards',
-        description: `${dueCards.length} cards ready`,
-        action: () => startStudyForDeck(decks[0]?.id || ''),
-        gradient: 'from-violet-500/20 to-purple-600/20',
-        border: 'border-violet-500/30',
-        iconBg: 'bg-violet-500/20',
-        iconColor: 'text-violet-400'
-      },
-      {
-        id: 'create',
-        icon: <Layers className="w-5 h-5" />,
-        label: 'Generator',
-        description: 'Create quizzes & flashcards',
-        action: () => navigate('/dashboard/generator'),
-        gradient: 'from-blue-500/20 to-cyan-500/20',
-        border: 'border-blue-500/30',
-        iconBg: 'bg-blue-500/20',
-        iconColor: 'text-blue-400'
-      },
-      {
-        id: 'explain',
-        icon: <Zap className="w-5 h-5" />,
-        label: 'Explain Concept',
-        description: 'Get detailed explanations',
-        action: () => setInput('Explain the concept of'),
-        gradient: 'from-amber-500/20 to-orange-500/20',
-        border: 'border-amber-500/30',
-        iconBg: 'bg-amber-500/20',
-        iconColor: 'text-amber-400'
-      },
-    ];
-  }, [cards, decks, startStudyForDeck, navigate]);
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { 
-      opacity: 1,
-      transition: { staggerChildren: 0.08, delayChildren: 0.1 }
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setInput(val);
+    if (val === '/') {
+      setShowCommands(true);
+    } else {
+      setShowCommands(false);
     }
-  } as const;
+  };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 16 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: { type: 'spring' as const, stiffness: 300, damping: 25 }
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      send();
     }
-  } as const;
+    if (e.key === 'Escape') setShowCommands(false);
+  };
+
+  const copyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      addToast('Copied to clipboard', 'success');
+    } catch {
+      addToast('Failed to copy', 'error');
+    }
+  };
+
+  const regenerate = () => {
+    const msgs = messagesRef.current;
+    if (msgs.length < 2) return;
+    const lastUserMsg = [...msgs].reverse().find(m => m.role === 'user');
+    if (lastUserMsg) {
+      updateMessages(prev => prev.slice(0, -1));
+      setFollowUps([]);
+      setParsedQuizzes(prev => { const n = { ...prev }; delete n[Object.keys(prev).length - 1]; return n; });
+      setParsedFlashcards(prev => { const n = { ...prev }; delete n[Object.keys(prev).length - 1]; return n; });
+      send(lastUserMsg.content);
+    }
+  };
+
+  const startEditing = (idx: number, content: string) => {
+    setEditingIndex(idx);
+    setEditText(content);
+  };
+
+  const saveEdit = (idx: number) => {
+    if (!editText.trim() || busyRef.current) return;
+    const msgs = messagesRef.current;
+    const updatedMsgs = msgs.map((m, i) =>
+      i === idx ? { ...m, content: editText.trim() } : m
+    ).slice(0, idx + 1);
+    updateMessages(() => updatedMsgs);
+    setEditingIndex(null);
+    setEditText('');
+    triggerAiStreaming(updatedMsgs);
+  };
+
+  const cancelEdit = () => {
+    setEditingIndex(null);
+    setEditText('');
+  };
+
+  const toggleVoiceInput = () => {
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognitionAPI) {
+      addToast('Voice input not supported in this browser', 'error');
+      return;
+    }
+    if (listening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setListening(false);
+      return;
+    }
+    const recognition = new SpeechRecognitionAPI();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((r: any) => r[0].transcript)
+        .join('');
+      setInput(transcript);
+    };
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setListening(true);
+    addToast('Listening...', 'info');
+  };
+
+  const toggleTts = (idx: number, content: string) => {
+    if (ttsPlaying.has(idx)) {
+      window.speechSynthesis.cancel();
+      setTtsPlaying(prev => { const n = new Set(prev); n.delete(idx); return n; });
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(content.replace(/<[^>]*>/g, ''));
+    utterance.rate = 0.95;
+    utterance.onend = () => setTtsPlaying(prev => { const n = new Set(prev); n.delete(idx); return n; });
+    window.speechSynthesis.speak(utterance);
+    setTtsPlaying(new Set([idx]));
+  };
+
+  const exportChat = () => {
+    const msgs = messagesRef.current;
+    if (msgs.length === 0) return;
+    const md = msgs.map(m =>
+      m.role === 'user' ? `## You\n\n${m.content}\n` : `## Aura\n\n${m.content}\n`
+    ).join('\n---\n\n');
+    const blob = new Blob([`# Chat Transcript\n\n${md}`], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `aura-chat-${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    addToast('Chat exported', 'success');
+  };
+
+  const toggleBookmark = (idx: number) => {
+    setBookmarked(prev => {
+      const n = new Set(prev);
+      n.has(idx) ? n.delete(idx) : n.add(idx);
+      addToast(n.has(idx) ? 'Bookmarked' : 'Bookmark removed', 'info');
+      return n;
+    });
+  };
+
+  const handleModeChange = (newMode: ChatMode) => {
+    if (modeRef.current === newMode) {
+      setShowModeMenu(false);
+      return;
+    }
+    setMode(newMode);
+    setShowModeMenu(false);
+    const labels: Record<ChatMode, string> = { chat: 'Chat', quiz: 'Quiz', flashcard: 'Flashcard' };
+    addToast(`Switched to ${labels[newMode]} mode`, 'info');
+    // Start new chat when switching modes
+    startNewChat();
+  };
+
+  // Quiz/Flashcard edit handlers
+  const handleQuizEdit = (convoId: string, questionIndex: number, field: string, value: string) => {
+    const quiz = parsedQuizzes[convoId];
+    if (!quiz) return;
+    quiz.questions[questionIndex] = { ...quiz.questions[questionIndex], [field]: value };
+    setParsedQuizzes(prev => ({ ...prev, [convoId]: { ...quiz } }));
+    addToast('Question updated', 'success');
+  };
+
+  const handleFlashcardEdit = (convoId: string, cardIndex: number, field: string, value: string) => {
+    const fcs = parsedFlashcards[convoId];
+    if (!fcs) return;
+    fcs[cardIndex] = { ...fcs[cardIndex], [field]: value };
+    setParsedFlashcards(prev => ({ ...prev, [convoId]: [...fcs] }));
+    addToast('Card updated', 'success');
+  };
+
+  const handleSaveQuiz = async () => {
+    const quiz = parsedQuizzes[currentConversationId];
+    if (!quiz) return;
+    if (!createDeck || !addCardsToDeck) { addToast('Please sign in to save decks', 'error'); return; }
+    setBusy(true);
+    try {
+      const deck = await createDeck(
+        `Quiz: ${quiz.title}`,
+        `${quiz.topic} · ${quiz.difficulty} · ${quiz.questions.length} questions`
+      );
+      if (!deck) { addToast('Please sign in to save', 'error'); return; }
+
+      const cards = quiz.questions.flatMap((q: QuizQuestion) => [
+        { front: q.question, back: q.options.map((o, i) => `${String.fromCharCode(65 + i)}) ${o}`).join('\n'), deckId: deck.id },
+        ...(q.explanation ? [{ front: `Why? — ${q.question}`, back: q.explanation, deckId: deck.id }] : []),
+      ]);
+      await addCardsToDeck(deck.id, cards);
+      addToast(`Quiz saved to "${deck.title}"`, 'success');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '';
+      addToast(msg.includes('sign in') ? msg : 'Failed to save quiz', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSaveFlashcards = async () => {
+    const fcs = parsedFlashcards[currentConversationId];
+    if (!fcs?.length) return;
+    if (!createDeck || !addCardsToDeck) { addToast('Please sign in to save decks', 'error'); return; }
+    setBusy(true);
+    try {
+      const deck = await createDeck(
+        'AI Flashcards',
+        `${fcs.length} flashcards generated by Aura AI`
+      );
+      if (!deck) { addToast('Please sign in to save', 'error'); return; }
+
+      const cards = fcs.map(card => ({
+        front: card.front,
+        back: card.back,
+        deckId: deck.id,
+      }));
+      await addCardsToDeck(deck.id, cards);
+      addToast(`${fcs.length} flashcards saved to "${deck.title}"`, 'success');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '';
+      addToast(msg.includes('sign in') ? msg : 'Failed to save flashcards', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Custom markdown renderer with code blocks
+  const MarkdownContent: React.FC<{ content: string; convoId: string }> = ({ content, convoId }) => {
+    const rawContent = streamingText[convoId] ?? content;
+
+    // Quiz mode - hide content if parsed successfully (quiz card handles display)
+    if (convoId && mode === 'quiz' && parsedQuizzes[convoId]) return null;
+    if (convoId && mode === 'flashcard' && parsedFlashcards[convoId]) return null;
+
+    // Strip JSON tool blocks from display to prevent raw JSON leakage
+    let displayContent = rawContent;
+    if (mode === 'quiz') {
+      displayContent = rawContent.replace(/\s*\{"tool"\s*:\s*"generate_quiz"[\s\S]*\}/, '').trim();
+    } else if (mode === 'flashcard') {
+      displayContent = rawContent.replace(/\s*\{"tool"\s*:\s*"generate_flashcards"[\s\S]*\}/, '').trim();
+    }
+
+    if (!displayContent) return null;
+
+    return (
+      <div className="prose prose-invert prose-sm max-w-none
+        [&_pre]:hidden [&_code]:text-primary [&_code]:bg-zinc-800/80 [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs
+        [&_a]:text-primary [&_a]:hover:underline
+        [&_h1]:text-base [&_h1]:font-bold [&_h1]:text-white [&_h1]:mb-2
+        [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-white [&_h2]:mb-2
+        [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:text-primary [&_h3]:mb-1
+        [&_p]:text-sm [&_p]:leading-relaxed [&_p]:mb-2 [&_p:last-child]:mb-0
+        [&_ul]:list-disc [&_ul]:list-inside [&_ul]:text-sm [&_ul]:space-y-0.5 [&_ul]:mb-2
+        [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:text-sm [&_ol]:space-y-0.5 [&_ol]:mb-2
+        [&_li]:text-zinc-300
+        [&_blockquote]:border-l-2 [&_blockquote]:border-primary/30 [&_blockquote]:pl-3 [&_blockquote]:text-zinc-500 [&_blockquote]:italic [&_blockquote]:text-sm [&_blockquote]:my-2
+        [&_hr]:border-zinc-800 [&_hr]:my-3
+        [&_table]:w-full [&_table]:text-sm [&_table]:border [&_table]:border-zinc-800 [&_table]:rounded-lg [&_table]:my-2
+        [&_th]:border [&_th]:border-zinc-800 [&_th]:px-3 [&_th]:py-2 [&_th]:bg-zinc-800/50 [&_th]:text-left [&_th]:font-semibold
+        [&_td]:border [&_td]:border-zinc-800 [&_td]:px-3 [&_td]:py-2">
+        <ReactMarkdown
+          components={{
+            code: ({ className, children, ...props }: any) => {
+              const match = /language-(\w+)/.exec(className || '');
+              const isInline = !props?.node?.tagName || props?.node?.tagName !== 'code';
+              if (match) {
+                const code = String(children).replace(/\n$/, '');
+                return <CodeBlock language={match[1]} code={code} onToast={addToast} />;
+              }
+              return <code className="text-primary bg-zinc-800/80 px-1 py-0.5 rounded text-xs" {...props}>{children}</code>;
+            },
+            pre: () => null,
+          }}
+        >
+          {displayContent}
+        </ReactMarkdown>
+        {/* Blinking cursor while streaming */}
+        {convoId && streamingText[convoId] !== undefined && (
+          <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-0.5 align-middle" />
+        )}
+      </div>
+    );
+  };
+
+  // ── Render ──────────────────────────────────────────────────────────
+
+  const ModeIcon = MODES.find(m => m.id === mode)!.icon;
 
   return (
-    <div className="flex flex-col gap-0 relative" style={{ height: 'calc(100vh - 8rem)' }}>
-      <AnimatePresence>
-        {showCommandPalette && (
-          <motion.div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start justify-center pt-32"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowCommandPalette(false)}
+    <div className="flex h-[calc(100dvh-8rem)] md:h-[calc(100vh-10.5rem)] rounded-xl md:rounded-2xl border border-zinc-800 bg-black overflow-hidden relative">
+      {/* ── Toast Container ─────────────────────────────────────────── */}
+      <div className="absolute top-4 right-4 z-[60] space-y-2 pointer-events-none">
+        {toasts.map(t => (
+          <div
+            key={t.id}
+            className={`pointer-events-auto px-3 py-2 rounded-xl text-xs font-medium shadow-lg border backdrop-blur-sm animate-in fade-in slide-in-from-right ${
+              t.type === 'success' ? 'bg-green-500/15 border-green-500/30 text-green-300' :
+              t.type === 'error' ? 'bg-red-500/15 border-red-500/30 text-red-300' :
+              'bg-zinc-800/90 border-zinc-700/50 text-zinc-300'
+            }`}
           >
-            <motion.div
-              className="w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-700 shadow-2xl overflow-hidden"
-              initial={{ scale: 0.95, y: -20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: -20 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-4 border-b border-zinc-200 dark:border-zinc-700">
-                <input
-                  type="text"
-                  placeholder="Type a command or search..."
-                  className="w-full bg-transparent text-zinc-900 dark:text-white text-lg placeholder-zinc-500 focus:outline-none"
-                  autoFocus
-                />
-              </div>
-              <div className="p-2 max-h-80 overflow-y-auto">
-                {quickActions.map((action) => (
-                  <button
-                    key={action.id}
-                    onClick={() => {
-                      action.action();
-                      setShowCommandPalette(false);
-                    }}
-                    className="w-full p-3 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-left flex items-center gap-3 transition-colors"
-                  >
-                    <div className={`p-2 rounded-lg ${action.iconBg}`}>
-                      {React.cloneElement(action.icon, { className: `w-5 h-5 ${action.iconColor}` })}
-                    </div>
-                    <div>
-                      <div className="text-zinc-900 dark:text-white font-medium">{action.label}</div>
-                      <div className="text-zinc-600 dark:text-zinc-400 text-sm">{action.description}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {t.message}
+          </div>
+        ))}
+      </div>
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <motion.div 
-          className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-950/30"
-          initial={{ y: -10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-        >
-          <div className="flex items-center gap-3">
-            <motion.button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/20"
+      {/* ── Mnemonic Generator Modal ──────────────────────────────── */}
+      {showMnemonicGenerator && (
+        <MnemonicGenerator
+          initialTopic={messages.filter(m => m.role === 'user').slice(-1)[0]?.content || ''}
+          onClose={() => setShowMnemonicGenerator(false)}
+        />
+      )}
+
+      {/* ── Keyboard Shortcuts Modal ────────────────────────────────── */}
+      {showShortcuts && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowShortcuts(false)}>
+          <div className="w-80 rounded-2xl border border-zinc-800 bg-zinc-950 p-5 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-2.5 mb-4">
+              <Keyboard size={14} className="text-primary" />
+              <span className="text-sm font-semibold text-white">Keyboard Shortcuts</span>
+            </div>
+            <div className="space-y-2.5">
+              {SHORTCUTS.map(s => (
+                <div key={s.desc} className="flex items-center justify-between">
+                  <span className="text-xs text-zinc-400">{s.desc}</span>
+                  <div className="flex gap-1">
+                    {s.keys.map(k => (
+                      <kbd key={k} className="px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-300 font-mono">{k}</kbd>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-[11px] text-zinc-700 mt-4 text-center">Press ⌘K or Escape to close</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── Sidebar ─────────────────────────────────────────────────── */}
+      <div className={`hidden md:flex flex-col border-r border-zinc-800 bg-zinc-950 transition-all duration-200 ${sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'}`}>
+        <div className="p-3 border-b border-zinc-800">
+          <button
+            onClick={startNewChat}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors text-sm font-medium"
+          >
+            <Plus size={16} />
+            New chat
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {conversations.map(c => (
+            <div
+              key={c.id}
+              onClick={() => { setCurrentConversationId(c.id); setShowSuggestions(false); setFollowUps([]); }}
+              className={`group flex items-center gap-2.5 px-3 py-2.5 rounded-xl cursor-pointer transition-colors text-sm ${
+                c.id === currentConversationId
+                  ? 'bg-zinc-800 text-white'
+                  : 'text-zinc-500 hover:bg-zinc-900 hover:text-zinc-300'
+              }`}
             >
-              <SparklesIcon className="w-5 h-5 text-white" />
-            </motion.button>
-            <div>
-              <h1 className="text-lg font-bold text-zinc-900 dark:text-white">Aura AI</h1>
-              <p className="text-zinc-500 text-xs">Your intelligent study assistant</p>
+              <MessageSquare size={14} className="shrink-0 opacity-50" />
+              <span className="truncate flex-1">{c.title}</span>
+              <button
+                onClick={(e) => deleteConversation(c.id, e)}
+                className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-zinc-700 text-zinc-500 hover:text-red-400 transition-all"
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Main Chat ───────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0 bg-black">
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-4 h-12 border-b border-zinc-800 shrink-0">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="hidden md:flex p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 transition-colors"
+            >
+              <ChevronLeft size={16} className={`transition-transform duration-200 ${sidebarOpen ? '' : 'rotate-180'}`} />
+            </button>
+            <span className="text-sm font-medium text-white">Aura AI</span>
+
+            {/* Mode Selector */}
+            <div className="relative" ref={modeMenuRef}>
+              <button
+                onClick={() => setShowModeMenu(!showModeMenu)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 transition-colors"
+              >
+                <ModeIcon size={12} />
+                <span className="capitalize">{mode}</span>
+                <ChevronDown size={10} className="text-zinc-600" />
+              </button>
+              {showModeMenu && (
+                <div className="absolute top-full left-0 mt-1.5 w-56 rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden z-50">
+                  {MODES.map(m => {
+                    const Icon = m.icon;
+                    return (
+                      <button
+                        key={m.id}
+                        onClick={() => handleModeChange(m.id)}
+                        className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                          mode === m.id ? 'bg-zinc-900' : 'hover:bg-zinc-900/50'
+                        }`}
+                      >
+                        <Icon size={14} className={m.color} />
+                        <div>
+                          <div className="text-xs font-medium text-zinc-200">{m.label}</div>
+                          <div className="text-[10px] text-zinc-600">{m.description}</div>
+                        </div>
+                        {mode === m.id && <Check size={12} className="ml-auto text-primary" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <motion.button
-              onClick={() => setShowCommandPalette(true)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-300 dark:border-zinc-700/50 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors"
-              title="Command Palette (Ctrl+K)"
+            {messages.length > 0 && (
+              <button
+                onClick={exportChat}
+                className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 transition-colors"
+                title="Export chat"
+              >
+                <Download size={14} />
+              </button>
+            )}
+            <button
+              onClick={() => setShowShortcuts(true)}
+              className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 transition-colors"
+              title="Keyboard shortcuts"
             >
-              <Command className="w-4 h-4" />
-            </motion.button>
-            <motion.button
-              onClick={startNewChat}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="p-2 rounded-lg bg-gradient-to-br from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/20"
+              <Keyboard size={14} />
+            </button>
+            <button
+              onClick={() => setShowMnemonicGenerator(true)}
+              className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 transition-colors"
+              title="Memory Wizard"
             >
-              <Plus className="w-4 h-4" />
-            </motion.button>
+              <Brain size={14} />
+            </button>
+            <span className="text-[11px] text-zinc-600">{dueCount} cards due</span>
           </div>
-        </motion.div>
+        </div>
 
-        <div 
-          ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto px-6 py-8"
-        >
-          <div className="max-w-3xl mx-auto">
-            {messages.length === 0 ? (
-                <motion.div 
-                  className="text-center py-12"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-                >
-                  <motion.div 
-                    className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-600/20 flex items-center justify-center border border-violet-500/30"
-                    animate={{ 
-                      boxShadow: ['0 0 0 rgba(139, 92, 246, 0)', '0 0 40px rgba(139, 92, 246, 0.3)', '0 0 0 rgba(139, 92, 246, 0)'],
-                    }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                  >
-                    <Bot className="w-10 h-10 text-violet-400" />
-                  </motion.div>
-                  <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-zinc-900 via-violet-700 to-zinc-700 dark:from-white dark:via-violet-200 dark:to-zinc-300 bg-clip-text text-transparent">
-                    How can Aura help you today?
-                  </h2>
-                  <p className="text-zinc-600 dark:text-zinc-400 mb-10 text-sm">
-                    Explain concepts, get study help, and more.
-                  </p>
-                  
-                  <motion.div 
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-                    variants={containerVariants}
-                    initial="hidden"
-                    animate="visible"
-                  >
-                    {quickActions.map((action) => (
-                      <motion.button
-                        key={action.id}
-                        variants={itemVariants}
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={action.action}
-                        className={`relative p-5 rounded-xl bg-gradient-to-br ${action.gradient} border ${action.border} text-left overflow-hidden group transition-all`}
+        {/* Progress bar */}
+        {studyProgress.total > 0 && (
+          <div className="px-4 py-2 border-b border-zinc-800/50">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[11px] text-zinc-600">Study session progress</span>
+              <span className="text-[11px] text-zinc-500">{studyProgress.reviewed}/{studyProgress.total}</span>
+            </div>
+            <div className="h-1 rounded-full bg-zinc-800 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-500"
+                style={{ width: `${(studyProgress.reviewed / studyProgress.total) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Mode indicator banner */}
+        {mode !== 'chat' && messages.length === 0 && (
+          <div className={`px-4 py-2 border-b ${
+            mode === 'quiz' ? 'border-violet-500/20 bg-violet-500/5' :
+            mode === 'flashcard' ? 'border-amber-500/20 bg-amber-500/5' :
+            mode === 'map' ? 'border-emerald-500/20 bg-emerald-500/5' :
+            'border-rose-500/20 bg-rose-500/5'
+          }`}>
+            <div className="flex items-center gap-2">
+              <ModeIcon size={13} className={
+                mode === 'quiz' ? 'text-violet-400' :
+                mode === 'flashcard' ? 'text-amber-400' :
+                mode === 'map' ? 'text-emerald-400' :
+                'text-rose-400'
+              } />
+              <span className="text-xs text-zinc-400">
+                {mode === 'quiz' ? 'Quiz Mode — Send a topic and I\'ll generate a quiz' :
+                 mode === 'flashcard' ? 'Flashcard Mode — Send a topic and I\'ll generate flashcards' :
+                 mode === 'map' ? 'Map Mode — Send a topic and I\'ll build an interactive concept map' :
+                 'Memory Mode — Send a topic and I\'ll generate mnemonics & memory palaces'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Messages */}
+        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-3 md:px-4 py-4 md:py-6">
+          {messages.length === 0 ? (
+            <div className={`h-full flex flex-col items-center justify-center max-w-lg mx-auto text-center transition-opacity duration-500 ${showWelcome ? 'opacity-100' : 'opacity-0'}`}>
+              <div className={`w-14 h-14 rounded-2xl border border-zinc-800 bg-zinc-900 flex items-center justify-center mb-6 transition-all duration-700 ${showWelcome ? 'scale-100 opacity-100' : 'scale-90 opacity-0'}`}>
+                <Bot size={28} className="text-zinc-500" />
+              </div>
+
+              {mode === 'chat' && (
+                <>
+                  <h1 className="text-xl font-semibold text-white mb-1.5">What do you want to study?</h1>
+                  <p className="text-sm text-zinc-600 mb-8">Ask me anything about your coursework</p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full mb-6">
+                    {SUGGESTIONS.map((s, i) => (
+                      <button
+                        key={s}
+                        onClick={() => send(s)}
+                        className={`px-3 py-2.5 rounded-xl border border-zinc-800 bg-zinc-900/50 text-left text-sm text-zinc-400 hover:border-zinc-700 hover:text-zinc-200 hover:bg-zinc-900 transition-all ${
+                          showWelcome ? 'opacity-0 translate-y-2' : ''
+                        }`}
+                        style={showWelcome ? { animation: `fadeSlideIn 0.4s ${i * 0.1}s forwards` } : {}}
                       >
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                        <div className="relative z-10">
-                          <div className={`inline-flex p-2 rounded-lg ${action.iconBg} mb-3`}>
-                            {React.cloneElement(action.icon, { className: `w-5 h-5 ${action.iconColor}` })}
-                          </div>
-                          <div className="font-semibold text-zinc-900 dark:text-white text-sm mb-1">{action.label}</div>
-                          <div className="text-xs text-zinc-600 dark:text-zinc-400">{action.description}</div>
-                        </div>
-                      </motion.button>
+                        {s}
+                      </button>
                     ))}
-                  </motion.div>
-                </motion.div>
-              ) : (
-                <div className="space-y-6">
-                  {messages.map((m, idx) => {
-                    const isStreaming = m.isStreaming === true;
-                    const toolResult = m.role === 'assistant' && !isStreaming ? extractFirstJsonObject(m.content) : null;
-                    const tool = toolResult?.data;
-                    const appAction = tool?.tool === 'app_action' ? tool : null;
-                    const interactionPlan = tool?.tool === 'interaction_plan' ? tool?.data : null;
-                    
-                    // Hide only the JSON block that was detected as a tool
-                    const displayContent = toolResult 
-                      ? (m.content.slice(0, toolResult.start) + m.content.slice(toolResult.end)).trim()
-                      : m.content;
+                  </div>
+                </>
+              )}
 
-                    return (
-                      <motion.div
-                        key={`${m.role}-${idx}`}
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-                        layout
-                        className={`flex gap-4 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}
+              {mode === 'quiz' && (
+                <>
+                  <h1 className="text-xl font-semibold text-white mb-1.5">Generate a Quiz</h1>
+                  <p className="text-sm text-zinc-600 mb-6">Tell me any topic and I'll create quiz questions</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full mb-6">
+                    {['Quiz me on world history', 'Test my knowledge of biology', '5 questions about geography', 'Hard science quiz'].map((s, i) => (
+                      <button
+                        key={s}
+                        onClick={() => send(s)}
+                        className="px-3 py-2.5 rounded-xl border border-violet-500/20 bg-violet-500/5 text-left text-sm text-zinc-400 hover:border-violet-500/40 hover:text-zinc-200 hover:bg-violet-500/10 transition-colors"
                       >
-                        <div 
-                          className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                            m.role === 'assistant' 
-                              ? 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/20' 
-                              : 'bg-zinc-700'
-                          }`}
-                        >
-                          {m.role === 'assistant' ? (
-                            isStreaming ? (
-                              <Loader2 className="w-4 h-4 text-white animate-spin" />
-                            ) : (
-                              <Bot className="w-4 h-4 text-white" />
-                            )
-                          ) : (
-                            <span className="text-xs font-bold text-white">U</span>
-                          )}
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {mode === 'flashcard' && (
+                <>
+                  <h1 className="text-xl font-semibold text-white mb-1.5">Create Flashcards</h1>
+                  <p className="text-sm text-zinc-600 mb-6">Send me a topic and I'll generate study cards</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full mb-6">
+                    {['Flashcards for Python basics', 'Make cards for anatomy', 'Vocabulary flashcards', 'Chemistry formulas'].map((s, i) => (
+                      <button
+                        key={s}
+                        onClick={() => send(s)}
+                        className="px-3 py-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 text-left text-sm text-zinc-400 hover:border-amber-500/40 hover:text-zinc-200 hover:bg-amber-500/10 transition-colors"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {mode === 'map' && (
+                <>
+                  <h1 className="text-xl font-semibold text-white mb-1.5">Generate a Concept Map</h1>
+                  <p className="text-sm text-zinc-600 mb-6">Send me a topic and I'll build an interactive map</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full mb-6">
+                    {['Map of photosynthesis', 'Concept map of World War II', 'Map the solar system', 'Map of machine learning'].map((s, i) => (
+                      <button
+                        key={s}
+                        onClick={() => send(s)}
+                        className="px-3 py-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-left text-sm text-zinc-400 hover:border-emerald-500/40 hover:text-zinc-200 hover:bg-emerald-500/10 transition-colors"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {mode === 'mnemonic' && (
+                <>
+                  <h1 className="text-xl font-semibold text-white mb-1.5">Memory Wizard</h1>
+                  <p className="text-sm text-zinc-600 mb-6">Generate mnemonics, acronyms & memory palaces</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full mb-6">
+                    {['Planets mnemonic', 'Acronym for biology cell parts', 'Memory palace for periodic table', 'Mnemonic for trigonometry'].map((s, i) => (
+                      <button
+                        key={s}
+                        onClick={() => send(s)}
+                        className="px-3 py-2.5 rounded-xl border border-rose-500/20 bg-rose-500/5 text-left text-sm text-zinc-400 hover:border-rose-500/40 hover:text-zinc-200 hover:bg-rose-500/10 transition-colors"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              <div className="flex gap-2 flex-wrap justify-center">
+                {COMMANDS.map(cmd => (
+                  <button
+                    key={cmd.id}
+                    onClick={() => { setInput(cmd.id + ' '); inputRef.current?.focus(); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors text-xs"
+                  >
+                    <cmd.icon size={12} />
+                    {cmd.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="max-w-3xl mx-auto space-y-5">
+              {messages.map((m, idx) => {
+                const isLastAssistant = m.role === 'assistant' && idx === messages.length - 1 && !busy;
+                const isLastMessage = idx === messages.length - 1 && m.role === 'assistant';
+                const msgKey = `${currentConversationId}-${idx}`;
+                const fb = feedback[msgKey];
+                const hasQuiz = parsedQuizzes[currentConversationId] !== undefined;
+                const hasFlashcards = parsedFlashcards[currentConversationId] !== undefined;
+
+                return (
+                  <div key={idx} className={`flex gap-3 ${m.role === 'user' ? 'justify-end' : ''}`}>
+                    {m.role === 'assistant' && (
+                      <div className="w-7 h-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0 mt-0.5">
+                        <Bot size={14} className="text-zinc-500" />
+                      </div>
+                    )}
+                    <div className={`max-w-[90%] md:max-w-[85%] group ${m.role === 'user' ? 'order-first' : ''}`}>
+                      {m.role === 'user' && editingIndex === idx ? (
+                        <div className="flex flex-col gap-2">
+                          <textarea
+                            value={editText}
+                            onChange={e => setEditText(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEdit(idx); }
+                              if (e.key === 'Escape') cancelEdit();
+                            }}
+                            className="w-full px-4 py-3 rounded-2xl rounded-tr-md bg-primary text-zinc-950 text-sm leading-relaxed resize-none focus:outline-none"
+                            rows={3}
+                            autoFocus
+                          />
+                          <div className="flex justify-end gap-1.5">
+                            <button onClick={() => saveEdit(idx)} className="p-1.5 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors">
+                              <Check size={12} />
+                            </button>
+                            <button onClick={cancelEdit} className="p-1.5 rounded-lg bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors">
+                              <X size={12} />
+                            </button>
+                          </div>
                         </div>
-
-                        <div className={`flex-1 min-w-0 ${m.role === 'user' ? 'flex justify-end' : ''}`}>
-                          {isStreaming ? (
-                            <motion.div 
-                              className="flex items-center gap-2 text-zinc-500 py-2"
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
+                      ) : (
+                        <div className={`px-4 py-3 text-sm leading-relaxed relative ${
+                          m.role === 'user'
+                            ? 'bg-primary text-zinc-950 rounded-2xl rounded-tr-md'
+                            : 'bg-zinc-900/60 border border-zinc-800/60 text-zinc-200 rounded-2xl rounded-tl-md'
+                        }`}>
+                          {m.role === 'user' && !busy && editingIndex !== idx && (
+                            <button
+                              onClick={() => startEditing(idx, m.content)}
+                              className="absolute -top-2 -right-2 p-1 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-500 hover:text-zinc-200 opacity-0 group-hover:opacity-100 transition-all"
                             >
-                              <div className="flex gap-1">
-                                {[0, 1, 2].map((i) => (
-                                  <motion.div
-                                    key={i}
-                                    className="w-1.5 h-1.5 bg-violet-400 rounded-full"
-                                    animate={{ y: [0, -6, 0], opacity: [0.3, 1, 0.3] }}
-                                    transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
-                                  />
-                                ))}
-                              </div>
-                              <span className="text-xs">Thinking...</span>
-                            </motion.div>
+                              <Pencil size={10} />
+                            </button>
+                          )}
+                          {m.role === 'user' ? (
+                            <p className="whitespace-pre-wrap">{m.content}</p>
                           ) : (
-                            <div 
-                              className={`inline-block max-w-full px-5 py-4 rounded-2xl ${
-                                m.role === 'user'
-                                  ? 'bg-gradient-to-br from-violet-600/30 to-purple-600/30 border border-violet-500/30 text-zinc-100'
-                                  : 'bg-white dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/60 text-zinc-800 dark:text-zinc-200'
-                              }`}
-                            >
-                              <div className="prose prose-invert prose-sm max-w-none">
-                                <ReactMarkdown
-                                  components={{
-                                    code: ({ className, children, ...props }) => {
-                                      const match = /language-(\w+)/.exec(className || '');
-                                      return match ? (
-                                        <pre className="bg-zinc-950/80 rounded-lg p-3 overflow-x-auto border border-zinc-800 my-2">
-                                          <code className={className} {...props}>{children}</code>
-                                        </pre>
-                                      ) : (
-                                        <code className="bg-zinc-800/80 px-1.5 py-0.5 rounded text-violet-300 text-xs" {...props}>{children}</code>
-                                      );
-                                    },
-                                    a: ({ href, children }) => (
-                                      <a href={href} target="_blank" rel="noopener noreferrer" className="text-violet-400 hover:text-violet-300 hover:underline transition-colors">
-                                        {children}
-                                      </a>
-                                    ),
-                                    h1: ({ children }) => <h1 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">{children}</h1>,
-                                    h2: ({ children }) => <h2 className="text-base font-bold text-zinc-900 dark:text-white mb-2">{children}</h2>,
-                                    h3: ({ children }) => <h3 className="text-sm font-semibold text-violet-300 mb-1">{children}</h3>,
-                                    p: ({ children }) => <p className="text-sm leading-relaxed mb-2 last:mb-0">{children}</p>,
-                                    ul: ({ children }) => <ul className="list-disc list-inside text-sm space-y-1 mb-2">{children}</ul>,
-                                    ol: ({ children }) => <ol className="list-decimal list-inside text-sm space-y-1 mb-2">{children}</ol>,
-                                    li: ({ children }) => <li className="text-zinc-700 dark:text-zinc-300">{children}</li>,
-                                    blockquote: ({ children }) => (
-                                      <blockquote className="border-l-2 border-violet-500/50 pl-3 text-zinc-400 italic text-sm my-2">{children}</blockquote>
-                                    ),
-                                    hr: () => <hr className="border-zinc-700/50 my-3" />,
-                                    table: ({ children }) => <table className="min-w-full text-sm border border-zinc-700 rounded-lg my-2">{children}</table>,
-                                    th: ({ children }) => <th className="border border-zinc-700 px-3 py-2 bg-zinc-800/50 font-semibold text-left">{children}</th>,
-                                    td: ({ children }) => <td className="border border-zinc-700 px-3 py-2">{children}</td>,
-                                  }}
-                                >
-                                  {displayContent}
-                                </ReactMarkdown>
-                              </div>
+                            <>
+                              {/* Thinking Panel */}
+                              {isLastMessage && <ThinkingPanel steps={thinkingSteps[currentConversationId] || []} />}
 
-                              {interactionPlan && (
-                                <InteractionPlan 
-                                  title={interactionPlan.title}
-                                  steps={interactionPlan.steps}
-                                  actions={interactionPlan.actions}
-                                  onAction={(actionId) => {
-                                    if (actionId === 'proceed' || actionId === 'start') {
-                                      // Simulate user clicking "Proceed"
-                                      setInput(`Proceed with plan: ${interactionPlan.title}`);
-                                      setTimeout(() => send(), 100);
-                                    } else {
-                                      setInput(`Regarding the plan "${interactionPlan.title}": I want to ${actionId}`);
-                                    }
-                                  }}
+                              {/* Quiz Renderer */}
+                              {hasQuiz && isLastMessage && (
+                                <QuizRenderer
+                                  quiz={parsedQuizzes[currentConversationId]}
+                                  onEdit={(qi, field, value) => handleQuizEdit(currentConversationId, qi, field, value)}
+                                  onSave={handleSaveQuiz}
+                                  mode={mode}
                                 />
                               )}
 
-                              {appAction && (
-                                <motion.div 
-                                  className="mt-4 p-3 rounded-xl border border-violet-500/20 bg-violet-500/5"
-                                  initial={{ opacity: 0, y: 8 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={{ delay: 0.15 }}
-                                >
-                                  <div className="flex items-center justify-between gap-4">
-                                    <div>
-                                      <div className="text-xs uppercase tracking-wider text-violet-400 font-semibold flex items-center gap-2">
-                                        <Wand2 className="w-3.5 h-3.5" />
-                                        Action
-                                      </div>
-                                      <div className="text-sm text-zinc-700 dark:text-zinc-200 mt-1">
-                                        <span className="text-zinc-500">Execute:</span>{' '}
-                                        <span className="font-medium">{String(appAction?.data?.action ?? '')}</span>
-                                      </div>
-                                    </div>
-                                    <motion.button
-                                      onClick={async () => {
-                                        try { 
-                                          const toolResult = extractFirstJsonObject(m.content);
-                                          if (toolResult) await runAppAction(toolResult.data); 
-                                        } 
-                                        catch (e) { setError(e instanceof Error ? e.message : 'Failed'); }
-                                      }}
-                                      whileHover={{ scale: 1.05 }}
-                                      whileTap={{ scale: 0.95 }}
-                                      className="px-3 py-1.5 rounded-lg bg-violet-600 text-white text-xs font-medium hover:bg-violet-500 flex items-center gap-1.5"
-                                    >
-                                      <Play className="w-3 h-3" />
-                                      Run
-                                    </motion.button>
-                                  </div>
-                                </motion.div>
+                              {/* Flashcard Renderer */}
+                              {hasFlashcards && isLastMessage && (
+                                <FlashcardRenderer
+                                  cards={parsedFlashcards[currentConversationId]}
+                                  onEdit={(ci, field, value) => handleFlashcardEdit(currentConversationId, ci, field, value)}
+                                  onSave={handleSaveFlashcards}
+                                  mode={mode}
+                                />
                               )}
 
+                              {/* Concept Map Renderer */}
+                              {mode === 'map' && parsedConceptMaps[currentConversationId] && isLastMessage && (
+                                <div className="my-2">
+                                  <div className="w-full p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 text-left">
+                                    <div className="flex items-center gap-3">
+                                      <Network size={18} className="text-emerald-400" />
+                                      <div>
+                                        <h3 className="text-sm font-semibold text-white">{parsedConceptMaps[currentConversationId].topic}</h3>
+                                        <p className="text-xs text-zinc-500">{parsedConceptMaps[currentConversationId].nodes.length} concepts · {parsedConceptMaps[currentConversationId].edges.length} connections</p>
+                                      </div>
+                                      <span className="ml-auto text-xs text-emerald-400">Exploring</span>
+                                    </div>
+                                  </div>
+                                  <ConceptMap
+                                    data={parsedConceptMaps[currentConversationId]}
+                                    onClose={() => setParsedConceptMap(prev => { const n = { ...prev }; delete n[currentConversationId]; return n; })}
+                                  />
+                                </div>
+                              )}
 
-                            </div>
+                              {/* Markdown Content */}
+                              <MarkdownContent content={m.content} convoId={isLastMessage ? currentConversationId : ''} />
+
+                              {/* Assistant message actions */}
+                              {(!busy && (isLastMessage ? streamingDone.has(-1) : true)) && m.content && (
+                                <div className="flex items-center gap-1 mt-2 -mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button onClick={() => copyMessage(m.content)} className="p-1 rounded text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors" title="Copy">
+                                    <Copy size={12} />
+                                  </button>
+                                  <button onClick={() => toggleTts(idx, m.content)} className={`p-1 rounded transition-colors ${ttsPlaying.has(idx) ? 'text-primary bg-primary/10' : 'text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800'}`} title={ttsPlaying.has(idx) ? 'Stop' : 'Read aloud'}>
+                                    <Volume2 size={12} />
+                                  </button>
+                                  <button
+                                    onClick={() => toggleBookmark(idx)}
+                                    className={`p-1 rounded transition-colors ${bookmarked.has(idx) ? 'text-amber-400' : 'text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800'}`}
+                                    title={bookmarked.has(idx) ? 'Remove bookmark' : 'Bookmark'}
+                                  >
+                                    <Bookmark size={12} />
+                                  </button>
+                                  <button
+                                    onClick={() => { copyMessage(`${m.content}`); addToast('Shared to clipboard', 'success'); }}
+                                    className="p-1 rounded text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
+                                    title="Share"
+                                  >
+                                    <Share size={12} />
+                                  </button>
+                                  <div className="w-px h-3 bg-zinc-800 mx-0.5" />
+                                  <button onClick={() => setFeedback(prev => ({ ...prev, [msgKey]: fb === 'up' ? undefined as any : 'up' }))} className={`p-1 rounded transition-colors ${fb === 'up' ? 'text-green-400' : 'text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800'}`} title="Helpful">
+                                    <ThumbsUp size={12} />
+                                  </button>
+                                  <button onClick={() => setFeedback(prev => ({ ...prev, [msgKey]: fb === 'down' ? undefined as any : 'down' }))} className={`p-1 rounded transition-colors ${fb === 'down' ? 'text-red-400' : 'text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800'}`} title="Not helpful">
+                                    <ThumbsDown size={12} />
+                                  </button>
+                                  {isLastAssistant && (
+                                    <>
+                                      <div className="w-px h-3 bg-zinc-800 mx-0.5" />
+                                      <button onClick={regenerate} className="p-1 rounded text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors" title="Regenerate">
+                                        <RefreshCw size={12} />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
-                      </motion.div>
-                    );
-                  })}
-                  <div ref={messagesEndRef} />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Busy / Thinking indicator */}
+              {busy && (
+                <div className="flex gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0">
+                    <Loader2 size={14} className="text-zinc-500 animate-spin" />
+                  </div>
+                  <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl rounded-tl-md bg-zinc-900/40 border border-zinc-800/40">
+                    <div className="flex gap-1">
+                      {[0, 1, 2].map(i => (
+                        <div key={i} className="w-2 h-2 bg-zinc-600 rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+                      ))}
+                    </div>
+                    <span className="text-xs text-zinc-600">
+                      {mode === 'quiz' ? 'Generating quiz' :
+                       mode === 'flashcard' ? 'Creating flashcards' :
+                       mode === 'map' ? 'Building concept map' :
+                       mode === 'mnemonic' ? 'Crafting memory aids' :
+                       'Thinking'}
+                    </span>
+                  </div>
                 </div>
               )}
-          </div>
+
+              {/* Follow-up suggestions */}
+              {!busy && followUps.length > 0 && mode === 'chat' && (
+                <div className="flex gap-2 flex-wrap justify-center max-w-lg mx-auto">
+                  {followUps.map(s => (
+                    <button
+                      key={s}
+                      onClick={() => send(s)}
+                      className="px-3.5 py-2 rounded-xl border border-zinc-800 bg-zinc-900/60 text-xs text-zinc-400 hover:border-zinc-700 hover:text-zinc-200 hover:bg-zinc-900 transition-colors"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+          )}
         </div>
 
-        <div className="px-6 pb-6 pt-2 bg-gradient-to-t from-zinc-950 via-zinc-950/95 to-transparent">
+        {/* Error */}
+        {error && (
+          <div className="px-4 py-2 bg-red-500/10 border-t border-red-500/20">
+            <p className="text-xs text-red-400">{error}</p>
+          </div>
+        )}
+
+        {/* Input */}
+        <div className="px-3 md:px-4 pb-3 md:pb-4 pt-2 shrink-0 relative">
           <div className="max-w-3xl mx-auto">
-            <motion.div 
-              className="relative flex items-end gap-2 p-2 rounded-2xl bg-zinc-900/80 border border-zinc-800/60 shadow-xl shadow-black/20"
-              whileFocus={{ borderColor: 'rgba(139, 92, 246, 0.4)' }}
-            >
+            {/* Inline context suggestions (above input) */}
+            {mode === 'chat' && !busy && messages.length > 0 && followUps.length === 0 && (
+              <div className="flex gap-1.5 mb-2 overflow-x-auto pb-1">
+                {['Explain more simply', 'Give examples', 'Quiz me on this'].map(s => (
+                  <button
+                    key={s}
+                    onClick={() => send(s)}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-zinc-800 bg-zinc-900/40 text-[11px] text-zinc-500 hover:border-zinc-700 hover:text-zinc-300 whitespace-nowrap transition-colors"
+                  >
+                    <Lightbulb size={10} />
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="relative flex items-end gap-2 px-3 py-2 rounded-2xl border border-zinc-800 bg-zinc-900/80 focus-within:border-zinc-700 transition-colors">
               <textarea
                 ref={textareaRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                    e.preventDefault();
-                    send();
-                  }
-                }}
-                placeholder="Message Aura..."
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder={
+                  mode === 'quiz' ? 'Enter a topic for the quiz...' :
+                  mode === 'flashcard' ? 'Enter a topic for flashcards...' :
+                  mode === 'map' ? 'Enter a topic for a concept map...' :
+                  mode === 'mnemonic' ? 'Enter a topic for mnemonics...' :
+                  'Ask Aura anything... (⌘K for shortcuts)'
+                }
                 rows={1}
-                className="flex-1 bg-transparent text-white placeholder-zinc-500 resize-none focus:outline-none max-h-40 text-sm leading-relaxed px-3 py-2.5"
-                style={{ minHeight: '40px' }}
+                className="flex-1 bg-transparent text-white placeholder-zinc-600 resize-none focus:outline-none max-h-40 text-sm leading-relaxed py-1.5 relative"
+                style={{ minHeight: '24px' }}
               />
-              {busy ? (
-                <motion.button
-                  onClick={stopGeneration}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="p-2.5 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/30 transition-colors shrink-0"
-                  title="Stop generation"
-                >
-                  <StopCircle className="w-4 h-4" />
-                </motion.button>
-              ) : (
-                <>
-                  <motion.button
-                    onClick={() => setInput(prev => prev + '/define ')}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="p-2.5 rounded-xl bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-primary hover:border-primary/50 transition-colors shrink-0"
-                    title="Define a word"
-                  >
-                    <BookText className="w-4 h-4" />
-                  </motion.button>
-                  <motion.button
-                    onClick={send}
-                    disabled={!input.trim()}
-                    whileHover={input.trim() ? { scale: 1.05 } : {}}
-                    whileTap={input.trim() ? { scale: 0.95 } : {}}
-                    className="p-2.5 rounded-xl bg-gradient-to-br from-violet-600 to-purple-600 text-white disabled:opacity-30 disabled:cursor-not-allowed shadow-lg shadow-violet-500/20 transition-all shrink-0"
-                  >
-                    <Send className="w-4 h-4" />
-                  </motion.button>
-                </>
+              {/* Ghost suggestion */}
+              {ghostSuggestion && !busy && (
+                <span className="absolute right-16 bottom-2 pointer-events-none text-xs text-zinc-700 select-none">
+                  {ghostSuggestion.replace(input, '').substring(0, 30)}
+                  {ghostSuggestion.replace(input, '').length > 30 ? '...' : ''}
+                </span>
               )}
-            </motion.div>
-            <p className="text-center text-xs text-zinc-600 mt-2.5">
-              Aura can make mistakes. Verify important information.
-            </p>
+              <button
+                onClick={toggleVoiceInput}
+                className={`p-2 rounded-xl transition-colors shrink-0 ${listening ? 'bg-red-500/20 text-red-400 animate-pulse' : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'}`}
+                title={listening ? 'Stop recording' : 'Voice input'}
+              >
+                <Mic size={16} />
+              </button>
+              {busy ? (
+                <button className="p-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors shrink-0">
+                  <StopCircle size={16} />
+                </button>
+              ) : (
+                <button
+                  onClick={() => send()}
+                  disabled={!input.trim()}
+                  className="p-2 rounded-xl bg-primary text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/80 transition-all shrink-0"
+                >
+                  <Send size={16} />
+                </button>
+              )}
+            </div>
+
+            {mode === 'chat' && (
+              <p className="text-center text-[11px] text-zinc-700 mt-2">
+                Aura can make mistakes. Verify important information.
+                {ghostSuggestion && <span className="ml-1 text-zinc-600">Press Tab to accept suggestion</span>}
+              </p>
+            )}
           </div>
+
+          {/* Command menu */}
+          {showCommands && (
+            <div ref={commandsRef} className="absolute bottom-full left-4 mb-2 w-64 rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden">
+              {COMMANDS.map(cmd => (
+                <button
+                  key={cmd.id}
+                  onClick={() => { setInput(cmd.id + ' '); setShowCommands(false); inputRef.current?.focus(); }}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 transition-colors"
+                >
+                  <cmd.icon size={14} className="text-zinc-600" />
+                  {cmd.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* ── CSS Animations ──────────────────────────────────────────── */}
+      <style>{`
+        @keyframes fadeSlideIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .animate-in { animation: fadeSlideIn 0.3s ease-out; }
+      `}</style>
     </div>
   );
 };
 
 export default AIChat;
-
-
-

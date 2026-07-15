@@ -11,7 +11,7 @@ import {
 } from '../icons/CustomIcons';
 
 // Glassmorphism utility classes
-const glassCard = 'bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl';
+const glassCard = 'bg-zinc-900/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl';
 
 // Animation variants
 const popIn = {

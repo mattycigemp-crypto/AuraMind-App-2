@@ -10,7 +10,9 @@ import {
   SparklesIcon as Sparkles,
   TargetIcon as Target,
 } from '../icons/CustomIcons';
+import { MagneticButton } from '../ui/MagneticButton';
 import GlassCard from '../shared/GlassCard';
+import Confetti from '../shared/Confetti';
 import OnboardingTutorial from '../shared/OnboardingTutorial';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
 import { RetentionConicChart } from '../../components/visualizations/RetentionConicChart';
@@ -28,6 +30,21 @@ export interface MainDashboardProps {
 const MainDashboard: React.FC<MainDashboardProps> = ({ onNavigate }) => {
   const { user, decks, cards, startQuickStudy, goToDeck } = useDashboardWorkspace();
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+
+  // ─── Confetti listener ───
+  useEffect(() => {
+    const handler = () => setShowConfetti(true);
+    window.addEventListener('auramind:celebrate', handler);
+    return () => window.removeEventListener('auramind:celebrate', handler);
+  }, []);
+
+  useEffect(() => {
+    if (showConfetti) {
+      const timer = setTimeout(() => setShowConfetti(false), 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [showConfetti]);
 
   useEffect(() => {
     const completed = localStorage.getItem('auramind:completedTutorials');
@@ -89,21 +106,41 @@ const MainDashboard: React.FC<MainDashboardProps> = ({ onNavigate }) => {
 
   return (
     <div className="p-4 md:p-8 space-y-8 max-w-7xl mx-auto relative">
+      {/* Ambient texture */}
+      <img
+        src="/auramind/dashboard-ambient.png"
+        alt=""
+        className="fixed inset-0 w-full h-full object-cover pointer-events-none"
+        style={{ opacity: 0.06 }}
+      />
       <DashboardGlowBackground />
       
       <motion.header 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="space-y-2"
+        className="space-y-2 relative"
       >
+        {/* Mesh gradient hero card layer */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
+          <div className="absolute -top-20 -left-16 w-72 h-72 rounded-full opacity-[0.08]"
+            style={{ background: "radial-gradient(circle, #7C3AED 0%, transparent 70%)", filter: "blur(80px)", animation: "aurora-drift 18s ease-in-out infinite" }}
+          />
+          <div className="absolute -bottom-12 right-0 w-56 h-56 rounded-full opacity-[0.06]"
+            style={{ background: "radial-gradient(circle, #3B82F6 0%, transparent 70%)", filter: "blur(80px)", animation: "aurora-drift 18s ease-in-out infinite 6s" }}
+          />
+          <div className="absolute top-1/2 left-1/3 w-48 h-48 rounded-full opacity-[0.05]"
+            style={{ background: "radial-gradient(circle, #4F46E5 0%, transparent 70%)", filter: "blur(80px)", animation: "aurora-drift 18s ease-in-out infinite 12s" }}
+          />
+        </div>
+
         <p className="text-xs uppercase tracking-[0.25em] text-primary/70 font-mono-label">
           {greeting}, {user.name.split(/\s+/)[0]}
         </p>
-        <h1 className="text-3xl md:text-4xl font-bold text-zinc-50 tracking-tight">
+        <h1 className="text-3xl md:text-4xl font-bold text-zinc-50 tracking-tight relative z-10">
           Ship one learning win today
         </h1>
-        <p className="text-zinc-400 max-w-2xl text-base md:text-lg">
+        <p className="text-zinc-400 max-w-2xl text-base md:text-lg relative z-10">
           Insights first, noise never — prioritized like Linear and Duolingo: due cards, streak, then everything else.
         </p>
       </motion.header>
@@ -162,6 +199,55 @@ const MainDashboard: React.FC<MainDashboardProps> = ({ onNavigate }) => {
         </DashboardCard>
       </div>
 
+      {/* Suggested for you */}
+      <motion.section
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="w-4 h-4 text-primary" aria-hidden />
+          <h2 className="text-sm font-semibold text-primary uppercase tracking-wider">Suggested for you</h2>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-300 text-[10px] font-medium ring-1 ring-violet-500/30">
+            <Sparkles className="w-3 h-3" />
+            AI
+          </span>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {decks.length > 0 ? (
+            decks.slice(0, 3).map((deck, i) => {
+              const due = cards.filter(c => c.deckId === deck.id && c.nextReview <= Date.now()).length;
+              const total = cards.filter(c => c.deckId === deck.id).length;
+              const lastStudied = cards.filter(c => c.deckId === deck.id && c.lastReviewed).sort((a, b) => b.lastReviewed - a.lastReviewed)[0];
+              return (
+                <DashboardCard key={deck.id} delay={0.25 + i * 0.07} enableTilt glowOnHover>
+                  <GlassCard className="border-primary/10 hover:border-primary/30 transition-colors group cursor-pointer" onClick={() => goToDeck(deck.id)}>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg">📚</span>
+                        <span className="text-[10px] text-zinc-500 bg-zinc-800/50 px-2 py-0.5 rounded-full">{due > 0 ? `${due} due` : 'All caught up'} · {total} cards</span>
+                      </div>
+                      <h3 className="text-sm font-semibold text-zinc-100 group-hover:text-primary transition-colors">{deck.title}</h3>
+                      <p className="text-xs text-zinc-500 leading-relaxed">{deck.description || (lastStudied ? `Last studied ${Math.round((Date.now() - lastStudied.lastReviewed) / 3600000)}h ago` : 'Ready to start studying')}</p>
+                    </div>
+                  </GlassCard>
+                </DashboardCard>
+              );
+            })
+          ) : (
+            <DashboardCard delay={0.25} enableTilt glowOnHover>
+              <GlassCard className="border-primary/10">
+                <div className="space-y-2 text-center py-4">
+                  <span className="text-2xl">🚀</span>
+                  <h3 className="text-sm font-semibold text-zinc-100">Create your first deck</h3>
+                  <p className="text-xs text-zinc-500 leading-relaxed">AI will suggest topics once you start studying.</p>
+                </div>
+              </GlassCard>
+            </DashboardCard>
+          )}
+        </div>
+      </motion.section>
+
       <AnimatedChartWrapper delay={0.3} animationType="fade-up">
         <GlassCard variant="neural" className="border-primary/20">
          <div className="space-y-6">
@@ -183,33 +269,35 @@ const MainDashboard: React.FC<MainDashboardProps> = ({ onNavigate }) => {
              </div>
              <div className="flex justify-center w-full overflow-x-auto">
                <StreakCalendarHeatmap 
-                 data={[
-                   { date: '2026-05-01', count: 5 },
-                   { date: '2026-05-02', count: 3 },
-                   { date: '2026-05-03', count: 0 },
-                   { date: '2026-05-04', count: 8 },
-                   { date: '2026-05-05', count: 2 },
-                   { date: '2026-05-06', count: 0 },
-                   { date: '2026-05-07', count: 1 },
-                   { date: '2026-05-08', count: 4 },
-                   { date: '2026-05-09', count: 6 },
-                   { date: '2026-05-10', count: 0 },
-                   { date: '2026-05-11', count: 3 },
-                   { date: '2026-05-12', count: 7 },
-                 ]}
+                 data={(() => {
+                   // Build real heatmap from card study dates
+                   const studyMap = new Map<string, number>();
+                   cards.forEach(c => {
+                     if (c.lastReviewed && c.lastReviewed > 0) {
+                       const d = new Date(c.lastReviewed).toISOString().slice(0, 10);
+                       studyMap.set(d, (studyMap.get(d) || 0) + 1);
+                     }
+                   });
+                   return Array.from(studyMap.entries()).map(([date, count]) => ({ date, count }));
+                 })()}
                />
              </div>
              <div className="flex justify-center">
-               <MasteryRadarChart 
-                 data={[
-                   { subject: 'Mathematics', score: 85 },
-                   { subject: 'Science', score: 72 },
-                   { subject: 'History', score: 91 },
-                   { subject: 'Literature', score: 68 },
-                   { subject: 'Programming', score: 79 },
-                   { subject: 'Languages', score: 63 }
-                 ]}
-               />
+               {decks.length > 0 ? (
+                 <MasteryRadarChart 
+                   data={decks.slice(0, 6).map(deck => {
+                     const deckCards = cards.filter(c => c.deckId === deck.id);
+                     const studied = deckCards.filter(c => (c.repetition ?? 0) > 0 || (c.lastReviewed && c.lastReviewed > 0)).length;
+                     const score = deckCards.length > 0 ? Math.round((studied / deckCards.length) * 100) : 0;
+                     return { subject: deck.title.slice(0, 14), score };
+                   })}
+                 />
+               ) : (
+                 <div className="text-center text-zinc-500 text-sm py-8">
+                   <p>Mastery data appears after</p>
+                   <p>you create and study decks</p>
+                 </div>
+               )}
              </div>
            </div>
          </div>
@@ -268,13 +356,12 @@ const MainDashboard: React.FC<MainDashboardProps> = ({ onNavigate }) => {
                 : 'Nothing due right now. Add harder cards via AI Chat or sneak in early review.'}
           </p>
           <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
+            <MagneticButton
               onClick={() => (decks.length ? startQuickStudy() : onNavigate('cards'))}
-              className="px-5 py-2.5 rounded-xl bg-primary text-black font-semibold hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="shimmer-sweep px-5 py-2.5 rounded-xl bg-primary text-black font-semibold hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               {decks.length ? 'Start session' : 'Create a deck'}
-            </button>
+            </MagneticButton>
             {firstDeckId && (
               <button
                 type="button"
@@ -310,6 +397,9 @@ const MainDashboard: React.FC<MainDashboardProps> = ({ onNavigate }) => {
         onClose={() => setShowTutorial(false)}
         onComplete={() => setShowTutorial(false)}
       />
+
+      {/* Confetti celebration */}
+      <Confetti isActive={showConfetti} particleCount={80} duration={3000} />
     </div>
   );
 };

@@ -274,7 +274,8 @@ const InteractiveOverlay: React.FC<InteractiveOverlayProps> = ({
                         ? 'border-violet-500 bg-violet-500 text-white'
                         : 'border-zinc-600 text-zinc-400'
                     }`}>
-                      ✎
+                      Edit
+
                     </span>
                     <span className="flex-1">Type your own answer</span>
                   </div>

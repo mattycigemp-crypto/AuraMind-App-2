@@ -25,12 +25,17 @@ export const analyticsService = {
     initialized = true;
     const ph = await getPostHog();
     if (ph) {
-      ph.init(POSTHOG_KEY, {
-        api_host: POSTHOG_HOST,
-        autocapture: true,
-        capture_pageview: true,
-        capture_pageleave: true,
-      });
+      try {
+        ph.init(POSTHOG_KEY, {
+          api_host: POSTHOG_HOST,
+          autocapture: true,
+          capture_pageview: true,
+          capture_pageleave: true,
+          advanced_disable_feature_flags: true,
+        });
+      } catch (e) {
+        console.warn('[Analytics] PostHog init failed:', e);
+      }
     }
   },
 

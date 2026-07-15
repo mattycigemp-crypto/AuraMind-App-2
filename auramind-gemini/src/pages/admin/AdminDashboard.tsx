@@ -186,13 +186,13 @@ const AdminSidebar: React.FC<{
     <motion.aside
       animate={{ width: collapsed ? 72 : 280 }}
       transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-      className="relative h-screen bg-zinc-950/80 backdrop-blur-3xl border-r border-white/[0.04] flex flex-col z-50 shrink-0 overflow-hidden"
+      className="relative h-screen bg-zinc-950/80 backdrop-blur-3xl border-r border-zinc-700/30 flex flex-col z-50 shrink-0 overflow-hidden"
     >
       {/* Glass edge glow */}
       <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-primary/20 to-transparent" />
 
       {/* Header */}
-      <div className={cn("p-5 flex items-center gap-3 border-b border-white/[0.03]", collapsed && "justify-center p-3")}>
+      <div className={cn("p-5 flex items-center gap-3 border-b border-zinc-700/30", collapsed && "justify-center p-3")}>
         <div className="w-9 h-9 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
           <BrainCircuit size={18} className="text-primary" />
         </div>
@@ -205,7 +205,7 @@ const AdminSidebar: React.FC<{
         <button
           onClick={onToggleCollapse}
           className={cn(
-            "ml-auto p-1.5 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-zinc-300 transition-all",
+            "ml-auto p-1.5 rounded-lg hover:bg-zinc-900/20 text-zinc-500 hover:text-zinc-300 transition-all",
             collapsed && "ml-0"
           )}
         >
@@ -227,7 +227,7 @@ const AdminSidebar: React.FC<{
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Jump to section..."
-                className="w-full pl-8 pr-7 py-2 bg-white/[0.02] border border-white/[0.06] rounded-xl text-[11px] text-zinc-300 focus:outline-none focus:border-primary/30 transition-all"
+                className="w-full pl-8 pr-7 py-2 bg-zinc-900/10 border border-zinc-700/30 rounded-xl text-[11px] text-zinc-300 focus:outline-none focus:border-primary/30 transition-all"
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') { setSearchOpen(false); setSearchQuery(''); }
                 }}
@@ -242,7 +242,7 @@ const AdminSidebar: React.FC<{
           ) : (
             <button
               onClick={() => setSearchOpen(true)}
-              className="w-full flex items-center gap-2 px-3 py-2 bg-white/[0.01] border border-white/[0.04] rounded-xl text-[10px] text-zinc-500 hover:text-zinc-300 hover:border-white/[0.08] transition-all"
+className="w-full flex items-center gap-2 px-3 py-2 bg-zinc-900/10 border border-zinc-700/30 rounded-xl text-[10px] text-zinc-500 hover:text-zinc-300 hover:border-zinc-700/50 transition-all"
             >
               <Search size={12} />
               <span>Quick search...</span>
@@ -257,7 +257,7 @@ const AdminSidebar: React.FC<{
         <div className="px-3 pt-1 pb-2">
           <button
             onClick={onBackToDashboard}
-            className="w-full flex items-center gap-2 px-3 py-2 bg-white/[0.01] border border-white/[0.04] rounded-xl text-[10px] text-zinc-500 hover:text-zinc-300 hover:border-white/[0.08] transition-all"
+            className="w-full flex items-center gap-2 px-3 py-2 bg-zinc-900/10 border border-zinc-700/30 rounded-xl text-[10px] text-zinc-500 hover:text-zinc-300 hover:border-zinc-700/50 transition-all"
           >
             <ChevronRight size={12} className="rotate-180" />
             <span>Exit Admin &raquo;</span>
@@ -268,7 +268,7 @@ const AdminSidebar: React.FC<{
         <div className="flex justify-center py-1">
           <button
             onClick={onBackToDashboard}
-            className="p-2 rounded-xl bg-white/[0.01] border border-white/[0.04] text-zinc-500 hover:text-zinc-300 hover:border-white/[0.08] transition-all"
+            className="p-2 rounded-xl bg-zinc-900/10 border border-zinc-700/30 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700/50 transition-all"
             title="Back to Dashboard"
           >
             <ChevronRight size={14} className="rotate-180" />
@@ -292,7 +292,7 @@ const AdminSidebar: React.FC<{
                 collapsed ? 'justify-center px-0 py-3' : 'px-4 py-3',
                 isActive
                   ? 'bg-primary/10 border border-primary/20 text-primary shadow-[0_0_20px_rgba(168,85,247,0.06)]'
-                  : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.03] border border-transparent'
+                  : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/20 border border-transparent'
               )}
             >
               {/* Active indicator */}
@@ -341,8 +341,8 @@ const AdminSidebar: React.FC<{
 
       {/* Footer */}
       {!collapsed && (
-        <div className="p-4 border-t border-white/[0.03]">
-          <div className="p-3 rounded-2xl bg-white/[0.01] border border-white/[0.04]">
+        <div className="p-4 border-t border-zinc-700/30">
+          <div className="p-3 rounded-2xl bg-zinc-900/10 border border-zinc-700/30">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_6px_rgba(74,222,128,0.4)]" />
               <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider">System Online</p>
@@ -395,7 +395,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ className, onBackToDash
       {/* Main Content */}
       <div className="flex-1 flex flex-col relative z-10 min-w-0">
         {/* Top Bar */}
-        <header className="h-16 shrink-0 border-b border-white/[0.04] flex items-center px-6 gap-4 backdrop-blur-xl bg-zinc-950/40">
+        <header className="h-16 shrink-0 border-b border-zinc-700/30 flex items-center px-6 gap-4 backdrop-blur-xl bg-zinc-950/40">
           <div className="flex items-center gap-3">
             <meta.icon size={18} className="text-primary/70" />
             <div>
@@ -407,7 +407,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ className, onBackToDash
           <div className="ml-auto flex items-center gap-3">
             {/* Live clock */}
             <LiveClock />
-            <div className="w-px h-6 bg-white/[0.06]" />
+            <div className="w-px h-6 bg-zinc-900/20" />
             <SystemStatus />
           </div>
         </header>
@@ -454,7 +454,7 @@ const LiveClock: React.FC = () => {
 
 // --- System Status ---
 const SystemStatus: React.FC = () => (
-  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.02] border border-white/[0.05]">
+  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/10 border border-zinc-700/30">
     <span className="text-[9px] text-zinc-500 font-bold tracking-wider">ALL SYSTEMS OPERATIONAL</span>
     <div className="flex gap-1">
       <div className="w-1 h-1 rounded-full bg-green-400" />

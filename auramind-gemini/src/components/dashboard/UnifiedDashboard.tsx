@@ -1,397 +1,264 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '../../lib/utils';
-import {
-  LayersIcon as Layers,
-  PlusIcon as Plus, PlayIcon as Play, TargetIcon as Target, FlameIcon as Flame, FolderOpenIcon as FolderOpen,
-  BrainCircuitIcon,
-  BookOpenIcon as BookOpen,
-  BotIcon as Bot,
-} from '../icons/CustomIcons';
-import Sidebar from './Sidebar';
-import TopAppBar from './TopAppBar';
-import StatCard from './StatCard';
-import MobileTabBar from './MobileTabBar';
-import SourceGroundedChat from '../chat/SourceGroundedChat';
-import CardsDecks from './CardsDecks';
-import QuoteOfTheDay from './QuoteOfTheDay';
-import WordOfTheDay from './WordOfTheDay';
-import LearningPaths from './LearningPaths';
-import TutorialPage from './TutorialPage';
-import AnalyticsPage from '../../pages/dashboard/AnalyticsPage';
-import AdminDashboard from '../../pages/admin/AdminDashboard';
-import GeneratorPage from '../../pages/generator/GeneratorPage';
-import SettingsPage from '../../pages/settings/SettingsPage';
-import { trackPageVisit, getTopSections, type SectionRanking } from '../../services/analytics/pageVisitTracker';
-import { usePlatform, useHaptics, useSplashScreen, useKeyboard, useAppLifecycle } from '../../hooks/useNative';
+import React, { useState, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Search, Bell, Flame } from 'lucide-react';
+import type { UserProfile, Deck, Card } from '../../types';
+import PageShell from './PageShell';
 
-
-type UserRole = 'user' | 'admin' | 'manager' | 'owner';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  plan: string;
-  streak?: number;
-}
-
-interface UnifiedDashboardProps {
-  user: User;
-  cards: { id: string; front: string; back: string; nextReview: number; lastReviewed?: number; interval?: number; repetition?: number }[];
-  decks: { id: string; title: string; cardCount: number }[];
-  onNavigate: (section: string) => void;
-  onStartStudy: () => void;
-  onCreateDeck: () => void;
-  onDeckClick?: (id: string) => void;
-  initialPage?: string;
+type Props = {
+  user: UserProfile;
+  decks: Deck[];
+  cards: Card[];
+  createDeck: (title: string, description: string) => Promise<Deck | null>;
+  deleteDeck: (id: string) => Promise<void>;
+  addCardsToDeck: (deckId: string, newCards: any[]) => Promise<number | undefined>;
   onLogout: () => void;
+  initialPage?: string;
+};
+
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+function formatDate(ts: number): string {
+  const d = new Date(ts);
+  return `${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
 }
 
-const UnifiedDashboard: React.FC<UnifiedDashboardProps> = ({
-  user,
-  cards,
-  decks,
-  onNavigate,
-  onStartStudy,
-  onCreateDeck,
-  onDeckClick,
-  initialPage = 'main',
-  onLogout
+const StatCard = ({ label, value, trend, accent }: { label: string; value: string; trend?: string; accent?: string }) => (
+  <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-5">
+    <div className="text-[#5A5A72] text-[11px] font-medium mb-1">{label}</div>
+    <div className={`text-2xl font-semibold ${accent || 'text-[#F0EFFE]'} mb-0.5`}>{value}</div>
+    {trend && <div className="text-emerald-400 text-[10px]">{trend}</div>}
+  </div>
+);
+
+export const UnifiedDashboard: React.FC<Props> = ({
+  user, decks, cards, createDeck, deleteDeck, addCardsToDeck, onLogout, initialPage,
 }) => {
-  const platform = usePlatform();
-  const { hide: hideSplash } = useSplashScreen();
-  const { isOpen: keyboardOpen } = useKeyboard();
-  const appState = useAppLifecycle();
-  const { impact } = useHaptics();
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [charVersion, setCharVersion] = useState(0);
-  const [mounted, setMounted] = useState(false);
+  const navigate = useNavigate();
+  const [showNewDeck, setShowNewDeck] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newDesc, setNewDesc] = useState('');
 
-  useEffect(() => {
-    setMounted(true);
-    hideSplash();
-    
-    const interval = setInterval(() => {
-      const v = parseInt(localStorage.getItem('auramind-char-version') || '0');
-      if (v !== charVersion) setCharVersion(v);
-    }, 500);
-    return () => clearInterval(interval);
-  }, [charVersion, hideSplash]);
-
-  // Native app lifecycle handling
-  useEffect(() => {
-    if (appState === 'active') {
-      // App came to foreground - refresh data
-    }
-  }, [appState]);
+  const todayCards = useMemo(() => cards.filter(c => c.nextReview <= Date.now()).length, [cards]);
+  const studiedToday = useMemo(() => cards.filter(c => {
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    return c.lastReviewed >= d.getTime();
+  }).length, [cards]);
   
-  const dashCharId = localStorage.getItem('auramind-character-id') || 'matt';
-  const dashUploadedImage = localStorage.getItem('auramind-uploaded-image');
-  const dashCustomRaw = localStorage.getItem('auramind-custom-characters');
-  const dashCustomChars = dashCustomRaw ? (() => { try { return JSON.parse(dashCustomRaw); } catch { return []; } })() : [];
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [activeItem, setActiveItem] = useState(initialPage);
+  // Real computed stats (no more mocks)
+  const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay()); weekStart.setHours(0,0,0,0);
+  const reviewedThisWeek = useMemo(() => cards.filter(c => c.lastReviewed && c.lastReviewed >= weekStart.getTime()).length, [cards, weekStart]);
+  const totalStudiedCards = useMemo(() => cards.filter(c => (c.repetition ?? 0) > 0 || (c.lastReviewed && c.lastReviewed > 0)).length, [cards]);
 
-  const handleNavigate = (item: string) => {
-    const wasChange = activeItem !== item;
-    setActiveItem(item);
-    onNavigate(item);
-    setMobileNavOpen(false);
-    if (wasChange) {
-      trackPageVisit(item);
-    }
+  const handleCreateDeck = async () => {
+    if (!newTitle.trim()) return;
+    await createDeck(newTitle.trim(), newDesc.trim());
+    setNewTitle(''); setNewDesc(''); setShowNewDeck(false);
   };
-
-  const dueCount = useMemo(() => cards.filter(c => (c.nextReview || 0) <= Date.now()).length, [cards]);
-
-  const searchItems = useMemo(() => decks.map(d => ({
-    id: d.id,
-    label: d.title,
-    href: `/deck/${d.id}`
-  })), [decks]);
-
-  const badgeCounts = useMemo(() => ({
-    dashboard: dueCount,
-    cards: decks.length,
-  }), [dueCount, decks.length]);
-
-  const renderContent = () => {
-    switch (activeItem) {
-      case 'main':
-        return <OverviewPage 
-          user={user} 
-          dueCount={dueCount} 
-          totalCards={cards.length}
-          totalDecks={decks.length}
-          onStartStudy={onStartStudy}
-          onCreateDeck={onCreateDeck}
-          onNavigate={(section) => handleNavigate(section)}
-        />;
-      case 'cards':
-        return <CardsDecks />;
-      case 'chat':
-        return <SourceGroundedChat />;
-      case 'generator':
-        return <GeneratorPage />;
-      case 'analytics':
-        return <AnalyticsPage />;
-      case 'paths':
-        return <LearningPaths user={user} />;
-      case 'tutorial':
-        return <TutorialPage />;
-      case 'quiz':
-        return null;
-      case 'settings':
-        return <SettingsPage user={user} onLogout={onLogout} />;
-      default:
-        return <OverviewPage user={user} dueCount={dueCount} totalCards={cards.length} totalDecks={decks.length} onStartStudy={onStartStudy} onCreateDeck={onCreateDeck} onNavigate={(section) => handleNavigate(section)} />;
-    }
-  };
-
-  if (activeItem === 'admin' && (user.role === 'admin' || user.role === 'owner')) {
-    return <AdminDashboard onBackToDashboard={() => handleNavigate('main')} />;
-  }
 
   return (
-    <div className="flex min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 selection:bg-primary/30 selection:text-white overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar 
-        activeItem={activeItem === 'main' ? 'dashboard' : activeItem}
-        onNavigate={(id) => handleNavigate(id === 'dashboard' ? 'main' : id)}
-        onQuickStudy={onStartStudy}
-        badgeCounts={badgeCounts}
-        isCollapsed={isCollapsed}
-        onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
-        userRole={user.role}
-        className={cn(
-          "transition-transform duration-500 ease-in-out z-[60]",
-          mobileNavOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        )}
-      />
+    <PageShell>
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8 space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-[#F0EFFE] text-xl font-light tracking-tight">
+              Good {new Date().getHours() < 12 ? 'morning' : 'afternoon'}, {user.name.split(' ')[0]}
+            </h1>
+            <p className="text-[#5A5A72] text-xs mt-0.5">{formatDate(Date.now())}</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#111118] border border-[#2A2A3A] text-[#5A5A72] text-xs w-48">
+              <Search size={14} />
+              <input
+                placeholder="Search decks or cards..."
+                className="bg-transparent outline-none text-[#F0EFFE] text-xs w-full placeholder-[#5A5A72]"
+              />
+            </div>
+            <button className="w-8 h-8 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#5A5A72] hover:text-[#F0EFFE] transition-colors">
+              <Bell size={16} />
+            </button>
+          </div>
+        </div>
 
-      {/* Mobile Overlay */}
-      {mobileNavOpen && (
-        <div 
-          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[55] md:hidden animate-in fade-in duration-500"
-          onClick={() => setMobileNavOpen(false)}
-        />
-      )}
+        {/* Today's Goal */}
+        <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <div className="relative w-20 h-20">
+                <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+                  <circle cx="40" cy="40" r="34" fill="none" stroke="#2A2A3A" strokeWidth="3" />
+                  <circle cx="40" cy="40" r="34" fill="none" stroke="#7C3AED" strokeWidth="3"
+                    strokeDasharray={`${(studiedToday / 20) * 213.6} 213.6`} strokeLinecap="round" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center flex-col">
+                  <span className="text-[#F0EFFE] text-lg font-semibold leading-none">{studiedToday}</span>
+                  <span className="text-[#5A5A72] text-[9px]">/ 20</span>
+                </div>
+              </div>
+              <div>
+                <div className="text-[#5A5A72] text-[10px] font-medium tracking-wider uppercase mb-0.5">Today's Goal</div>
+                <div className="text-[#F0EFFE] text-sm font-medium">{studiedToday} cards reviewed today</div>
+                <div className="text-[#5A5A72] text-xs mt-0.5">{Math.max(0, 20 - studiedToday)} more to hit your goal</div>
+                <div className="flex items-center gap-1.5 mt-2">
+                  <Flame size={16} className="text-orange-400" />
+                  <span className="text-[#F0EFFE] text-xs font-medium">{user.streak} day streak</span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate(`/study/${decks[0]?.id || ''}`)}
+              className="px-5 py-2.5 bg-[#7C3AED] text-white text-xs font-medium rounded-lg hover:bg-[#6D28D9] transition-all shadow-[0_0_20px_rgba(124,58,237,0.2)]"
+            >
+              Study now
+            </button>
+          </div>
+        </div>
 
-      {/* Main Content Area */}
-      <div 
-        className={cn(
-          "flex-1 flex flex-col transition-all duration-500 relative min-w-0",
-          isCollapsed ? "md:pl-20" : "md:pl-[280px]"
-        )}
-      >
-        <TopAppBar 
-          userName={user.name}
-          userEmail={user.email}
-          planLabel={user.plan}
-          onLogout={onLogout}
-          onMobileMenuClick={() => setMobileNavOpen(true)}
-          searchItems={searchItems}
-          onNavigate={(path) => {
-            if (path.startsWith('/deck/')) {
-              onDeckClick?.(path.split('/').pop() || '');
-            }
-          }}
-          characterId={dashCharId}
-          customCharacters={dashCustomChars}
-          uploadedImage={dashUploadedImage}
-          className={cn(
-             "transition-all duration-500",
-             isCollapsed ? "md:left-20" : "md:left-[280px]"
+        {/* Stats Row */}
+        <div className="grid grid-cols-4 gap-4">
+          <StatCard label="Total cards studied" value={totalStudiedCards.toLocaleString()} trend={cards.length > 0 ? `${cards.length} in library` : undefined} />
+          <StatCard label="Reviewed this week" value={reviewedThisWeek.toLocaleString()} trend={studiedToday > 0 ? `+${studiedToday} today` : undefined} accent={reviewedThisWeek > 0 ? 'text-[#8B5CF6]' : undefined} />
+          <StatCard label="Current streak" value={`${user.streak}`} trend={user.streak >= 7 ? 'Personal best' : undefined} accent="text-orange-400" />
+          <StatCard label="Decks" value={`${decks.length}`} trend={decks.length > 0 ? `${cards.length} cards total` : 'Create your first'} accent={decks.length > 0 ? 'text-emerald-400' : undefined} />
+        </div>
+
+        {/* Due Today */}
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h2 className="text-[#F0EFFE] text-sm font-medium">Due today</h2>
+              <span className="px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#8B5CF6] text-[10px] font-medium">
+                {decks.filter(d => cards.some(c => c.deckId === d.id && c.nextReview <= Date.now())).length} decks
+              </span>
+            </div>
+            <button onClick={() => setShowNewDeck(true)} className="px-3 py-1.5 bg-[#7C3AED] text-white text-[11px] font-medium rounded-lg hover:bg-[#6D28D9] transition-all">
+              + New Deck
+            </button>
+          </div>
+
+          {showNewDeck && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
+              className="mb-4 bg-[#111118] border border-[#2A2A3A] rounded-xl p-4"
+            >
+              <input value={newTitle} onChange={e => setNewTitle(e.target.value)}
+                placeholder="Deck title"
+                className="w-full bg-[#1A1A24] border border-[#2A2A3A] rounded-lg px-3 py-2 text-[#F0EFFE] text-sm placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50 mb-2"
+                onKeyDown={e => e.key === 'Enter' && handleCreateDeck()} autoFocus
+              />
+              <input value={newDesc} onChange={e => setNewDesc(e.target.value)}
+                placeholder="Description (optional)"
+                className="w-full bg-[#1A1A24] border border-[#2A2A3A] rounded-lg px-3 py-2 text-[#F0EFFE] text-sm placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50 mb-3"
+                onKeyDown={e => e.key === 'Enter' && handleCreateDeck()}
+              />
+              <div className="flex items-center gap-2">
+                <button onClick={handleCreateDeck} className="px-4 py-1.5 bg-[#7C3AED] text-white text-[11px] font-medium rounded-lg hover:bg-[#6D28D9] transition-all">Create</button>
+                <button onClick={() => setShowNewDeck(false)} className="px-4 py-1.5 text-[#5A5A72] text-[11px] hover:text-[#F0EFFE] transition-all">Cancel</button>
+              </div>
+            </motion.div>
           )}
-        />
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden" style={{ paddingTop: 'calc(4rem + env(safe-area-inset-top, 0px))', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-          <div className="p-6 md:p-12 max-w-[1600px] mx-auto">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeItem}
-                initial={{ opacity: 0, scale: 0.98, y: 10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.98, y: -10 }}
-                transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-              >
-                {renderContent()}
-              </motion.div>
-            </AnimatePresence>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {decks.map((deck) => {
+              const due = cards.filter(c => c.deckId === deck.id && c.nextReview <= Date.now()).length;
+              const lastStudied = cards
+                .filter(c => c.deckId === deck.id && c.lastReviewed)
+                .sort((a, b) => b.lastReviewed - a.lastReviewed)[0];
+              return (
+                <motion.div key={deck.id} whileHover={{ y: -2 }}
+                  className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-5 hover:border-[#3A3A4F] transition-all"
+                >
+                  <h3 className="text-[#F0EFFE] text-sm font-medium mb-1">{deck.title}</h3>
+                  <p className={`text-xs font-medium ${due > 0 ? 'text-[#8B5CF6]' : 'text-emerald-400'}`}>
+                    {due > 0 ? `${due} due` : 'All reviewed'}
+                  </p>
+                  {lastStudied && (
+                    <p className="text-[#5A5A72] text-[10px] mt-0.5">
+                      Last studied {Math.round((Date.now() - lastStudied.lastReviewed) / 3600000)}h ago
+                    </p>
+                  )}
+                  <button onClick={() => navigate(`/study/${deck.id}`)}
+                    className="mt-3 w-full py-1.5 bg-[#7C3AED]/10 text-[#8B5CF6] text-[11px] font-medium rounded-lg hover:bg-[#7C3AED]/20 transition-all"
+                  >
+                    Study
+                  </button>
+                </motion.div>
+              );
+            })}
+            {decks.length === 0 && (
+              <div className="col-span-full text-center py-12">
+                <div className="text-[#5A5A72] text-sm mb-2">No decks yet</div>
+                <button onClick={() => setShowNewDeck(true)}
+                  className="px-4 py-2 bg-[#7C3AED]/10 text-[#8B5CF6] text-xs font-medium rounded-lg hover:bg-[#7C3AED]/20 transition-all"
+                >Create your first deck</button>
+              </div>
+            )}
           </div>
-</main>
-        {/* Mobile Tab Bar for native apps */}
-        <MobileTabBar
-          activeTab={activeItem === 'main' ? 'dashboard' : activeItem}
-          onTabChange={handleNavigate}
-          badgeCounts={badgeCounts}
-        />
-      </div>
-    </div>
-  );
-};
+        </div>
 
-interface OverviewPageProps {
-  user: User;
-  dueCount: number;
-  totalCards: number;
-  totalDecks: number;
-  onStartStudy: () => void;
-  onCreateDeck: () => void;
-  onNavigate: (section: string) => void;
-}
-
-const QuickActionIcons: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
-  Layers,
-  BrainCircuit: BrainCircuitIcon,
-  FolderOpen,
-  BookOpen,
-  Bot,
-  Play,
-};
-
-const OverviewPage: React.FC<OverviewPageProps> = ({ user, dueCount, totalCards, totalDecks, onStartStudy, onCreateDeck, onNavigate }) => {
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-  const weekdays = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const today = `${weekdays[new Date().getDay()]} · ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`;
-
-  const topSections: SectionRanking[] = getTopSections(4);
-
-  return (
-    <div className="space-y-10 pb-20">
-      <header>
-        <p className="text-[11px] text-zinc-500 dark:text-zinc-500 font-medium mb-1">{today}</p>
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
-          {greeting}, {user.name.split(' ')[0]}
-        </h1>
-        {dueCount > 0 && (
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">
-            You have <span className="text-primary font-semibold">{dueCount} card{dueCount !== 1 ? 's' : ''} due</span> for review
-          </p>
-        )}
-      </header>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Due for Review" value={dueCount} subtitle={dueCount === 1 ? 'card waiting' : 'cards waiting'} icon={Target} variant="focus" />
-        <StatCard title="Streak" value={user.streak ?? 0} subtitle="day streak" icon={Flame} />
-        <StatCard title="Total Cards" value={totalCards.toLocaleString()} subtitle="flashcards" icon={Layers} />
-        <StatCard title="Decks" value={totalDecks} subtitle={`deck${totalDecks !== 1 ? 's' : ''}`} icon={FolderOpen} />
-      </div>
-
-      <div className="grid lg:grid-cols-5 gap-8">
-        <div className="lg:col-span-3 space-y-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <QuoteOfTheDay />
-            <WordOfTheDay />
+        {/* Bottom Row */}
+        <div className="grid grid-cols-2 gap-6">
+          {/* Continue Learning */}
+          <div>
+            <h3 className="text-[#F0EFFE] text-sm font-medium mb-3">Continue learning</h3>
+            <div className="space-y-2">
+              {decks.slice(0, 3).map(deck => {
+                const due = cards.filter(c => c.deckId === deck.id && c.nextReview <= Date.now()).length;
+                const total = cards.filter(c => c.deckId === deck.id).length;
+                const progress = total > 0 ? ((total - due) / total) * 100 : 0;
+                return (
+                  <div key={deck.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-[#111118] border border-[#2A2A3A]">
+                    <div className="flex-1 mr-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[#F0EFFE] text-xs">{deck.title}</span>
+                        <span className="text-[#5A5A72] text-[10px]">{Math.round(progress)}%</span>
+                      </div>
+                      <div className="w-full h-1 rounded-full bg-[#2A2A3A] overflow-hidden">
+                        <div className="h-full rounded-full bg-[#7C3AED] transition-all" style={{ width: `${progress}%` }} />
+                      </div>
+                    </div>
+                    <button onClick={() => navigate(`/study/${deck.id}`)}
+                      className="text-[#8B5CF6] text-[10px] font-medium hover:text-[#7C3AED] transition-colors shrink-0"
+                    >
+                      Continue
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="architectural-panel p-8 rounded-[24px] border-primary/15">
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-3">
-              {dueCount > 0 ? 'Ready to study?' : 'All caught up!'}
-            </h2>
-            <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-6 leading-relaxed">
-              {dueCount > 0
-                ? `You have ${dueCount} card${dueCount !== 1 ? 's' : ''} ready for review. Spaced repetition keeps your memory strong — a quick session now saves time later.`
-                : 'Every card is up to date. Create new flashcards or explore the Generator to build more study material.'}
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <button
-                onClick={onStartStudy}
-                disabled={dueCount === 0}
-                className="btn-arch h-12 px-8 rounded-xl text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Play size={18} className="fill-current mr-2 inline-block" />
-                Start Review
-              </button>
-              <button
-                onClick={onCreateDeck}
-                className="btn-arch-outline h-12 px-8 rounded-xl text-sm font-semibold border-primary/30 hover:border-primary"
-              >
-                <Plus size={18} className="mr-2 inline-block" />
-                New Deck
-              </button>
+          {/* Suggested */}
+          <div>
+            <h3 className="text-[#F0EFFE] text-sm font-medium mb-1">Suggested for you</h3>
+            <p className="text-[#5A5A72] text-[10px] mb-3">AI picks based on your study history</p>
+            <div className="space-y-2">
+              {decks.length > 0 ? (
+                decks.slice(0, 4).map(deck => {
+                  const due = cards.filter(c => c.deckId === deck.id && c.nextReview <= Date.now()).length;
+                  const total = cards.filter(c => c.deckId === deck.id).length;
+                  return (
+                    <div key={deck.id} className="flex items-center justify-between px-3 py-2.5 rounded-lg bg-[#111118] border border-[#2A2A3A] hover:border-[#3A3A4F] transition-all">
+                      <div>
+                        <span className="text-[#F0EFFE] text-xs">{deck.title}</span>
+                        <p className="text-[#5A5A72] text-[10px]">{total} cards{ due > 0 ? ` · ${due} due` : ''}</p>
+                      </div>
+                      <button onClick={() => navigate(`/study/${deck.id}`)} className="text-[#8B5CF6] text-[10px] font-medium hover:text-[#7C3AED] transition-colors shrink-0">
+                        Study
+                      </button>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-4 text-[#5A5A72] text-xs">
+                  Create your first deck to see suggestions
+                </div>
+              )}
             </div>
           </div>
         </div>
-
-        <aside className="lg:col-span-2 space-y-4">
-          <h3 className="text-xs font-semibold text-zinc-600 dark:text-zinc-500 uppercase tracking-wider">Quick Actions</h3>
-          <div className="space-y-3">
-            {topSections.map((section) => {
-              const Icon = QuickActionIcons[section.iconName] || Layers;
-              return (
-                <QuickAction
-                  key={section.section}
-                  icon={Icon}
-                  label={section.label}
-                  description={section.visitCount > 0
-                    ? section.description
-                    : 'Discover this feature'}
-                  onClick={() => onNavigate(section.section)}
-                />
-              );
-            })}
-          </div>
-        </aside>
       </div>
-    </div>
+    </PageShell>
   );
 };
-
-const QuickAction: React.FC<{ icon: React.ComponentType<{ size?: number; className?: string }>; label: string; description: string; onClick: () => void }> = ({ icon: Icon, label, description, onClick }) => (
-  <button
-    onClick={onClick}
-    className="w-full text-left architectural-panel p-5 rounded-[20px] border-primary/10 bg-primary/[0.01] hover:bg-primary/[0.04] hover:border-primary/25 transition-all group cursor-pointer"
-  >
-    <div className="flex items-center gap-4">
-      <div className="w-10 h-10 rounded-xl bg-zinc-200 dark:bg-zinc-900 border border-primary/20 flex items-center justify-center shrink-0 group-hover:border-primary/40 group-hover:bg-primary/10 transition-colors">
-        <Icon size={18} className="text-primary/80 group-hover:text-primary transition-colors" />
-      </div>
-      <div className="min-w-0">
-        <div className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 group-hover:text-black dark:group-hover:text-white transition-colors">{label}</div>
-        <div className="text-[11px] text-zinc-500 dark:text-zinc-500 mt-0.5 truncate">{description}</div>
-      </div>
-    </div>
-  </button>
-);
-
-
-
-const PageHeader: React.FC<{ title: string; description?: string; action?: { label: string; onClick: () => void; primary?: boolean } }> = ({ title, description, action }) => {
-  return (
-    <div className="mb-12">
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-        <div className="space-y-3">
-          <h1 className="text-impact-md text-zinc-900 dark:text-white leading-none tracking-tight">{title}</h1>
-          {description && <p className="text-zinc-500 font-bold uppercase tracking-[0.2em] text-[10px] italic opacity-80">{description}</p>}
-        </div>
-        {action && (
-          <button
-            onClick={action.onClick}
-            className={cn(
-              "h-14 px-8 rounded-2xl flex items-center justify-center gap-3 transition-all font-black text-xs uppercase tracking-widest",
-              action.primary 
-                ? "btn-arch group overflow-hidden" 
-                : "btn-arch-outline border-primary/20 text-primary/70 hover:text-primary hover:border-primary"
-            )}
-          >
-            {action.primary && <div className="absolute inset-0 bg-gradient-to-r from-primary to-cosmic opacity-0 group-hover:opacity-100 transition-opacity duration-500" />}
-            <span className="relative z-10 flex items-center gap-3">
-              {action.primary && <Plus size={18} />}
-              {action.label}
-            </span>
-          </button>
-        )}
-      </div>
-      <div className="h-px w-full bg-gradient-to-r from-primary/30 via-primary/5 to-transparent mt-10" />
-    </div>
-  );
-};
-
-export { UnifiedDashboard, PageHeader };
-
-
-

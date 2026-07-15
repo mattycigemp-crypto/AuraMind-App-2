@@ -8,6 +8,7 @@ import {
   CheckCircle2Icon as CheckCircle2,
   ArrowRightIcon as ArrowRight,
   ExternalLinkIcon as ExternalLink,
+  MailIcon as Mail,
 } from '../components/icons/CustomIcons';
 import { TechGridBackground, GridDotPattern } from '../components/landing/TechGridBackground';
 
@@ -43,14 +44,15 @@ const features: Feature[] = [
 const platformButtons = [
   {
     label: 'Windows',
-    subtitle: '.msi / .exe installer',
+    subtitle: '.msi / .exe installer — Windows 10+',
     icon: <Monitor size={22} />,
     href: 'https://github.com/mattycigemp-crypto/AuraMind-App-2/releases/latest',
+    directDownload: 'https://github.com/mattycigemp-crypto/AuraMind-App-2/releases/latest/download/AuraMind_2.0.0_x64_en-US.msi',
     variant: 'primary',
   },
   {
     label: 'macOS',
-    subtitle: '.dmg (Apple Silicon & Intel)',
+    subtitle: '.dmg — Apple Silicon & Intel',
     icon: (
       <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20.33 18.53A10.24 10.24 0 0 0 16 2H6a6 6 0 0 0-6 6v2.5" />
@@ -62,6 +64,7 @@ const platformButtons = [
       </svg>
     ),
     href: 'https://github.com/mattycigemp-crypto/AuraMind-App-2/releases/latest',
+    directDownload: 'https://github.com/mattycigemp-crypto/AuraMind-App-2/releases/latest/download/AuraMind_2.0.0_aarch64.dmg',
     variant: 'secondary',
   },
   {
@@ -69,6 +72,7 @@ const platformButtons = [
     subtitle: '.AppImage / .deb / .rpm',
     icon: <Monitor size={22} />,
     href: 'https://github.com/mattycigemp-crypto/AuraMind-App-2/releases/latest',
+    directDownload: 'https://github.com/mattycigemp-crypto/AuraMind-App-2/releases/latest/download/AuraMind_2.0.0_amd64.AppImage',
     variant: 'secondary',
   },
 ];
@@ -76,9 +80,9 @@ const platformButtons = [
 const mobilePlatforms = [
   {
     label: 'iOS',
-    subtitle: 'App Store (coming soon)',
+    subtitle: 'App Store — submit for review',
     icon: (
-      <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor">
+      <svg width={22} height="22" viewBox="0 0 24 24" fill="currentColor">
         <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
       </svg>
     ),
@@ -88,9 +92,9 @@ const mobilePlatforms = [
   },
   {
     label: 'Android',
-    subtitle: 'Google Play (coming soon)',
+    subtitle: 'Google Play — submit for review',
     icon: (
-      <svg width={22} height={22} viewBox="0 0 24 24" fill="currentColor">
+      <svg width={22} height="22" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.33,0-6-2.67-6-6s2.67-6,6-6c1.663,0,3.145,0.688,4.212,1.775L13.81,5.504C12.451,4.465,10.873,4,9.245,4C5.555,4,2.592,6.896,2.592,10.539c0,3.831,3.152,6.734,6.901,6.734h0.144c0.303,0,0.604-0.027,0.902-0.082v-4.257H9.245v-2.31h2.656v-1.865c0-2.178,1.37-3.293,3.114-3.293h1.912V10.239z"/>
       </svg>
     ),
@@ -209,6 +213,9 @@ const DownloadPage: React.FC = () => {
                       <Download size={18} />
                       Download for {platform.label}
                     </a>
+                    <p className="text-center text-[10px] text-zinc-600 mt-3">
+                      Opens GitHub Releases — pick the latest version for your OS.
+                    </p>
                   </div>
                 </motion.div>
               ))}
@@ -279,13 +286,13 @@ const DownloadPage: React.FC = () => {
                     </ul>
 
                     {platform.disabled ? (
-                      <button
-                        disabled
-                        className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-zinc-800 border border-zinc-700 text-zinc-500 font-medium rounded-xl cursor-not-allowed"
+                      <a
+                        href="mailto:auramind-app@googlegroups.com?subject=Notify me when AuraMind mobile launches&body=I want to be notified when the AuraMind native mobile app is available on iOS/Android."
+                        className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-zinc-800 border border-zinc-700 text-zinc-300 font-medium rounded-xl hover:bg-primary hover:text-black transition-colors"
                       >
-                        <ExternalLink size={18} />
-                        Coming Soon
-                      </button>
+                        <Mail size={18} />
+                        Notify Me
+                      </a>
                     ) : (
                       <a
                         href={platform.href}
@@ -300,6 +307,134 @@ const DownloadPage: React.FC = () => {
                   </div>
                 </motion.div>
               ))}
+            </div>
+
+            {/* Waitlist CTA */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mt-12 text-center"
+            >
+              <div className="inline-flex items-center gap-3 px-6 py-4 rounded-2xl bg-zinc-800/50 border border-zinc-700/50">
+                <Mail size={20} className="text-primary shrink-0" />
+                <p className="text-zinc-300">
+                  Native mobile apps are in final review.{' '}
+                  <a
+                    href="mailto:auramind-app@googlegroups.com?subject=Notify me when AuraMind mobile launches&body=I want to be notified when the AuraMind native mobile app is available on iOS/Android."
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Join the waitlist to get notified.
+                  </a>
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Publishing Checklist */}
+      <section className="relative z-10 py-24 md:py-32 px-6 md:px-12">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-4">
+                Publishing Checklist
+              </h2>
+              <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
+                What&apos;s needed before native mobile apps go live on the App Store and Google Play.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* iOS Checklist */}
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 md:p-10">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <svg width={22} height="22" viewBox="0 0 24 24" fill="currentColor" className="text-primary">
+                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold">iOS — App Store</h3>
+                    <p className="text-zinc-500">Apple Developer Program ($99/yr)</p>
+                  </div>
+                </div>
+                <ul className="space-y-4">
+                  {[
+                    'Apple Developer account enrollment ($99/year)',
+                    'App Store Connect setup & team invite',
+                    'App icon (all sizes: 1024×1024 + device-specific)',
+                    'Screenshots: 6.7″ (iPhone 15 Pro Max) & 12.9″ (iPad Pro)',
+                    'App preview video (optional, recommended)',
+                    'Privacy policy URL (hosted on auramind.app/privacy)',
+                    'App description, keywords, and support URL',
+                    'Export Compliance (Crypto: YES — uses encryption)',
+                    'TestFlight internal & external testing (1–3 days)',
+                    'App Review submission (24–48 hours typical)',
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-3 text-zinc-300">
+                      <CheckCircle2 size={18} className="text-emerald-500 shrink-0 mt-0.5" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Android Checklist */}
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 md:p-10">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <svg width={22} height="22" viewBox="0 0 24 24" fill="currentColor" className="text-primary">
+                      <path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.33,0-6-2.67-6-6s2.67-6,6-6c1.663,0,3.145,0.688,4.212,1.775L13.81,5.504C12.451,4.465,10.873,4,9.245,4C5.555,4,2.592,6.896,2.592,10.539c0,3.831,3.152,6.734,6.901,6.734h0.144c0.303,0,0.604-0.027,0.902-0.082v-4.257H9.245v-2.31h2.656v-1.865c0-2.178,1.37-3.293,3.114-3.293h1.912V10.239z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold">Android — Google Play</h3>
+                    <p className="text-zinc-500">Google Play Console ($25 one-time)</p>
+                  </div>
+                </div>
+                <ul className="space-y-4">
+                  {[
+                    'Google Play Developer account ($25 one-time fee)',
+                    'Create or link Google Pay Merchant account (paid app or IAP)',
+                    'Production keystore generation & backup (see scripts/)',
+                    'App icon (512×512 + 1024×1024 adaptive icon)',
+                    'Feature graphic (1024×500) & screenshots (phone + tablet)',
+                    'Store listing: title (30 chars), short desc (80), full desc (4000)',
+                    'Privacy policy URL (hosted on auramind.app/privacy)',
+                    'Content rating questionnaire (IARC)',
+                    'App releases → Production track: rollout % → 100%',
+                    'In-app review & in-app update APIs integration',
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-3 text-zinc-300">
+                      <CheckCircle2 size={18} className="text-emerald-500 shrink-0 mt-0.5" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-12 text-center">
+              <p className="text-zinc-500 text-sm">
+                See{' '}
+                <a
+                  href="https://github.com/mattycigemp-crypto/AuraMind-App-2/blob/main/auramind-gemini/scripts/README-MOBILE-PUBLISHING.md"
+                  className="text-primary hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  scripts/README-MOBILE-PUBLISHING.md
+                </a>{' '}
+                for the full step-by-step publishing guide.
+              </p>
             </div>
           </motion.div>
         </div>

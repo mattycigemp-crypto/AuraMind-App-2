@@ -135,7 +135,7 @@ const MobileDashboard: React.FC = () => {
                   <span className="text-primary">days</span>
                 </div>
                 <p className="text-xs text-muted">
-                  {stats.streakDays >= 7 ? '🔥 On fire!' : 'Keep going!'}
+                  {stats.streakDays >= 7 ? 'On fire!' : 'Keep going!'}
                 </p>
               </div>
             </Card>

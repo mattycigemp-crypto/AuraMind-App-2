@@ -10,6 +10,7 @@ export interface AuraMindCompleteProps {
   createDeck: (title: string, description: string) => Promise<Deck | null>;
   deleteDeck: (id: string) => Promise<void>;
   addCardsToDeck: (deckId: string, newCards: any[]) => Promise<number | undefined>;
+  updateProfile?: (updates: Partial<UserProfile>) => Promise<void>;
   onLogout: () => void;
   initialPage?: string;
 }
@@ -21,6 +22,7 @@ const AuraMindComplete: React.FC<AuraMindCompleteProps> = ({
   createDeck,
   deleteDeck,
   addCardsToDeck,
+  updateProfile,
   onLogout,
   initialPage = 'main',
 }) => {
@@ -32,6 +34,7 @@ const AuraMindComplete: React.FC<AuraMindCompleteProps> = ({
       createDeck={createDeck}
       deleteDeck={deleteDeck}
       addCardsToDeck={addCardsToDeck}
+      updateProfile={updateProfile || (async () => { console.warn('updateProfile called but not provided to AuraMindComplete'); })}
       onLogout={onLogout}
     >
       <DashboardLayout initialPage={initialPage} />
@@ -40,6 +43,3 @@ const AuraMindComplete: React.FC<AuraMindCompleteProps> = ({
 };
 
 export default AuraMindComplete;
-
-
-

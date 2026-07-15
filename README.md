@@ -48,8 +48,8 @@ An AI-powered study companion application with spaced repetition, flashcard mana
    
    # Stripe Configuration (for payments)
    VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key_here
-   VITE_STRIPE_PRICE_ID_MONTHLY=price_1SNlszGhRq84JnUVyNTmKt3A
-   VITE_STRIPE_PRICE_ID_ANNUAL=price_1SedVnGhRq84JnUVctLWWuWJ
+   VITE_STRIPE_PRICE_ID_MONTHLY=price_1TqjKHGhRq84JnUVogflTfeY
+   VITE_STRIPE_PRICE_ID_ANNUAL=price_1SNlxOGhRq84JnUV1DzlFMS8
 
    # Email Configuration (IMPORTANT: Must use verified domain in Resend)
    RESEND_FROM_EMAIL=noreply@mail.auramind.app

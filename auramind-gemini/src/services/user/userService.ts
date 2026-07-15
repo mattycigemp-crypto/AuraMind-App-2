@@ -28,7 +28,7 @@ export const userService = {
         .insert({
           id: user.id,
           email: user.email || '',
-          name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+          name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
           role: UserRole.USER,
           plan: 'Starter',
           streak: 0,

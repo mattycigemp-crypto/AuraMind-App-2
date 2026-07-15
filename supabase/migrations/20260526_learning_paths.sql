@@ -45,10 +45,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Create triggers for updated_at
+-- Create triggers for updated_at (idempotent)
+DROP TRIGGER IF EXISTS update_learning_paths_updated_at ON learning_paths;
 CREATE TRIGGER update_learning_paths_updated_at BEFORE UPDATE ON learning_paths
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_learning_path_enrollments_updated_at ON learning_path_enrollments;
 CREATE TRIGGER update_learning_path_enrollments_updated_at BEFORE UPDATE ON learning_path_enrollments
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -67,19 +69,24 @@ ALTER TABLE learning_paths ENABLE ROW LEVEL SECURITY;
 ALTER TABLE learning_path_enrollments ENABLE ROW LEVEL SECURITY;
 
 -- RLS policies for learning_paths (read-only for authenticated users)
+DROP POLICY IF EXISTS "Anyone can view learning paths" ON learning_paths;
 CREATE POLICY "Anyone can view learning paths" ON learning_paths
   FOR SELECT USING (auth.role() = 'authenticated');
 
 -- RLS policies for learning_path_enrollments
+DROP POLICY IF EXISTS "Users can view their own enrollments" ON learning_path_enrollments;
 CREATE POLICY "Users can view their own enrollments" ON learning_path_enrollments
   FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert their own enrollments" ON learning_path_enrollments;
 CREATE POLICY "Users can insert their own enrollments" ON learning_path_enrollments
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own enrollments" ON learning_path_enrollments;
 CREATE POLICY "Users can update their own enrollments" ON learning_path_enrollments
   FOR UPDATE USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own enrollments" ON learning_path_enrollments;
 CREATE POLICY "Users can delete their own enrollments" ON learning_path_enrollments
   FOR DELETE USING (auth.uid() = user_id);
 

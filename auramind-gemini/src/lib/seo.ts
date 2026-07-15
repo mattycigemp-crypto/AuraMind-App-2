@@ -17,7 +17,7 @@ export interface SEOConfig {
 
 const DEFAULT_TITLE = 'AuraMind - AI-Powered Study Companion';
 const DEFAULT_DESCRIPTION = 'AI flashcards powered by FSRS spaced repetition — learn anything in half the time. Turn notes and PDFs into smart decks that adapt to your memory.';
-const DEFAULT_IMAGE = '/og-image.png';
+const DEFAULT_IMAGE = '/auramind/og-cover.png';
 const SITE_URL = 'https://auramind.app';
 
 /**
@@ -101,20 +101,9 @@ function setMetaTag(attrName: string, attrValue: string, content: string): void 
 }
 
 function updateFavicon(): void {
-  // Update favicon for light/dark mode
-  const darkFavicon = '/favicon-dark.ico';
-  const lightFavicon = '/favicon-light.ico';
-
   let link = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
-  if (!link) {
-    link = document.createElement('link');
-    link.rel = 'icon';
-    link.type = 'image/x-icon';
-    document.head.appendChild(link);
-  }
-
-  // Use dark favicon by default (matches dark theme)
-  link.href = darkFavicon;
+  if (!link) return;
+  // Keep the existing favicon from index.html (favicon.svg)
 }
 
 /**

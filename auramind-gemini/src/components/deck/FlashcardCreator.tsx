@@ -31,37 +31,37 @@ const FlashcardCreator: React.FC<FlashcardCreatorProps> = ({ onAddCard, classNam
     };
 
     return (
-        <div className={`bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-[40px] p-8 relative overflow-hidden ${className}`}>
+        <div className={`bg-zinc-900/5 border border-zinc-800/60 rounded-[40px] p-8 relative overflow-hidden ${className}`}>
             <div className="flex items-center gap-4 mb-8">
-                <div className="w-10 h-10 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-xl flex items-center justify-center">
-                    <Type size={20} className="text-black/ dark:text-white/" />
+                <div className="w-10 h-10 bg-zinc-900/5 border border-zinc-800/60 rounded-xl flex items-center justify-center">
+                    <Type size={20} className="text-white" />
                 </div>
                 <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-black/ dark:text-white/">Manual Card Creator</p>
-                    <p className="text-[9px] font-bold text-black/ dark:text-white/ uppercase tracking-[0.2em] mt-0.5 italic">Add to Deck</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white">Manual Card Creator</p>
+                    <p className="text-[9px] font-bold text-white uppercase tracking-[0.2em] mt-0.5 italic">Add to Deck</p>
                 </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-[0.3em] text-black/ dark:text-white/ ml-1">Question</label>
+                    <label className="text-[10px] font-bold uppercase tracking-[0.3em] text-white ml-1">Question</label>
                     <input
                         type="text"
                         value={question}
                         onChange={(e) => setQuestion(e.target.value)}
                         placeholder="e.g., What is photosynthesis?"
-                        className="w-full bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ px-6 py-4 outline-none focus:border-black/ dark:border-white/ transition-all font-bold text-sm text-slate-900 dark:text-white placeholder:text-black/ dark:text-white/ rounded-2xl"
+                        className="w-full bg-zinc-900/5 border border-zinc-800/60 px-6 py-4 outline-none focus:border-white/30 transition-all font-bold text-sm text-white placeholder:text-zinc-500 rounded-2xl"
                         required
                     />
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-[0.3em] text-black/ dark:text-white/ ml-1">Answer</label>
+                    <label className="text-[10px] font-bold uppercase tracking-[0.3em] text-white ml-1">Answer</label>
                     <textarea
                         value={answer}
                         onChange={(e) => setAnswer(e.target.value)}
                         placeholder="e.g., The process by which plants convert light energy into chemical energy..."
-                        className="w-full bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ px-6 py-4 outline-none focus:border-black/ dark:border-white/ transition-all font-bold text-sm text-slate-900 dark:text-white placeholder:text-black/ dark:text-white/ rounded-2xl h-32 resize-none"
+                        className="w-full bg-zinc-900/5 border border-zinc-800/60 px-6 py-4 outline-none focus:border-white/30 transition-all font-bold text-sm text-white placeholder:text-zinc-500 rounded-2xl h-32 resize-none"
                         required
                     />
                 </div>
@@ -71,7 +71,7 @@ const FlashcardCreator: React.FC<FlashcardCreatorProps> = ({ onAddCard, classNam
                     disabled={isSubmitting}
                     className={`w-full py-5 rounded-2xl font-bold uppercase tracking-[0.2em] text-xs transition-all flex items-center justify-center gap-2 ${isSuccess
                         ? 'bg-emerald-500 text-white'
-                        : 'bg-white text-black hover:scale-[1.02] active:scale-[0.98]'
+                        : 'bg-zinc-900 text-white hover:scale-[1.02] active:scale-[0.98]'
                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                     {isSubmitting ? (

@@ -85,4 +85,77 @@ export const isEmployeeOrHigher = (role: UserRole): boolean => {
   return ROLE_HIERARCHY[role] >= ROLE_HIERARCHY[UserRole.EMPLOYEE];
 };
 
+export const isCeoOrHigher = (role?: UserRole): boolean => {
+  return (ROLE_HIERARCHY[role ?? UserRole.USER] ?? 0) >= ROLE_HIERARCHY[UserRole.CEO];
+};
+
+export const isOwnerOnly = (role?: UserRole): boolean => {
+  return role === UserRole.OWNER;
+};
+
+export interface RoleBadgeConfig {
+  label: string;
+  icon: 'crown' | 'star' | 'shield' | 'badge';
+  textColor: string;
+  ringColor: string;
+  gradient: string;
+  shimmerColor: string;
+  avatarGlow: string;
+  avatarGlowStrong: string;
+  animation: 'shimmer' | 'glow-pulse' | 'subtle-pulse';
+}
+
+export const getRoleBadgeConfig = (role?: UserRole): RoleBadgeConfig | null => {
+  if (!role) return null;
+
+  const configs: Partial<Record<UserRole, RoleBadgeConfig>> = {
+    [UserRole.OWNER]: {
+      label: 'Owner',
+      icon: 'crown',
+      textColor: 'text-purple-200',
+      ringColor: 'ring-purple-400/50',
+      gradient: 'linear-gradient(135deg, rgba(168,85,247,0.25), rgba(139,92,246,0.15), rgba(168,85,247,0.25))',
+      shimmerColor: 'rgba(192,132,252,0.35)',
+      avatarGlow: '0 0 20px rgba(168,85,247,0.5), 0 0 40px rgba(139,92,246,0.25)',
+      avatarGlowStrong: '0 0 28px rgba(168,85,247,0.7), 0 0 56px rgba(139,92,246,0.45)',
+      animation: 'glow-pulse',
+    },
+    [UserRole.CEO]: {
+      label: 'CEO',
+      icon: 'star',
+      textColor: 'text-amber-200',
+      ringColor: 'ring-amber-400/40',
+      gradient: 'linear-gradient(135deg, rgba(245,158,11,0.25), rgba(251,191,36,0.12), rgba(245,158,11,0.25))',
+      shimmerColor: 'rgba(252,211,77,0.4)',
+      avatarGlow: '0 0 20px rgba(245,158,11,0.45), 0 0 40px rgba(251,191,36,0.2)',
+      avatarGlowStrong: '0 0 20px rgba(245,158,11,0.45), 0 0 40px rgba(251,191,36,0.2)',
+      animation: 'shimmer',
+    },
+    [UserRole.ADMIN]: {
+      label: 'Admin',
+      icon: 'shield',
+      textColor: 'text-amber-300',
+      ringColor: 'ring-amber-500/40',
+      gradient: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.1), rgba(245,158,11,0.15))',
+      shimmerColor: 'rgba(251,191,36,0.3)',
+      avatarGlow: '0 0 15px rgba(245,158,11,0.3), 0 0 30px rgba(217,119,6,0.15)',
+      avatarGlowStrong: '0 0 15px rgba(245,158,11,0.3), 0 0 30px rgba(217,119,6,0.15)',
+      animation: 'shimmer',
+    },
+    [UserRole.EMPLOYEE]: {
+      label: 'Staff',
+      icon: 'badge',
+      textColor: 'text-teal-200',
+      ringColor: 'ring-teal-400/30',
+      gradient: 'linear-gradient(135deg, rgba(20,184,166,0.15), rgba(13,148,136,0.1), rgba(20,184,166,0.15))',
+      shimmerColor: 'rgba(45,212,191,0.25)',
+      avatarGlow: '0 0 12px rgba(20,184,166,0.25), 0 0 24px rgba(13,148,136,0.12)',
+      avatarGlowStrong: '0 0 12px rgba(20,184,166,0.25), 0 0 24px rgba(13,148,136,0.12)',
+      animation: 'subtle-pulse',
+    },
+  };
+
+  return configs[role] ?? null;
+};
+
 

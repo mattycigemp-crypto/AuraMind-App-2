@@ -10,5 +10,8 @@
     "express": "^5.2.1",
     "resend": "^4.0.0",
     "stripe": "^20.2.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.22.4"
   }
 }

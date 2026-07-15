@@ -229,11 +229,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const customerEmail = session.customer_details?.email;
         const customerName = session.customer_details?.name || 'User';
         const amount = session.amount_total ? (session.amount_total / 100).toFixed(2) : '0.00';
-        const currency = session.currency?.toUpperCase() || 'USD';
-
-        if (userId && session.subscription) {
+        const currency = session.currency?.toUpperCase() || 'USD';          if (userId && session.subscription) {
           const sub = await stripe.subscriptions.retrieve(session.subscription as string);
-          const subscription = 'current_period_end' in sub ? sub as Stripe.Subscription : sub;
+          const subscription = sub as any;
 
           await supabase.auth.admin.updateUserById(userId, {
             user_metadata: {
@@ -306,8 +304,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               user.user.email,
               user.user.user_metadata?.full_name || 'User',
               'Pro Plan',
-              subscription.current_period_end
-                ? new Date(subscription.current_period_end * 1000).toLocaleDateString()
+              (subscription as any).current_period_end
+                ? new Date((subscription as any).current_period_end * 1000).toLocaleDateString()
                 : 'N/A'
             );
           }

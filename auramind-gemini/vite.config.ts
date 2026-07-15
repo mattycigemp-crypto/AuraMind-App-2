@@ -16,6 +16,7 @@ export default defineConfig(({ mode }) => {
     server: {
       port: Number(process.env.PORT) || 3000,
       host: isProd ? '0.0.0.0' : 'localhost',
+      allowedHosts: true,
       proxy: {
         '/local-ai': {
           target: env.VITE_AI_BASE_URL || 'http://localhost:1234',

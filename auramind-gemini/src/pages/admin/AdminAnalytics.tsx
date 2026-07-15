@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
+import PageShell from '../../components/dashboard/PageShell';
 import {
   TrendingUpIcon as TrendingUp,
   UsersIcon as Users,
@@ -200,7 +201,8 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ className }) => {
   }
 
   return (
-    <div className={cn("space-y-8 pb-20", className)}>
+    <PageShell>
+      <div className={cn('max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-20', className)}>
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
@@ -401,7 +403,8 @@ const AdminAnalytics: React.FC<AdminAnalyticsProps> = ({ className }) => {
           Revenue data {revenue ? `from Stripe — MRR: $${formatNumber(revenue.mrr)}, ${revenue.activeSubscriptions} active subscriptions` : 'is simulated. Connect Stripe for real-time MRR, churn, and LTV metrics.'}
         </p>
       </div>
-    </div>
+      </div>
+    </PageShell>
   );
 };
 
@@ -456,7 +459,7 @@ const ChartCard: React.FC<{
   children: React.ReactNode;
   className?: string;
 }> = ({ title, subtitle, children, className }) => (
-  <div className={cn('p-6 bg-white/[0.01] border border-white/[0.06] rounded-2xl backdrop-blur-sm', className)}>
+  <div className={cn('p-6 bg-zinc-900/10 border border-zinc-700/30 rounded-2xl backdrop-blur-sm', className)}>
     <div className="mb-4">
       <h3 className="text-xs font-black text-white uppercase tracking-[0.1em]">{title}</h3>
       {subtitle && <p className="text-[9px] text-zinc-600 mt-1">{subtitle}</p>}

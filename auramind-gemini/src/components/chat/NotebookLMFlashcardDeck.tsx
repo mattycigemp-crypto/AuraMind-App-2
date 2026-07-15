@@ -219,7 +219,7 @@ const NotebookLMFlashcardDeck: React.FC<NotebookLMFlashcardDeckProps> = ({
               className={`p-2 rounded-lg border transition-all ${
                 isShuffled
                   ? 'bg-violet-500/10 border-violet-500/30 text-violet-400'
-                  : 'bg-zinc-100 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700/50 text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300'
+                  : 'bg-zinc-800 border-zinc-700/50 text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300'
               }`}
               title="Shuffle cards"
             >
@@ -227,7 +227,7 @@ const NotebookLMFlashcardDeck: React.FC<NotebookLMFlashcardDeckProps> = ({
             </button>
             <button
               onClick={() => setViewMode('grid')}
-              className="p-2 rounded-lg bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-all"
+              className="p-2 rounded-lg bg-zinc-800 border border-zinc-700/50 text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-all"
               title="Grid view"
             >
               <BookOpen size={14} />
@@ -410,7 +410,7 @@ const NotebookLMFlashcardDeck: React.FC<NotebookLMFlashcardDeckProps> = ({
           <div className="flex gap-2">
             <button
               onClick={resetSession}
-              className="p-1.5 rounded-lg bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700/50 text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-all"
+              className="p-1.5 rounded-lg bg-zinc-800 border border-zinc-700/50 text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-all"
               title="Reset session"
             >
               <RotateCcw size={12} />

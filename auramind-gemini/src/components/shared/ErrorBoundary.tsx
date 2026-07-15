@@ -132,7 +132,7 @@ Time: ${new Date().toISOString()}
               )}
               <button
                 onClick={this.handleGoHome}
-                className="flex items-center gap-2 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors text-sm"
+                className="flex items-center gap-2 px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-sm"
               >
                 <Home className="h-4 w-4" />
                 Go Home
@@ -140,7 +140,7 @@ Time: ${new Date().toISOString()}
               {import.meta.env.DEV && (
                 <button
                   onClick={this.handleCopyError}
-                  className="flex items-center gap-2 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors text-sm"
+className="flex items-center gap-2 px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-sm"
                 >
                   <Bug className="h-4 w-4" />
                   Copy Error

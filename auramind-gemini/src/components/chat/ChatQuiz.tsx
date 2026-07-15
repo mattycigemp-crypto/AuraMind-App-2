@@ -63,7 +63,7 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
     const percentage = Math.round((score / quiz.questions.length) * 100);
 
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+      <div className="bg-zinc-900 rounded-lg p-6 shadow-sm border border-zinc-700">
         <div className="text-center mb-6">
           <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-white">Quiz Complete!</h3>
           <div className="text-3xl font-bold mb-2">
@@ -80,7 +80,7 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
           {quiz.questions.map((question, index) => {
             const isCorrect = selectedAnswers[index] === question.correctAnswer;
             return (
-              <div key={question.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div key={question.id} className="flex items-center gap-3 p-3 bg-zinc-800 rounded-lg">
                 {isCorrect ? (
                   <CheckCircle className="text-green-600" size={20} />
                 ) : (
@@ -106,7 +106,7 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+    <div className="bg-zinc-900 rounded-lg shadow-sm border border-zinc-700">
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold text-gray-900 dark:text-white">{quiz.title}</h3>
@@ -121,7 +121,7 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
         <div className="text-sm text-gray-600 dark:text-gray-400">
           Question {currentQuestion + 1} of {quiz.questions.length}
         </div>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
+        <div className="w-full bg-zinc-700 rounded-full h-2 mt-2">
           <div 
             className="bg-purple-600 h-2 rounded-full transition-all duration-300" 
             style={{ width: `${((currentQuestion + 1) / quiz.questions.length) * 100}%` }}
@@ -158,8 +158,8 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
                     ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
                     : isSelected
                     ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
-                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                } ${showFeedback ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+: 'border-zinc-700 hover:border-zinc-600'
+                } ${showFeedback ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-zinc-800'}`}
               >
                 <div className="flex items-center gap-3">
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
@@ -172,7 +172,7 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
                       : 'border-gray-300 dark:border-gray-600'
                   }`}>
                     {(showCorrect || showIncorrect || isSelected) && (
-                      <div className="w-2 h-2 bg-white rounded-full" />
+                      <div className="w-2 h-2 bg-zinc-900 rounded-full" />
                     )}
                   </div>
                   <span className={`${
@@ -200,8 +200,8 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
         <div className="flex gap-3">
           {currentQuestion > 0 && (
             <button
-              onClick={handlePrevious}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+onClick={handlePrevious}
+              className="px-4 py-2 border border-zinc-700 text-zinc-300 rounded-lg hover:bg-zinc-800 transition-colors"
             >
               Previous
             </button>
@@ -216,7 +216,7 @@ const ChatQuiz: React.FC<ChatQuizProps> = ({ quiz, onComplete }) => {
               className={`px-4 py-2 rounded-lg transition-colors ${
                 isAnswered
                   ? 'bg-purple-600 hover:bg-purple-700 text-slate-900 dark:text-white'
-                  : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                  : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
               }`}
             >
               Submit Answer

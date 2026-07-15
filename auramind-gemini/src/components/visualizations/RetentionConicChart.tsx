@@ -100,9 +100,12 @@ const RetentionConicChart: React.FC<RetentionConicChartProps> = ({
         
         <defs>
           <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#8B5CF6" stopOpacity={1} />
-            <stop offset="100%" stopColor="#6D28D9" stopOpacity={1} />
+            <stop offset="0%" stopColor="#7C3AED" stopOpacity={1} />
+            <stop offset="100%" stopColor="#3B82F6" stopOpacity={1} />
           </linearGradient>
+          <filter id="glow">
+            <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#7C3AED" floodOpacity="0.5" />
+          </filter>
         </defs>
       </svg>
 

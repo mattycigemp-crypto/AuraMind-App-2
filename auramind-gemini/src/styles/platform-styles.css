@@ -1,0 +1,817 @@
+/* ========================================
+   Platform-Specific Visual Styles
+   Each platform gets its own look & feel
+   ======================================== */
+
+/* Apply platform font to body */
+.platform-ios body,
+.platform-macos body {
+  font-family: -apple-system, 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.platform-android body {
+  font-family: 'Google Sans', 'Inter', system-ui, sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.platform-windows body {
+  font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+.platform-linux body {
+  font-family: 'Inter', 'Cantarell', system-ui, sans-serif;
+}
+
+/* ========================================
+   Platform-specific nav/sidebar overrides
+   ======================================== */
+
+/* iOS — bottom tab bar style, large titles */
+.platform-ios .sidebar-nav-item {
+  border-radius: 0.75rem;
+  padding: 0.625rem 1rem;
+}
+
+.platform-ios .sidebar-nav-item.active {
+  background: var(--platform-primary-container);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+.platform-ios .neural-panel {
+  border-radius: 1.25rem;
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  background: rgba(30, 30, 35, 0.6);
+  border: 0.5px solid var(--platform-glass-border);
+}
+
+.platform-ios .glass-card-protocol {
+  border-radius: 1.25rem;
+  background: rgba(30, 30, 35, 0.55);
+  backdrop-filter: blur(30px) saturate(180%);
+}
+
+/* Android — M3 tonal surfaces, no shadows, elevation via color */
+.platform-android .sidebar-nav-item {
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  transition: background 0.2s ease;
+}
+
+.platform-android .sidebar-nav-item.active {
+  background: var(--platform-primary-container);
+}
+
+.platform-android .neural-panel {
+  border-radius: 1.5rem;
+  background: rgba(30, 28, 34, 0.7);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.platform-android .neural-panel:hover {
+  background: rgba(35, 33, 40, 0.8);
+  transition: background 0.2s ease;
+}
+
+.platform-android .glass-card-protocol {
+  border-radius: 1.5rem;
+}
+
+/* macOS — compact, edge-to-edge sidebar, colored icons */
+.platform-macos .sidebar-nav-item {
+  border-radius: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.platform-macos .sidebar-nav-item.active {
+  background: var(--platform-primary-container);
+}
+
+.platform-macos .sidebar-nav-item svg,
+.platform-macos .sidebar-nav-item img {
+  color: var(--platform-primary);
+}
+
+.platform-macos .neural-panel {
+  border-radius: 0.625rem;
+  background: rgba(30, 30, 35, 0.55);
+  backdrop-filter: blur(24px);
+  border: 0.5px solid var(--platform-glass-border);
+}
+
+.platform-macos .glass-card-protocol {
+  border-radius: 0.625rem;
+}
+
+/* Windows — clean, layered, minimal rounded */
+.platform-windows .sidebar-nav-item {
+  border-radius: 0.25rem;
+  padding: 0.5rem 1rem;
+}
+
+.platform-windows .sidebar-nav-item.active {
+  background: var(--platform-primary-container);
+  border-left: 3px solid var(--platform-primary);
+}
+
+.platform-windows .neural-panel {
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255,255,255,0.05);
+  background: rgba(25, 25, 28, 0.7);
+}
+
+.platform-windows .glass-card-protocol {
+  border-radius: 0.5rem;
+}
+
+/* Linux — GNOME-style clean, floating */
+.platform-linux .sidebar-nav-item {
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+}
+
+.platform-linux .sidebar-nav-item.active {
+  background: var(--platform-primary-container);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+.platform-linux .neural-panel {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(25, 25, 28, 0.65);
+}
+
+.platform-linux .glass-card-protocol {
+  border-radius: 0.75rem;
+}
+
+/* ========================================
+   Platform-specific motion curves
+   ======================================== */
+
+.platform-ios {
+  --cubic-platform: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.platform-android {
+  --cubic-platform: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.platform-macos {
+  --cubic-platform: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.platform-windows {
+  --cubic-platform: cubic-bezier(0.12, 0.9, 0.11, 1);
+}
+
+.platform-linux {
+  --cubic-platform: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========================================
+   Platform-specific focused interactions
+   ======================================== */
+
+/* iOS — tap highlight, spring feel */
+.platform-ios button:active,
+.platform-ios [role="button"]:active {
+  opacity: 0.7;
+  transition: opacity 0.1s ease;
+}
+
+/* Android — ripple-like effect on dark */
+.platform-android button::after,
+.platform-android [role="button"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255,255,255,0.1);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.platform-android button:hover::after,
+.platform-android [role="button"]:hover::after {
+  opacity: 1;
+}
+
+/* Windows — subtle lift on hover */
+.platform-windows button:hover,
+.platform-windows [role="button"]:hover {
+  transform: translateY(-1px);
+  transition: transform 0.15s ease;
+}
+
+/* Linux — GNOME-style subtle highlight */
+.platform-linux button:hover,
+.platform-linux [role="button"]:hover {
+  background: rgba(255,255,255,0.03);
+  transition: background 0.15s ease;
+}
+
+/* macOS — no opacity change (native feel) */
+.platform-macos button:active,
+.platform-macos [role="button"]:active {
+  transform: scale(0.97);
+  transition: transform 0.1s ease;
+}
+
+/* ========================================
+   Platform-specific scrollbars
+   ======================================== */
+
+.platform-ios ::-webkit-scrollbar,
+.platform-macos ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.platform-ios ::-webkit-scrollbar-thumb,
+.platform-macos ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.15);
+  border-radius: 3px;
+}
+
+.platform-ios ::-webkit-scrollbar-track,
+.platform-macos ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.platform-android ::-webkit-scrollbar {
+  width: 4px;
+}
+
+.platform-android ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+}
+
+.platform-windows ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.platform-windows ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 0;
+}
+
+.platform-windows ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.platform-linux ::-webkit-scrollbar {
+  width: 6px;
+}
+
+.platform-linux ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+
+/* ========================================
+   Platform-specific focus rings
+   ======================================== */
+
+.platform-ios *:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3);
+}
+
+.platform-android *:focus-visible {
+  outline: 2px solid var(--platform-primary);
+  outline-offset: 2px;
+}
+
+.platform-macos *:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.3);
+}
+
+.platform-windows *:focus-visible {
+  outline: 2px solid var(--platform-primary);
+  outline-offset: 1px;
+}
+
+.platform-linux *:focus-visible {
+  outline: 2px solid var(--platform-primary);
+  outline-offset: 2px;
+  outline-style: dashed;
+}
+
+/* ========================================
+   Platform-specific selection colors
+   ======================================== */
+
+.platform-ios ::selection,
+.platform-macos ::selection {
+  background: rgba(0, 122, 255, 0.3);
+  color: inherit;
+}
+
+.platform-android ::selection {
+  background: rgba(103, 80, 164, 0.35);
+  color: inherit;
+}
+
+.platform-windows ::selection {
+  background: rgba(0, 120, 212, 0.3);
+  color: inherit;
+}
+
+.platform-linux ::selection {
+  background: rgba(53, 132, 228, 0.3);
+  color: inherit;
+}
+
+/* ========================================
+   Platform-specific card hover effects
+   ======================================== */
+
+.platform-ios .card-glow:hover {
+  box-shadow:
+    0 0 0 0.5px rgba(0, 122, 255, 0.15),
+    0 8px 40px -8px rgba(0, 122, 255, 0.12),
+    0 0 60px -20px rgba(0, 122, 255, 0.06);
+}
+
+.platform-android .card-glow:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.platform-windows .card-glow:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.platform-linux .card-glow:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+}
+
+.platform-macos .card-glow:hover {
+  box-shadow: 0 0 0 0.5px rgba(255,255,255,0.05), 0 8px 32px -8px rgba(0,0,0,0.25);
+}
+
+/* ========================================
+   Platform-specific neon card effects
+   ======================================== */
+
+.platform-ios .neon-card::before {
+  background: radial-gradient(
+    500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(0, 122, 255, 0.08),
+    transparent 40%
+  );
+}
+
+.platform-ios .neon-card::after {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 122, 255, 0.15),
+    transparent 50%
+  ) border-box;
+}
+
+.platform-android .neon-card::before {
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(103, 80, 164, 0.08),
+    transparent 40%
+  );
+}
+
+.platform-android .neon-card::after {
+  background: linear-gradient(
+    135deg,
+    rgba(103, 80, 164, 0.2),
+    transparent 50%
+  ) border-box;
+}
+
+.platform-windows .neon-card::after {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 120, 212, 0.18),
+    transparent 50%
+  ) border-box;
+}
+
+.platform-linux .neon-card::after {
+  background: linear-gradient(
+    135deg,
+    rgba(53, 132, 228, 0.18),
+    transparent 50%
+  ) border-box;
+}
+
+.platform-macos .neon-card::after {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 122, 255, 0.12),
+    transparent 50%
+  ) border-box;
+}
+
+/* ========================================
+   Platform-specific progress rings
+   ======================================== */
+
+.platform-ios .progress-ring {
+  --ring-color: #007AFF;
+}
+
+.platform-android .progress-ring {
+  --ring-color: #6750A4;
+}
+
+.platform-windows .progress-ring {
+  --ring-color: #0078D4;
+}
+
+.platform-linux .progress-ring {
+  --ring-color: #3584E4;
+}
+
+.platform-macos .progress-ring {
+  --ring-color: #007AFF;
+}
+
+/* ========================================
+   Platform-specific button styles
+   ======================================== */
+
+.platform-ios .cosmic-button {
+  border-radius: 0.75rem;
+  font-family: -apple-system, 'Inter', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.platform-android .cosmic-button {
+  border-radius: 1rem;
+  font-family: 'Google Sans', 'Inter', sans-serif;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.platform-windows .cosmic-button {
+  border-radius: 0.25rem;
+  font-family: 'Segoe UI', 'Inter', sans-serif;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.platform-linux .cosmic-button {
+  border-radius: 0.5rem;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.platform-macos .cosmic-button {
+  border-radius: 0.375rem;
+  font-family: -apple-system, 'Inter', sans-serif;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ========================================
+   Platform-specific search / input styles
+   ======================================== */
+
+.platform-ios .search-glow:focus-within {
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.12);
+  border-color: rgba(0, 122, 255, 0.35);
+}
+
+.platform-android .search-glow:focus-within {
+  box-shadow: 0 0 0 4px rgba(103, 80, 164, 0.15);
+  border-color: rgba(103, 80, 164, 0.4);
+}
+
+.platform-windows .search-glow:focus-within {
+  border-color: rgba(0, 120, 212, 0.4);
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+}
+
+.platform-linux .search-glow:focus-within {
+  border-color: rgba(53, 132, 228, 0.4);
+  box-shadow: 0 0 0 2px rgba(53, 132, 228, 0.15);
+}
+
+.platform-macos .search-glow:focus-within {
+  box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.12);
+  border-color: rgba(0, 122, 255, 0.3);
+}
+
+/* ========================================
+   Platform-specific heatmap colors
+   ======================================== */
+
+.platform-ios .heatmap-cell--l1 { background: rgba(0, 122, 255, 0.15); }
+.platform-ios .heatmap-cell--l2 { background: rgba(0, 122, 255, 0.35); }
+.platform-ios .heatmap-cell--l3 { background: rgba(0, 122, 255, 0.55); }
+.platform-ios .heatmap-cell--l4 { background: rgba(0, 122, 255, 0.85); box-shadow: 0 0 6px rgba(0, 122, 255, 0.4); }
+
+.platform-android .heatmap-cell--l1 { background: rgba(103, 80, 164, 0.15); }
+.platform-android .heatmap-cell--l2 { background: rgba(103, 80, 164, 0.35); }
+.platform-android .heatmap-cell--l3 { background: rgba(103, 80, 164, 0.55); }
+.platform-android .heatmap-cell--l4 { background: rgba(103, 80, 164, 0.85); box-shadow: 0 0 6px rgba(103, 80, 164, 0.4); }
+
+.platform-windows .heatmap-cell--l1 { background: rgba(0, 120, 212, 0.15); }
+.platform-windows .heatmap-cell--l2 { background: rgba(0, 120, 212, 0.35); }
+.platform-windows .heatmap-cell--l3 { background: rgba(0, 120, 212, 0.55); }
+.platform-windows .heatmap-cell--l4 { background: rgba(0, 120, 212, 0.85); box-shadow: 0 0 6px rgba(0, 120, 212, 0.4); }
+
+.platform-linux .heatmap-cell--l1 { background: rgba(53, 132, 228, 0.15); }
+.platform-linux .heatmap-cell--l2 { background: rgba(53, 132, 228, 0.35); }
+.platform-linux .heatmap-cell--l3 { background: rgba(53, 132, 228, 0.55); }
+.platform-linux .heatmap-cell--l4 { background: rgba(53, 132, 228, 0.85); box-shadow: 0 0 6px rgba(53, 132, 228, 0.4); }
+
+.platform-macos .heatmap-cell--l1 { background: rgba(0, 122, 255, 0.15); }
+.platform-macos .heatmap-cell--l2 { background: rgba(0, 122, 255, 0.35); }
+.platform-macos .heatmap-cell--l3 { background: rgba(0, 122, 255, 0.55); }
+.platform-macos .heatmap-cell--l4 { background: rgba(0, 122, 255, 0.85); box-shadow: 0 0 6px rgba(0, 122, 255, 0.4); }
+
+/* ========================================
+   Platform-specific signal pill colors
+   ======================================== */
+
+.platform-ios .signal-pill {
+  color: #007AFF;
+  border-color: rgba(0, 122, 255, 0.3);
+  background: rgba(0, 122, 255, 0.08);
+}
+
+.platform-android .signal-pill {
+  color: #6750A4;
+  border-color: rgba(103, 80, 164, 0.3);
+  background: rgba(103, 80, 164, 0.08);
+}
+
+.platform-windows .signal-pill {
+  color: #0078D4;
+  border-color: rgba(0, 120, 212, 0.3);
+  background: rgba(0, 120, 212, 0.08);
+}
+
+.platform-linux .signal-pill {
+  color: #3584E4;
+  border-color: rgba(53, 132, 228, 0.3);
+  background: rgba(53, 132, 228, 0.08);
+}
+
+.platform-macos .signal-pill {
+  color: #007AFF;
+  border-color: rgba(0, 122, 255, 0.3);
+  background: rgba(0, 122, 255, 0.08);
+}
+
+/* ========================================
+   Platform-specific gradient text
+   ======================================== */
+
+.platform-ios .gradient-text-animated {
+  background: linear-gradient(90deg, #007AFF 0%, #5856D6 25%, #AF52DE 50%, #007AFF 75%, #5856D6 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.platform-android .gradient-text-animated {
+  background: linear-gradient(90deg, #6750A4 0%, #7C62B8 25%, #D0BCFF 50%, #6750A4 75%, #7C62B8 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.platform-windows .gradient-text-animated {
+  background: linear-gradient(90deg, #0078D4 0%, #106EBE 25%, #60CDFF 50%, #0078D4 75%, #106EBE 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.platform-linux .gradient-text-animated {
+  background: linear-gradient(90deg, #3584E4 0%, #62A0EA 25%, #33D17A 50%, #3584E4 75%, #62A0EA 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.platform-macos .gradient-text-animated {
+  background: linear-gradient(90deg, #007AFF 0%, #6366f1 25%, #AF52DE 50%, #007AFF 75%, #6366f1 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ========================================
+   Platform-specific border beam
+   ======================================== */
+
+.platform-ios .border-beam::before {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%, transparent 60%,
+    rgba(0, 122, 255, 0.6) 75%,
+    rgba(88, 86, 214, 0.8) 85%,
+    rgba(175, 82, 222, 0.6) 95%,
+    transparent 100%
+  );
+}
+
+.platform-android .border-beam::before {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%, transparent 60%,
+    rgba(103, 80, 164, 0.6) 75%,
+    rgba(125, 82, 96, 0.8) 85%,
+    rgba(208, 188, 255, 0.6) 95%,
+    transparent 100%
+  );
+}
+
+.platform-windows .border-beam::before {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%, transparent 60%,
+    rgba(0, 120, 212, 0.6) 75%,
+    rgba(16, 110, 190, 0.8) 85%,
+    rgba(96, 205, 255, 0.6) 95%,
+    transparent 100%
+  );
+}
+
+.platform-linux .border-beam::before {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%, transparent 60%,
+    rgba(53, 132, 228, 0.6) 75%,
+    rgba(51, 209, 122, 0.8) 85%,
+    rgba(230, 97, 0, 0.6) 95%,
+    transparent 100%
+  );
+}
+
+/* ========================================
+   Platform-specific typography
+   ======================================== */
+
+.platform-ios .text-impact-lg,
+.platform-ios .text-impact-hero,
+.platform-ios .text-impact-xl,
+.platform-ios .text-impact-md {
+  font-family: -apple-system, 'Space Grotesk', sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.platform-android .text-impact-lg,
+.platform-android .text-impact-hero,
+.platform-android .text-impact-xl,
+.platform-android .text-impact-md {
+  font-family: 'Google Sans', 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.platform-macos .text-impact-lg,
+.platform-macos .text-impact-hero,
+.platform-macos .text-impact-xl,
+.platform-macos .text-impact-md {
+  font-family: -apple-system, 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.platform-windows .text-impact-lg,
+.platform-windows .text-impact-hero,
+.platform-windows .text-impact-xl,
+.platform-windows .text-impact-md {
+  font-family: 'Segoe UI', 'Space Grotesk', sans-serif;
+  letter-spacing: 0;
+}
+
+.platform-linux .text-impact-lg,
+.platform-linux .text-impact-hero,
+.platform-linux .text-impact-xl,
+.platform-linux .text-impact-md {
+  font-family: 'Inter', 'Space Grotesk', sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* ========================================
+   Platform-specific skeleton shimmer color
+   ======================================== */
+
+.platform-ios .data-shimmer::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 122, 255, 0.04) 20%, rgba(0, 122, 255, 0.08) 50%, rgba(0, 122, 255, 0.04) 80%, transparent 100%);
+}
+
+.platform-android .data-shimmer::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(103, 80, 164, 0.04) 20%, rgba(103, 80, 164, 0.08) 50%, rgba(103, 80, 164, 0.04) 80%, transparent 100%);
+}
+
+.platform-windows .data-shimmer::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(0, 120, 212, 0.04) 20%, rgba(0, 120, 212, 0.08) 50%, rgba(0, 120, 212, 0.04) 80%, transparent 100%);
+}
+
+.platform-linux .data-shimmer::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(53, 132, 228, 0.04) 20%, rgba(53, 132, 228, 0.08) 50%, rgba(53, 132, 228, 0.04) 80%, transparent 100%);
+}
+
+/* ========================================
+   Platform-Specific Safe Area & Positioning
+   ======================================== */
+
+/* iOS — notch and dynamic island spacing */
+.platform-ios .sticky-header-offset {
+  top: env(safe-area-inset-top, 44px);
+}
+
+.platform-ios .sidebar-nav-item {
+  /* Extra touch target padding for iOS */
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+/* Push content down past notch on iOS */
+.platform-ios {
+  --platform-nav-offset: env(safe-area-inset-top, 44px);
+}
+
+/* Android — status bar + nav bar safe areas */
+.platform-android .sticky-header-offset {
+  top: env(safe-area-inset-top, 24px);
+}
+
+.platform-android .sidebar-nav-item {
+  /* M3 spec: 48dp touch target minimum */
+  min-height: 48px;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+@media (pointer: coarse) {
+  .platform-android button,
+  .platform-android a,
+  .platform-android [role="button"] {
+    min-height: 48px;
+  }
+}
+
+/* Android 16+ Edge-to-Edge: WebView renders behind system bars */
+@media (display-mode: standalone) {
+  .platform-android body {
+    /* Content starts under status bar; safe-area padding on fixed elements handles the rest */
+    padding-top: env(safe-area-inset-top, 24px);
+    padding-bottom: env(safe-area-inset-bottom, 24px);
+  }
+
+  .platform-android .dashboard-content {
+    margin-top: 0;
+  }
+}
+
+/* macOS — no safe areas, compact spacing */
+.platform-macos {
+  --platform-nav-offset: 0px;
+}
+
+.platform-macos .sidebar-nav-item {
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}
+
+/* Windows — no safe areas */
+.platform-windows {
+  --platform-nav-offset: 0px;
+}
+
+/* Linux — no safe areas */
+.platform-linux {
+  --platform-nav-offset: 0px;
+}
+
+/* ========================================
+   Platform-specific keyboard handling
+   ======================================== */
+
+/* iOS: maintain bottom inset when keyboard is visible */
+.platform-ios .keyboard-aware {
+  transition: padding-bottom 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Android: keyboard resize 'body' mode is handled by Capacitor config */

@@ -1,22 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <title>AuraMind - AI-Powered Study Companion</title>
     <meta name="description" content="AI flashcards powered by FSRS spaced repetition — learn anything in half the time. Turn notes and PDFs into smart decks that adapt to your memory." />
-    <!-- Blocking theme script: applies light/dark class before first paint to prevent flash -->
     <script>
-      (function() {
-        try {
-          var stored = localStorage.getItem('auramind-theme');
-          var theme = stored === 'light' || stored === 'dark' ? stored
-            : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-          document.documentElement.classList.add(theme);
-        } catch (e) {}
-      })();
+      // Synchronous platform detection — runs BEFORE paint to prevent FOUC
+      (function(){var d=document.documentElement,c=window.Capacitor,t=window.__TAURI_OS_PLUGIN_INTERNALS__;if(t){d.classList.add('tauri-app','platform-'+t.platform)}else if(c){d.classList.add('platform-'+c.getPlatform())}else{var u=navigator.userAgent;if(/iPad|iPhone|iPod/.test(u))d.classList.add('platform-ios');else if(/android/i.test(u))d.classList.add('platform-android');else if(/Macintosh|MacIntel/.test(u)&&!/iPhone|iPad/.test(u))d.classList.add('platform-macos');else if(/Windows NT/.test(u))d.classList.add('platform-windows');else if(/Linux/.test(u))d.classList.add('platform-linux');else d.classList.add('platform-web')}})();
     </script>
     <link rel="stylesheet" href="/src/index.css">
+    <!-- Favicons & Logos -->
+    <link rel="icon" type="image/svg+xml" href="/favicons,logos/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicons,logos/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicons,logos/favicon-16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicons,logos/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicons,logos/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#6366f1" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="AuraMind - AI-Powered Study Companion" />
+    <meta property="og:description" content="AI flashcards powered by FSRS spaced repetition — learn anything in half the time." />
+    <meta property="og:image" content="/favicons,logos/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="AuraMind - AI-Powered Study Companion" />
+    <meta name="twitter:description" content="AI flashcards powered by FSRS spaced repetition — learn anything in half the time." />
+    <meta name="twitter:image" content="/favicons,logos/og-image.png" />
   </head>
   <body>
     <div id="root"></div>

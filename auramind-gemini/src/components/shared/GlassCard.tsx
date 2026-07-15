@@ -68,11 +68,11 @@ const GlassCard: React.FC<GlassCardProps> = ({
 
   // Variant configurations
   const variantConfig = {
-    default: "border border-zinc-200 dark:border-zinc-700/20 bg-white dark:bg-zinc-950/50",
-    neural: "border border-zinc-200 dark:border-zinc-700/20 bg-white dark:bg-zinc-950/60 before:absolute before:inset-0 before:bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTAgMEg0MFY0MEg0MFYwWiIgZmlsbD0iIzAwREJFOSIgZmlsbC1vcGFjaXR5PSIwLjAzIi8+CjxwYXRoIGQ9Ik0wIDIwSDQwVjQwSDBWMjBaIiBmaWxsPSIjMDBEQkU5IiBmaWxsLW9wYWNpdHk9IjAuMDMiLz4KPHBhdGggZD0iTTIwIDBIMDBWMjBIMjBaIiBmaWxsPSIjMDBEQkU5IiBmaWxsLW9wYWNpdHk9IjAuMDMiLz4KPC9zdmc+')] before:opacity-20",
+    default: "border border-zinc-700/20 bg-zinc-950/50",
+    neural: "border border-zinc-700/20 bg-zinc-950/60 before:absolute before:inset-0 before:bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTAgMEg0MFY0MEg0MFYwWiIgZmlsbD0iIzAwREJFOSIgZmlsbC1vcGFjaXR5PSIwLjAzIi8+CjxwYXRoIGQ9Ik0wIDIwSDQwVjQwSDBWMjBaIiBmaWxsPSIjMDBEQkU5IiBmaWxsLW9wYWNpdHk9IjAuMDMiLz4KPHBhdGggZD0iTTIwIDBIMDBWMjBIMjBaIiBmaWxsPSIjMDBEQkU5IiBmaWxsLW9wYWNpdHk9IjAuMDMiLz4KPC9zdmc+')] before:opacity-20",
     bordered: "border-primary/30 bg-primary/5",
-    elevated: "shadow-md bg-white dark:bg-zinc-950/60",
-    interactive: "hover:bg-zinc-100 dark:hover:bg-zinc-900/30 hover:border-zinc-300 dark:hover:border-zinc-600/50 transition-all duration-300",
+    elevated: "shadow-md bg-zinc-950/60",
+    interactive: "hover:bg-zinc-900/30 hover:border-zinc-600/50 transition-all duration-300",
     cosmic: "border-cosmic/30 bg-cosmic/5 shadow-[0_0_40px_rgba(168,85,247,0.1)]",
     loading: "relative after:absolute after:inset-0 after:bg-gradient-to-r from-transparent via-zinc-950/10 to-transparent after:animate-[loadingBar_2s_ease-in-out_infinite]",
   }[variant] || "";

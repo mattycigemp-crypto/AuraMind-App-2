@@ -14,9 +14,9 @@ export interface DashboardWorkspaceValue {
   createDeck: DashboardCreateDeck;
   deleteDeck: DashboardDeleteDeck;
   addCardsToDeck: (deckId: string, newCards: Array<{ question?: string; answer?: string; front?: string; back?: string }>) => Promise<number | undefined>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   goToDeck: (deckId: string) => void;
   startStudyForDeck: (deckId: string) => void;
-  /** Picks a deck with due cards, else the first deck */
   startQuickStudy: () => void;
 }
 
@@ -29,6 +29,7 @@ export interface DashboardWorkspaceProviderProps {
   createDeck: DashboardCreateDeck;
   deleteDeck: DashboardDeleteDeck;
   addCardsToDeck: (deckId: string, newCards: Array<{ question?: string; answer?: string; front?: string; back?: string }>) => Promise<number | undefined>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   onLogout: () => void;
   children: React.ReactNode;
 }
@@ -40,6 +41,7 @@ export const DashboardWorkspaceProvider: React.FC<DashboardWorkspaceProviderProp
   createDeck,
   deleteDeck,
   addCardsToDeck,
+  updateProfile,
   onLogout,
   children,
 }) => {
@@ -80,6 +82,7 @@ export const DashboardWorkspaceProvider: React.FC<DashboardWorkspaceProviderProp
       createDeck,
       deleteDeck,
       addCardsToDeck,
+      updateProfile,
       goToDeck,
       startStudyForDeck,
       startQuickStudy,
@@ -94,13 +97,6 @@ export const DashboardWorkspaceProvider: React.FC<DashboardWorkspaceProviderProp
   );
 };
 
-export function useDashboardWorkspace(): DashboardWorkspaceValue {
-  const ctx = useContext(DashboardWorkspaceContext);
-  if (!ctx) {
-    throw new Error('useDashboardWorkspace must be used within DashboardWorkspaceProvider');
-  }
-  return ctx;
+export function useDashboardWorkspace(): DashboardWorkspaceValue | null {
+  return useContext(DashboardWorkspaceContext);
 }
-
-
-

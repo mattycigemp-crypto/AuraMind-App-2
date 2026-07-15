@@ -17,7 +17,7 @@ import {
 } from '../icons/CustomIcons';
 
 // Glassmorphism utility classes
-const glassCard = 'bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl';
+const glassCard = 'bg-zinc-900/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl';
 
 // Animation variants
 const fadeInUp = {
@@ -253,7 +253,7 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ onClose }) => {
           {onClose && (
             <button
               onClick={onClose}
-              className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              className="p-2 hover:bg-zinc-900/10 rounded-lg transition-colors"
             >
               <X size={24} className="text-gray-400" />
             </button>
@@ -313,7 +313,7 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ onClose }) => {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                 selectedTab === tab.value
                   ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                  : 'bg-white/10 text-gray-400 hover:bg-white/20'
+                  : 'bg-zinc-900/10 text-gray-400 hover:bg-zinc-900/20'
               }`}
             >
               <tab.icon size={16} />
@@ -367,7 +367,7 @@ const DailyChallenges: React.FC<DailyChallengesProps> = ({ onClose }) => {
                         </span>
                         <span className="text-white font-medium">{Math.round(progress)}%</span>
                       </div>
-                      <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                       <div className="h-2 bg-zinc-900/10 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${progress}%` }}

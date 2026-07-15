@@ -62,10 +62,12 @@ CREATE TABLE IF NOT EXISTS fact_check_history (
 -- Enable RLS on fact_check_history
 ALTER TABLE fact_check_history ENABLE ROW LEVEL SECURITY;
 
--- RLS policies for fact_check_history
+-- RLS policies for fact_check_history (idempotent)
+DROP POLICY IF EXISTS "Users can view own fact check history" ON fact_check_history;
 CREATE POLICY "Users can view own fact check history" ON fact_check_history
     FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can insert own fact check history" ON fact_check_history;
 CREATE POLICY "Users can insert own fact check history" ON fact_check_history
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 

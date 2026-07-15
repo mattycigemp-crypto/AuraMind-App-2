@@ -1,4 +1,35 @@
+# Old/removed API routes
 api/delete-account.ts
 api/digest.ts
 api/reminder.ts
 api/welcome.ts
+
+# AI model files (local inference only, not for Vercel)
+content/
+model-service/
+
+# Native app builds and source
+auramind-gemini/src-tauri/
+auramind-gemini/android/
+auramind-gemini/ios/
+
+# Database migrations (applied via Supabase CLI)
+supabase/
+
+# Shared library (bundled into frontend build)
+auramind-lib/
+
+# Generated training data and large assets
+*.safetensors
+*.jsonl
+
+# IDE and tooling
+.claude/
+.cline/
+.cursor/
+
+# Root docs (not needed at runtime)
+ARCHITECTURE.md
+CHANGELOG.md
+DEPLOYMENT.md
+fix-corruption.ps1

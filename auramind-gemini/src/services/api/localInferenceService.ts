@@ -14,6 +14,7 @@ export const AVAILABLE_MODELS: ModelInfo[] = [
   { id: 'gemma3-1b-it-q4f16_1-MLC', vram: 711, name: 'AuraMind Core' },
   { id: 'gemma-2-2b-it-q4f16_1-MLC', vram: 1200, name: 'AuraMind Plus' },
   { id: 'Llama-3.1-8B-Instruct-q4f16_1-MLC-1k', vram: 5400, name: 'AuraMind Pro' },
+  { id: 'Qwen2.5-Coder-14B-Instruct-q4f16_1-MLC', vram: 8700, name: 'AuraMind Pro Max' },
 ];
 
 export function getModelDisplayName(modelId: string): string {
@@ -26,7 +27,7 @@ export function getModelDisplayName(modelId: string): string {
 // All model IDs that WebLLM recognizes — union of AVAILABLE_MODELS and TIER_MODELS
 const VALID_LOCAL_MODEL_IDS = new Set([
   ...AVAILABLE_MODELS.map(m => m.id),
-  ...['TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC', 'SmolLM2-360M-Instruct-q4f16_1-MLC', 'Llama-3.2-1B-Instruct-q4f16_1-MLC', 'gemma-2-2b-it-q4f16_1-MLC', 'Llama-3.1-8B-Instruct-q4f16_1-MLC-1k'],
+  ...['TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC', 'SmolLM2-360M-Instruct-q4f16_1-MLC', 'Llama-3.2-1B-Instruct-q4f16_1-MLC', 'gemma-2-2b-it-q4f16_1-MLC', 'Llama-3.1-8B-Instruct-q4f16_1-MLC-1k', 'Qwen2.5-Coder-14B-Instruct-q4f16_1-MLC'],
 ]);
 
 export type LocalInferenceStatus = 'unloaded' | 'downloading' | 'ready' | 'error';
@@ -48,7 +49,7 @@ const TIER_MODELS: Record<GPUTier, string[]> = {
   1: ['SmolLM2-360M-Instruct-q4f16_1-MLC', 'TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC'],
   2: ['Llama-3.2-1B-Instruct-q4f16_1-MLC', 'TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC'],
   3: ['gemma-2-2b-it-q4f16_1-MLC', 'Llama-3.2-1B-Instruct-q4f16_1-MLC'],
-  4: ['Llama-3.1-8B-Instruct-q4f16_1-MLC-1k', 'gemma-2-2b-it-q4f16_1-MLC'],
+  4: ['Qwen2.5-Coder-14B-Instruct-q4f16_1-MLC', 'Llama-3.1-8B-Instruct-q4f16_1-MLC-1k'],
 };
 
 class LocalInferenceService {

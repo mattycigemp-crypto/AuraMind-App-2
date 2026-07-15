@@ -1,582 +1,480 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  UserIcon as User,
-  PaletteIcon as Palette,
-  BookOpenIcon as BookOpen,
-  TargetIcon as Target,
-  AwardIcon as Award,
-  BrainIcon as Brain,
-  StarIcon as Star,
-  CreditCardIcon as CreditCard,
-  ShieldIcon as ShieldCheck,
-  LogOutIcon as LogOut,
-  SunIcon as Sun,
-  MoonIcon as Moon,
-  GlobeIcon as Globe,
-  BellIcon as Bell,
-  ChevronRightIcon as ChevronRight,
-  XIcon as X,
-  CheckIcon as Check,
-  CheckCircle2Icon as CheckCircle,
-  XCircleIcon as XCircle,
-  FileTextIcon as FileText,
-  SparklesIcon as Sparkles,
-  RotateCcwIcon as RotateCcw,
-} from '../../components/icons/CustomIcons';
-import { useTheme } from '../../hooks/useTheme';
-import type { Theme } from '../../types';
-import MiiCharacter, { CHARACTER_PRESETS } from '../../components/shared/MiiCharacter';
-import MiiCreator from '../../components/shared/MiiCreator';
-import type { DicebearOptions } from '../../components/shared/MiiCharacter';
-import type { ReactElement } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { BookOpen, Zap, Bell, Palette, Shield, AlertTriangle, Volume2, RefreshCw, Languages, Accessibility, Pencil, Check, X } from 'lucide-react';
+import PageShell from '../../components/dashboard/PageShell';
+import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
+import { supabase } from '../../services/database/supabase';
+import { userService } from '../../services/user/userService';
+import type { UserProfile } from '../../types';
 
-interface SavedCustomCharacter {
-  id: string;
-  name: string;
-  options: DicebearOptions;
+function useLocalStorage<T>(key: string, defaultValue: T): [T, (v: T | ((prev: T) => T)) => void] {
+  const [value, setValue] = useState<T>(() => {
+    try {
+      const stored = localStorage.getItem(key);
+      return stored !== null ? JSON.parse(stored) : defaultValue;
+    } catch { return defaultValue; }
+  });
+  useEffect(() => { localStorage.setItem(key, JSON.stringify(value)); }, [key, value]);
+  return [value, setValue];
 }
 
-let nextCustomId = 1;
-const CUSTOM_PREFIX = 'custom-';
+const Toggle = ({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) => (
+  <button
+    onClick={() => onChange(!on)}
+    className={`relative w-10 h-5 rounded-full transition-all duration-200 ${
+      on ? 'bg-[#7C3AED]' : 'bg-[#2A2A3A]'
+    }`}
+  >
+    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all duration-200 shadow ${
+      on ? 'left-5' : 'left-0.5'
+    }`} />
+  </button>
+);
 
-type SettingsSection = 'profile' | 'appearance' | 'study' | 'account' | 'about' | null;
+const Select = ({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: { label: string; value: string }[] }) => (
+  <select
+    value={value}
+    onChange={e => onChange(e.target.value)}
+    className="bg-[#1A1A24] border border-[#2A2A3A] rounded-lg px-3 py-1.5 text-[#F0EFFE] text-xs outline-none focus:border-[#7C3AED]/50 min-w-[120px]"
+  >
+    {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+  </select>
+);
 
-interface SettingsPageProps {
-  user: { id: string; name: string; email: string; plan: string; streak?: number };
-  onLogout: () => void;
+function SectionHeader({ icon: Icon, title, subtitle }: { icon: React.ComponentType<{ size?: number; className?: string }>; title: string; subtitle: string }) {
+  return (
+    <div className="flex items-start gap-3 mb-4">
+      <div className="w-7 h-7 rounded-lg bg-[#7C3AED]/10 flex items-center justify-center text-sm shrink-0 mt-0.5">
+        <Icon size={14} className="text-[#8B5CF6]" />
+      </div>
+      <div>
+        <h3 className="text-[#F0EFFE] text-sm font-medium">{title}</h3>
+        <p className="text-[#5A5A72] text-[11px]">{subtitle}</p>
+      </div>
+    </div>
+  );
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ user, onLogout }) => {
-  const { theme, setTheme, resolvedTheme } = useTheme();
-  const [activeSection, setActiveSection] = useState<SettingsSection>(null);
-  const [displayName, setDisplayName] = useState(user.name);
-  const [dailyGoal, setDailyGoal] = useState(() => parseInt(localStorage.getItem('auramind-daily-goal') || '20'));
-  const [notifications, setNotifications] = useState(() => localStorage.getItem('auramind-notifications') || 'daily');
-  const [customCharacters, setCustomCharacters] = useState<SavedCustomCharacter[]>(() => {
-    const saved = localStorage.getItem('auramind-custom-characters');
-    if (saved) {
+function SettingRow({ label, desc, children }: { label: string; desc?: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between py-2.5">
+      <div>
+        <div className="text-[#F0EFFE] text-xs">{label}</div>
+        {desc && <div className="text-[#5A5A72] text-[10px] mt-0.5">{desc}</div>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+export default function SettingsPage() {
+  const navigate = useNavigate();
+  const workspace = useDashboardWorkspace();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
+  const [nameSaving, setNameSaving] = useState(false);
+
+  // Use workspace user for display name (matches sidebar), fall back to profile
+  const displayName = workspace?.user?.name || profile?.name || 'User';
+
+  const [dailyGoal, setDailyGoal] = useLocalStorage('auramind_dailyGoal', '20');
+  const [newCards, setNewCards] = useLocalStorage('auramind_newCards', '10');
+  const [maxReviews, setMaxReviews] = useLocalStorage('auramind_maxReviews', '100');
+  const [retention, setRetention] = useLocalStorage('auramind_retention', 'Balanced - 85%');
+  const [showIntervals, setShowIntervals] = useLocalStorage('auramind_showIntervals', true);
+  const [keyboardShortcuts, setKeyboardShortcuts] = useLocalStorage('auramind_keyboardShortcuts', true);
+  const [cardsPerGen, setCardsPerGen] = useLocalStorage('auramind_cardsPerGen', '20');
+  const [includeExamples, setIncludeExamples] = useLocalStorage('auramind_includeExamples', true);
+  const [defaultLanguage, setDefaultLanguage] = useLocalStorage('auramind_defaultLanguage', 'English');
+  const [dailyReminder, setDailyReminder] = useLocalStorage('auramind_dailyReminder', true);
+  const [reminderTime, setReminderTime] = useLocalStorage('auramind_reminderTime', '09:00');
+  const [dueReminder, setDueReminder] = useLocalStorage('auramind_dueReminder', true);
+  const [streakReminder, setStreakReminder] = useLocalStorage('auramind_streakReminder', true);
+  const [weeklySummary, setWeeklySummary] = useLocalStorage('auramind_weeklySummary', false);
+  const [theme, setTheme] = useLocalStorage('auramind_theme', 'Dark');
+  const [reduceMotion, setReduceMotion] = useLocalStorage('auramind_reduceMotion', false);
+  const [compactMode, setCompactMode] = useLocalStorage('auramind_compactMode', false);
+  const [usageAnalytics, setUsageAnalytics] = useLocalStorage('auramind_usageAnalytics', true);
+  const [saveChatHistory, setSaveChatHistory] = useLocalStorage('auramind_saveChatHistory', true);
+  const [soundEffects, setSoundEffects] = useLocalStorage('auramind_soundEffects', true);
+  const [studyMusicVolume, setStudyMusicVolume] = useLocalStorage('auramind_studyMusicVolume', '50');
+  const [autoSync, setAutoSync] = useLocalStorage('auramind_autoSync', true);
+  const [offlineMode, setOfflineMode] = useLocalStorage('auramind_offlineMode', false);
+  const [fontSize, setFontSize] = useLocalStorage('auramind_fontSize', 'Medium');
+  const [highContrast, setHighContrast] = useLocalStorage('auramind_highContrast', false);
+  const [textToSpeech, setTextToSpeech] = useLocalStorage('auramind_textToSpeech', false);
+  const [autoNightMode, setAutoNightMode] = useLocalStorage('auramind_autoNightMode', true);
+  const [reviewOrder, setReviewOrder] = useLocalStorage('auramind_reviewOrder', 'FSRS - Optimized');
+  const [showHintFirst, setShowHintFirst] = useLocalStorage('auramind_showHintFirst', false);
+  const [autoPlayAudio, setAutoPlayAudio] = useLocalStorage('auramind_autoPlayAudio', false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    (async () => {
       try {
-        const parsed: SavedCustomCharacter[] = JSON.parse(saved);
-        parsed.forEach(c => { const n = parseInt(c.id.replace(CUSTOM_PREFIX, '')); if (n >= nextCustomId) nextCustomId = n + 1; });
-        return parsed;
-      } catch { /* fall through */ }
-    }
-    return [];
-  });
-  const [characterId, setCharacterId] = useState(() => {
-    const saved = localStorage.getItem('auramind-character-id');
-    if (saved === 'uploaded') return saved;
-    if (saved && saved.startsWith(CUSTOM_PREFIX) && customCharacters.some(c => c.id === saved)) return saved;
-    if (saved && CHARACTER_PRESETS.some(p => p.id === saved)) return saved;
-    return 'matt';
-  });
-  const [uploadedImage, setUploadedImage] = useState<string | null>(() => localStorage.getItem('auramind-uploaded-image'));
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [editingCharacter, setEditingCharacter] = useState<SavedCustomCharacter | null>(null);
-  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
+        const { data: { user } } = await supabase!.auth.getUser();
+        if (user) {
+          const p = await userService.getCurrentUser();
+          setProfile(p);
+          setNameInput(p?.name || '');
+        }
+      } catch {} finally { setProfileLoading(false); }
+    })();
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem('auramind-daily-goal', String(dailyGoal));
-  }, [dailyGoal]);
-
-  useEffect(() => {
-    localStorage.setItem('auramind-notifications', notifications);
-  }, [notifications]);
-
-  const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image must be under 5MB');
+  const saveName = useCallback(async () => {
+    const trimmed = nameInput.trim();
+    if (!trimmed || trimmed === displayName) {
+      setEditingName(false);
+      setNameInput(displayName);
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      setUploadedImage(dataUrl);
-      setCharacterId('uploaded');
-      localStorage.setItem('auramind-uploaded-image', dataUrl);
-    };
-    reader.readAsDataURL(file);
-  }, []);
-
-  const removeUploadedImage = useCallback(() => {
-    setUploadedImage(null);
-    localStorage.removeItem('auramind-uploaded-image');
-    setCharacterId('matt');
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('auramind-character-id', characterId);
-    localStorage.setItem('auramind-char-version', String(Date.now()));
-  }, [characterId]);
-
-  useEffect(() => {
-    localStorage.setItem('auramind-custom-characters', JSON.stringify(customCharacters));
-  }, [customCharacters]);
-
-  useEffect(() => {
-    if (activeSection && contentRef.current) {
-      contentRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setNameSaving(true);
+    try {
+      // Use workspace updateProfile if available (keeps sidebar in sync)
+      if (workspace?.updateProfile) {
+        await workspace.updateProfile({ name: trimmed });
+      } else {
+        // Fallback: direct supabase update
+        if (supabase) {
+          const { error } = await supabase.auth.updateUser({
+            data: { full_name: trimmed },
+          });
+          if (error) throw error;
+          await supabase.from('user_profiles').update({ name: trimmed }).eq('id', profile!.id);
+        }
+      }
+      setProfile(prev => prev ? { ...prev, name: trimmed } : prev);
+      setNameInput(trimmed);
+      setEditingName(false);
+    } catch (err) {
+      console.error('Failed to save name:', err);
+      setNameInput(displayName);
+      setEditingName(false);
+    } finally {
+      setNameSaving(false);
     }
-  }, [activeSection]);
-
-  const tiles: { id: SettingsSection; icon: React.FC<{ size?: number; className?: string }>; label: string; desc: string; color: string }[] = [
-    { id: 'profile', icon: User, label: 'Profile', desc: 'Avatar, name, email', color: 'from-violet-500 to-purple-600' },
-    { id: 'appearance', icon: Palette, label: 'Appearance', desc: 'Theme, display', color: 'from-pink-500 to-rose-600' },
-    { id: 'study', icon: BookOpen, label: 'Study', desc: 'Goals, notifications', color: 'from-emerald-500 to-teal-600' },
-    { id: 'account', icon: CreditCard, label: 'Account', desc: 'Plan, billing, data', color: 'from-blue-500 to-indigo-600' },
-    { id: 'about', icon: ShieldCheck, label: 'About', desc: 'Version, legal', color: 'from-amber-500 to-orange-600' },
-  ];
-
-  const themeOptions: { value: Theme; label: string; icon: React.FC<{ size?: number; className?: string }> }[] = [
-    { value: 'light', label: 'Light', icon: Sun },
-    { value: 'dark', label: 'Dark', icon: Moon },
-    { value: 'system', label: 'System', icon: Globe },
-  ];
+  }, [nameInput, displayName, workspace, profile]);
 
   return (
-    <div className="max-w-5xl mx-auto pb-20">
-      <div className="mb-10">
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">Settings</h1>
-        <p className="text-zinc-400 dark:text-zinc-500 text-sm">Customize your AuraMind experience</p>
-      </div>
+    <PageShell>
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8 space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-[#F0EFFE] text-lg font-light tracking-tight">Settings</h1>
+          <p className="text-[#5A5A72] text-xs mt-1">Customize your AuraMind experience</p>
+        </div>
 
-      {/* Avatar Card */}
-      <motion.div         initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-8"
-      >
-        <div className="flex flex-col sm:flex-row items-center gap-8">
-          <div className="relative group">
-            <div               className="w-28 h-28 rounded-full flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-105 overflow-hidden"
-              style={{ backgroundColor: (characterId.startsWith(CUSTOM_PREFIX) || characterId === 'uploaded' ? '#8B5CF6' : (CHARACTER_PRESETS.find(c => c.id === characterId)?.accentColor || '#8B5CF6')) + '30' }}
-            >
-              {(() => {
-                const custom = customCharacters.find(c => c.id === characterId);
-                if (characterId === 'uploaded' && uploadedImage) return <img src={uploadedImage} alt="Profile" className="w-full h-full object-cover" />;
-                if (custom) return <MiiCharacter seed={custom.id} size={80} dicebear={custom.options} />;
-                return <MiiCharacter seed={CHARACTER_PRESETS.find(c => c.id === characterId)?.seed || 'Matt'} size={80} />;
-              })()}
+        {/* Profile Card — full width at top */}
+        <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] flex items-center justify-center text-white text-xl font-semibold shrink-0">
+              {profile ? (profile.name || profile.email || 'A').charAt(0).toUpperCase() : 'A'}
             </div>
-            <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-zinc-800 border-2 border-zinc-900 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Palette size={14} className="text-zinc-400" />
+            <div className="flex-1 min-w-0">
+              {editingName ? (
+                <div className="flex items-center gap-2 mb-1">
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={e => setNameInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && saveName()}
+                    className="flex-1 px-2 py-1 bg-[#1A1A24] border border-[#7C3AED]/50 rounded-lg text-[#F0EFFE] text-sm outline-none focus:border-[#7C3AED] max-w-xs"
+                    autoFocus
+                    placeholder="Your name"
+                  />
+                  <button onClick={saveName} disabled={nameSaving} className="p-1.5 rounded-lg bg-[#7C3AED] text-white hover:bg-[#6D28D9] disabled:opacity-50 transition-colors">
+                    <Check size={14} />
+                  </button>
+                  <button onClick={() => { setEditingName(false); setNameInput(profile?.name || ''); }} className="p-1.5 rounded-lg hover:bg-[#2A2A3A] text-[#5A5A72]">
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span
+                    onClick={() => { setNameInput(profile?.name || ''); setEditingName(true); }}
+                    className="text-[#F0EFFE] text-lg font-medium truncate cursor-pointer hover:text-[#8B5CF6] transition-colors"
+                    title="Click to edit name"
+                  >
+                    {profileLoading && !workspace ? 'Loading...' : displayName}
+                  </span>
+                  <button onClick={() => { setNameInput(profile?.name || ''); setEditingName(true); }} className="text-[#5A5A72] hover:text-[#8B5CF6] transition-colors">
+                    <Pencil size={14} />
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#8B5CF6] text-[9px] font-medium shrink-0">
+                  {profile?.plan || 'Free'}
+                </span>
+              </div>
+              <p className="text-[#5A5A72] text-xs mt-1">{profile?.email || ''}</p>
+              <button className="text-[#8B5CF6] text-[10px] font-medium hover:text-[#7C3AED] transition-colors mt-1">
+                Manage subscription
+              </button>
             </div>
-          </div>
-          <div className="flex-1 text-center sm:text-left">
-            <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">{displayName}</h2>
-            <p className="text-zinc-400 dark:text-zinc-500 text-sm">{user.email}</p>
-            <div className="flex items-center justify-center sm:justify-start gap-4 mt-3">
-              <div className="flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
-                <Target size={12} />
-                <span>Streak {user.streak ?? 0} days</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
-                <Award size={12} />
-                <span>{user.plan}</span>
-              </div>
+            <div className="flex gap-2 mt-2 sm:mt-0">
+              <button className="px-4 py-2 border border-[#2A2A3A] text-[#F0EFFE] text-xs font-medium rounded-lg hover:border-[#3A3A4F] transition-all">
+                Change Password
+              </button>
             </div>
           </div>
         </div>
-      </motion.div>
 
-      {/* Wii-Style Tile Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-        {tiles.map((tile, i) => (
-          <motion.button             key={tile.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 * i }}
-            onClick={() => setActiveSection(activeSection === tile.id ? null : tile.id)}
-            className={`relative p-6 rounded-2xl border-2 transition-all duration-300 text-left group ${
-              activeSection === tile.id
-                ? 'border-violet-500 bg-violet-500/10 shadow-lg shadow-violet-500/10'
-                : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/60 hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:shadow-lg hover:-translate-y-1'
-            }`}
-          >
-            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tile.color} flex items-center justify-center mb-4 shadow-lg`}>
-              <tile.icon size={22} className="text-white" />
-            </div>
-            <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 mb-1">{tile.label}</h3>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500">{tile.desc}</p>
-            {activeSection === tile.id && (
-              <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-violet-500 flex items-center justify-center">
-                <X size={10} className="text-white" />
+        {/* Settings Grid — 2 columns on desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+          {/* Study */}
+          <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
+          <SectionHeader icon={BookOpen} title="Study" subtitle="Tune your daily review rhythm and retention target." />
+          <div className="space-y-1">
+            <SettingRow label="Daily goal" desc="Cards to review each day">
+              <Select value={dailyGoal} onChange={setDailyGoal} options={[10,15,20,25,30,40,50,100].map(n => ({ label: `${n} cards`, value: String(n) }))} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="New cards per day">
+              <Select value={newCards} onChange={setNewCards} options={[5,10,15,20,25,30].map(n => ({ label: `${n} cards`, value: String(n) }))} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Max reviews per day">
+              <Select value={maxReviews} onChange={setMaxReviews} options={[50,75,100,150,200,9999].map(n => ({ label: n === 9999 ? 'Unlimited' : `${n} cards`, value: String(n) }))} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Target retention">
+              <Select value={retention} onChange={setRetention} options={[
+                { label: 'Conservative - 90%', value: 'Conservative - 90%' },
+                { label: 'Balanced - 85%', value: 'Balanced - 85%' },
+                { label: 'Aggressive - 80%', value: 'Aggressive - 80%' },
+              ]} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Show next intervals">
+              <Toggle on={showIntervals} onChange={setShowIntervals} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Enable keyboard shortcuts">
+              <Toggle on={keyboardShortcuts} onChange={setKeyboardShortcuts} />
+            </SettingRow>
+          </div>
+        </div>
+
+        {/* AI Generation */}
+        <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
+          <SectionHeader icon={Zap} title="AI Generation" subtitle="Defaults applied when Aura builds new cards." />
+          <div className="space-y-1">
+            <SettingRow label="Cards per generation">
+              <Select value={cardsPerGen} onChange={setCardsPerGen} options={[5,10,15,20,25,30].map(n => ({ label: `${n} cards`, value: String(n) }))} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Include examples">
+              <Toggle on={includeExamples} onChange={setIncludeExamples} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Default language">
+              <Select value={defaultLanguage} onChange={setDefaultLanguage} options={[
+                { label: 'English', value: 'English' },
+                { label: 'Spanish', value: 'Spanish' },
+                { label: 'French', value: 'French' },
+                { label: 'German', value: 'German' },
+                { label: 'Japanese', value: 'Japanese' },
+              ]} />
+            </SettingRow>
+          </div>
+        </div>
+
+        {/* Notifications */}
+        <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
+          <SectionHeader icon={Bell} title="Notifications" subtitle="Reminders that keep your streak alive." />
+          <div className="space-y-1">
+            <SettingRow label="Daily reminder">
+              <div className="flex items-center gap-2">
+                <input
+                  type="time"
+                  value={reminderTime}
+                  onChange={e => setReminderTime(e.target.value)}
+                  className="bg-[#1A1A24] border border-[#2A2A3A] rounded-lg px-2 py-1 text-[#F0EFFE] text-xs outline-none focus:border-[#7C3AED]/50"
+                />
+                <Toggle on={dailyReminder} onChange={setDailyReminder} />
               </div>
-            )}
-          </motion.button>
-        ))}
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Due cards reminder">
+              <Toggle on={dueReminder} onChange={setDueReminder} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Streak reminder">
+              <Toggle on={streakReminder} onChange={setStreakReminder} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Weekly progress summary">
+              <Toggle on={weeklySummary} onChange={setWeeklySummary} />
+            </SettingRow>
+          </div>
+        </div>
+
+        {/* Appearance */}
+        <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
+          <SectionHeader icon={Palette} title="Appearance" subtitle="How AuraMind looks and feels on this device." />
+          <div className="space-y-1">
+            <SettingRow label="Theme">
+              <Select value={theme} onChange={setTheme} options={[
+                { label: 'Dark', value: 'Dark' },
+                { label: 'Light', value: 'Light' },
+                { label: 'System', value: 'System' },
+              ]} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Reduce motion">
+              <Toggle on={reduceMotion} onChange={setReduceMotion} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Compact mode">
+              <Toggle on={compactMode} onChange={setCompactMode} />
+            </SettingRow>
+          </div>
+        </div>
+
+        {/* Privacy */}
+        <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
+          <SectionHeader icon={Shield} title="Privacy" subtitle="What we store, what stays on your device." />
+          <div className="space-y-1">
+            <SettingRow label="Send anonymous usage analytics">
+              <Toggle on={usageAnalytics} onChange={setUsageAnalytics} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Save AI chat history">
+              <Toggle on={saveChatHistory} onChange={setSaveChatHistory} />
+            </SettingRow>
+          </div>
+        </div>
+
+        {/* Audio */}
+        <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
+          <SectionHeader icon={Volume2} title="Audio" subtitle="Sound effects, study music, and text-to-speech." />
+          <div className="space-y-1">
+            <SettingRow label="Sound effects" desc="Card flip and button sounds">
+              <Toggle on={soundEffects} onChange={setSoundEffects} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Study music volume" desc="Ambient background during study sessions">
+              <Select value={studyMusicVolume} onChange={setStudyMusicVolume} options={[
+                { label: 'Off', value: '0' },
+                { label: '25%', value: '25' },
+                { label: '50%', value: '50' },
+                { label: '75%', value: '75' },
+                { label: '100%', value: '100' },
+              ]} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Text-to-speech" desc="Read cards aloud during review">
+              <Toggle on={textToSpeech} onChange={setTextToSpeech} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Auto-play audio" desc="Play card audio automatically">
+              <Toggle on={autoPlayAudio} onChange={setAutoPlayAudio} />
+            </SettingRow>
+          </div>
+        </div>
+
+        {/* Sync & Data */}
+        <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
+          <SectionHeader icon={RefreshCw} title="Sync & Data" subtitle="How your data stays up to date across devices." />
+          <div className="space-y-1">
+            <SettingRow label="Auto-sync" desc="Sync progress automatically">
+              <Toggle on={autoSync} onChange={setAutoSync} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Offline mode" desc="Work without internet connection">
+              <Toggle on={offlineMode} onChange={setOfflineMode} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <div className="flex items-center justify-between py-2.5">
+              <div>
+                <div className="text-[#F0EFFE] text-xs">Clear local cache</div>
+                <div className="text-[#5A5A72] text-[10px] mt-0.5">Free up storage on this device</div>
+              </div>
+              <button className="px-4 py-1.5 border border-[#2A2A3A] text-[#5A5A72] text-[11px] font-medium rounded-lg hover:border-[#3A3A4F] hover:text-[#F0EFFE] transition-all">
+                Clear
+              </button>
+            </div>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <div className="flex items-center justify-between py-2.5">
+              <div>
+                <div className="text-[#F0EFFE] text-xs">Reset progress</div>
+                <div className="text-[#5A5A72] text-[10px] mt-0.5">Reset all study progress and streaks</div>
+              </div>
+              <button className="px-4 py-1.5 border border-red-500/30 text-red-400 text-[11px] font-medium rounded-lg hover:bg-red-500/10 transition-all">
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Accessibility */}
+        <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
+          <SectionHeader icon={Accessibility} title="Accessibility" subtitle="Make AuraMind comfortable for your needs." />
+          <div className="space-y-1">
+            <SettingRow label="Font size">
+              <Select value={fontSize} onChange={setFontSize} options={[
+                { label: 'Small', value: 'Small' },
+                { label: 'Medium', value: 'Medium' },
+                { label: 'Large', value: 'Large' },
+                { label: 'Extra Large', value: 'Extra Large' },
+              ]} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="High contrast">
+              <Toggle on={highContrast} onChange={setHighContrast} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Auto night mode" desc="Dim screen during late-night study">
+              <Toggle on={autoNightMode} onChange={setAutoNightMode} />
+            </SettingRow>
+          </div>
+        </div>
+
+        {/* Learning */}
+        <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
+          <SectionHeader icon={Languages} title="Learning Preferences" subtitle="Fine-tune how cards are presented during review." />
+          <div className="space-y-1">
+            <SettingRow label="Review order">
+              <Select value={reviewOrder} onChange={setReviewOrder} options={[
+                { label: 'FSRS - Optimized', value: 'FSRS - Optimized' },
+                { label: 'Random', value: 'Random' },
+                { label: 'Newest first', value: 'Newest first' },
+                { label: 'Oldest first', value: 'Oldest first' },
+                { label: 'Hardest first', value: 'Hardest first' },
+              ]} />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
+            <SettingRow label="Show hint first" desc="Reveal hint before showing answer">
+              <Toggle on={showHintFirst} onChange={setShowHintFirst} />
+            </SettingRow>
+          </div>
+          </div>
+        </div>
       </div>
 
-      {/* Expanded Section Content */}
-      <AnimatePresence mode="wait">
-        {activeSection && (
-          <motion.div             ref={contentRef}
-            key={activeSection}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="bg-white dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-3xl p-8 mb-8">
-              {activeSection === 'profile' && (
-                <div className="space-y-8">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
-                    <User size={20} className="text-violet-400" />
-                    Profile
-                  </h3>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">Display Name</label>
-                    <input                       type="text"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      className="w-full p-4 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:border-violet-500 transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-3">Mind Character</label>
-                    <div className="grid grid-cols-4 sm:grid-cols-9 gap-3">
-                      {CHARACTER_PRESETS.map((char) => {
-                        const isActive = characterId === char.id;
-                        return (
-                          <button                             key={char.id}
-                            onClick={() => setCharacterId(char.id)}
-                            className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all ${
-                              isActive
-                                ? 'border-violet-500 bg-violet-500/10'
-                                : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/60'
-                            }`}
-                          >
-                            <MiiCharacter seed={char.seed} size={40} />
-                            <span className={`text-[10px] font-bold ${isActive ? 'text-zinc-800 dark:text-zinc-200' : 'text-zinc-500'}`}>
-                              {char.name}
-                            </span>
-                          </button>
-                        );
-                      })}
-                      {customCharacters.map((cc) => {
-                        const isActive = characterId === cc.id;
-                        return (
-                          <div key={cc.id} className="relative group">
-                            <button                               onClick={() => setCharacterId(cc.id)}
-                              className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 transition-all w-full ${
-                                isActive
-                              ? 'border-violet-500 bg-violet-500/10'
-                              : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/60'
-                              }`}
-                            >
-                              <MiiCharacter seed={cc.id} size={40} dicebear={cc.options} />
-                              <span className={`text-[10px] font-bold ${isActive ? 'text-zinc-800 dark:text-zinc-200' : 'text-zinc-500'}`}>
-                                {cc.name}
-                              </span>
-                            </button>
-                            <div className="absolute -top-1.5 -right-1.5 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button                                 onClick={() => setEditingCharacter(cc)}
-                                className="w-5 h-5 rounded-full bg-zinc-700 hover:bg-zinc-600 flex items-center justify-center"
-                              >
-                                <Palette size={8} className="text-zinc-600 dark:text-zinc-300" />
-                              </button>
-                              <button                                 onClick={() => {
-                                  setCustomCharacters(prev => prev.filter(c => c.id !== cc.id));
-                                  if (characterId === cc.id) setCharacterId('matt');
-                                }}
-                                className="w-5 h-5 rounded-full bg-red-500/80 hover:bg-red-500 flex items-center justify-center"
-                              >
-                                <X size={8} className="text-white" />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      <button                         onClick={() => setEditingCharacter({ id: '', name: '', options: { accessories: 'kurt', accessoriesColor: '262e33', clothing: 'shirtCrewNeck', clothesColor: '6c5ce7', eyes: 'default', eyebrows: 'defaultNatural', hairColor: '2c1b18', hatColor: '262e33', mouth: 'smile', skinColor: 'fd9841', top: 'shortFlat', facialHairColor: '2c1b18' } })}
-                        className="flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 border-dashed transition-all border-zinc-300 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/60"
-                      >
-                        <div className="w-10 h-10 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                          <Palette size={18} className="text-zinc-500" />
-                        </div>
-                        <span className="text-[10px] font-bold text-zinc-500">Create</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-3">Upload Photo / GIF</label>
-                    <div className="flex items-center gap-4">
-                      <button                         onClick={() => fileInputRef.current?.click()}
-                        className={`flex flex-col items-center gap-2 p-6 rounded-2xl border-2 border-dashed transition-all ${
-                          characterId === 'uploaded'
-                            ? 'border-violet-500 bg-violet-500/10'
-                            : 'border-zinc-300 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900/60'
-                        }`}
-                      >
-                        {uploadedImage ? (
-                          <div className="w-20 h-20 rounded-full overflow-hidden">
-                            <img src={uploadedImage} alt="" className="w-full h-full object-cover" />
-                          </div>
-                        ) : (
-                          <div className="w-20 h-20 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
-                            <User size={28} className="text-zinc-400 dark:text-zinc-500" />
-                          </div>
-                        )}
-                        <span className={`text-xs font-bold ${characterId === 'uploaded' ? 'text-zinc-800 dark:text-zinc-200' : 'text-zinc-500'}`}>
-                          {uploadedImage ? 'Change Photo' : 'Choose File'}
-                        </span>
-                      </button>
-                      {characterId === 'uploaded' && (
-                        <button                           onClick={removeUploadedImage}
-                          className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 text-xs font-bold transition-all"
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                  </div>
-
-                  <div className="flex items-center gap-4 p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl">
-                    <div                       className="w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
-                      style={{ backgroundColor: (characterId.startsWith(CUSTOM_PREFIX) || characterId === 'uploaded' ? '#8B5CF6' : (CHARACTER_PRESETS.find(c => c.id === characterId)?.accentColor || '#8B5CF6')) + '30' }}
-                    >
-                      {(() => {
-                        const custom = customCharacters.find(c => c.id === characterId);
-                        if (characterId === 'uploaded' && uploadedImage) return <img src={uploadedImage} alt="" className="w-full h-full object-cover" />;
-                        if (custom) return <MiiCharacter seed={custom.id} size={48} dicebear={custom.options} />;
-                        return <MiiCharacter seed={CHARACTER_PRESETS.find(c => c.id === characterId)?.seed || 'Matt'} size={48} />;
-                      })()}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-zinc-800 dark:text-zinc-300 font-bold">
-                        {(() => {
-                          const custom = customCharacters.find(c => c.id === characterId);
-                          if (characterId === 'uploaded') return 'Photo';
-                          if (custom) return custom.name;
-                          return CHARACTER_PRESETS.find(c => c.id === characterId)?.name || 'Matt';
-                        })()}
-                      </p>
-                      <p className="text-xs text-zinc-500">Your character appears like this across the app</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeSection === 'appearance' && (
-                <div className="space-y-8">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
-                    <Palette size={20} className="text-pink-400" />
-                    Appearance
-                  </h3>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-3">Theme</label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {themeOptions.map((opt) => {
-                        const Icon = opt.icon;
-                        const isActive = theme === opt.value;
-                        return (
-                          <button                             key={opt.value}
-                            onClick={() => setTheme(opt.value)}
-                            className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${
-                              isActive
-                                ? 'border-pink-500 bg-pink-500/10 text-pink-600 dark:text-white'
-                                : 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600 text-zinc-600 dark:text-zinc-400'
-                            }`}
-                          >
-<opt.icon size={28} className={isActive ? 'text-pink-400' : ''} />
-                            <span className="text-sm font-bold">{opt.label}</span>
-                            {isActive && <Check size={16} className="text-pink-400" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <p className="text-xs text-zinc-400 dark:text-zinc-600 mt-3">
-                      {resolvedTheme === 'dark' ? 'Dark mode is active' : 'Light mode is active'}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {activeSection === 'study' && (
-                <div className="space-y-8">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
-                    <BookOpen size={20} className="text-emerald-400" />
-                    Study Preferences
-                  </h3>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-2">Daily Review Goal</label>
-                    <div className="flex items-center gap-4">
-                      <input                         type="range"
-                        min="5"
-                        max="100"
-                        step="5"
-                        value={dailyGoal}
-                        onChange={(e) => setDailyGoal(parseInt(e.target.value))}
-                        className="flex-1 accent-emerald-500"
-                      />
-                      <span className="text-2xl font-bold text-emerald-400 w-12 text-right">{dailyGoal}</span>
-                    </div>
-                    <p className="text-xs text-zinc-400 dark:text-zinc-600 mt-1">Cards to review each day</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-3">Notifications</label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {[
-                        { value: 'none', label: 'None', icon: X },
-                        { value: 'daily', label: 'Daily Reminder', icon: Bell },
-                        { value: 'weekly', label: 'Weekly Summary', icon: Target },
-                      ].map((opt) => {
-                        const Icon = opt.icon;
-                        const isActive = notifications === opt.value;
-                        return (
-                          <button                             key={opt.value}
-                            onClick={() => setNotifications(opt.value)}
-                            className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all ${
-                              isActive
-                                ? 'border-emerald-500 bg-emerald-500/10'
-                                : 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600'
-                            }`}
-                          >
-                            <Icon size={18} className={isActive ? 'text-emerald-400' : 'text-zinc-400 dark:text-zinc-500'} />
-                            <span className={`text-sm font-bold ${isActive ? 'text-emerald-600 dark:text-emerald-300' : 'text-zinc-600 dark:text-zinc-400'}`}>
-                              {opt.label}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {activeSection === 'account' && (
-                <div className="space-y-8">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
-                    <CreditCard size={20} className="text-blue-400" />
-                    Account
-                  </h3>
-
-                  <div className="p-6 bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl border border-zinc-200 dark:border-zinc-700/50">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Current Plan</p>
-                        <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mt-1">{user.plan}</p>
-                      </div>
-                      <div className="px-4 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                        <p className="text-xs font-bold text-blue-400 uppercase tracking-wider">
-                          {user.plan === 'Starter' ? 'Free Tier' : 'Active'}
-                        </p>
-                      </div>
-                    </div>
-                    <button                       onClick={() => window.location.href = '/subscribe'}
-                      className="w-full p-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase tracking-wider text-sm transition-all"
-                    >
-                      {user.plan === 'Starter' ? 'Upgrade Plan' : 'Manage Subscription'}
-                    </button>
-                  </div>
-
-                  <div className="p-6 bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl border border-zinc-200 dark:border-zinc-700/50">
-                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-3">Email</p>
-                    <p className="text-zinc-800 dark:text-zinc-300 font-medium">{user.email}</p>
-                  </div>
-                </div>
-              )}
-
-              {activeSection === 'about' && (
-                <div className="space-y-8">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100 flex items-center gap-3">
-                    <ShieldCheck size={20} className="text-amber-400" />
-                    About
-                  </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-5 bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl border border-zinc-200 dark:border-zinc-700/50">
-                      <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">Version</p>
-                      <p className="text-zinc-800 dark:text-zinc-300 font-bold">3.0.0</p>
-                    </div>
-                    <div className="p-5 bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl border border-zinc-200 dark:border-zinc-700/50">
-                      <p className="text-xs font-bold uppercase tracking-widest text-zinc-400 dark:text-zinc-500 mb-1">Environment</p>
-                      <p className="text-zinc-800 dark:text-zinc-300 font-bold capitalize">{import.meta.env.MODE}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {[
-                      { label: 'Privacy Policy', href: '/privacy' },
-                      { label: 'Terms of Service', href: '/terms' },
-                      { label: 'Documentation', href: '/docs' },
-                    ].map((link) => (
-                      <a                         key={link.label}
-                        href={link.href}
-                        className="flex items-center justify-between p-4 bg-zinc-100 dark:bg-zinc-800/50 rounded-2xl border border-zinc-200 dark:border-zinc-700/50 hover:border-zinc-300 dark:hover:border-zinc-600 transition-all group"
-                      >
-                        <span className="text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors font-medium">{link.label}</span>
-                        <ChevronRight size={16} className="text-zinc-400 dark:text-zinc-600 group-hover:text-zinc-600 dark:group-hover:text-zinc-400 transition-colors" />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Sign Out Tile */}
-              <div className="mt-8 pt-8 border-t border-zinc-200 dark:border-zinc-800">
-                {showSignOutConfirm ? (
-                  <div className="p-6 bg-red-500/5 border border-red-500/20 rounded-2xl">
-                    <p className="text-red-400 font-bold text-sm mb-4">Are you sure you want to sign out?</p>
-                    <div className="flex gap-3">
-                      <button                         onClick={() => { setShowSignOutConfirm(false); onLogout(); }}
-                        className="flex-1 p-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold uppercase tracking-wider text-sm transition-all"
-                      >
-                        Sign Out
-                      </button>
-                      <button                         onClick={() => setShowSignOutConfirm(false)}
-                        className="flex-1 p-4 rounded-xl bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-600 dark:text-zinc-400 font-bold uppercase tracking-wider text-sm transition-all"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button                     onClick={() => setShowSignOutConfirm(true)}
-                    className="w-full flex items-center justify-center gap-3 p-5 rounded-2xl border-2 border-red-500/20 hover:border-red-500/40 text-red-400 hover:text-red-300 transition-all group"
-                  >
-                    <LogOut size={20} />
-                    <span className="font-bold uppercase tracking-widest text-sm">Sign Out</span>
-                  </button>
-                )}
+      {/* Danger Zone — full width */}
+      <div className="mt-8 bg-[#111118] border border-red-500/20 rounded-xl p-6">
+          <SectionHeader icon={AlertTriangle} title="Danger Zone" subtitle="Irreversible actions. Proceed with care." />
+          <div className="space-y-3">
+            {['Export your data', 'Export Anki package', 'Delete account'].map((item, i) => (
+              <div key={i} className="flex items-center justify-between py-2">
+                <span className="text-[#F0EFFE] text-xs">{item}</span>
+                <button className={`px-4 py-1.5 text-[11px] font-medium rounded-lg border transition-all ${
+                  item === 'Delete account'
+                    ? 'border-red-500/30 text-red-400 hover:bg-red-500/10'
+                    : 'border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#3A3A4F]'
+                }`}>
+                  {item === 'Delete account' ? 'Delete' : 'Export'}
+                </button>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-       <AnimatePresence>
-         {editingCharacter && (
-           <MiiCreator
-            initialOptions={editingCharacter.options}
-            initialName={editingCharacter.name}
-            onSave={(name, opts) => {
-              if (editingCharacter.id) {
-                setCustomCharacters(prev => prev.map(c => c.id === editingCharacter.id ? { ...c, name, options: opts } : c));
-              } else {
-                const id = `${CUSTOM_PREFIX}${nextCustomId++}`;
-                setCustomCharacters(prev => [...prev, { id, name, options: opts }]);
-                setCharacterId(id);
-              }
-              setEditingCharacter(null);
-            }}
-            onClose={() => setEditingCharacter(null)}
-          />
-        )}
-      </AnimatePresence>
-    </div>
+            ))}
+          </div>
+        </div>
+    </PageShell>
   );
-};
-
-export default SettingsPage;
-
-
+}

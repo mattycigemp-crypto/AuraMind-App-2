@@ -56,9 +56,17 @@ export async function syncCurrentUser(): Promise<boolean> {
  * Ensure user is synced before database operations
  */
 export async function ensureUserSynced(): Promise<void> {
+  if (hasSyncedForSession) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      hasSyncedForSession = false;
+      throw new Error('Session expired. Please sign in again.');
+    }
+    return;
+  }
   const synced = await syncCurrentUser();
   if (!synced) {
-    throw new Error('Failed to sync user to database. Cannot proceed with database operations.');
+    throw new Error('Failed to sync user. Please sign in to save data.');
   }
 }
 

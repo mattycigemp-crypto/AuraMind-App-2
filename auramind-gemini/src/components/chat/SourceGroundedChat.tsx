@@ -59,14 +59,20 @@ const ChatWithSources: React.FC = () => {
   const navigate = useNavigate();
 
   const handleSaveCards = useCallback(async (cards: SourceGroundedCard[], deckTitle: string) => {
-    if (!createDeck || !addCardsToDeck) return;
+    if (!createDeck || !addCardsToDeck) {
+      console.warn('[SourceGrounded] Cannot save: not signed in');
+      return;
+    }
     try {
       const deck = await createDeck(deckTitle, `Generated from ${activeSourceIds.length} source document${activeSourceIds.length > 1 ? 's' : ''}`);
-      if (deck) {
-        await addCardsToDeck(deck.id, cards.map(c => ({ question: c.question, answer: c.answer })));
-        clearGeneration();
-        navigate(`/deck/${deck.id}`);
+      if (!deck) {
+        console.error('[SourceGrounded] Deck creation returned null');
+        return;
       }
+      const cardCount = await addCardsToDeck(deck.id, cards.map(c => ({ question: c.question, answer: c.answer })));
+      console.log(`[SourceGrounded] Saved ${cardCount} cards to "${deck.title}"`);
+      clearGeneration();
+      navigate(`/deck/${deck.id}`);
     } catch (err) {
       console.error('[SourceGrounded] Failed to save cards:', err);
     }
@@ -88,7 +94,7 @@ const ChatWithSources: React.FC = () => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
             onClick={() => setSourcesPanelOpen(true)}
-            className="absolute top-4 right-4 z-40 p-3 rounded-xl bg-white dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/60 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:border-violet-500/30 transition-all shadow-lg backdrop-blur-xl"
+            className="absolute top-4 right-4 z-40 p-3 rounded-xl bg-zinc-900/90 border border-zinc-700/30 text-zinc-300 hover:text-white hover:border-violet-500/30 transition-all shadow-lg backdrop-blur-xl"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
@@ -123,7 +129,7 @@ const ChatWithSources: React.FC = () => {
           >
             {generationState.isLoading ? (
               <motion.div
-                className="p-6 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl"
+                className="p-6 rounded-2xl bg-zinc-900 border border-zinc-700/30 shadow-2xl"
                 initial={{ scale: 0.95 }}
                 animate={{ scale: 1 }}
               >
@@ -140,7 +146,7 @@ const ChatWithSources: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <div className="mt-4 w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+                <div className="mt-4 w-full h-1 bg-zinc-800 rounded-full overflow-hidden">
                   <motion.div
                     className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full"
                     animate={{ x: ['-100%', '100%'] }}
@@ -159,7 +165,7 @@ const ChatWithSources: React.FC = () => {
               </motion.div>
             ) : (
               <motion.div
-                className="rounded-2xl border border-zinc-200 dark:border-zinc-800/60 bg-white dark:bg-zinc-900 shadow-2xl overflow-hidden"
+                className="rounded-2xl border border-zinc-700/30 bg-zinc-900 shadow-2xl overflow-hidden"
                 initial={{ scale: 0.95 }}
                 animate={{ scale: 1 }}
               >
@@ -173,7 +179,7 @@ const ChatWithSources: React.FC = () => {
                   </div>
                   <button
                     onClick={clearGeneration}
-                    className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-all"
+                    className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-all"
                   >
                     <X size={14} />
                   </button>

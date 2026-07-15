@@ -63,7 +63,7 @@ export function CookieConsentBanner(): React.ReactElement | null {
 
   if (showPreferences) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-50 p-4">
+      <div className="fixed bottom-0 left-0 right-0 z-50" style={{ padding: '1rem', paddingBottom: 'calc(var(--safe-bottom, 0px) + 1rem)' }}>
         <div className="max-w-lg mx-auto bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Cookie Preferences</h3>
@@ -112,7 +112,7 @@ export function CookieConsentBanner(): React.ReactElement | null {
             </button>
             <button
               onClick={handleDecline}
-              className="px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors text-sm"
+className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-sm"
             >
               Decline All
             </button>
@@ -127,7 +127,7 @@ export function CookieConsentBanner(): React.ReactElement | null {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4">
+    <div className="fixed bottom-0 left-0 right-0 z-50" style={{ padding: '1rem', paddingBottom: 'calc(var(--safe-bottom, 0px) + 1rem)' }}>
       <div className="max-w-lg mx-auto bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-6">
         <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">We use cookies</h3>
         <p className="text-sm text-zinc-400 mb-4">
@@ -138,14 +138,14 @@ export function CookieConsentBanner(): React.ReactElement | null {
         <div className="flex gap-2">
           <button
             onClick={() => setShowPreferences(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-sm"
           >
             <Settings className="h-4 w-4" />
             Customize
           </button>
           <button
             onClick={handleDecline}
-            className="px-4 py-2 bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-colors text-sm"
+            className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg hover:bg-zinc-700 transition-colors text-sm"
           >
             Decline
           </button>

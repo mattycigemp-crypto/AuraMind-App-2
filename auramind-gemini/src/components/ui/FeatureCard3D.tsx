@@ -44,7 +44,7 @@ export const FeatureCard3D: React.FC<FeatureCard3DProps> = ({
     <motion.div
       ref={cardRef}
       className={cn(
-        "relative p-8 rounded-3xl border bg-white dark:bg-slate-800 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group",
+        "relative p-8 rounded-3xl border bg-slate-800 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group",
         "hover:border-indigo-500/40 hover:bg-gradient-to-br hover:from-indigo-50 hover:to-purple-50 dark:hover:from-indigo-900/20 dark:hover:to-purple-900/20",
         "transform-gpu will-change-transform",
         className

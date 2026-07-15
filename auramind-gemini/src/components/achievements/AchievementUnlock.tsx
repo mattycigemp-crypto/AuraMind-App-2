@@ -67,7 +67,7 @@ export const getLevelTitle = (level: number) => {
 
 
 // Glassmorphism utility classes
-const glassCard = 'bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl';
+const glassCard = 'bg-zinc-900/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl';
 
 // Animation variants
 const scaleIn = {
@@ -95,7 +95,7 @@ const sparkleVariants = {
   exit: { opacity: 0, scale: 0, transition: { duration: 0.2 } },
 };
 
-interface Achievement {
+export interface Achievement {
   id: string;
   title: string;
   description: string;
@@ -274,10 +274,10 @@ interface AchievementUnlockProps {
         </AnimatePresence>
 
         {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-lg transition-colors"
-        >
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 p-2 hover:bg-zinc-900/10 rounded-lg transition-colors"
+            >
           <X size={20} className="text-gray-400" />
         </button>
 
@@ -310,7 +310,7 @@ interface AchievementUnlockProps {
           transition={{ delay: 0.3 }}
           className="space-y-3"
         >
-          <div className="inline-block px-3 py-1 bg-white/10 rounded-full text-xs font-medium uppercase tracking-wider text-white">
+           <div className="inline-block px-3 py-1 bg-zinc-900/10 rounded-full text-xs font-medium uppercase tracking-wider text-white">
             {achievement.rarity}
           </div>
           <h2 className="text-2xl font-bold text-white">{achievement.title}</h2>
@@ -450,8 +450,9 @@ export const useAchievements = () => {
   return context;
 };
 
-// Predefined Achievements
+// Predefined Achievements (42 total — 8 original + 34 new)
 export const ACHIEVEMENTS: Record<string, Achievement> = {
+  // ── Existing (8) ──
   FIRST_DECK: {
     id: 'first_deck',
     title: 'Deck Creator',
@@ -515,6 +516,388 @@ export const ACHIEVEMENTS: Record<string, Achievement> = {
     icon: 'medal',
     rarity: 'epic',
     xpReward: 400,
+  },
+
+  // ── Streaks (9 new) ──
+  STREAK_1: {
+    id: 'streak_1',
+    title: 'First Step',
+    description: 'Start your first study streak',
+    icon: 'flame',
+    rarity: 'common',
+    xpReward: 25,
+  },
+  STREAK_3: {
+    id: 'streak_3',
+    title: 'Warming Up',
+    description: 'Maintain a 3-day study streak',
+    icon: 'flame',
+    rarity: 'common',
+    xpReward: 50,
+  },
+  STREAK_14: {
+    id: 'streak_14',
+    title: 'Fortnight Fighter',
+    description: 'Maintain a 14-day study streak',
+    icon: 'flame',
+    rarity: 'rare',
+    xpReward: 150,
+  },
+  STREAK_21: {
+    id: 'streak_21',
+    title: 'Habit Builder',
+    description: 'Maintain a 21-day study streak',
+    icon: 'flame',
+    rarity: 'rare',
+    xpReward: 200,
+  },
+  STREAK_60: {
+    id: 'streak_60',
+    title: 'Unstoppable',
+    description: 'Maintain a 60-day study streak',
+    icon: 'flame',
+    rarity: 'epic',
+    xpReward: 400,
+  },
+  STREAK_90: {
+    id: 'streak_90',
+    title: 'Quarter Century',
+    description: 'Maintain a 90-day study streak',
+    icon: 'flame',
+    rarity: 'epic',
+    xpReward: 500,
+  },
+  STREAK_180: {
+    id: 'streak_180',
+    title: 'Half Year Hero',
+    description: 'Maintain a 180-day study streak',
+    icon: 'flame',
+    rarity: 'legendary',
+    xpReward: 1000,
+  },
+  STREAK_365: {
+    id: 'streak_365',
+    title: 'Year of the Scholar',
+    description: 'Maintain a full 365-day study streak',
+    icon: 'flame',
+    rarity: 'legendary',
+    xpReward: 2000,
+  },
+
+  // ── Card Milestones (6 new) ──
+  CARDS_10: {
+    id: 'cards_10',
+    title: 'Getting Started',
+    description: 'Review 10 cards',
+    icon: 'trophy',
+    rarity: 'common',
+    xpReward: 25,
+  },
+  CARDS_50: {
+    id: 'cards_50',
+    title: 'Card Flipper',
+    description: 'Review 50 cards',
+    icon: 'trophy',
+    rarity: 'common',
+    xpReward: 50,
+  },
+  CARDS_100: {
+    id: 'cards_100',
+    title: 'Century Mark',
+    description: 'Review 100 cards',
+    icon: 'trophy',
+    rarity: 'rare',
+    xpReward: 100,
+  },
+  CARDS_500: {
+    id: 'cards_500',
+    title: 'Dedicated Reader',
+    description: 'Review 500 cards',
+    icon: 'trophy',
+    rarity: 'rare',
+    xpReward: 200,
+  },
+  CARDS_5000: {
+    id: 'cards_5000',
+    title: 'Library Patron',
+    description: 'Review 5000 cards',
+    icon: 'trophy',
+    rarity: 'epic',
+    xpReward: 500,
+  },
+  CARDS_10000: {
+    id: 'cards_10000',
+    title: 'Walking Encyclopedia',
+    description: 'Review 10000 cards',
+    icon: 'crown',
+    rarity: 'legendary',
+    xpReward: 1500,
+  },
+
+  // ── Deck Creation (3 new) ──
+  DECKS_5: {
+    id: 'decks_5',
+    title: 'Curator',
+    description: 'Create 5 flashcard decks',
+    icon: 'award',
+    rarity: 'common',
+    xpReward: 50,
+  },
+  DECKS_25: {
+    id: 'decks_25',
+    title: 'Syllabus Architect',
+    description: 'Create 25 flashcard decks',
+    icon: 'award',
+    rarity: 'epic',
+    xpReward: 300,
+  },
+  DECKS_50: {
+    id: 'decks_50',
+    title: 'Librarian',
+    description: 'Create 50 flashcard decks',
+    icon: 'crown',
+    rarity: 'legendary',
+    xpReward: 1000,
+  },
+
+  // ── Study Sessions (5 new) ──
+  SESSION_1: {
+    id: 'session_1',
+    title: 'First Lesson',
+    description: 'Complete your first study session',
+    icon: 'star',
+    rarity: 'common',
+    xpReward: 25,
+  },
+  SESSION_10: {
+    id: 'session_10',
+    title: 'Steady Student',
+    description: 'Complete 10 study sessions',
+    icon: 'star',
+    rarity: 'rare',
+    xpReward: 100,
+  },
+  SESSION_50: {
+    id: 'session_50',
+    title: 'Avid Learner',
+    description: 'Complete 50 study sessions',
+    icon: 'star',
+    rarity: 'epic',
+    xpReward: 300,
+  },
+  SESSION_100: {
+    id: 'session_100',
+    title: 'Century Scholar',
+    description: 'Complete 100 study sessions',
+    icon: 'star',
+    rarity: 'epic',
+    xpReward: 500,
+  },
+  SESSION_500: {
+    id: 'session_500',
+    title: 'Session Master',
+    description: 'Complete 500 study sessions',
+    icon: 'crown',
+    rarity: 'legendary',
+    xpReward: 1500,
+  },
+
+  // ── Accuracy (3 new) ──
+  ACCURACY_80: {
+    id: 'accuracy_80',
+    title: 'On Point',
+    description: 'Achieve 80% accuracy in a session',
+    icon: 'target',
+    rarity: 'common',
+    xpReward: 50,
+  },
+  ACCURACY_95: {
+    id: 'accuracy_95',
+    title: 'Laser Focus',
+    description: 'Achieve 95% accuracy in a session',
+    icon: 'target',
+    rarity: 'rare',
+    xpReward: 150,
+  },
+  ACCURACY_100: {
+    id: 'accuracy_100',
+    title: 'Flawless Recall',
+    description: 'Achieve 100% accuracy in a session',
+    icon: 'target',
+    rarity: 'epic',
+    xpReward: 350,
+  },
+
+  // ── Speed (2 new) ──
+  SPEED_50: {
+    id: 'speed_50',
+    title: 'Pacing Well',
+    description: 'Review 50 cards in one day',
+    icon: 'zap',
+    rarity: 'common',
+    xpReward: 50,
+  },
+  SPEED_2S: {
+    id: 'speed_2s',
+    title: 'Lightning Fast',
+    description: 'Maintain under 2s average response time',
+    icon: 'zap',
+    rarity: 'rare',
+    xpReward: 150,
+  },
+
+  // ── AI Generation (4 new) ──
+  AI_DECK_1: {
+    id: 'ai_deck_1',
+    title: 'AI Pioneer',
+    description: 'Generate your first AI deck',
+    icon: 'zap',
+    rarity: 'common',
+    xpReward: 50,
+  },
+  AI_DECK_10: {
+    id: 'ai_deck_10',
+    title: 'Prompt Engineer',
+    description: 'Generate 10 AI decks',
+    icon: 'zap',
+    rarity: 'rare',
+    xpReward: 150,
+  },
+  AI_DECK_50: {
+    id: 'ai_deck_50',
+    title: 'AI Orchestrator',
+    description: 'Generate 50 AI decks',
+    icon: 'zap',
+    rarity: 'epic',
+    xpReward: 400,
+  },
+  AI_CARDS_1000: {
+    id: 'ai_cards_1000',
+    title: 'Synthesis Master',
+    description: 'Generate 1000 AI cards',
+    icon: 'crown',
+    rarity: 'legendary',
+    xpReward: 1000,
+  },
+
+  // ── Quiz (3 new) ──
+  PERFECT_QUIZ_5: {
+    id: 'perfect_quiz_5',
+    title: 'Quiz Ace',
+    description: 'Get a perfect score on 5 quizzes',
+    icon: 'star',
+    rarity: 'rare',
+    xpReward: 150,
+  },
+  PERFECT_QUIZ_25: {
+    id: 'perfect_quiz_25',
+    title: 'Exam Champion',
+    description: 'Get a perfect score on 25 quizzes',
+    icon: 'star',
+    rarity: 'epic',
+    xpReward: 400,
+  },
+  QUIZZES_50: {
+    id: 'quizzes_50',
+    title: 'Test Taker',
+    description: 'Complete 50 quizzes',
+    icon: 'star',
+    rarity: 'rare',
+    xpReward: 200,
+  },
+
+  // ── Social (3 new) ──
+  SOCIAL_SHARE_1: {
+    id: 'social_share_1',
+    title: 'Knowledge Sharer',
+    description: 'Share your first deck',
+    icon: 'award',
+    rarity: 'common',
+    xpReward: 50,
+  },
+  SOCIAL_SHARE_10: {
+    id: 'social_share_10',
+    title: 'Community Pillar',
+    description: 'Share 10 decks',
+    icon: 'award',
+    rarity: 'rare',
+    xpReward: 150,
+  },
+  SOCIAL_GROUP: {
+    id: 'social_group',
+    title: 'Team Player',
+    description: 'Join a study group',
+    icon: 'medal',
+    rarity: 'common',
+    xpReward: 50,
+  },
+
+  // ── Profile (3 new) ──
+  PROFILE_SETUP: {
+    id: 'profile_setup',
+    title: 'Who Am I',
+    description: 'Complete your profile setup',
+    icon: 'medal',
+    rarity: 'common',
+    xpReward: 25,
+  },
+  PROFILE_AVATAR: {
+    id: 'profile_avatar',
+    title: 'Looking Good',
+    description: 'Upload a profile avatar',
+    icon: 'medal',
+    rarity: 'common',
+    xpReward: 25,
+  },
+  PROFILE_LINK: {
+    id: 'profile_link',
+    title: 'Connected',
+    description: 'Link your Schoology or Notion account',
+    icon: 'medal',
+    rarity: 'rare',
+    xpReward: 75,
+  },
+
+  // ── Special (5 new) ──
+  NIGHT_OWL: {
+    id: 'night_owl',
+    title: 'Night Owl',
+    description: 'Study at midnight',
+    icon: 'medal',
+    rarity: 'rare',
+    xpReward: 100,
+  },
+  EARLY_BIRD: {
+    id: 'early_bird',
+    title: 'Early Bird',
+    description: 'Study before 6 AM',
+    icon: 'medal',
+    rarity: 'rare',
+    xpReward: 100,
+  },
+  MARATHON: {
+    id: 'marathon',
+    title: 'Marathon Runner',
+    description: 'Complete a 2+ hour study session',
+    icon: 'flame',
+    rarity: 'epic',
+    xpReward: 300,
+  },
+  STREAK_FREEZE: {
+    id: 'streak_freeze',
+    title: 'Saved by the Bell',
+    description: 'Use a streak freeze to save your streak',
+    icon: 'medal',
+    rarity: 'common',
+    xpReward: 50,
+  },
+  PHOENIX: {
+    id: 'phoenix',
+    title: 'Phoenix',
+    description: 'Come back after losing a 7+ day streak',
+    icon: 'flame',
+    rarity: 'rare',
+    xpReward: 150,
   },
 };
 

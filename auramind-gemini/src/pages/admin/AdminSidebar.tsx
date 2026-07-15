@@ -43,7 +43,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeSection, onSectionCha
               'w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 text-left',
               isActive
                 ? 'bg-primary/10 text-primary border border-primary/20 shadow-[0_0_15px_rgba(168,85,247,0.05)]'
-                : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/5 border border-transparent'
+                : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/20 border border-transparent'
             )}
           >
             <Icon className="w-4 h-4 shrink-0" />

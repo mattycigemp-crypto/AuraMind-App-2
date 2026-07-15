@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyMiddleware } from './middleware';
+import { applyMiddleware } from './middleware.js';
+import { handleChatStream } from './chatHandler.js';
 import { z } from 'zod';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || '';
@@ -119,7 +120,7 @@ function validateBody<T extends z.ZodTypeAny>(
   if (!result.success) {
     json(res, 400, {
       error: 'Validation failed',
-      details: result.error.flatten().fieldErrors,
+      details: (result as any).error?.flatten?.().fieldErrors ?? {},
     });
     return { ok: false };
   }
@@ -149,6 +150,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return await handleCoupons(req, res, action);
       case 'subscription':
         return await handleSubscription(req, res, action);
+      case 'chat':
+        return await handleChat(req, res, action);
       case 'stripe':
         return await handleStripe(req, res, action);
       case 'account':
@@ -230,12 +233,16 @@ async function handleAdmin(req: VercelRequest, res: VercelResponse, action?: str
         severity: 'info',
       });
       return json(res, 200, { success: true });
+    }
 
     case 'utility':
       return await handleAdminUtility(req, res, supabase, user);
 
     case 'test':
       return await handleAdminTest(req, res, supabase);
+
+    case 'health':
+      return await handleAdminHealth(req, res, supabase);
 
     case 'query':
       return await handleAdminQuery(req, res, supabase);
@@ -321,7 +328,7 @@ async function handleAdminUtility(req: VercelRequest, res: VercelResponse, supab
       if (!parsed.ok) return;
       const { email, password, makeAdmin = false, role = 'user' } = parsed.data.testData;
 
-      const { data, error } = await supabase.auth.admin.createUser({
+      const userPayload = {
         email,
         password,
         email_confirm: true,
@@ -333,7 +340,22 @@ async function handleAdminUtility(req: VercelRequest, res: VercelResponse, supab
           subscription_status: 'none',
           joined_date: Date.now().toString()
         }
-      });
+      };
+
+      let { data, error } = await supabase.auth.admin.createUser(userPayload);
+
+      // If user already exists from a previous scan, delete and retry once
+      if (error && (error.message?.includes('already') || error.status === 422)) {
+        try {
+          const { data: existingUsers } = await supabase.auth.admin.listUsers();
+          const existing = existingUsers?.users?.find((u: any) => u.email === email);
+          if (existing) await supabase.auth.admin.deleteUser(existing.id);
+        } catch { /* best effort */ }
+        const retry = await supabase.auth.admin.createUser(userPayload);
+        data = retry.data;
+        error = retry.error;
+      }
+
       if (error) throw error;
 
       await logAuditEvent(supabase, {
@@ -355,6 +377,42 @@ async function handleAdminUtility(req: VercelRequest, res: VercelResponse, supab
       const { data: userData } = await supabase.auth.admin.getUserById(targetUserId);
       if (!userData?.user) return json(res, 404, { error: 'User not found' });
       return json(res, 200, { user: { id: userData.user.id, email: userData.user.email, metadata: userData.user.user_metadata } });
+    }
+
+    case 'delete_user': {
+      const parsed = validateBody(res, z.object({ targetUserId: z.string().uuid() }), req.body);
+      if (!parsed.ok) return;
+      const { targetUserId } = parsed.data;
+      if (targetUserId === requestingUser.id) return json(res, 403, { error: 'Cannot delete your own account' });
+      const { data: userData } = await supabase.auth.admin.getUserById(targetUserId);
+      if (!userData?.user) return json(res, 404, { error: 'User not found' });
+      if (userData.user.email === ADMIN_EMAIL) return json(res, 403, { error: 'Cannot delete the owner account' });
+
+      const targetEmail = userData.user.email;
+
+      // Clean up user's data in public schema before deleting auth record
+      try {
+        await supabase.from('cards').delete().eq('user_id', targetUserId);
+        await supabase.from('decks').delete().eq('user_id', targetUserId);
+        await supabase.from('learning_path_enrollments').delete().eq('user_id', targetUserId);
+        await supabase.from('fact_check_history').delete().eq('user_id', targetUserId);
+        await supabase.from('chat_logs').delete().eq('user_id', targetUserId);
+      } catch (cleanupErr: any) {
+        console.warn('Partial cleanup during user deletion:', cleanupErr.message);
+      }
+
+      await supabase.auth.admin.deleteUser(targetUserId);
+
+      await logAuditEvent(supabase, {
+        actorEmail: requestingUser.email || 'admin',
+        action: 'User permanently deleted',
+        category: 'user',
+        targetId: targetUserId,
+        targetEmail: targetEmail,
+        details: `Admin "${requestingUser.email}" permanently deleted user "${targetEmail}" and all associated data`,
+        severity: 'warning',
+      });
+      return json(res, 200, { success: true });
     }
 
     default:
@@ -395,6 +453,106 @@ async function handleAdminQuery(req: VercelRequest, res: VercelResponse, supabas
   }
 }
 
+// ── Health Check: Stripe payments deep test ──
+async function handleAdminHealth(req: VercelRequest, res: VercelResponse, supabase: any) {
+  // URL is /api/admin/health/payments → path = 'admin/health/payments', subAction = 'payments'
+  const subAction = ((req.query.path as string) || '').split('/')[2];
+
+  if (subAction === 'payments') {
+    const results: any = {
+      configOk: false,
+      apiOk: false,
+      prices: [],
+      products: [],
+      webhookConfigured: false,
+      testPaymentIntentCreated: false,
+      errors: [] as string[],
+    };
+
+    try {
+      const Stripe = (await import('stripe')).default;
+      const secretKey = process.env.STRIPE_SECRET_KEY || '';
+      if (!secretKey) {
+        results.errors.push('STRIPE_SECRET_KEY not configured');
+        return json(res, 200, results);
+      }
+      results.configOk = true;
+
+      const stripe = new Stripe(secretKey);
+
+      // Test 1: List prices (basic API connectivity)
+      try {
+        const prices = await stripe.prices.list({ limit: 10, active: true });
+        results.apiOk = true;
+        results.prices = prices.data.map(p => ({
+          id: p.id,
+          nickname: p.nickname || p.id,
+          currency: p.currency,
+          unitAmount: p.unit_amount ? (p.unit_amount / 100).toFixed(2) : '0.00',
+          interval: p.recurring?.interval || 'one-time',
+          active: p.active,
+        }));
+      } catch (err: any) {
+        results.errors.push(`Prices list failed: ${err.message}`);
+      }
+
+      // Test 2: List products
+      try {
+        const products = await stripe.products.list({ limit: 10, active: true });
+        results.products = products.data.map(p => ({
+          id: p.id,
+          name: p.name,
+          active: p.active,
+        }));
+      } catch (err: any) {
+        results.errors.push(`Products list failed: ${err.message}`);
+      }
+
+      // Test 3: Check webhook endpoint exists
+      try {
+        const webhooks = await stripe.webhookEndpoints.list({ limit: 10 });
+        const auramindWebhook = webhooks.data.find(
+          (w: any) => w.url?.includes('auramind') || w.url?.includes('stripe-webhook'),
+        );
+        results.webhookConfigured = !!auramindWebhook;
+        if (auramindWebhook) {
+          results.webhookUrl = auramindWebhook.url;
+          results.webhookEnabled = auramindWebhook.enabled_events?.length > 0;
+        }
+      } catch (err: any) {
+        results.errors.push(`Webhook check failed: ${err.message}`);
+      }
+
+      // Test 4: Create a test payment intent (unconfirmed — no charge)
+      try {
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: 100, // $1.00 — test amount
+          currency: 'usd',
+          payment_method_types: ['card'],
+          description: 'AuraMind health check — test payment (not charged)',
+          metadata: { source: 'health_check', timestamp: new Date().toISOString() },
+        });
+        results.testPaymentIntentCreated = paymentIntent.status === 'requires_payment_method';
+        results.testPaymentIntentId = paymentIntent.id;
+        results.testPaymentIntentStatus = paymentIntent.status;
+        results.testPaymentAmount = `1.00 USD`;
+
+        // Immediately cancel the test payment intent to clean up
+        await stripe.paymentIntents.cancel(paymentIntent.id).catch(() => {});
+      } catch (err: any) {
+        results.errors.push(`Test payment intent failed: ${err.message}`);
+      }
+
+    } catch (err: any) {
+      results.errors.push(`Stripe init failed: ${err.message}`);
+    }
+
+    return json(res, 200, results);
+  }
+
+  return json(res, 400, { error: 'Invalid health action. Use: payments' });
+}
+
 async function handleAdminTest(req: VercelRequest, res: VercelResponse, supabase: any) {
   const results = {
     timestamp: new Date().toISOString(),
@@ -417,6 +575,30 @@ async function handleAdminTest(req: VercelRequest, res: VercelResponse, supabase
     results.tests.push({ name: 'Stripe API', status: 'passed', message: 'Connected' });
   } catch (err: any) {
     results.tests.push({ name: 'Stripe API', status: 'failed', message: err.message });
+  }
+
+  // Test Resend Email
+  try {
+    const resendKey = process.env.RESEND_API_KEY || '';
+    const resendFrom = process.env.RESEND_FROM_EMAIL || '';
+    if (!resendKey) {
+      results.tests.push({ name: 'Resend Email', status: 'failed', message: 'RESEND_API_KEY not configured' });
+    } else {
+      // Verify the API key works by checking Resend's health endpoint
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${resendKey}` },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (res.ok || res.status === 405) {
+        // 200 or 405 (Method Not Allowed) both mean we authenticated successfully
+        results.tests.push({ name: 'Resend Email', status: 'passed', message: `Configured (from: ${resendFrom || 'default'})` });
+      } else {
+        results.tests.push({ name: 'Resend Email', status: 'failed', message: `API returned ${res.status}` });
+      }
+    }
+  } catch (err: any) {
+    results.tests.push({ name: 'Resend Email', status: 'failed', message: err.message });
   }
 
   return json(res, 200, results);
@@ -454,10 +636,10 @@ async function handleCoupons(req: VercelRequest, res: VercelResponse, action?: s
       const coupon = await stripe.coupons.create({
         id: id || undefined,
         name: name || 'Coupon',
-        percent_off: percent_off ? parseFloat(percent_off) : undefined,
-        amount_off: amount_off ? parseInt(amount_off) * 100 : undefined,
+        percent_off: percent_off ? parseFloat(String(percent_off)) : undefined,
+        amount_off: amount_off ? parseInt(String(amount_off)) * 100 : undefined,
         duration: duration || 'once',
-        duration_in_months: duration === 'repeating' ? parseInt(duration_in_months) : undefined,
+        duration_in_months: duration === 'repeating' ? parseInt(String(duration_in_months)) : undefined,
       });
       return json(res, 200, { coupon });
     }
@@ -498,10 +680,28 @@ async function handleSubscription(req: VercelRequest, res: VercelResponse, actio
   });
 }
 
+// Chat endpoints
+async function handleChat(req: VercelRequest, res: VercelResponse, action?: string) {
+  if (action === 'stream') {
+    await handleChatStream(
+      req,
+      res,
+      { message: req.query.message as string | undefined, token: req.query.token as string | undefined },
+    );
+    return;
+  }
+  return json(res, 400, { error: 'Invalid chat action' });
+}
+
 // Stripe endpoints
 async function handleStripe(req: VercelRequest, res: VercelResponse, action?: string) {
+  const secretKey = process.env.STRIPE_SECRET_KEY || '';
+  if (!secretKey) {
+    return json(res, 500, { error: 'Stripe secret key not configured. Add STRIPE_SECRET_KEY to environment variables.' });
+  }
+
   const Stripe = (await import('stripe')).default;
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+  const stripe = new Stripe(secretKey);
 
   switch (action) {
     case 'checkout': {
@@ -509,31 +709,66 @@ async function handleStripe(req: VercelRequest, res: VercelResponse, action?: st
       if (!parsed.ok) return;
       const { priceId, userId, email } = parsed.data;
 
-      const session = await stripe.checkout.sessions.create({
-        mode: 'subscription',
-        payment_method_collection: 'always',
-        line_items: [{ price: priceId, quantity: 1 }],
-        subscription_data: {
-          trial_period_days: 7,
-          metadata: { supabase_user_id: userId }
-        },
-        customer_email: email,
-        metadata: { supabase_user_id: userId },
-        success_url: `${req.headers.origin || 'https://auramind.app'}/dashboard?payment=success`,
-        cancel_url: `${req.headers.origin || 'https://auramind.app'}/subscribe?payment=cancelled`
-      });
-      return json(res, 200, { url: session.url });
+      try {
+        const session = await stripe.checkout.sessions.create({
+          mode: 'subscription',
+          payment_method_collection: 'always',
+          line_items: [{ price: priceId, quantity: 1 }],
+          subscription_data: {
+            trial_period_days: 7,
+            metadata: { supabase_user_id: userId }
+          },
+          customer_email: email,
+          metadata: { supabase_user_id: userId },
+          success_url: `${req.headers.origin || 'https://auramind.app'}/dashboard?payment=success`,
+          cancel_url: `${req.headers.origin || 'https://auramind.app'}/subscribe?payment=cancelled`
+        });
+
+        // Immediately mark user as trialing so they don't get stuck in a redirect loop
+        // (the webhook is async and may not have fired by the time they return from Stripe)
+        try {
+          const { createClient } = await import('@supabase/supabase-js');
+          const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+          const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+          if (supabaseUrl && supabaseServiceKey) {
+            const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+            const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
+            if (userData?.user) {
+              await supabaseAdmin.auth.admin.updateUserById(userId, {
+                user_metadata: {
+                  ...userData.user.user_metadata,
+                  subscription_status: 'trialing',
+                  plan: 'Pro',
+                },
+              });
+            }
+          }
+        } catch (metaErr: any) {
+          console.warn('Failed to update user metadata after checkout:', metaErr.message);
+          // Non-fatal — the webhook will eventually update it
+        }
+
+        return json(res, 200, { url: session.url });
+      } catch (err: any) {
+        console.error('Stripe checkout error:', err.message);
+        return json(res, 500, { error: err.message || 'Failed to create checkout session' });
+      }
     }
     case 'portal': {
       const parsed = validateBody(res, StripePortalSchema, req.body);
       if (!parsed.ok) return;
       const { customerId } = parsed.data;
 
-      const session = await stripe.billingPortal.sessions.create({
-        customer: customerId,
-        return_url: `${req.headers.origin || 'https://auramind.app'}/settings`
-      });
-      return json(res, 200, { url: session.url });
+      try {
+        const session = await stripe.billingPortal.sessions.create({
+          customer: customerId,
+          return_url: `${req.headers.origin || 'https://auramind.app'}/settings`
+        });
+        return json(res, 200, { url: session.url });
+      } catch (err: any) {
+        console.error('Stripe portal error:', err.message);
+        return json(res, 500, { error: err.message || 'Failed to create billing portal session' });
+      }
     }
     default:
       return json(res, 400, { error: 'Invalid stripe action' });
@@ -828,7 +1063,7 @@ async function handleAudit(req: VercelRequest, res: VercelResponse, action?: str
       if (!parsed.ok) return;
       const event = parsed.data;
 
-      await logAuditEvent(supabase, event);
+      await logAuditEvent(supabase, event as { actorEmail: string; action: string; category: 'user' | 'admin' | 'subscription' | 'database' | 'system' | 'security'; targetId?: string; targetEmail?: string; details?: string; severity?: 'info' | 'warning' | 'critical' });
       return json(res, 200, { success: true });
     }
 

@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import handler from './index.js';
+import chatRouter from './routes/chat.js';
 
 if (!process.env.NODE_ENV) {
   process.env.NODE_ENV = 'development';
@@ -25,6 +26,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Chat SSE streaming router — mounted before the Vercel proxy to avoid buffering
+app.use('/api/chat', chatRouter);
 
 // Proxy all API requests to the Vercel handler (runs first for all /api/* paths)
 app.use('/api', async (req, res) => {

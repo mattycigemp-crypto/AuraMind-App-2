@@ -24,13 +24,14 @@ import { toast } from 'sonner';
 import { localInference, getModelDisplayName, type InitProgress } from '../../services/api/localInferenceService';
 import PresentationViewer from '../../components/study/PresentationViewer';
 import { extractStudyAssetText } from '../../services/import/documentImportService';
+import PageShell from '../../components/dashboard/PageShell';
 
 type GeneratorType = 'quiz' | 'flashcards' | 'presentation';
 type InputSource = 'topic' | 'url' | 'youtube' | 'file';
 type Difficulty = 'easy' | 'medium' | 'hard' | 'mixed';
 
 const GeneratorPage: React.FC = () => {
-  const { createDeck, addCardsToDeck } = useDashboardWorkspace();
+  const { createDeck, addCardsToDeck, deleteDeck } = useDashboardWorkspace();
   const [generatorType, setGeneratorType] = useState<GeneratorType>('quiz');
   const [topic, setTopic] = useState('');
   const [numItems, setNumItems] = useState(10);
@@ -275,21 +276,29 @@ const GeneratorPage: React.FC = () => {
 
   const handleSaveQuiz = async () => {
     if (!generatedQuiz) return;
+    if (!createDeck || !addCardsToDeck) {
+      toast.error('Please sign in to save decks');
+      return;
+    }
     setIsSaving(true);
     try {
       const deck = await createDeck(
         `${generatedQuiz.title} (Quiz)`,
         `__QUIZ__:${JSON.stringify(generatedQuiz)}`
       );
-      if (deck) {
-        const cards = generatedQuiz.questions.map(q => ({
-          question: q.question,
-          answer: `${q.options[q.correctAnswer]}${q.explanation ? ` — ${q.explanation}` : ''}`
-        }));
-        await addCardsToDeck(deck.id, cards);
-        toast.success('Quiz saved as a deck!');
-        handleReset();
+      if (!deck) { toast.error('Failed to create deck'); return; }
+      const cards = generatedQuiz.questions.map(q => ({
+        question: q.question,
+        answer: `${q.options[q.correctAnswer]}${q.explanation ? ` — ${q.explanation}` : ''}`
+      }));
+      const savedCount = await addCardsToDeck(deck.id, cards);
+      if (!savedCount) {
+        toast.error('Failed to save quiz cards — cleaning up');
+        await deleteDeck?.(deck.id);
+        return;
       }
+      toast.success(`Quiz saved as "${deck.title}" (${savedCount} cards)`);
+      handleReset();
     } catch (error) {
       console.error('Failed to save quiz:', error);
       toast.error('Failed to save quiz');
@@ -308,6 +317,10 @@ const GeneratorPage: React.FC = () => {
 
   const handleSavePresentation = async () => {
     if (!generatedPresentation) return;
+    if (!createDeck || !addCardsToDeck) {
+      toast.error('Please sign in to save decks');
+      return;
+    }
     setIsSaving(true);
     try {
       const slides = generatedPresentation.slides;
@@ -315,15 +328,19 @@ const GeneratorPage: React.FC = () => {
         `${generatedPresentation.title}`,
         `AI-generated presentation on ${generatedPresentation.title}. ${slides.length} slides.`
       );
-      if (deck) {
-        const cards = slides.map(s => ({
-          question: s.title,
-          answer: `${s.bullets.join('\n')}${s.script ? `\n\nScript: ${s.script}` : ''}`
-        }));
-        await addCardsToDeck(deck.id, cards);
-        toast.success('Presentation saved as a deck!');
-        handleReset();
+      if (!deck) { toast.error('Failed to create deck'); return; }
+      const cards = slides.map(s => ({
+        question: s.title,
+        answer: `${s.bullets.join('\n')}${s.script ? `\n\nScript: ${s.script}` : ''}`
+      }));
+      const savedCount = await addCardsToDeck(deck.id, cards);
+      if (!savedCount) {
+        toast.error('Failed to save presentation cards — cleaning up');
+        await deleteDeck?.(deck.id);
+        return;
       }
+      toast.success(`Presentation saved as "${deck.title}" (${savedCount} cards)`);
+      handleReset();
     } catch (error) {
       console.error('Failed to save presentation:', error);
       toast.error('Failed to save presentation');
@@ -334,21 +351,29 @@ const GeneratorPage: React.FC = () => {
 
   const handleSaveFlashcards = async () => {
     if (!generatedFlashcards || generatedFlashcards.length === 0) return;
+    if (!createDeck || !addCardsToDeck) {
+      toast.error('Please sign in to save decks');
+      return;
+    }
     setIsSaving(true);
     try {
       const deck = await createDeck(
         `${topic} Flashcards`,
         `AI-generated flashcards on ${topic} at ${difficulty} difficulty. ${generatedFlashcards.length} cards.`
       );
-      if (deck) {
-        const cards = generatedFlashcards.map(card => ({
-          question: card.question,
-          answer: card.answer
-        }));
-        await addCardsToDeck(deck.id, cards);
-        toast.success('Flashcards saved as a deck!');
-        handleReset();
+      if (!deck) { toast.error('Failed to create deck'); return; }
+      const cards = generatedFlashcards.map(card => ({
+        question: card.question,
+        answer: card.answer
+      }));
+      const savedCount = await addCardsToDeck(deck.id, cards);
+      if (!savedCount) {
+        toast.error('Failed to save flashcards — cleaning up');
+        await deleteDeck?.(deck.id);
+        return;
       }
+      toast.success(`Flashcards saved as "${deck.title}" (${savedCount} cards)`);
+      handleReset();
     } catch (error) {
       console.error('Failed to save flashcards:', error);
       toast.error('Failed to save flashcards');
@@ -412,38 +437,59 @@ const GeneratorPage: React.FC = () => {
     setEditForm({});
   };
 
+  const generatorCards = [
+    { id: 'quiz', label: 'Quiz', description: 'Multiple choice questions', icon: Sparkles },
+    { id: 'flashcards', label: 'Flashcards', description: 'Study cards', icon: CheckCircle },
+    { id: 'presentation', label: 'Presentation', description: 'Slide decks with voiceover', icon: Sparkles },
+  ] as const;
+
+  const sourceOptions = [
+    { value: 'topic' as InputSource, label: 'Topic', icon: Type },
+    { value: 'url' as InputSource, label: 'URL', icon: Globe },
+    { value: 'youtube' as InputSource, label: 'YouTube', icon: Play },
+    { value: 'file' as InputSource, label: 'File', icon: FileText },
+  ];
+
+  const difficultyOptions = [
+    { value: 'easy', label: 'Easy', color: 'emerald' },
+    { value: 'medium', label: 'Medium', color: 'amber' },
+    { value: 'hard', label: 'Hard', color: 'red' },
+    { value: 'mixed', label: 'Mixed', color: 'violet' },
+  ];
+
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <PageShell>
+      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="mb-8"
       >
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">Content Generator</h1>
-        <p className="text-zinc-600 dark:text-zinc-400">Create quizzes, flashcards, and presentations with AI</p>
+        <h1 className="text-xl font-light text-[#F0EFFE] tracking-tight mb-1">Content Generator</h1>
+        <p className="text-[#5A5A72] text-sm">Create quizzes, flashcards, and presentations with AI</p>
       </motion.div>
 
       {useLocalAI && localAIProgress && localAIProgress.status !== 'ready' && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-6 bg-zinc-900 border border-zinc-800 rounded-2xl p-6"
+          className="mb-6 bg-[#111118] border border-[#2A2A3A] rounded-xl p-5"
         >
           {localAIProgress.status === 'downloading' && (
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-5 h-5 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
-                <p className="text-zinc-100 font-bold text-sm">Loading {getModelDisplayName(localInference.getModelId())}</p>
+                <div className="w-5 h-5 border-2 border-[#7C3AED]/30 border-t-[#7C3AED] rounded-full animate-spin" />
+                <p className="text-[#F0EFFE] text-sm font-medium">Loading {getModelDisplayName(localInference.getModelId())}</p>
               </div>
-              <div className="w-full h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div className="w-full h-1.5 bg-[#2A2A3A] rounded-full overflow-hidden">
                 <motion.div
-                  className="h-full bg-violet-500 rounded-full"
+                  className="h-full bg-[#7C3AED] rounded-full"
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.round(localAIProgress.progress * 100)}%` }}
                   transition={{ duration: 0.3 }}
                 />
               </div>
-              <p className="text-xs text-zinc-500 mt-2">{localAIProgress.text}</p>
+              <p className="text-[#5A5A72] text-xs mt-2">{localAIProgress.text}</p>
             </div>
           )}
           {localAIProgress.status === 'error' && (
@@ -452,93 +498,53 @@ const GeneratorPage: React.FC = () => {
                 <span className="text-red-400 text-xs font-bold">!</span>
               </div>
               <div>
-                <p className="text-red-400 font-bold text-sm mb-1">Failed to load local model</p>
-                <p className="text-zinc-600 dark:text-zinc-400 text-xs">{localAIProgress.error}</p>
-                <p className="text-zinc-500 text-xs mt-2">The app will use the cloud API instead.</p>
+                <p className="text-red-400 text-sm font-medium mb-1">Failed to load local model</p>
+                <p className="text-[#5A5A72] text-xs">{localAIProgress.error}</p>
+                <p className="text-[#5A5A72] text-xs mt-2">The app will use the cloud API instead.</p>
               </div>
             </div>
           )}
         </motion.div>
       )}
 
+      {/* Generator Type Cards */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
         className="mb-6"
       >
-        <div className="grid grid-cols-3 gap-4">
-          <button
-            onClick={() => {
-              setGeneratorType('quiz');
-              handleReset();
-            }}
-            className={`p-6 rounded-2xl border-2 transition-all ${
-              generatorType === 'quiz'
-                ? 'border-violet-500 bg-violet-500/10'
-                : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                generatorType === 'quiz' ? 'bg-violet-500' : 'bg-zinc-200 dark:bg-zinc-800'
-              }`}>
-                <Sparkles size={24} className={generatorType === 'quiz' ? 'text-white' : 'text-zinc-600 dark:text-zinc-400'} />
-              </div>
-              <div className="text-left">
-                <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Quiz</h3>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">Multiple choice questions</p>
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => {
-              setGeneratorType('flashcards');
-              handleReset();
-            }}
-            className={`p-6 rounded-2xl border-2 transition-all ${
-              generatorType === 'flashcards'
-                ? 'border-violet-500 bg-violet-500/10'
-                : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                generatorType === 'flashcards' ? 'bg-violet-500' : 'bg-zinc-200 dark:bg-zinc-800'
-              }`}>
-                <CheckCircle size={24} className={generatorType === 'flashcards' ? 'text-white' : 'text-zinc-600 dark:text-zinc-400'} />
-              </div>
-              <div className="text-left">
-                <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Flashcards</h3>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">Study cards</p>
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => {
-              setGeneratorType('presentation');
-              handleReset();
-            }}
-            className={`p-6 rounded-2xl border-2 transition-all ${
-              generatorType === 'presentation'
-                ? 'border-violet-500 bg-violet-500/10'
-                : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-900'
-            }`}
-          >
-            <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                generatorType === 'presentation' ? 'bg-violet-500' : 'bg-zinc-200 dark:bg-zinc-800'
-              }`}>
-                <Sparkles size={24} className={generatorType === 'presentation' ? 'text-white' : 'text-zinc-600 dark:text-zinc-400'} />
-              </div>
-              <div className="text-left">
-                <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Presentation</h3>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">Slide decks with voiceover</p>
-              </div>
-            </div>
-          </button>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {generatorCards.map((card) => {
+            const Icon = card.icon;
+            const isActive = generatorType === card.id;
+            return (
+              <button
+                key={card.id}
+                onClick={() => {
+                  setGeneratorType(card.id as GeneratorType);
+                  handleReset();
+                }}
+                className={`p-5 rounded-xl border text-left transition-all ${
+                  isActive
+                    ? 'bg-[#7C3AED]/10 border-[#7C3AED]'
+                    : 'bg-[#111118] border-[#2A2A3A] hover:border-[#3A3A4F]'
+                }`}
+              >
+                  <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      isActive ? 'bg-[#7C3AED]' : 'bg-[#1A1A24]'
+                    }`}>
+                      <Icon size={20} className={isActive ? 'text-white' : 'text-[#5A5A72]'} />
+                    </div>
+                    <div>
+                      <h3 className={`text-sm font-medium ${isActive ? 'text-[#8B5CF6]' : 'text-[#F0EFFE]'}`}>{card.label}</h3>
+                      <p className="text-xs text-[#5A5A72]">{card.description}</p>
+                    </div>
+                  </div>
+              </button>
+            );
+          })}
         </div>
       </motion.div>
 
@@ -547,33 +553,28 @@ const GeneratorPage: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-8"
+          className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6"
         >
-          <h2 className="text-xl font-bold mb-6 text-zinc-900 dark:text-zinc-100">
+          <h2 className="text-sm font-medium text-[#F0EFFE] mb-6">
             Configure {generatorType === 'quiz' ? 'Quiz' : generatorType === 'presentation' ? 'Presentation' : 'Flashcards'}
           </h2>
 
           {/* Source Type Tabs */}
           <div className="mb-6">
-            <label className="block text-sm font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-400 mb-3">Source</label>
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { value: 'topic' as InputSource, label: 'Topic', icon: Type },
-                { value: 'url' as InputSource, label: 'URL', icon: Globe },
-                { value: 'youtube' as InputSource, label: 'YouTube', icon: Play },
-                { value: 'file' as InputSource, label: 'File', icon: FileText },
-              ].map((src) => (
+            <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">Source</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {sourceOptions.map((src) => (
                 <button
                   key={src.value}
                   onClick={() => { setInputSource(src.value); setFetchError(null); }}
-                  className={`flex items-center justify-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                  className={`flex items-center justify-center gap-2 p-3 rounded-lg border text-xs transition-all ${
                     inputSource === src.value
-                      ? 'border-violet-500 bg-violet-500/10 text-violet-700 dark:text-white'
-                      : 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600 text-zinc-600 dark:text-zinc-400'
+                      ? 'bg-[#7C3AED]/10 border-[#7C3AED] text-[#8B5CF6]'
+                      : 'bg-[#1A1A24] border-[#2A2A3A] text-[#5A5A72] hover:border-[#3A3A4F] hover:text-[#F0EFFE]'
                   }`}
                 >
-                  <src.icon size={16} />
-                  <span className="text-sm font-bold">{src.label}</span>
+                  <src.icon size={14} />
+                  <span className="font-medium">{src.label}</span>
                 </button>
               ))}
             </div>
@@ -582,13 +583,13 @@ const GeneratorPage: React.FC = () => {
           {/* Topic Input */}
           {inputSource === 'topic' && (
             <div className="mb-6">
-              <label className="block text-sm font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-400 mb-3">Topic</label>
+              <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">Topic</label>
               <input
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 placeholder="e.g., Biology, History, Mathematics"
-                className="w-full p-4 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
+                className="w-full p-4 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] placeholder-[#5A5A72] focus:outline-none focus:border-[#7C3AED]/50 transition-colors text-sm"
               />
             </div>
           )}
@@ -596,19 +597,19 @@ const GeneratorPage: React.FC = () => {
           {/* URL Input */}
           {inputSource === 'url' && (
             <div className="mb-6">
-              <label className="block text-sm font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-400 mb-3">Website URL</label>
+              <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">Website URL</label>
               <div className="flex gap-3">
                 <input
                   type="url"
                   value={topic}
                   onChange={(e) => { setTopic(e.target.value); setExtractedContent(null); }}
                   placeholder="https://example.com/article"
-                  className="flex-1 p-4 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
+                  className="flex-1 p-4 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] placeholder-[#5A5A72] focus:outline-none focus:border-[#7C3AED]/50 transition-colors text-sm"
                 />
                 <button
                   onClick={handleFetchUrl}
                   disabled={!topic.trim() || isExtracting}
-                  className="px-6 py-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold uppercase tracking-wider text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-5 py-3 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isExtracting ? (
                     <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Fetch</>
@@ -616,9 +617,9 @@ const GeneratorPage: React.FC = () => {
                 </button>
               </div>
               {extractedContent && (
-                <div className="mt-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                  <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-1">Fetched: {extractedTitle}</p>
-                  <p className="text-xs text-zinc-500">{extractedContent.length.toLocaleString()} characters extracted</p>
+                <div className="mt-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
+                  <p className="text-xs text-emerald-400 font-medium mb-1">Fetched: {extractedTitle}</p>
+                  <p className="text-[10px] text-[#5A5A72]">{extractedContent.length.toLocaleString()} characters extracted</p>
                 </div>
               )}
             </div>
@@ -627,19 +628,19 @@ const GeneratorPage: React.FC = () => {
           {/* YouTube Input */}
           {inputSource === 'youtube' && (
             <div className="mb-6">
-              <label className="block text-sm font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-400 mb-3">YouTube Video URL</label>
+              <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">YouTube Video URL</label>
               <div className="flex gap-3">
                 <input
                   type="url"
                   value={topic}
                   onChange={(e) => { setTopic(e.target.value); setExtractedContent(null); }}
                   placeholder="https://youtube.com/watch?v=..."
-                  className="flex-1 p-4 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
+                  className="flex-1 p-4 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] placeholder-[#5A5A72] focus:outline-none focus:border-[#7C3AED]/50 transition-colors text-sm"
                 />
                 <button
                   onClick={handleFetchYoutube}
                   disabled={!topic.trim() || isExtracting}
-                  className="px-6 py-4 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold uppercase tracking-wider text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-5 py-3 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white text-xs font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isExtracting ? (
                     <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Fetch</>
@@ -647,9 +648,9 @@ const GeneratorPage: React.FC = () => {
                 </button>
               </div>
               {extractedContent && (
-                <div className="mt-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                  <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-1">Transcript: {extractedTitle}</p>
-                  <p className="text-xs text-zinc-500">{extractedContent.length.toLocaleString()} characters</p>
+                <div className="mt-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
+                  <p className="text-xs text-emerald-400 font-medium mb-1">Transcript: {extractedTitle}</p>
+                  <p className="text-[10px] text-[#5A5A72]">{extractedContent.length.toLocaleString()} characters</p>
                 </div>
               )}
             </div>
@@ -658,12 +659,12 @@ const GeneratorPage: React.FC = () => {
           {/* File Upload */}
           {inputSource === 'file' && (
             <div className="mb-6">
-              <label className="block text-sm font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-400 mb-3">Upload Document</label>
+              <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">Upload Document</label>
               <div
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-violet-500/50 rounded-2xl p-12 text-center cursor-pointer transition-colors"
+                className="border border-dashed border-[#2A2A3A] hover:border-[#7C3AED]/50 rounded-xl p-12 text-center cursor-pointer transition-colors bg-[#1A1A24]/50"
               >
                 <input
                   ref={fileInputRef}
@@ -674,21 +675,21 @@ const GeneratorPage: React.FC = () => {
                 />
                 {isExtracting ? (
                   <div className="flex flex-col items-center gap-3">
-                    <div className="w-8 h-8 border-2 border-violet-500/30 border-t-violet-500 rounded-full animate-spin" />
-                    <p className="text-zinc-600 dark:text-zinc-400">Extracting text...</p>
+                    <div className="w-8 h-8 border-2 border-[#7C3AED]/30 border-t-[#7C3AED] rounded-full animate-spin" />
+                    <p className="text-[#5A5A72] text-sm">Extracting text...</p>
                   </div>
                 ) : extractedContent ? (
                   <div className="flex flex-col items-center gap-3">
                     <FileText size={32} className="text-emerald-400" />
-                    <p className="text-emerald-400 font-bold">{extractedTitle}</p>
-                    <p className="text-xs text-zinc-500">{extractedContent.length.toLocaleString()} characters extracted</p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-600">Click or drop a new file to replace</p>
+                    <p className="text-emerald-400 font-medium text-sm">{extractedTitle}</p>
+                    <p className="text-[10px] text-[#5A5A72]">{extractedContent.length.toLocaleString()} characters extracted</p>
+                    <p className="text-[10px] text-[#5A5A72]">Click or drop a new file to replace</p>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3">
-                    <BookOpen size={32} className="text-zinc-500" />
-                    <p className="text-zinc-700 dark:text-zinc-400 font-bold">Drop a file here or click to browse</p>
-                    <p className="text-xs text-zinc-500 dark:text-zinc-600">PDF, DOCX, TXT, MD, PPTX</p>
+                    <BookOpen size={32} className="text-[#5A5A72]" />
+                    <p className="text-[#F0EFFE] font-medium text-sm">Drop a file here or click to browse</p>
+                    <p className="text-[10px] text-[#5A5A72]">PDF, DOCX, TXT, MD, PPTX</p>
                   </div>
                 )}
               </div>
@@ -699,14 +700,14 @@ const GeneratorPage: React.FC = () => {
           )}
 
           {fetchError && inputSource !== 'file' && (
-            <p className="mb-6 text-sm text-red-400">{fetchError}</p>
+            <p className="mb-6 text-xs text-red-400">{fetchError}</p>
           )}
 
           <div className="mb-6">
-            <label className="block text-sm font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-400 mb-3">
+            <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">
               Number of {generatorType === 'quiz' ? 'Questions' : generatorType === 'presentation' ? 'Slides' : 'Cards'}
             </label>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3">
               {[5, 10, 15, 20].map((num) => (
                 <button
                   key={num}
@@ -715,10 +716,10 @@ const GeneratorPage: React.FC = () => {
                     setShowCustomInput(false);
                     setCustomNumItems('');
                   }}
-                  className={`p-4 rounded-xl border-2 transition-all ${
+                  className={`p-4 rounded-lg border text-sm font-medium transition-all ${
                     numItems === num && !showCustomInput
-                      ? 'border-violet-500 bg-violet-500/10 text-violet-700 dark:text-white'
-                      : 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600 text-zinc-600 dark:text-zinc-400'
+                      ? 'bg-[#7C3AED]/10 border-[#7C3AED] text-[#8B5CF6]'
+                      : 'bg-[#1A1A24] border-[#2A2A3A] text-[#5A5A72] hover:border-[#3A3A4F] hover:text-[#F0EFFE]'
                   }`}
                 >
                   {num}
@@ -726,10 +727,10 @@ const GeneratorPage: React.FC = () => {
               ))}
               <button
                 onClick={() => setShowCustomInput(true)}
-                className={`p-4 rounded-xl border-2 transition-all ${
+                className={`p-4 rounded-lg border text-sm font-medium transition-all ${
                   showCustomInput
-                    ? 'border-violet-500 bg-violet-500/10 text-violet-700 dark:text-white'
-                    : 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600 text-zinc-600 dark:text-zinc-400'
+                    ? 'bg-[#7C3AED]/10 border-[#7C3AED] text-[#8B5CF6]'
+                    : 'bg-[#1A1A24] border-[#2A2A3A] text-[#5A5A72] hover:border-[#3A3A4F] hover:text-[#F0EFFE]'
                 }`}
               >
                 Custom
@@ -747,7 +748,7 @@ const GeneratorPage: React.FC = () => {
                   value={customNumItems}
                   onChange={(e) => setCustomNumItems(e.target.value)}
                   placeholder="Enter custom number..."
-                  className="w-full p-4 bg-zinc-100 dark:bg-zinc-800 border border-zinc-300 dark:border-zinc-700 rounded-xl text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-violet-500 transition-colors"
+                  className="w-full p-4 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] placeholder-[#5A5A72] focus:outline-none focus:border-[#7C3AED]/50 transition-colors text-sm"
                   min="1"
                   max="50"
                 />
@@ -756,21 +757,16 @@ const GeneratorPage: React.FC = () => {
           </div>
 
           <div className="mb-8">
-            <label className="block text-sm font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-400 mb-3">Difficulty</label>
+            <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">Difficulty</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { value: 'easy', label: 'Easy', color: 'emerald' },
-                { value: 'medium', label: 'Medium', color: 'amber' },
-                { value: 'hard', label: 'Hard', color: 'red' },
-                { value: 'mixed', label: 'Mixed', color: 'violet' }
-              ].map((diff) => (
+              {difficultyOptions.map((diff) => (
                 <button
                   key={diff.value}
                   onClick={() => setDifficulty(diff.value as Difficulty)}
-                  className={`p-4 rounded-xl border-2 transition-all ${
+                  className={`p-4 rounded-lg border text-sm font-medium transition-all ${
                     difficulty === diff.value
-                      ? `border-${diff.color}-500 bg-${diff.color}-500/10 text-${diff.color}-700 dark:text-white`
-                      : 'border-zinc-300 dark:border-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-600 text-zinc-600 dark:text-zinc-400'
+                      ? 'bg-[#7C3AED]/10 border-[#7C3AED] text-[#8B5CF6]'
+                      : 'bg-[#1A1A24] border-[#2A2A3A] text-[#5A5A72] hover:border-[#3A3A4F] hover:text-[#F0EFFE]'
                   }`}
                 >
                   {diff.label}
@@ -782,15 +778,15 @@ const GeneratorPage: React.FC = () => {
           <button
             onClick={handleGenerate}
             disabled={!topic.trim() || isGenerating || isExtracting}
-            className={`w-full flex items-center justify-center gap-3 p-5 rounded-xl text-lg font-bold uppercase tracking-widest transition-all ${
+            className={`w-full flex items-center justify-center gap-3 p-4 rounded-lg text-sm font-medium transition-all ${
               !topic.trim() || isGenerating || isExtracting
-                ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
-                : 'bg-violet-600 hover:bg-violet-500 text-white'
+                ? 'bg-[#1A1A24] text-[#5A5A72] cursor-not-allowed'
+                : 'bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-[0_0_20px_rgba(124,58,237,0.2)]'
             }`}
           >
             {isGenerating ? (
               <>
-                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 <span className="flex flex-col items-start">
                   <span>Generating...</span>
                   <span className="text-[10px] font-normal opacity-60">
@@ -802,7 +798,7 @@ const GeneratorPage: React.FC = () => {
               </>
             ) : (
               <>
-                <Play size={20} />
+                <Play size={18} />
                 Generate {generatorType === 'quiz' ? 'Quiz' : generatorType === 'presentation' ? 'Presentation' : 'Flashcards'}
               </>
             )}
@@ -819,10 +815,10 @@ const GeneratorPage: React.FC = () => {
           >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+                <h2 className="text-lg font-medium text-[#F0EFFE]">
                   Generated {generatorType === 'quiz' ? 'Quiz' : generatorType === 'presentation' ? 'Presentation' : 'Flashcards'}
                 </h2>
-                <p className="text-sm text-zinc-500 mt-1">
+                <p className="text-xs text-[#5A5A72] mt-1">
                   {generatorType === 'quiz' ? (
                     <>Topic: {generatedQuiz?.topic} &middot; {generatedQuiz?.difficulty} &middot; {generatedQuiz?.questions.length} questions</>
                   ) : generatorType === 'presentation' ? (
@@ -835,7 +831,7 @@ const GeneratorPage: React.FC = () => {
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleReset}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-700 transition-all text-sm font-bold uppercase tracking-widest"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#111118] border border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#3A3A4F] transition-all text-xs font-medium"
                 >
                   <RotateCcw size={14} />
                   Start Over
@@ -844,14 +840,14 @@ const GeneratorPage: React.FC = () => {
             </div>
 
             {generatedQuiz && (
-              <div className="space-y-4 mb-8">
+              <div className="space-y-3 mb-8">
                 {generatedQuiz.questions.map((q, i) => (
                   <div
                     key={q.id || i}
-                    className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6"
+                    className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-5"
                   >
                     <div className="flex items-start gap-4">
-                      <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-sm font-bold text-violet-400">
+                      <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-[#7C3AED]/10 border border-[#7C3AED]/20 flex items-center justify-center text-sm font-bold text-[#8B5CF6]">
                         {i + 1}
                       </span>
                       <div className="flex-1 min-w-0">
@@ -860,7 +856,7 @@ const GeneratorPage: React.FC = () => {
                             <textarea
                               value={editForm.question}
                               onChange={e => setEditForm(f => ({ ...f, question: e.target.value }))}
-                              className="w-full p-3 bg-zinc-800 border border-zinc-700 rounded-xl text-zinc-100 text-sm focus:outline-none focus:border-violet-500"
+                              className="w-full p-3 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] text-sm focus:outline-none focus:border-[#7C3AED]/50"
                               rows={2}
                             />
                             {editForm.options?.map((opt: string, oi: number) => (
@@ -870,7 +866,7 @@ const GeneratorPage: React.FC = () => {
                                   name={`correct-${i}`}
                                   checked={oi === editForm.correctAnswer}
                                   onChange={() => setEditForm(f => ({ ...f, correctAnswer: oi }))}
-                                  className="accent-emerald-500"
+                                  className="accent-[#7C3AED]"
                                 />
                                 <input
                                   value={opt}
@@ -879,7 +875,7 @@ const GeneratorPage: React.FC = () => {
                                     opts[oi] = e.target.value;
                                     setEditForm(f => ({ ...f, options: opts }));
                                   }}
-                                  className="flex-1 p-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 text-sm focus:outline-none focus:border-violet-500"
+                                  className="flex-1 p-2 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] text-sm focus:outline-none focus:border-[#7C3AED]/50"
                                 />
                               </div>
                             ))}
@@ -887,37 +883,37 @@ const GeneratorPage: React.FC = () => {
                               value={editForm.explanation || ''}
                               onChange={e => setEditForm(f => ({ ...f, explanation: e.target.value }))}
                               placeholder="Explanation (optional)"
-                              className="w-full p-3 bg-zinc-800 border border-zinc-700 rounded-xl text-zinc-100 text-sm focus:outline-none focus:border-violet-500"
+                              className="w-full p-3 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] text-sm focus:outline-none focus:border-[#7C3AED]/50"
                               rows={2}
                             />
                             <div className="flex gap-2">
-                              <button onClick={handleSaveQuestionEdit} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider transition-all">
-                                <Check size={12} /> Save
+                              <button onClick={handleSaveQuestionEdit} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-all">
+                                <Check size={14} /> Save
                               </button>
-                              <button onClick={handleCancelEdit} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-400 text-xs font-bold uppercase tracking-wider transition-all">
-                                <X size={12} /> Cancel
+                              <button onClick={handleCancelEdit} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1A1A24] text-[#5A5A72] hover:text-[#F0EFFE] text-xs font-medium transition-all">
+                                <X size={14} /> Cancel
                               </button>
                             </div>
                           </div>
                         ) : (
                           <>
-                            <p className="text-zinc-100 font-medium mb-3">{q.question}</p>
+                            <p className="text-[#F0EFFE] font-medium text-sm mb-3">{q.question}</p>
                             <div className="space-y-2">
                               {q.options.map((opt, oi) => {
                                 const isCorrect = oi === q.correctAnswer;
                                 return (
                                   <div
                                     key={oi}
-                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-sm ${
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-lg border text-sm ${
                                       isCorrect
                                         ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300'
-                                        : 'border-zinc-300 dark:border-zinc-700/50 text-zinc-600 dark:text-zinc-400'
+                                        : 'border-[#2A2A3A] text-[#5A5A72]'
                                     }`}
                                   >
                                     <span className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold ${
                                       isCorrect
                                         ? 'bg-emerald-500/20 text-emerald-400'
-                                        : 'bg-zinc-800 text-zinc-500'
+                                        : 'bg-[#1A1A24] text-[#5A5A72]'
                                     }`}>
                                       {String.fromCharCode(65 + oi)}
                                     </span>
@@ -928,20 +924,20 @@ const GeneratorPage: React.FC = () => {
                               })}
                             </div>
                             {q.explanation && (
-                              <div className="mt-3 px-4 py-3 rounded-xl bg-violet-500/5 border border-violet-500/10 text-sm text-zinc-600 dark:text-zinc-400">
-                                <span className="text-violet-400 font-bold mr-2">Explanation:</span>
+                              <div className="mt-3 px-4 py-3 rounded-lg bg-[#7C3AED]/5 border border-[#7C3AED]/10 text-sm text-[#5A5A72]">
+                                <span className="text-[#8B5CF6] font-medium mr-2">Explanation:</span>
                                 {q.explanation}
                               </div>
                             )}
                           </>
                         )}
                       </div>
-                      <div className="flex-shrink-0 flex flex-col gap-1.5">
-                        <button onClick={() => handleEditQuestion(i)} className="w-8 h-8 rounded-lg bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-all" title="Edit">
-                          <Pencil size={14} />
+                      <div className="flex-shrink-0 flex flex-row sm:flex-col gap-1.5">
+                        <button onClick={() => handleEditQuestion(i)} className="w-9 h-9 rounded-lg bg-[#1A1A24] text-[#5A5A72] hover:text-[#F0EFFE] flex items-center justify-center transition-all" title="Edit">
+                          <Pencil size={15} />
                         </button>
-                        <button onClick={() => handleDeleteQuestion(i)} className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-red-500/20 flex items-center justify-center text-zinc-500 hover:text-red-400 transition-all" title="Delete">
-                          <Trash size={14} />
+                        <button onClick={() => handleDeleteQuestion(i)} className="w-9 h-9 rounded-lg bg-[#1A1A24] hover:bg-red-500/20 flex items-center justify-center text-[#5A5A72] hover:text-red-400 transition-all" title="Delete">
+                          <Trash size={15} />
                         </button>
                       </div>
                     </div>
@@ -974,10 +970,10 @@ const GeneratorPage: React.FC = () => {
               </div>
             )}
 
-            <div className="sticky bottom-0 bg-zinc-950/90 backdrop-blur-xl border-t border-zinc-800 -mx-6 px-6 py-5 flex items-center justify-end gap-4">
+            <div className="sticky bottom-0 bg-[#0A0A0F]/90 backdrop-blur-xl border-t border-[#2A2A3A] -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 py-4 md:py-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 md:gap-4">
               <button
                 onClick={handleReset}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:border-zinc-400 dark:hover:border-zinc-600 transition-all text-sm font-bold uppercase tracking-widest"
+                className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg border border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#3A3A4F] transition-all text-xs font-medium"
               >
                 <RotateCcw size={14} />
                 Discard
@@ -985,7 +981,7 @@ const GeneratorPage: React.FC = () => {
               {generatorType === 'quiz' && generatedQuiz && (
                 <button
                   onClick={handleSendToQuizLab}
-                  className="flex items-center gap-3 px-6 py-3 rounded-xl border border-violet-500/30 text-violet-400 hover:text-violet-300 hover:border-violet-500/60 transition-all text-sm font-bold uppercase tracking-widest"
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg border border-[#7C3AED]/30 text-[#8B5CF6] hover:text-[#F0EFFE] hover:border-[#7C3AED]/60 transition-all text-xs font-medium"
                 >
                   <Target size={16} />
                   Send to Quiz Lab
@@ -994,7 +990,7 @@ const GeneratorPage: React.FC = () => {
               <button
                 onClick={generatorType === 'presentation' ? handleSavePresentation : generatorType === 'quiz' ? handleSaveQuiz : handleSaveFlashcards}
                 disabled={isSaving}
-                className="flex items-center gap-3 px-8 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white transition-all text-sm font-bold uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center gap-2 px-8 py-3 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] text-white transition-all text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(124,58,237,0.2)]"
               >
                 <Save size={18} />
                 {isSaving ? 'Saving...' : `Save as Deck (${generatorType === 'presentation' ? generatedPresentation?.slides.length : generatorType === 'quiz' ? generatedQuiz?.questions.length : generatedFlashcards?.length} cards)`}
@@ -1004,6 +1000,7 @@ const GeneratorPage: React.FC = () => {
         )}
       </AnimatePresence>
     </div>
+    </PageShell>
   );
 };
 
@@ -1023,7 +1020,7 @@ const FlashcardRow: React.FC<{
   const isEditing = editingIndex === index;
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+    <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-5">
       <div className="flex items-start gap-4">
         <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-sm font-bold text-amber-400">
           {index + 1}
@@ -1034,21 +1031,21 @@ const FlashcardRow: React.FC<{
               <textarea
                 value={editForm.question}
                 onChange={e => setEditForm(f => ({ ...f, question: e.target.value }))}
-                className="w-full p-3 bg-zinc-800 border border-zinc-700 rounded-xl text-zinc-100 text-sm focus:outline-none focus:border-violet-500"
+                className="w-full p-3 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] text-sm focus:outline-none focus:border-[#7C3AED]/50"
                 rows={2}
               />
               <textarea
                 value={editForm.answer}
                 onChange={e => setEditForm(f => ({ ...f, answer: e.target.value }))}
-                className="w-full p-3 bg-zinc-800 border border-zinc-700 rounded-xl text-zinc-100 text-sm focus:outline-none focus:border-violet-500"
+                className="w-full p-3 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] text-sm focus:outline-none focus:border-[#7C3AED]/50"
                 rows={2}
               />
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-zinc-500 mb-1">Difficulty</label>
+                <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-1">Difficulty</label>
                 <select
                   value={editForm.difficulty}
                   onChange={e => setEditForm(f => ({ ...f, difficulty: e.target.value }))}
-                  className="w-full p-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 text-sm focus:outline-none focus:border-violet-500"
+                  className="w-full p-2 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] text-sm focus:outline-none focus:border-[#7C3AED]/50"
                 >
                   <option value="easy">Easy</option>
                   <option value="medium">Medium</option>
@@ -1056,27 +1053,27 @@ const FlashcardRow: React.FC<{
                 </select>
               </div>
               <div className="flex gap-2">
-                <button onClick={onSave} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase tracking-wider transition-all">
-                  <Check size={12} /> Save
+                <button onClick={onSave} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-all">
+                  <Check size={14} /> Save
                 </button>
-                <button onClick={onCancel} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-400 text-xs font-bold uppercase tracking-wider transition-all">
-                  <X size={12} /> Cancel
+                <button onClick={onCancel} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1A1A24] text-[#5A5A72] hover:text-[#F0EFFE] text-xs font-medium transition-all">
+                  <X size={14} /> Cancel
                 </button>
               </div>
             </div>
           ) : (
             <>
-              <p className="text-zinc-100 font-medium mb-2">{card.question}</p>
+              <p className="text-[#F0EFFE] font-medium text-sm mb-2">{card.question}</p>
               <motion.div
                 initial={false}
                 animate={{ height: showAnswer ? 'auto' : 0, opacity: showAnswer ? 1 : 0 }}
                 className="overflow-hidden"
               >
-                <div className="pt-3 border-t border-zinc-800">
+                <div className="pt-3 border-t border-[#2A2A3A]">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-bold uppercase tracking-widest text-amber-500">Answer</span>
+                    <span className="text-[10px] font-medium uppercase tracking-widest text-amber-500">Answer</span>
                     {card.difficulty && (
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium uppercase tracking-wider ${
                         card.difficulty === 'easy' ? 'bg-emerald-500/10 text-emerald-400' :
                         card.difficulty === 'hard' ? 'bg-red-500/10 text-red-400' :
                         'bg-amber-500/10 text-amber-400'
@@ -1085,25 +1082,25 @@ const FlashcardRow: React.FC<{
                       </span>
                     )}
                   </div>
-                  <p className="text-zinc-700 dark:text-zinc-300">{card.answer}</p>
+                  <p className="text-[#5A5A72] text-sm">{card.answer}</p>
                 </div>
               </motion.div>
             </>
           )}
         </div>
-        <div className="flex-shrink-0 flex flex-col gap-1.5">
-          <button onClick={() => onEdit(index)} disabled={editingIndex !== null && editingIndex !== index} className="w-8 h-8 rounded-lg bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Edit">
-            <Pencil size={14} />
+        <div className="flex-shrink-0 flex flex-row sm:flex-col gap-1.5">
+          <button onClick={() => onEdit(index)} disabled={editingIndex !== null && editingIndex !== index} className="w-9 h-9 rounded-lg bg-[#1A1A24] text-[#5A5A72] hover:text-[#F0EFFE] flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Edit">
+            <Pencil size={15} />
           </button>
-          <button onClick={() => onDelete(index)} disabled={editingIndex !== null} className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-red-500/20 flex items-center justify-center text-zinc-500 hover:text-red-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Delete">
-            <Trash size={14} />
+          <button onClick={() => onDelete(index)} disabled={editingIndex !== null} className="w-9 h-9 rounded-lg bg-[#1A1A24] hover:bg-red-500/20 flex items-center justify-center text-[#5A5A72] hover:text-red-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Delete">
+            <Trash size={15} />
           </button>
         </div>
       </div>
       {!isEditing && (
         <button
           onClick={() => setShowAnswer(!showAnswer)}
-          className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-800/50 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300 text-xs font-bold uppercase tracking-widest transition-all"
+          className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#1A1A24] hover:bg-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] text-xs font-medium transition-all"
         >
           <Eye size={14} /> {showAnswer ? 'Hide' : 'Show'} Answer
         </button>
@@ -1113,6 +1110,3 @@ const FlashcardRow: React.FC<{
 };
 
 export default GeneratorPage;
-
-
-

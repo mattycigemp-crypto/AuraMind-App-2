@@ -119,13 +119,13 @@ const PresentationViewer: React.FC<PresentationViewerProps> = ({ title, slides }
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => setIsPlaying(!isPlaying)}
-                            className="p-2 rounded-full bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ text-slate-900 dark:text-white transition-colors"
+                            className="p-2 rounded-full bg-zinc-900/5 hover:bg-zinc-900/10 text-slate-900 dark:text-white transition-colors"
                         >
                             {isPlaying ? <Pause size={20} /> : <Play size={20} />}
                         </button>
                         <button
                             onClick={() => { setCurrentSlide(0); setIsPlaying(true); }}
-                            className="p-2 rounded-full bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ text-slate-900 dark:text-white transition-colors"
+                            className="p-2 rounded-full bg-zinc-900/5 hover:bg-zinc-900/10 text-slate-900 dark:text-white transition-colors"
                             title="Restart"
                         >
                             <RotateCcw size={20} />
@@ -141,14 +141,14 @@ const PresentationViewer: React.FC<PresentationViewerProps> = ({ title, slides }
                         <button
                             onClick={handlePrev}
                             disabled={currentSlide === 0}
-                            className="p-2 rounded-full hover:bg-black/5 dark:bg-white/ text-slate-900 dark:text-white disabled:opacity-30"
+                            className="p-2 rounded-full hover:bg-zinc-900/10 text-slate-900 dark:text-white disabled:opacity-30"
                         >
                             <ChevronLeft size={24} />
                         </button>
                         <button
                             onClick={handleNext}
                             disabled={currentSlide === slides.length - 1}
-                            className="p-2 rounded-full hover:bg-black/5 dark:bg-white/ text-slate-900 dark:text-white disabled:opacity-30"
+                            className="p-2 rounded-full hover:bg-zinc-900/10 text-slate-900 dark:text-white disabled:opacity-30"
                         >
                             <ChevronRight size={24} />
                         </button>
@@ -156,7 +156,7 @@ const PresentationViewer: React.FC<PresentationViewerProps> = ({ title, slides }
 
                     <button
                         onClick={toggleFullscreen}
-                        className="p-2 rounded-full bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ text-slate-900 dark:text-white transition-colors"
+                        className="p-2 rounded-full bg-zinc-900/5 hover:bg-zinc-900/10 text-slate-900 dark:text-white transition-colors"
                     >
                         {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
                     </button>

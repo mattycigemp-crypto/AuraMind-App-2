@@ -11,8 +11,8 @@ const getEnv = (key: string): string => {
   }
 };
 
-const RESEND_API_KEY = getEnv('RESEND_API_KEY');
-const RESEND_FROM_EMAIL = getEnv('RESEND_FROM_EMAIL') || 'noreply@mail.auramind.app';
+const RESEND_API_KEY = getEnv('VITE_RESEND_API_KEY');
+const RESEND_FROM_EMAIL = getEnv('VITE_RESEND_FROM_EMAIL') || 'noreply@mail.auramind.app';
 
 interface EmailOptions {
   to: string;

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
+import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
 import { getUserStats, awardXP, XP_REWARDS, calculateLevel, getLevelProgress, getXPToNextLevel, ACHIEVEMENTS, checkAchievements, getEarnedAchievements, getNextAchievements, UserStats, trackStudySession } from '../../services/gamification/gamificationService';
 import { challengesService, Challenge } from '../../services/api/challengesService';
 
@@ -9,7 +10,7 @@ const AchievementsDashboard: React.FC = () => {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userId] = useState('current_user');
+  const workspace = useDashboardWorkspace();
   const [earnedAchievements, setEarnedAchievements] = useState(ACHIEVEMENTS.filter(() => false));
   const [availableAchievements, setAvailableAchievements] = useState(ACHIEVEMENTS);
 
@@ -17,7 +18,7 @@ const AchievementsDashboard: React.FC = () => {
     loadUserData();
   }, []);
 
-  const loadUserData = () => {
+  const loadUserData = async () => {
     setLoading(true);
     try {
       const stats = getUserStats();
@@ -27,12 +28,17 @@ const AchievementsDashboard: React.FC = () => {
       setEarnedAchievements(earned);
       setAvailableAchievements(available);
 
-      // Generate mock challenges for now
-      setChallenges([
-        { id: '1', title: 'Daily Practice', description: 'Study for 15 minutes today', type: 'daily' as const, difficulty: 'easy' as const, category: 'Study', reward: { type: 'xp' as const, amount: 25, icon: 'star' }, progress: 10, maxProgress: 15, isCompleted: false, isLocked: false, deadline: '', createdAt: '', updatedAt: '' },
-        { id: '2', title: 'Card Master', description: 'Review 20 flashcards', type: 'weekly' as const, difficulty: 'medium' as const, category: 'Review', reward: { type: 'xp' as const, amount: 50, icon: 'star' }, progress: 15, maxProgress: 20, isCompleted: false, isLocked: false, deadline: '', createdAt: '', updatedAt: '' },
-        { id: '3', title: 'Streak Builder', description: 'Maintain a 3-day streak', type: 'weekly' as const, difficulty: 'medium' as const, category: 'Streak', reward: { type: 'badge' as const, amount: 1, icon: 'star' }, progress: 2, maxProgress: 3, isCompleted: false, isLocked: false, deadline: '', createdAt: '', updatedAt: '' },
-      ]);
+      // Load real challenges from API using actual user ID
+      if (workspace?.user?.id) {
+        try {
+          const realChallenges = await challengesService.generateChallenges(workspace!.user.id);
+          setChallenges(realChallenges || []);
+        } catch {
+          setChallenges([]);
+        }
+      } else {
+        setChallenges([]);
+      }
     } catch (error) {
       console.error('Error loading gamification data:', error);
     } finally {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
+import PageShell from '../../components/dashboard/PageShell';
 import {
   DatabaseIcon as Database,
   PlayIcon as Play,
@@ -171,7 +172,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
     });
 
     if (hasDangerous) {
-      setError('⚠️ Write operations are disabled. Only SELECT, EXPLAIN, SHOW, and DESCRIBE queries are allowed.');
+      setError('Write operations are disabled. Only SELECT, EXPLAIN, SHOW, and DESCRIBE queries are allowed.');
       setResults(null);
       return;
     }
@@ -273,7 +274,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
   };
 
   return (
-    <div className={cn("space-y-6 pb-20", className)}>
+    <PageShell>
+      <div className={cn('max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 pb-20', className)}>
       {/* Stats Bar */}
       <div className="grid grid-cols-3 gap-4">
         <StatPill label="Saved Queries" value={savedQueries.length} icon={Save} />
@@ -291,7 +293,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
         {/* Left Sidebar */}
         <div className="space-y-4">
           {/* Schema Browser */}
-          <div className="bg-white/[0.01] border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-sm">
+          <div className="bg-zinc-900/10 border border-zinc-700/30 rounded-2xl overflow-hidden backdrop-blur-sm">
             <button
               onClick={() => setSchemaExpanded(schemaExpanded ? null : Object.keys(KNOWN_TABLES)[0])}
               className="w-full flex items-center gap-2 px-4 py-3 text-[10px] font-black text-zinc-400 uppercase tracking-[0.15em] hover:text-zinc-200 transition-colors"
@@ -301,12 +303,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
               <ChevronDown size={12} className={cn("ml-auto transition-transform", schemaExpanded && "rotate-180")} />
             </button>
             {schemaExpanded && (
-              <div className="border-t border-white/[0.04]">
+              <div className="border-t border-zinc-700/30">
                 {Object.entries(KNOWN_TABLES).map(([table, cols]) => (
                   <div key={table}>
                     <button
                       onClick={() => setSchemaExpanded(schemaExpanded === table ? null : table)}
-                      className="w-full flex items-center gap-2 px-5 py-2 text-[10px] font-bold text-zinc-300 hover:bg-white/[0.03] transition-colors"
+                      className="w-full flex items-center gap-2 px-5 py-2 text-[10px] font-bold text-zinc-300 hover:bg-zinc-900/10 transition-colors"
                     >
                       <div className={cn(
                         "w-1.5 h-1.5 rounded-full",
@@ -326,7 +328,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
                                 return prev + `${suffix}-- ${col}`;
                               });
                             }}
-                            className="w-full text-left px-8 py-1 text-[9px] text-zinc-500 font-mono hover:text-zinc-300 hover:bg-white/[0.02] transition-colors"
+                            className="w-full text-left px-8 py-1 text-[9px] text-zinc-500 font-mono hover:text-zinc-300 hover:bg-zinc-900/10 transition-colors"
                           >
                             {col}
                           </button>
@@ -340,7 +342,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
           </div>
 
           {/* Preset Queries */}
-          <div className="bg-white/[0.01] border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-sm">
+          <div className="bg-zinc-900/10 border border-zinc-700/30 rounded-2xl overflow-hidden backdrop-blur-sm">
             <button
               onClick={() => setPresetsExpanded(!presetsExpanded)}
               className="w-full flex items-center gap-2 px-4 py-3 text-[10px] font-black text-zinc-400 uppercase tracking-[0.15em] hover:text-zinc-200 transition-colors"
@@ -350,12 +352,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
               <ChevronDown size={12} className={cn("ml-auto transition-transform", presetsExpanded && "rotate-180")} />
             </button>
             {presetsExpanded && (
-              <div className="border-t border-white/[0.04] max-h-[320px] overflow-y-auto">
+              <div className="border-t border-zinc-700/30 max-h-[320px] overflow-y-auto">
                 {PRESET_QUERIES.map((preset, i) => (
                   <button
                     key={i}
                     onClick={() => setQuery(preset.query)}
-                    className="w-full text-left px-4 py-2.5 hover:bg-white/[0.03] transition-colors group"
+                    className="w-full text-left px-4 py-2.5 hover:bg-zinc-900/10 transition-colors group"
                   >
                     <p className="text-[10px] font-bold text-zinc-300 group-hover:text-white">{preset.name}</p>
                     <p className="text-[8px] text-zinc-600 font-mono truncate mt-0.5">
@@ -369,7 +371,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
 
           {/* Saved Queries */}
           {savedQueries.length > 0 && (
-            <div className="bg-white/[0.01] border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-sm">
+            <div className="bg-zinc-900/10 border border-zinc-700/30 rounded-2xl overflow-hidden backdrop-blur-sm">
               <button
                 onClick={() => setHistoryExpanded(!historyExpanded)}
                 className="w-full flex items-center gap-2 px-4 py-3 text-[10px] font-black text-zinc-400 uppercase tracking-[0.15em] hover:text-zinc-200 transition-colors"
@@ -379,9 +381,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
                 <ChevronDown size={12} className={cn("ml-auto transition-transform", historyExpanded && "rotate-180")} />
               </button>
               {historyExpanded && (
-                <div className="border-t border-white/[0.04] max-h-[200px] overflow-y-auto">
+                <div className="border-t border-zinc-700/30 max-h-[200px] overflow-y-auto">
                   {savedQueries.map(q => (
-                    <div key={q.id} className="flex items-center px-4 py-2 hover:bg-white/[0.03] transition-colors group">
+                    <div key={q.id} className="flex items-center px-4 py-2 hover:bg-zinc-900/10 transition-colors group">
                       <button
                         onClick={() => setQuery(q.query)}
                         className="flex-1 text-left min-w-0"
@@ -407,7 +409,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
         <div className="space-y-4 min-w-0">
           {/* Toolbar */}
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.02] border border-white/[0.06] rounded-xl">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/10 border border-zinc-700/30 rounded-xl">
               <div className="w-2 h-2 rounded-full bg-green-400/60 animate-pulse" />
               <span className="text-[9px] text-zinc-500 font-bold tracking-wider font-mono">SUPABASE SQL</span>
             </div>
@@ -417,7 +419,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
             {/* Save button */}
             <button
               onClick={() => setShowSaveDialog(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.05] border border-transparent hover:border-white/[0.08] transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-bold text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/10 border border-transparent hover:border-zinc-700/30 transition-all"
             >
               <Save size={12} />
               Save
@@ -447,9 +449,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
           </div>
 
           {/* SQL Editor */}
-          <div className="relative bg-zinc-900/80 border border-white/[0.08] rounded-2xl overflow-hidden backdrop-blur-sm focus-within:border-primary/30 transition-all shadow-[0_0_0_1px_rgba(168,85,247,0)] focus-within:shadow-[0_0_0_1px_rgba(168,85,247,0.1)]">
+          <div className="relative bg-zinc-900/80 border border-zinc-700/30 rounded-2xl overflow-hidden backdrop-blur-sm focus-within:border-primary/30 transition-all shadow-[0_0_0_1px_rgba(168,85,247,0)] focus-within:shadow-[0_0_0_1px_rgba(168,85,247,0.1)]">
             {/* Editor header */}
-            <div className="flex items-center gap-2 px-4 py-2 border-b border-white/[0.04] bg-white/[0.01]">
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-zinc-700/30 bg-zinc-900/10">
               <div className="flex gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-red-400/60" />
                 <div className="w-2.5 h-2.5 rounded-full bg-amber-400/60" />
@@ -462,7 +464,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
               {/* Line numbers */}
               <div
                 ref={lineNumbersRef}
-                className="shrink-0 py-3 pl-3 pr-2 text-right select-none overflow-hidden bg-white/[0.005] border-r border-white/[0.03]"
+                className="shrink-0 py-3 pl-3 pr-2 text-right select-none overflow-hidden bg-zinc-900/5 border-r border-zinc-700/20"
                 style={{ width: '44px' }}
               >
                 {lineNumbers.map(n => (
@@ -509,7 +511,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
             </div>
 
             {/* Status bar */}
-            <div className="flex items-center gap-4 px-4 py-1.5 border-t border-white/[0.04] bg-white/[0.005]">
+            <div className="flex items-center gap-4 px-4 py-1.5 border-t border-zinc-700/30 bg-zinc-900/5">
               <span className="text-[8px] text-zinc-600 font-mono">Ln {lineCount}, Col {query.length}</span>
               <span className="text-[8px] text-zinc-700 font-mono">SQL</span>
               <span className="text-[8px] text-zinc-700 font-mono ml-auto">UTF-8</span>
@@ -523,7 +525,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                className="bg-zinc-900 border border-white/[0.08] rounded-2xl p-4 backdrop-blur-xl flex items-center gap-3"
+                className="bg-zinc-900 border border-zinc-700/30 rounded-2xl p-4 backdrop-blur-xl flex items-center gap-3"
               >
                 <Save size={14} className="text-primary/70 shrink-0" />
                 <input
@@ -583,10 +585,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white/[0.01] border border-white/[0.06] rounded-2xl overflow-hidden backdrop-blur-sm"
+              className="bg-zinc-900/10 border border-zinc-700/30 rounded-2xl overflow-hidden backdrop-blur-sm"
             >
               {/* Results header */}
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-white/[0.04]">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-700/30">
                 <Table size={13} className="text-primary/70" />
                 <span className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.15em]">
                   Results
@@ -596,7 +598,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
                 </span>
                 <button
                   onClick={copyAsCSV}
-                  className="ml-auto flex items-center gap-1 px-3 py-1 rounded-lg text-[9px] font-bold text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.05] transition-all"
+                  className="ml-auto flex items-center gap-1 px-3 py-1 rounded-lg text-[9px] font-bold text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900/10 transition-all"
                 >
                   {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
                   {copied ? 'Copied!' : 'CSV'}
@@ -607,11 +609,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
               <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                 <table className="w-full text-left">
                   <thead className="sticky top-0 bg-zinc-950/90 backdrop-blur-sm">
-                    <tr className="border-b border-white/[0.06]">
+                    <tr className="border-b border-zinc-700/30">
                       {columns.map(col => (
                         <th
                           key={col}
-                          className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.15em] px-4 py-2.5 whitespace-nowrap border-r border-white/[0.02] last:border-r-0"
+                          className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.15em] px-4 py-2.5 whitespace-nowrap border-r border-zinc-700/20 last:border-r-0"
                         >
                           {col}
                         </th>
@@ -622,10 +624,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
                     {results.map((row, i) => (
                       <tr
                         key={i}
-                        className={cn(
-                          'border-b border-white/[0.02] last:border-b-0 transition-colors',
-                          i % 2 === 0 ? 'bg-transparent' : 'bg-white/[0.005]',
-                          'hover:bg-white/[0.03]'
+className={cn(
+                          'border-b border-zinc-700/20 last:border-b-0 transition-colors',
+                          i % 2 === 0 ? 'bg-transparent' : 'bg-zinc-900/5',
+                          'hover:bg-zinc-900/20'
                         )}
                       >
                         {columns.map(col => {
@@ -639,7 +641,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
                             <td
                               key={col}
                               className={cn(
-                                'px-4 py-2 text-[10px] font-mono whitespace-nowrap border-r border-white/[0.02] last:border-r-0 max-w-[300px] truncate',
+                                'px-4 py-2 text-[10px] font-mono whitespace-nowrap border-r border-zinc-700/20 last:border-r-0 max-w-[300px] truncate',
                                 value === null
                                   ? 'text-zinc-700 italic'
                                   : typeof value === 'number'
@@ -669,7 +671,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
               animate={{ opacity: 1 }}
               className="flex flex-col items-center justify-center py-16 text-center"
             >
-              <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.05] flex items-center justify-center mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-zinc-900/10 border border-zinc-700/30 flex items-center justify-center mb-4">
                 <Table size={20} className="text-zinc-600" />
               </div>
               <p className="text-xs text-zinc-500 font-bold">No rows returned</p>
@@ -678,7 +680,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({ className }) => {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </PageShell>
   );
 };
 
@@ -693,7 +696,7 @@ const StatPill: React.FC<{
     'flex items-center gap-3 px-4 py-3 rounded-2xl border backdrop-blur-sm transition-all',
     highlight
       ? 'bg-primary/[0.04] border-primary/20 shadow-[0_0_15px_rgba(168,85,247,0.05)]'
-      : 'bg-white/[0.01] border-white/[0.05]'
+      : 'bg-zinc-900/10 border-zinc-700/30'
   )}>
     <Icon size={16} className={highlight ? 'text-primary' : 'text-zinc-500'} />
     <div>

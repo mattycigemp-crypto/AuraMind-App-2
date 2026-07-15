@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
-import { TrophyIcon as Trophy, MedalIcon as Medal, CrownIcon as Crown, ChevronUpIcon as ChevronUp, ChevronDownIcon as ChevronDown, MinusIcon as Minus, UsersIcon as Users, CalendarIcon as Calendar } from '../icons/CustomIcons';
+import { Trophy, Medal, Crown, ChevronUp, ChevronDown, Minus, Users, Calendar, Flame } from 'lucide-react';
 
 interface LeaderboardUser {
   id: string;
@@ -30,26 +30,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, timeFilter = '
 
   const loadLeaderboard = () => {
     setLoading(true);
-
-    // Generate mock leaderboard data
-    const mockUsers: LeaderboardUser[] = [
-      { id: '1', name: 'Alex Chen', xp: 15420, streak: 45, level: 12, rank: 1, previousRank: 2 },
-      { id: '2', name: 'Sarah Kim', xp: 14850, streak: 32, level: 11, rank: 2, previousRank: 1 },
-      { id: '3', name: 'Mike Johnson', xp: 12300, streak: 28, level: 10, rank: 3, previousRank: 4 },
-      { id: '4', name: 'Emma Davis', xp: 11200, streak: 21, level: 9, rank: 4, previousRank: 3 },
-      { id: '5', name: 'James Wilson', xp: 10800, streak: 15, level: 9, rank: 5, previousRank: 6 },
-      { id: '6', name: 'Lisa Brown', xp: 9500, streak: 18, level: 8, rank: 6, previousRank: 5 },
-      { id: '7', name: 'David Lee', xp: 8900, streak: 12, level: 8, rank: 7, previousRank: 8 },
-      { id: '8', name: 'Anna Taylor', xp: 8200, streak: 9, level: 7, rank: 8, previousRank: 7 },
-      { id: '9', name: 'Chris Martin', xp: 7500, streak: 7, level: 7, rank: 9, previousRank: 10 },
-      { id: '10', name: 'You', xp: 6800, streak: 5, level: 6, rank: 10, previousRank: 9 },
-    ];
-
-    // Simulate fetching different data based on filter
-    setTimeout(() => {
-      setUsers(mockUsers);
-      setLoading(false);
-    }, 500);
+    // Real leaderboard data will come from the API when available
+    // For now, show an empty state — no mock data
+    setUsers([]);
+    setLoading(false);
   };
 
   const getRankIcon = (rank: number) => {
@@ -129,6 +113,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, timeFilter = '
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
           <p className="text-muted text-sm">Loading leaderboard...</p>
         </div>
+      ) : users.length === 0 ? (
+        <div className="text-center py-12 space-y-2">
+          <Trophy className="w-10 h-10 text-zinc-600 mx-auto" />
+          <p className="text-muted text-sm">Leaderboard coming soon</p>
+          <p className="text-muted text-xs">Study more to compete with other learners</p>
+        </div>
       ) : (
         <div className="space-y-2">
           {/* Top 3 Podium */}
@@ -151,7 +141,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, timeFilter = '
               </div>
               <div className="text-right">
                 <p className="font-bold text-primary">{user.xp.toLocaleString()} XP</p>
-                <p className="text-xs text-muted">🔥 {user.streak} days</p>
+                <p className="text-xs text-muted"><Flame size={12} className="inline mr-0.5" />{user.streak} days</p>
               </div>
             </div>
           ))}

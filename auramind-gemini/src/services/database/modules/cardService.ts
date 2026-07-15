@@ -141,33 +141,65 @@ export const cardService = {
         if (updates.verified !== undefined) updatesForDb.verified = updates.verified;
         if (updates.fsrsState !== undefined) updatesForDb.fsrs_state = JSON.stringify(updates.fsrsState);
 
+        // Optimistically update local cache first so the UI never waits on the network
+        const existingCard = cachedCards?.find(card => card.id === id);
+        const optimisticCard: Card | undefined = existingCard
+            ? { ...existingCard, ...updates, id }
+            : undefined;
+
+        if (optimisticCard && cachedCards) {
+            setCachedCards(cachedCards.map(card =>
+                card.id === id ? optimisticCard : card
+            ));
+        }
+
+        // Use .select() without .single() so a missing RLS UPDATE policy (0 rows)
+        // does not crash the app with PGRST116.
         const { data, error } = await supabase
             .from('cards')
             .update(updatesForDb)
             .eq('id', id)
-            .select()
-            .single();
+            .select();
 
-        if (error) throw error;
+        if (error) {
+            // Don't block the study session; keep the optimistic update in cache.
+            console.warn('Supabase updateCard failed (keeping optimistic update):', error);
+            if (!optimisticCard) throw error;
+            return optimisticCard;
+        }
+
+        const row = data && data.length > 0 ? data[0] : null;
+        if (!row) {
+            // 0 rows returned: either missing UPDATE RLS policy, auth UID mismatch,
+            // or the request is unauthenticated. Keep optimistic update.
+            const { data: { session } } = await supabase.auth.getSession();
+            console.warn('Supabase updateCard returned 0 rows. Possible causes: missing UPDATE RLS policy, unauthenticated request, or auth UID mismatch.', {
+                cardId: id,
+                authUid: session?.user?.id ?? null,
+                hasAuthToken: !!session?.access_token,
+            });
+            if (!optimisticCard) throw new Error(`Card ${id} not found or not updatable`);
+            return optimisticCard;
+        }
 
         const updatedCard: Card = {
-            id: data.id,
-            front: data.front,
-            back: data.back,
-            deckId: data.deck_id,
-            image: data.image,
-            nextReview: data.next_review || Date.now(),
-            interval: data.interval || 0,
-            easeFactor: data.ease_factor || 2.5,
-            repetition: data.repetition || 0,
-            understandingLevel: data.understanding_level,
-            lastReviewed: data.last_reviewed,
-            sourceType: data.source_type,
-            sourceLabel: data.source_label,
-            citations: data.citations,
-            trustScore: data.trust_score,
-            verified: data.verified,
-            fsrsState: data.fsrs_state ? (typeof data.fsrs_state === 'string' ? JSON.parse(data.fsrs_state) : data.fsrs_state) : undefined
+            id: row.id,
+            front: row.front,
+            back: row.back,
+            deckId: row.deck_id,
+            image: row.image,
+            nextReview: row.next_review || Date.now(),
+            interval: row.interval || 0,
+            easeFactor: row.ease_factor || 2.5,
+            repetition: row.repetition || 0,
+            understandingLevel: row.understanding_level,
+            lastReviewed: row.last_reviewed,
+            sourceType: row.source_type,
+            sourceLabel: row.source_label,
+            citations: row.citations,
+            trustScore: row.trust_score,
+            verified: row.verified,
+            fsrsState: row.fsrs_state ? (typeof row.fsrs_state === 'string' ? JSON.parse(row.fsrs_state) : row.fsrs_state) : undefined
         };
 
         if (cachedCards) {

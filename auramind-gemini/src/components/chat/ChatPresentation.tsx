@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Presentation } from '../../types';
+import { useFeatureFlag } from '../../hooks/useFeatureFlag';
+import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
 import {
   ChevronLeftIcon as ChevronLeft,
   ChevronRightIcon as ChevronRight,
@@ -15,6 +17,15 @@ interface ChatPresentationProps {
 }
 
 const ChatPresentation: React.FC<ChatPresentationProps> = ({ presentation }) => {
+  const workspace = useDashboardWorkspace();
+  const aiVoiceEnabled = useFeatureFlag(
+    'ai_voice_mode',
+    workspace?.user?.id,
+    workspace?.user?.role,
+    workspace?.user?.plan,
+    workspace?.user?.isAdmin,
+  );
+
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -115,16 +126,18 @@ const ChatPresentation: React.FC<ChatPresentationProps> = ({ presentation }) => 
           <button onClick={() => goToSlide(currentSlide - 1)} disabled={currentSlide === 0}
             className="p-2 rounded-lg text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800 disabled:opacity-30 disabled:pointer-events-none transition-colors"
           ><ChevronLeft className="w-4 h-4" /></button>
-          <button onClick={togglePlay}
-            className="p-2 rounded-lg text-zinc-500 hover:text-violet-400 hover:bg-zinc-800 transition-colors"
-          >{isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}</button>
+          {aiVoiceEnabled && (
+            <button onClick={togglePlay}
+              className="p-2 rounded-lg text-zinc-500 hover:text-violet-400 hover:bg-zinc-800 transition-colors"
+            >{isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}</button>
+          )}
           <button onClick={() => goToSlide(currentSlide + 1)} disabled={currentSlide >= presentation.slides.length - 1}
             className="p-2 rounded-lg text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800 disabled:opacity-30 disabled:pointer-events-none transition-colors"
           ><ChevronRight className="w-4 h-4" /></button>
         </div>
 
         <div className="flex items-center gap-1">
-          {isSpeaking && <Volume2 className="w-3.5 h-3.5 text-violet-400 animate-pulse" />}
+          {isSpeaking && aiVoiceEnabled && <Volume2 className="w-3.5 h-3.5 text-violet-400 animate-pulse" />}
           <button onClick={() => { stopSpeaking(); setCurrentSlide(0); }}
             className="p-2 rounded-lg text-zinc-500 hover:text-zinc-100 hover:bg-zinc-800 transition-colors"
             title="Restart"

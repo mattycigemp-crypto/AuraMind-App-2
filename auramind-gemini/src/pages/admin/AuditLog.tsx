@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../lib/utils';
+import PageShell from '../../components/dashboard/PageShell';
 import {
   ShieldIcon as Shield,
   SearchIcon as Search,
@@ -125,7 +126,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
       case 'subscription': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
       case 'admin': return 'bg-primary/10 text-primary border-primary/20';
       case 'database': return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20';
-      case 'system': return 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20';
+      case 'system': return 'bg-zinc-500/10 text-zinc-300 border-zinc-500/20';
       case 'security': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
     }
   };
@@ -147,7 +148,8 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
   }
 
   return (
-    <div className={cn("space-y-6 pb-20", className)}>
+    <PageShell>
+      <div className={cn('max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 pb-20', className)}>
       {/* Summary Bar */}
       <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
         {categories.slice(1).map(cat => (
@@ -160,7 +162,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
                 ? cat.value === 'security' ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
                   : cat.value === 'system' ? 'bg-zinc-500/10 border-zinc-500/20 text-zinc-300'
                   : 'bg-primary/10 border-primary/20 text-primary'
-                : 'bg-white/[0.01] border-white/[0.05] text-zinc-500 hover:text-zinc-300 hover:border-white/[0.1]'
+                : 'bg-zinc-900/10 border-zinc-700/30 text-zinc-500 hover:text-zinc-300 hover:border-zinc-700/50'
             )}
           >
             {categoryIcon(cat.value as AuditEvent['category'])}
@@ -179,14 +181,14 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search audit events..."
-            className="w-full pl-9 pr-4 py-2.5 bg-white/[0.02] border border-white/[0.06] rounded-xl text-[10px] text-zinc-300 focus:outline-none focus:border-primary/30 transition-all"
+            className="w-full pl-9 pr-4 py-2.5 bg-zinc-900/10 border border-zinc-700/30 rounded-xl text-[10px] text-zinc-300 focus:outline-none focus:border-primary/30 transition-all"
           />
         </div>
 
         <select
           value={severityFilter}
           onChange={(e) => setSeverityFilter(e.target.value as SeverityFilter)}
-          className="px-4 py-2.5 bg-white/[0.02] border border-white/[0.06] rounded-xl text-[10px] text-zinc-300 focus:outline-none focus:border-primary/30 transition-all appearance-none cursor-pointer"
+          className="px-4 py-2.5 bg-zinc-900/10 border border-zinc-700/30 rounded-xl text-[10px] text-zinc-300 focus:outline-none focus:border-primary/30 transition-all appearance-none cursor-pointer"
         >
           <option value="all">All Severities</option>
           <option value="info">Info</option>
@@ -208,12 +210,12 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
       {/* Timeline */}
       <div className="relative">
         {/* Vertical line */}
-        <div className="absolute left-[19px] top-0 bottom-0 w-px bg-gradient-to-b from-primary/20 via-white/[0.04] to-transparent" />
+        <div className="absolute left-[19px] top-0 bottom-0 w-px bg-gradient-to-b from-primary/20 via-zinc-700/20 to-transparent" />
 
         <div className="space-y-2">
           {filteredEvents.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.05] flex items-center justify-center mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-zinc-900/10 border border-zinc-700/30 flex items-center justify-center mb-4">
                 <Search size={20} className="text-zinc-600" />
               </div>
               <p className="text-xs text-zinc-500 font-bold">No events match your filters</p>
@@ -240,7 +242,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
                 {/* Card */}
                 <button
                   onClick={() => setSelectedEvent(event)}
-                  className="w-full text-left p-4 rounded-2xl bg-white/[0.01] border border-white/[0.05] hover:border-white/[0.1] hover:bg-white/[0.02] transition-all group/card backdrop-blur-sm"
+                  className="w-full text-left p-4 rounded-2xl bg-zinc-900/10 border border-zinc-700/30 hover:border-zinc-700/50 hover:bg-zinc-900/10 transition-all group/card backdrop-blur-sm"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
@@ -273,7 +275,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
                       <span className="text-[9px] text-zinc-600 font-mono whitespace-nowrap">
                         {formatTime(event.timestamp)}
                       </span>
-                      <Eye size={12} className="text-zinc-600 group-hover/card:text-zinc-400 transition-colors" />
+                      <Eye size={12} className="text-zinc-600 group-hover/card:text-zinc-300 transition-colors" />
                     </div>
                   </div>
                 </button>
@@ -298,7 +300,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="fixed inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[560px] max-w-full bg-zinc-950 border border-white/[0.08] rounded-2xl p-6 z-[101] overflow-y-auto max-h-[80vh] backdrop-blur-2xl shadow-[0_0_80px_rgba(0,0,0,0.5)]"
+              className="fixed inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[560px] max-w-full bg-zinc-950 border border-zinc-700/30 rounded-2xl p-6 z-[101] overflow-y-auto max-h-[80vh] backdrop-blur-2xl shadow-[0_0_80px_rgba(0,0,0,0.5)]"
             >
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-2">
@@ -314,9 +316,9 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
               </div>
 
               <div className="space-y-4">
-                <div className="p-4 bg-white/[0.02] border border-white/[0.05] rounded-xl">
+                <div className="p-4 bg-zinc-900/10 border border-zinc-700/30 rounded-xl">
                   <p className="text-xs font-bold text-white">{selectedEvent.action}</p>
-                  <p className="text-[10px] text-zinc-400 mt-2 leading-relaxed">{selectedEvent.details}</p>
+                  <p className="text-[10px] text-zinc-300 mt-2 leading-relaxed">{selectedEvent.details}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -329,7 +331,7 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
                     { label: 'Severity', value: selectedEvent.severity },
                     { label: 'Event ID', value: selectedEvent.id },
                   ].map(field => (
-                    <div key={field.label} className="p-3 bg-white/[0.01] border border-white/[0.04] rounded-xl">
+                    <div key={field.label} className="p-3 bg-zinc-900/10 border border-zinc-700/30 rounded-xl">
                       <p className="text-[8px] text-zinc-600 uppercase tracking-wider font-bold">{field.label}</p>
                       <p className="text-[10px] text-zinc-300 font-mono mt-1 break-all">{field.value}</p>
                     </div>
@@ -340,7 +342,8 @@ const AuditLog: React.FC<AuditLogProps> = ({ className }) => {
           </>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </PageShell>
   );
 };
 

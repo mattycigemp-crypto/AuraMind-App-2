@@ -176,7 +176,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
         >
-          <div className="w-20 h-20 bg-black/5 dark:bg-white/ rounded-full flex items-center justify-center shadow-xl">
+          <div className="w-20 h-20 bg-zinc-900/5 rounded-full flex items-center justify-center shadow-xl">
             <Play size={32} className="text-black ml-1" />
           </div>
         </motion.button>
@@ -193,14 +193,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           {/* Progress bar */}
           <div
             ref={progressBarRef}
-            className="w-full h-1 bg-black/5 dark:bg-white/ rounded-full mb-4 cursor-pointer group"
+            className="w-full h-1 bg-zinc-900/5 rounded-full mb-4 cursor-pointer group"
             onClick={handleProgressClick}
           >
             <div
               className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full relative transition-all duration-100"
               style={{ width: `${(currentTime / duration) * 100 || 0}%` }}
             >
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-zinc-900 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
           </div>
 
@@ -210,7 +210,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               {/* Play/Pause */}
               <button
                 onClick={togglePlay}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ transition-colors"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-900/5 hover:bg-zinc-900/5 transition-colors"
               >
                 {isPlaying ? <Pause size={18} /> : <Play size={18} className="ml-0.5" />}
               </button>
@@ -218,7 +218,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               {/* Restart */}
               <button
                 onClick={restart}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ transition-colors"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-900/5 hover:bg-zinc-900/5 transition-colors"
               >
                 <RotateCcw size={16} />
               </button>
@@ -226,7 +226,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               {/* Mute/Unmute */}
               <button
                 onClick={toggleMute}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ transition-colors"
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-900/5 hover:bg-zinc-900/5 transition-colors"
               >
                 {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
               </button>
@@ -240,7 +240,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
             {/* Fullscreen */}
             <button
               onClick={toggleFullscreen}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-zinc-900/5 hover:bg-zinc-900/5 transition-colors"
             >
               <Maximize size={18} />
             </button>

@@ -174,11 +174,11 @@ const NotebookLMQuiz: React.FC<NotebookLMQuizProps> = ({ title, questions: initi
           </div>
           <button
             onClick={toggleShuffle}
-            className={`p-2 rounded-lg border transition-all ${
-              isShuffled
-                ? 'bg-violet-500/10 border-violet-500/30 text-violet-400'
-                : 'bg-zinc-100 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700/50 text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300'
-            }`}
+              className={`p-2 rounded-lg border transition-all ${
+                isShuffled
+                  ? 'bg-violet-500/10 border-violet-500/30 text-violet-400'
+                  : 'bg-zinc-800 border-zinc-700/50 text-zinc-600 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300'
+              }`}
             title="Shuffle questions"
           >
             <Shuffle size={14} />

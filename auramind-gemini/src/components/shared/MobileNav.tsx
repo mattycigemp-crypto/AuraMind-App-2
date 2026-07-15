@@ -22,7 +22,7 @@ const MobileNav: React.FC = () => {
   ];
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-black/5 dark:bg-white/ dark:bg-black/80 backdrop-blur-xl border-t border-arch-border z-[100] flex items-center justify-around px-2">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-zinc-900/80 backdrop-blur-xl border-t border-arch-border z-[100] flex items-center justify-around px-2 safe-area-bottom" style={{ height: 'calc(4rem + var(--safe-bottom, 0px))' }}>
       {navItems.map((item) => {
         const isActive = location.pathname === item.path;
         return (
@@ -33,8 +33,8 @@ const MobileNav: React.FC = () => {
           >
             <item.icon size={20} />
             <span className="text-[8px] font-black uppercase tracking-widest">{item.title}</span>
-            {isActive && (
-              <div className="w-1 h-1 bg-black dark:bg-white rounded-full mt-0.5" />
+{isActive && (
+              <div className="w-1 h-1 bg-primary rounded-full mt-0.5" />
             )}
           </button>
         );

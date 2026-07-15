@@ -28,7 +28,8 @@ CREATE INDEX IF NOT EXISTS idx_audit_events_category_created ON audit_events(cat
 -- Enable Row Level Security
 ALTER TABLE audit_events ENABLE ROW LEVEL SECURITY;
 
--- Only admins can read audit events
+-- Only admins can read audit events (idempotent)
+DROP POLICY IF EXISTS "Admins can read audit events" ON audit_events;
 CREATE POLICY "Admins can read audit events" ON audit_events
   FOR SELECT USING (
     EXISTS (
@@ -38,7 +39,8 @@ CREATE POLICY "Admins can read audit events" ON audit_events
     )
   );
 
--- Only service role can insert (via API)
+-- Only service role can insert (via API) (idempotent)
+DROP POLICY IF EXISTS "Service role can insert audit events" ON audit_events;
 CREATE POLICY "Service role can insert audit events" ON audit_events
   FOR INSERT WITH CHECK (auth.role() = 'service_role');
 

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { Routes, Route, Navigate, useLocation, Outlet } from "react-router-dom";
-import { AnimatePresence, motion, useAnimation } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { Deck, Card, Rating, UserProfile, UserRole } from "./types";
 import { calculateSRS, getInitialCardState } from "./services/study/srs";
 import { generateDeckFromTopic, GeneratedCard } from "./services/api/groqService";
@@ -12,18 +12,18 @@ import {
 } from "./services/study/roadmapService";
 import { syncCurrentUser } from "./services/database/syncUser";
 import { analyticsService } from "./services/analytics/analyticsService";
-import { getPermissions, getDefaultRole } from "./utils/permissions";
-import { userService } from "./services/api";
+import { getPermissions, getDefaultRole, isCeoOrHigher, isOwnerOnly } from "./utils/permissions";
+import { DashboardWorkspaceProvider } from "./contexts/DashboardWorkspaceContext";
+import { addNotification } from "./services/notifications/notificationStore";
 
-// The Engineering of Awe: Elite Animation System
+import { checkReducedMotion } from "./styles/animations/awe";
 import {
-  initializeAweSystem,
-  EASING_PRESETS,
-  SPRING_PRESETS,
-  checkReducedMotion,
-} from "./styles/animations/awe";
-import { useScrollAnimations } from "./hooks/useScrollAnimations";
-import { useMagneticButton } from "./hooks/useMagneticButton";
+  dashboardPathToSection,
+  getPageTransitionVariant,
+  isMarketingRoute,
+  type PageTransitionVariant,
+  supportsViewTransitions,
+} from "./lib/motion";
 import "./styles/design-tokens.css";
 // import './i18n/config';
 
@@ -49,23 +49,24 @@ if (typeof window !== "undefined" && !window.requestIdleCallback) {
 import { LayoutProvider } from "./contexts/LayoutContext";
 import { AchievementProvider } from "./components/achievements/AchievementUnlock";
 
-import AmbientPlayer from "./components/shared/AmbientPlayer";
+const AmbientPlayer = React.lazy(() => import("./components/shared/AmbientPlayer"));
 import HmrRefreshNotice from "./components/shared/HmrRefreshNotice";
 import { ErrorBoundary } from "./components/shared/ErrorBoundary";
+import { KeyboardAware } from "./components/shared/KeyboardAware";
 import QuizGenerationNotifier from "./components/notifications/QuizGenerationNotifier";
+import { Toaster } from "./components/ui/sonner";
 import { ThemeProvider, useTheme } from "./hooks/useTheme";
 import { supabase } from "./services/database/supabase";
+import { CommandPalette } from "./components/auramind/CommandPalette";
+import { CinematicLoader } from "./components/ui/CinematicLoader";
+import { CustomCursor } from "./components/ui/CustomCursor";
 
 // Lazy-loaded route pages
 const AuraLandingPage = React.lazy(() => import("./components/landing/ModernLandingPage"));
 const AuraMindComplete = React.lazy(() => import("./pages/AuraMindComplete"));
-const SimplePage = React.lazy(() => import("./pages/SimplePage"));
-const BrightDashboard = React.lazy(() => import("./pages/BrightDashboard"));
-const WorkingDashboard = React.lazy(() => import("./pages/WorkingDashboard"));
 const AuthPage = React.lazy(() => import("./components/auth/AuthPage"));
 const DeckDetailRoute = React.lazy(() => import("./pages/deck/DeckDetailRoute"));
 const StudyModeRoute = React.lazy(() => import("./pages/study/StudyModePage"));
-const AdminConsolePage = React.lazy(() => import("./pages/auth/AdminConsolePage"));
 const DocsPage = React.lazy(() => import("./pages/legal/DocsPage"));
 const PrivacyPolicyPage = React.lazy(() => import("./pages/legal/PrivacyPolicyPage"));
 const TermsOfServicePage = React.lazy(() => import("./pages/legal/TermsOfServicePage"));
@@ -76,6 +77,26 @@ const SchoologyCallbackPage = React.lazy(() => import("./pages/auth/SchoologyCal
 const NotFoundPage = React.lazy(() => import("./pages/NotFoundPage"));
 const PaymentPage = React.lazy(() => import("./components/auth/PaymentPage"));
 const DownloadPage = React.lazy(() => import("./pages/DownloadPage"));
+const OnboardingPage = React.lazy(() => import("./pages/OnboardingPage"));
+const AIChatPage = React.lazy(() => import("./components/chat/AIChatPage"));
+const SettingsPage = React.lazy(() => import("./pages/settings/SettingsPage"));
+const AnalyticsPage = React.lazy(() => import("./pages/dashboard/AnalyticsPage"));
+const AchievementsPage = React.lazy(() => import("./pages/dashboard/AchievementsPage"));
+const LeaderboardPage = React.lazy(() => import("./pages/dashboard/LeaderboardPage"));
+const HealthCheckPage = React.lazy(() => import("./pages/admin/HealthCheckPage"));
+const AdminOverview = React.lazy(() => import("./pages/admin/AdminOverview"));
+const AdminUsers = React.lazy(() => import("./pages/admin/AdminUsers"));
+const AdminSubscriptions = React.lazy(() => import("./pages/admin/AdminSubscriptions"));
+const AdminTestUsers = React.lazy(() => import("./pages/admin/AdminTestUsers"));
+const AdminContent = React.lazy(() => import("./pages/admin/AdminContent"));
+const AdminPlatformPreview = React.lazy(() => import("./pages/admin/AdminPlatformPreview"));
+const AdminNexusPage = React.lazy(() => import("./pages/admin/AdminNexusPage"));
+const AdminFeatureFlags = React.lazy(() => import("./pages/admin/AdminFeatureFlags"));
+const AdminRoles = React.lazy(() => import("./pages/admin/AdminRoles"));
+const AuditLog = React.lazy(() => import("./pages/admin/AuditLog"));
+const DatabaseExplorer = React.lazy(() => import("./pages/admin/DatabaseExplorer"));
+const AdminAnalytics = React.lazy(() => import("./pages/admin/AdminAnalytics"));
+const AdminSettings = React.lazy(() => import("./pages/admin/AdminSettings"));
 
 // Icons
 import {
@@ -93,12 +114,12 @@ const LoadingOverlay = () => (
   >
     {/* Background Depth */}
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-white/[0.02] blur-[100px] rounded-full animate-pulse" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-zinc-900/[0.02] blur-[100px] rounded-full animate-pulse" />
     </div>
 
     <div className="relative flex flex-col items-center gap-10">
-      <div className="w-24 h-24 rounded-[32px] bg-white/[0.02] border border-white/5 flex items-center justify-center shadow-[0_0_50px_rgba(255,255,255,0.02)] relative group">
-        <div className="absolute inset-0 bg-white/5 rounded-full blur-2xl opacity-50 animate-pulse" />
+      <div className="w-24 h-24 rounded-[32px] bg-zinc-900/[0.02] border border-zinc-700/10 flex items-center justify-center shadow-[0_0_50px_rgba(0,0,0,0.02)] relative group">
+        <div className="absolute inset-0 bg-zinc-900/10 rounded-full blur-2xl opacity-50 animate-pulse" />
         <BrainCircuit size={40} className="text-white relative z-10" />
       </div>
 
@@ -119,7 +140,7 @@ const LoadingOverlay = () => (
                 repeat: Infinity,
                 delay: i * 0.2,
               }}
-              className="w-[3px] bg-white rounded-full"
+              className="w-[3px] bg-zinc-300 rounded-full"
             />
           ))}
         </div>
@@ -140,7 +161,7 @@ const ScrollTopButton = () => {
       {visible && (
         <motion.button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-10 right-10 w-16 h-16 border border-white/10 bg-white/[0.02] text-white/40 flex items-center justify-center hover:bg-white hover:text-black hover:border-white transition-all z-50 group backdrop-blur-xl rounded-[20px] shadow-2xl"
+          className="fixed bottom-32 md:bottom-10 right-10 w-16 h-16 border border-border bg-background/80 text-muted-foreground flex items-center justify-center hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all z-50 group backdrop-blur-xl rounded-[20px] shadow-2xl"
           initial={{ opacity: 0, scale: 0.8, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 20 }}
@@ -188,54 +209,99 @@ const ProtectedRoute = ({
   }
 
   if (useLayout) {
-    return <div className="min-h-screen bg-white dark:bg-zinc-950">{children ?? <Outlet />}</div>;
+    return <div className="min-h-screen bg-zinc-950">{children ?? <Outlet />}</div>;
   }
 
   return <Outlet />;
 };
 
-const PageTransition = ({ children }: { children: React.ReactNode }) => {
-  // Check for reduced motion preference
-  const shouldReduceMotion = checkReducedMotion();
+const PageTransition = ({
+  children,
+  variant = "full",
+}: {
+  children: React.ReactNode;
+  variant?: PageTransitionVariant;
+}) => {
+  if (variant === "none" || checkReducedMotion()) {
+    return <div className="min-h-screen relative">{children}</div>;
+  }
 
-  const animationConfig = shouldReduceMotion
-    ? {
-        initial: { opacity: 0 },
-        animate: { opacity: 1 },
-        exit: { opacity: 0 },
-        transition: { duration: 0.2 },
-      }
-    : {
-        initial: { opacity: 0, y: 20, scale: 0.95 },
-        animate: {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          transition: {
-            duration: 0.6,
-            ease: [0.23, 1, 0.32, 1] as const,
-          },
-        },
-        exit: {
-          opacity: 0,
-          y: -20,
-          scale: 0.95,
-          transition: {
-            duration: 0.4,
-            ease: [0.23, 1, 0.32, 1] as const,
-          },
-        },
-      };
+  if (variant === "lite") {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] as const }}
+        className="min-h-screen relative"
+      >
+        {children}
+      </motion.div>
+    );
+  }
 
   return (
-    <motion.div {...animationConfig} className="min-h-screen gpu-accelerated relative">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.3, ease: [0.23, 1, 0.32, 1] as const },
+      }}
+      exit={{
+        opacity: 0,
+        y: -8,
+        transition: { duration: 0.3, ease: [0.23, 1, 0.32, 1] as const },
+      }}
+      className="min-h-screen gpu-accelerated relative"
+    >
       {children}
     </motion.div>
   );
 };
 
+type DashboardShellProps = {
+  user: UserProfile;
+  decks: Deck[];
+  cards: Card[];
+  createDeck: (title: string, description: string) => Promise<Deck | null>;
+  deleteDeck: (id: string) => Promise<void>;
+  addCardsToDeck: (deckId: string, newCards: any[]) => Promise<number | undefined>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  onLogout: () => void;
+};
+
+const DashboardShell = ({
+  user,
+  decks,
+  cards,
+  createDeck,
+  deleteDeck,
+  addCardsToDeck,
+  updateProfile,
+  onLogout,
+}: DashboardShellProps) => {
+  const location = useLocation();
+  const initialPage = dashboardPathToSection(location.pathname);
+
+  return (
+    <AuraMindComplete
+      user={user}
+      decks={decks}
+      cards={cards}
+      createDeck={createDeck}
+      deleteDeck={deleteDeck}
+      addCardsToDeck={addCardsToDeck}
+      updateProfile={updateProfile}
+      onLogout={onLogout}
+      initialPage={initialPage}
+    />
+  );
+};
+
 const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) => void }) => {
   const location = useLocation();
+  const transitionVariant = getPageTransitionVariant(location.pathname);
   const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
   const [decks, setDecks] = useState<Deck[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
@@ -243,12 +309,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
   const [subscriptionStatus, setSubscriptionStatus] = useState<
     "active" | "trialing" | "canceled" | "past_due" | "none" | "loading"
   >("loading");
-  const [isAweInitialized, setIsAweInitialized] = useState(false);
-
-  // Initialize scroll animations at the top level (follows Rules of Hooks)
-  const scrollAnimations = useScrollAnimations();
-
-  // Detect mobile for performance optimization
+  const [showAmbientPlayer, setShowAmbientPlayer] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -261,42 +322,55 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
   }, []);
 
   useEffect(() => {
-    // Skip heavy animation system on mobile
-    if (isMobile) {
-      setIsAweInitialized(true);
+    analyticsService.init().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!location.pathname.startsWith("/dashboard")) {
+      setShowAmbientPlayer(false);
       return;
     }
 
-    if (!isAweInitialized) {
-      requestIdleCallback(() => {
-        initializeAweSystem();
-        setIsAweInitialized(true);
-      });
-    }
+    const idleId = window.requestIdleCallback(() => setShowAmbientPlayer(true), { timeout: 2500 });
 
-    analyticsService.init().catch(() => {});
+    return () => window.cancelIdleCallback(idleId);
+  }, [location.pathname]);
 
-    // Add performance monitoring (deferred)
-    if (typeof window !== "undefined" && typeof PerformanceObserver !== 'undefined') {
-      requestIdleCallback(() => {
-        try {
-          const perfObserver = new PerformanceObserver(() => {});
-          perfObserver.observe({ entryTypes: ["largest-contentful-paint"] });
-        } catch {}
-      });
-    }
-  }, [isAweInitialized, isMobile]);
-
-  // Cleanup scroll animations on unmount
   useEffect(() => {
-    return () => {
-      scrollAnimations.cleanup();
-    };
-  }, [scrollAnimations]);
+    if (!isMarketingRoute(location.pathname) || isMobile || checkReducedMotion()) {
+      return;
+    }
 
-  const checkSubscription = async (userId: string, email: string) => {
+    let cancelled = false;
+
+    const initMarketingMotion = async () => {
+      const [{ initializeAweSystem }, { initializeScrollAnimations }] = await Promise.all([
+        import("./styles/animations/awe"),
+        import("./hooks/useScrollAnimations"),
+      ]);
+
+      if (cancelled) return;
+
+      window.requestIdleCallback(() => {
+        if (cancelled) return;
+        initializeAweSystem();
+        initializeScrollAnimations();
+      });
+    };
+
+    initMarketingMotion();
+
+    return () => {
+      cancelled = true;
+      import("./hooks/useScrollAnimations").then(({ cleanupScrollAnimations }) => {
+        cleanupScrollAnimations();
+      });
+    };
+  }, [location.pathname, isMobile]);
+
+  const checkSubscription = async (userId: string, email: string, forceCheck = false) => {
     try {
-      const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+      const apiBase = import.meta.env.VITE_API_BASE_URL || "";
       const response = await fetch(`${apiBase}/api/subscription`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -317,6 +391,40 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
       }
 
       const data = await response.json();
+      
+      // If URL has ?payment=success, user just returned from Stripe — retry
+      // up to 3 times over 6 seconds in case the webhook hasn't fired yet
+      if (forceCheck && data.status !== 'active' && data.status !== 'trialing') {
+        setSubscriptionStatus("loading");
+        for (let attempt = 0; attempt < 3; attempt++) {
+          await new Promise(r => setTimeout(r, 2000));
+          const retryRes = await fetch(`${apiBase}/api/subscription`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, email }),
+          });
+          if (retryRes.ok) {
+            const retryData = await retryRes.json();
+            if (retryData.status === 'active' || retryData.status === 'trialing') {
+              setSubscriptionStatus(retryData.status);
+              // Clean up the URL so future refreshes don't retry unnecessarily
+              const url = new URL(window.location.href);
+              url.searchParams.delete('payment');
+              window.history.replaceState({}, '', url.toString());
+              return;
+            }
+          }
+        }
+        // All retries failed — fall through to use original status
+      }
+      
+      // Clean up query param if check passed on first try
+      if (forceCheck && (data.status === 'active' || data.status === 'trialing')) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('payment');
+        window.history.replaceState({}, '', url.toString());
+      }
+      
       setSubscriptionStatus(data.status || "none");
     } catch (err) {
       console.error("Subscription check failed:", err);
@@ -365,13 +473,19 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
 
         const profile = mapAuthUserToProfile(session.user);
         setUser(profile);
-        analyticsService.identify(profile.id, { email: profile.email, plan: profile.plan }).catch(() => {});
+        analyticsService
+          .identify(profile.id, { email: profile.email, plan: profile.plan })
+          .catch(() => {});
 
         const permissions = getPermissions(profile.role || UserRole.USER);
         if (permissions.hasFreeAccess) {
           setSubscriptionStatus("active");
         } else {
-          await checkSubscription(session.user.id, session.user.email || "");
+          await checkSubscription(
+            session.user.id,
+            session.user.email || "",
+            window.location.search.includes('payment=success'),
+          );
         }
 
         await syncCurrentUser();
@@ -384,7 +498,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
         setDecks(fetchedDecks);
         setCards(fetchedCards);
       } catch (err) {
-        console.error('Failed to sync session:', err);
+        console.error("Failed to sync session:", err);
       }
     };
 
@@ -403,9 +517,12 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
       console.warn("Supabase not initialized - authentication disabled");
     }
 
-    supabase?.auth.getSession().then(({ data: { session } }) => {
-      syncSession(session);
-    }).catch(err => console.error('Failed to get session:', err));
+    supabase?.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        syncSession(session);
+      })
+      .catch((err) => console.error("Failed to get session:", err));
 
     return () => subscription?.unsubscribe();
   }, []);
@@ -414,6 +531,13 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
     if (!user) return null;
     const deck = await dbService.createDeck(user.id, t, d);
     setDecks((prev) => [...prev, deck]);
+    addNotification({
+      title: 'Deck Created',
+      description: `"${t}" is ready for study`,
+      type: 'success',
+      actionUrl: `/deck/${deck.id}`,
+      actionLabel: 'Open Deck',
+    });
     return deck;
   };
 
@@ -545,6 +669,18 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
           streakFreezes: nextFreezes,
           lastStudyDate: today,
         });
+
+        // Dispatch streak milestone notifications
+        const milestones = [3, 7, 14, 30, 50, 100, 200, 365];
+        if (milestones.includes(nextStreak)) {
+          addNotification({
+            title: `${nextStreak}-Day Streak! 🔥`,
+            description: 'Amazing consistency — keep the momentum going',
+            type: 'success',
+            actionUrl: '/dashboard/achievements',
+            actionLabel: 'View Achievements',
+          });
+        }
       }
     }
   };
@@ -621,13 +757,6 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
     return saveDeckWithCards(title, description, importedCards, title, "import");
   };
 
-  const loadSampleDecks = async () => {
-    if (!user) return;
-
-    console.log("Sample decks loading disabled - using real database data only");
-    // NO MOCK DATA - User will create their own real decks and cards
-  };
-
   const updateUserProfile = async (updates: Partial<UserProfile>) => {
     if (!user) return;
     const nextProfile = { ...user, ...updates };
@@ -644,60 +773,48 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
       },
     });
     if (error) throw error;
+    // Keep user_profiles table in sync for pages that read from it
+    if (updates.name) {
+      await supabase.from('user_profiles').update({ name: updates.name }).eq('id', user.id);
+    }
     setUser(mapAuthUserToProfile(data.user ?? { ...user, user_metadata: {} }));
   };
 
-  const currentUser = user || {
-    id: "guest",
-    name: "Guest",
-    email: "",
-    plan: "Starter",
-    streak: 0,
-    streakFreezes: 2,
-    joinedDate: Date.now(),
-    isAdmin: false,
-    isEmailVerified: false,
-    isPhoneVerified: false,
-    lastStudyDate: undefined,
-  };
+  const currentUser = user || null;
+  
+  // Don't render admin routes or dashboard shell if user is not loaded
+  if (!currentUser && location.pathname !== '/' && location.pathname !== '/auth' && !location.pathname.startsWith('/subscribe') && !location.pathname.startsWith('/docs') && !location.pathname.startsWith('/privacy') && !location.pathname.startsWith('/terms') && !location.pathname.startsWith('/download')) {
+    return <LoadingOverlay />;
+  }
   const onLogout = () => {
     supabase.auth.signOut();
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground font-body selection:bg-primary selection:text-primary-foreground">
-      <AnimatePresence mode="wait">
+      <CinematicLoader />
+      <CustomCursor />
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: '#111118',
+            color: '#F0EFFE',
+            border: '1px solid #2A2A3A',
+            fontSize: '12px',
+          },
+        }}
+      />
+      <KeyboardAware>
+      <CommandPalette />
+      <AnimatePresence mode="sync">
         <Suspense fallback={<LoadingOverlay />}>
-          <Routes location={location} key={location.pathname}>
+          <Routes location={location}>
             <Route
               path="/"
               element={
-                <PageTransition>
+                <PageTransition variant={transitionVariant}>
                   <AuraLandingPage />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/simple"
-              element={
-                <PageTransition>
-                  <SimplePage />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/bright"
-              element={
-                <PageTransition>
-                  <BrightDashboard />
-                </PageTransition>
-              }
-            />
-            <Route
-              path="/working"
-              element={
-                <PageTransition>
-                  <WorkingDashboard />
                 </PageTransition>
               }
             />
@@ -716,7 +833,10 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                   <Navigate to="/dashboard" replace />
                 ) : (
                   <PageTransition>
-                    <PaymentPage user={currentUser as any} />
+                    <PaymentPage
+                      user={currentUser as any}
+                      cancelled={window.location.search.includes('payment=cancelled')}
+                    />
                   </PageTransition>
                 )
               }
@@ -735,20 +855,165 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                   </PageTransition>
                 }
               />
-              <Route
-                path="/admin/vault"
-                element={(() => {
-                  const permissions = getPermissions(currentUser.role || UserRole.USER);
-                  return permissions.canAccessAdminPanel ? (
-                    <PageTransition>
-                      <AdminConsolePage />
-                    </PageTransition>
-                  ) : (
-                    <Navigate to="/dashboard" replace />
-                  );
-                })()}
-              />
             </Route>
+
+            {/* Admin: Vault / Overview */}
+            <Route
+              path="/admin/vault"
+              element={(() => {
+                if (!currentUser) return <Navigate to="/auth" replace />;
+                const permissions = getPermissions(currentUser.role || UserRole.USER);
+                return permissions.canAccessAdminPanel ? (
+                  <PageTransition>
+                    <DashboardWorkspaceProvider
+                      user={currentUser}
+                      decks={decks}
+                      cards={cards}
+                      createDeck={createDeck}
+                      deleteDeck={deleteDeck}
+                      addCardsToDeck={addCardsToDeck}
+                      onLogout={onLogout}
+                    >
+                      <AdminOverview />
+                    </DashboardWorkspaceProvider>
+                  </PageTransition>
+                ) : (
+                  <Navigate to="/dashboard" replace />
+                );
+              })()}
+            />
+            <Route
+              path="/admin/health"
+              element={(() => {
+                if (!currentUser) return <Navigate to="/auth" replace />;
+                const permissions = getPermissions(currentUser.role || UserRole.USER);
+                return permissions.canAccessAdminPanel ? (
+                  <PageTransition>
+                    <DashboardWorkspaceProvider
+                      user={currentUser}
+                      decks={decks}
+                      cards={cards}
+                      createDeck={createDeck}
+                      deleteDeck={deleteDeck}
+                      addCardsToDeck={addCardsToDeck}
+                      onLogout={onLogout}
+                    >
+                      <HealthCheckPage />
+                    </DashboardWorkspaceProvider>
+                  </PageTransition>
+                ) : (
+                  <Navigate to="/dashboard" replace />
+                );
+              })()}
+            />
+            {/* CEO+: Nexus Command (classified features) */}
+            <Route
+              path="/admin/nexus"
+              element={(() => {
+                if (!currentUser) return <Navigate to="/auth" replace />;
+                if (!isCeoOrHigher(currentUser.role)) return <Navigate to="/dashboard" replace />;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminNexusPage /></DashboardWorkspaceProvider></PageTransition>;
+              })()}
+            />
+            {/* Admin: Feature Flags */}
+            <Route
+              path="/admin/flags"
+              element={(() => {
+                if (!currentUser) return <Navigate to="/auth" replace />;
+                if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminFeatureFlags /></DashboardWorkspaceProvider></PageTransition>;
+              })()}
+            />
+            {/* Admin: Database Explorer */}
+            <Route
+              path="/admin/database"
+              element={(() => {
+                if (!currentUser) return <Navigate to="/auth" replace />;
+                if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><DatabaseExplorer /></DashboardWorkspaceProvider></PageTransition>;
+              })()}
+            />
+            {/* Admin: Audit Trail */}
+            <Route
+              path="/admin/audit"
+              element={(() => {
+                if (!currentUser) return <Navigate to="/auth" replace />;
+                if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AuditLog /></DashboardWorkspaceProvider></PageTransition>;
+              })()}
+            />
+            {/* CEO+: Revenue Dashboard */}
+            <Route
+              path="/admin/revenue"
+              element={(() => {
+                if (!currentUser) return <Navigate to="/auth" replace />;
+                if (!isCeoOrHigher(currentUser.role)) return <Navigate to="/dashboard" replace />;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminAnalytics /></DashboardWorkspaceProvider></PageTransition>;
+              })()}
+            />
+            {/* CEO+: System Config */}
+            <Route
+              path="/admin/config"
+              element={(() => {
+                if (!currentUser) return <Navigate to="/auth" replace />;
+                if (!isCeoOrHigher(currentUser.role)) return <Navigate to="/dashboard" replace />;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminSettings /></DashboardWorkspaceProvider></PageTransition>;
+              })()}
+            />
+            {/* Owner: Role Manager */}
+            <Route
+              path="/admin/roles"
+              element={(() => {
+                if (!currentUser) return <Navigate to="/auth" replace />;
+                if (!isOwnerOnly(currentUser.role)) return <Navigate to="/dashboard" replace />;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminRoles /></DashboardWorkspaceProvider></PageTransition>;
+              })()}
+            />
+            {/* Admin: User Management */}
+            <Route
+              path="/admin/users"
+              element={(() => {
+                if (!currentUser) return <Navigate to="/auth" replace />;
+                if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminUsers /></DashboardWorkspaceProvider></PageTransition>;
+              })()}
+            />
+            {/* Admin: Subscriptions */}
+            <Route
+              path="/admin/subscriptions"
+              element={(() => {
+                if (!currentUser) return <Navigate to="/auth" replace />;
+                if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminSubscriptions /></DashboardWorkspaceProvider></PageTransition>;
+              })()}
+            />
+            {/* Admin: Test Users */}
+            <Route
+              path="/admin/test-users"
+              element={(() => {
+                if (!currentUser) return <Navigate to="/auth" replace />;
+                if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminTestUsers /></DashboardWorkspaceProvider></PageTransition>;
+              })()}
+            />
+            {/* Admin: Content Library */}
+            <Route
+              path="/admin/content"
+              element={(() => {
+                if (!currentUser) return <Navigate to="/auth" replace />;
+                if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminContent /></DashboardWorkspaceProvider></PageTransition>;
+              })()}
+            />
+            {/* Admin: Platform Preview */}
+            <Route
+              path="/admin/preview"
+              element={(() => {
+                if (!currentUser) return <Navigate to="/auth" replace />;
+                if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminPlatformPreview /></DashboardWorkspaceProvider></PageTransition>;
+              })()}
+            />
             <Route
               path="/docs"
               element={
@@ -788,20 +1053,23 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               }
             >
               <Route
-                path="/dashboard"
+                path="/dashboard/analytics"
                 element={
-                  <PageTransition>
+                  <PageTransition variant="lite">
                     {user ? (
-                      <AuraMindComplete
-                        user={user}
-                        decks={decks}
-                        cards={cards}
-                        createDeck={createDeck}
-                        deleteDeck={deleteDeck}
-                        addCardsToDeck={addCardsToDeck}
-                        onLogout={onLogout}
-                        initialPage="main"
-                      />
+                      <Suspense fallback={<div className="min-h-screen bg-[#0A0A0F]" />}>
+                        <DashboardWorkspaceProvider
+                          user={user}
+                          decks={decks}
+                          cards={cards}
+                          createDeck={createDeck}
+                          deleteDeck={deleteDeck}
+                          addCardsToDeck={addCardsToDeck}
+                          onLogout={onLogout}
+                        >
+                          <AnalyticsPage />
+                        </DashboardWorkspaceProvider>
+                      </Suspense>
                     ) : (
                       <Navigate to="/auth" replace />
                     )}
@@ -809,20 +1077,64 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                 }
               />
               <Route
-                path="/dashboard/decks"
+                path="/dashboard/leaderboard"
                 element={
-                  <PageTransition>
+                  <PageTransition variant="lite">
                     {user ? (
-                      <AuraMindComplete
-                        user={user}
-                        decks={decks}
-                        cards={cards}
-                        createDeck={createDeck}
-                        deleteDeck={deleteDeck}
-                        addCardsToDeck={addCardsToDeck}
-                        onLogout={onLogout}
-                        initialPage="cards"
-                      />
+                      <Suspense fallback={<div className="min-h-screen bg-[#0A0A0F]" />}>
+                        <DashboardWorkspaceProvider
+                          user={user}
+                          decks={decks}
+                          cards={cards}
+                          createDeck={createDeck}
+                          deleteDeck={deleteDeck}
+                          addCardsToDeck={addCardsToDeck}
+                          onLogout={onLogout}
+                        >
+                          <LeaderboardPage />
+                        </DashboardWorkspaceProvider>
+                      </Suspense>
+                    ) : (
+                      <Navigate to="/auth" replace />
+                    )}
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/dashboard/achievements"
+                element={
+                  <PageTransition variant="lite">
+                    {user ? (
+                      <Suspense fallback={<div className="min-h-screen bg-[#0A0A0F]" />}>
+                        <DashboardWorkspaceProvider
+                          user={user}
+                          decks={decks}
+                          cards={cards}
+                          createDeck={createDeck}
+                          deleteDeck={deleteDeck}
+                          addCardsToDeck={addCardsToDeck}
+                          onLogout={onLogout}
+                        >
+                          <AchievementsPage />
+                        </DashboardWorkspaceProvider>
+                      </Suspense>
+                    ) : (
+                      <Navigate to="/auth" replace />
+                    )}
+                  </PageTransition>
+                }
+              />
+              <Route path="/dashboard/quiz" element={<Navigate to="/dashboard/decks" replace />} />
+              <Route path="/dashboard/planner" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard/insights" element={<Navigate to="/dashboard/analytics" replace />} />
+              <Route path="/dashboard/professor" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard/progress" element={<Navigate to="/dashboard/analytics" replace />} />
+              <Route
+                path="/dashboard/onboarding"
+                element={
+                  <PageTransition variant="lite">
+                    {user ? (
+                      <OnboardingPage />
                     ) : (
                       <Navigate to="/auth" replace />
                     )}
@@ -832,124 +1144,21 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               <Route
                 path="/dashboard/chat"
                 element={
-                  <PageTransition>
+                  <PageTransition variant="lite">
                     {user ? (
-                      <AuraMindComplete
-                        user={user}
-                        decks={decks}
-                        cards={cards}
-                        createDeck={createDeck}
-                        deleteDeck={deleteDeck}
-                        addCardsToDeck={addCardsToDeck}
-                        onLogout={onLogout}
-                        initialPage="chat"
-                      />
-                    ) : (
-                      <Navigate to="/auth" replace />
-                    )}
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="/dashboard/analytics"
-                element={
-                  <PageTransition>
-                    {user ? (
-                      <AuraMindComplete
-                        user={user}
-                        decks={decks}
-                        cards={cards}
-                        createDeck={createDeck}
-                        deleteDeck={deleteDeck}
-                        addCardsToDeck={addCardsToDeck}
-                        onLogout={onLogout}
-                        initialPage="analytics"
-                      />
-                    ) : (
-                      <Navigate to="/auth" replace />
-                    )}
-                  </PageTransition>
-                }
-              />
-              <Route path="/dashboard/quiz" element={<Navigate to="/dashboard/decks" replace />} />
-              <Route
-                path="/dashboard/generator"
-                element={
-                  <PageTransition>
-                    {user ? (
-                      <AuraMindComplete
-                        user={user}
-                        decks={decks}
-                        cards={cards}
-                        createDeck={createDeck}
-                        deleteDeck={deleteDeck}
-                        addCardsToDeck={addCardsToDeck}
-                        onLogout={onLogout}
-                        initialPage="generator"
-                      />
-                    ) : (
-                      <Navigate to="/auth" replace />
-                    )}
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="/dashboard/paths"
-                element={
-                  <PageTransition>
-                    {user ? (
-                      <AuraMindComplete
-                        user={user}
-                        decks={decks}
-                        cards={cards}
-                        createDeck={createDeck}
-                        deleteDeck={deleteDeck}
-                        addCardsToDeck={addCardsToDeck}
-                        onLogout={onLogout}
-                        initialPage="paths"
-                      />
-                    ) : (
-                      <Navigate to="/auth" replace />
-                    )}
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="/dashboard/tutorial"
-                element={
-                  <PageTransition>
-                    {user ? (
-                      <AuraMindComplete
-                        user={user}
-                        decks={decks}
-                        cards={cards}
-                        createDeck={createDeck}
-                        deleteDeck={deleteDeck}
-                        addCardsToDeck={addCardsToDeck}
-                        onLogout={onLogout}
-                        initialPage="tutorial"
-                      />
-                    ) : (
-                      <Navigate to="/auth" replace />
-                    )}
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="/dashboard/admin"
-                element={
-                  <PageTransition>
-                    {user ? (
-                      <AuraMindComplete
-                        user={user}
-                        decks={decks}
-                        cards={cards}
-                        createDeck={createDeck}
-                        deleteDeck={deleteDeck}
-                        addCardsToDeck={addCardsToDeck}
-                        onLogout={onLogout}
-                        initialPage="admin"
-                      />
+                      <Suspense fallback={<div className="min-h-screen bg-[#0A0A0F]" />}>
+                        <DashboardWorkspaceProvider
+                          user={user}
+                          decks={decks}
+                          cards={cards}
+                          createDeck={createDeck}
+                          deleteDeck={deleteDeck}
+                          addCardsToDeck={addCardsToDeck}
+                          onLogout={onLogout}
+                        >
+                          <AIChatPage />
+                        </DashboardWorkspaceProvider>
+                      </Suspense>
                     ) : (
                       <Navigate to="/auth" replace />
                     )}
@@ -959,17 +1168,42 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               <Route
                 path="/dashboard/settings"
                 element={
-                  <PageTransition>
+                  <PageTransition variant="lite">
                     {user ? (
-                      <AuraMindComplete
+                      <Suspense fallback={<div className="min-h-screen bg-[#0A0A0F]" />}>
+                        <DashboardWorkspaceProvider
+                          user={user}
+                          decks={decks}
+                          cards={cards}
+                          createDeck={createDeck}
+                          deleteDeck={deleteDeck}
+                          addCardsToDeck={addCardsToDeck}
+                          updateProfile={updateUserProfile}
+                          onLogout={onLogout}
+                        >
+                          <SettingsPage />
+                        </DashboardWorkspaceProvider>
+                      </Suspense>
+                    ) : (
+                      <Navigate to="/auth" replace />
+                    )}
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/dashboard/*"
+                element={
+                  <PageTransition variant="lite">
+                    {user ? (
+                      <DashboardShell
                         user={user}
                         decks={decks}
                         cards={cards}
                         createDeck={createDeck}
                         deleteDeck={deleteDeck}
                         addCardsToDeck={addCardsToDeck}
+                        updateProfile={updateUserProfile}
                         onLogout={onLogout}
-                        initialPage="settings"
                       />
                     ) : (
                       <Navigate to="/auth" replace />
@@ -984,11 +1218,8 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               <Route path="/analytics" element={<Navigate to="/dashboard/analytics" replace />} />
               <Route path="/schedule" element={<Navigate to="/dashboard" replace />} />
               <Route path="/decks" element={<Navigate to="/dashboard/decks" replace />} />
-              <Route path="/leaderboards" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/leaderboards" element={<Navigate to="/dashboard/leaderboard" replace />} />
               <Route path="/challenges" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard/planner" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard/insights" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard/professor" element={<Navigate to="/dashboard" replace />} />
             </Route>
 
             <Route
@@ -997,7 +1228,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                 subscriptionStatus === "active" ||
                 subscriptionStatus === "trialing" ||
                 subscriptionStatus === "loading" ? (
-                  <PageTransition>
+                  <PageTransition variant="lite">
                     <StudyModeRoute />
                   </PageTransition>
                 ) : (
@@ -1048,10 +1279,15 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
           </Routes>
         </Suspense>
       </AnimatePresence>
-      {location.pathname.startsWith("/dashboard") && <AmbientPlayer />}
+      {showAmbientPlayer && (
+        <Suspense fallback={null}>
+          <AmbientPlayer />
+        </Suspense>
+      )}
       <ScrollTopButton />
       <HmrRefreshNotice />
       <QuizGenerationNotifier />
+      </KeyboardAware>
     </div>
   );
 };

@@ -63,10 +63,10 @@ const config: CapacitorConfig = {
     backgroundColor: '#09090b',
     overrideUserAgent: 'AuraMind/2.0.0',
     buildOptions: {
-      keystorePath: undefined,
-      keystoreAlias: undefined,
-      keystorePassword: undefined,
-      keyPassword: undefined,
+      keystorePath: 'android/keystore/debug.keystore',
+      keystoreAlias: 'androiddebugkey',
+      keystorePassword: 'android',
+      keyPassword: 'android',
     },
   },
 };

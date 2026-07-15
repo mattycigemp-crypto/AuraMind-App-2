@@ -12,7 +12,7 @@ import { VitePWA } from 'vite-plugin-pwa';
  */
 export const pwaConfig = VitePWA({
   registerType: 'autoUpdate',
-  includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+  includeAssets: ['favicons,logos/favicon.ico', 'favicons,logos/apple-touch-icon.png'],
   manifest: {
     name: 'AuraMind - AI Study Companion',
     short_name: 'AuraMind',
@@ -25,18 +25,18 @@ export const pwaConfig = VitePWA({
     start_url: '/',
     icons: [
       {
-        src: '/icons/icon-192x192.png',
+        src: '/favicons,logos/icon-192.png',
         sizes: '192x192',
         type: 'image/png',
         purpose: 'any maskable',
       },
       {
-        src: '/icons/icon-384x384.png',
+        src: '/favicons,logos/icon-384.png',
         sizes: '384x384',
         type: 'image/png',
       },
       {
-        src: '/icons/icon-512x512.png',
+        src: '/favicons,logos/icon-512.png',
         sizes: '512x512',
         type: 'image/png',
       },

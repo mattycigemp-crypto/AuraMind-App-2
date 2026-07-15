@@ -15,8 +15,8 @@ const variantStylesMap: Record<ButtonVariant, string> = {
   secondary: 'bg-gray-600 text-white hover:bg-gray-700',
   destructive: 'bg-red-600 text-white hover:bg-red-700',
   success: 'bg-green-600 text-white hover:bg-green-700',
-  outline: 'border border-white/20 bg-transparent hover:bg-white/10',
-  ghost: 'hover:bg-white/10',
+outline: 'border border-zinc-700/30 bg-transparent hover:bg-zinc-900/10',
+  ghost: 'hover:bg-zinc-900/10',
 };
 
 const sizeStylesMap: Record<string, string> = {

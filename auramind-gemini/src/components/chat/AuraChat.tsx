@@ -149,7 +149,7 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
         ));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Neural uplink failed.');
+      setError(err instanceof Error ? err.message : 'Failed to get AI response.');
       setMessages(prev => prev.filter(m => m.id !== assistantId || m.content !== ''));
     } finally {
       setIsLoading(false);
@@ -176,32 +176,32 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
       </div>
 
       {/* Header */}
-      <header className="flex items-center justify-between px-6 py-5 border-b border-black/ dark:border-white/ bg-black/5 dark:bg-white/ backdrop-blur-3xl z-40 relative">
+      <header className="flex items-center justify-between px-6 py-5 border-b border-zinc-800 bg-zinc-900/5 backdrop-blur-3xl z-40 relative">
         <div className="flex items-center gap-6">
           {onBack && (
             <button
-              onClick={onBack}
-              className="flex items-center gap-2 text-black/ dark:text-white/ hover:text-slate-900 dark:text-white transition-all group px-3 py-1.5 rounded-xl hover:bg-black/5 dark:bg-white/"
+onClick={onBack}
+              className="flex items-center gap-2 text-zinc-400 hover:text-white transition-all group px-3 py-1.5 rounded-xl hover:bg-zinc-900/10"
             >
               <ChevronLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em]">De-Initialize</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Back</span>
             </button>
           )}
-          <div className="h-6 w-[1px] bg-black/5 dark:bg-white/ hidden sm:block" />
+          <div className="h-6 w-[1px] bg-zinc-800 hidden sm:block" />
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ flex items-center justify-center p-[2px]">
-              <div className="w-full h-full rounded-[14px] bg-arch-bg flex items-center justify-center border border-black/ dark:border-white/">
-                <BrainCircuit size={18} className="text-black/ dark:text-white/" />
+<div className="w-10 h-10 rounded-2xl bg-zinc-900/5 border border-zinc-800 flex items-center justify-center p-[2px]">
+              <div className="w-full h-full rounded-[14px] bg-arch-bg flex items-center justify-center border border-zinc-800">
+                <BrainCircuit size={18} className="text-zinc-400" />
               </div>
             </div>
             <div>
-              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-900 dark:text-white">Neural Operator <span className="text-[8px] text-black/ dark:text-white/ italic mx-2 tracking-widest font-bold">Aura-V2</span></h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-900 dark:text-white">AI Study Assistant <span className="text-[8px] text-black/ dark:text-white/ italic mx-2 tracking-widest font-bold">Aura-V2</span></h2>
               <div className="flex items-center gap-2 mt-1">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full bg-emerald-400 opacity-75 rounded-full" />
                   <span className="relative inline-flex h-1.5 w-1.5 bg-emerald-500 rounded-full" />
                 </span>
-                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-black/ dark:text-white/">Stable Connection</span>
+                <span className="text-[8px] font-black uppercase tracking-[0.2em] text-zinc-400">Connected</span>
               </div>
             </div>
           </div>
@@ -209,10 +209,10 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
 
         <div className="hidden lg:flex items-center gap-6">
           <div className="flex flex-col items-end">
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-black/ dark:text-white/">Session Tokens</p>
-            <p className="text-[11px] font-black text-black/ dark:text-white/ italic tracking-tighter">1,240 / 8,000</p>
+<p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">Messages</p>
+            <p className="text-[11px] font-black text-zinc-400 italic tracking-tighter">1,240 / 8,000</p>
           </div>
-          <button className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ flex items-center justify-center hover:bg-black/5 dark:bg-white/ hover:border-black/ dark:border-white/ transition-all text-black/ dark:text-white/ hover:text-slate-900 dark:text-white">
+          <button className="w-10 h-10 rounded-xl bg-zinc-900/5 border border-zinc-800 flex items-center justify-center hover:bg-zinc-900/10 hover:border-zinc-700 transition-all text-zinc-400 hover:text-white">
              <Globe size={16} />
           </button>
         </div>
@@ -223,16 +223,16 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
         <div className="max-w-4xl mx-auto space-y-12">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 animate-fade-in text-center">
-              <div className="w-20 h-20 bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-[32px] flex items-center justify-center mb-10 shadow-[0_0_50px_rgba(255,255,255,0.02)] relative group hover:scale-110 transition-all duration-700">
-                <div className="absolute inset-0 bg-white shadow-[0_0_80px_rgba(255,255,255,0.05)] rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="w-20 h-20 bg-zinc-900/5 border border-zinc-800 rounded-[32px] flex items-center justify-center mb-10 shadow-[0_0_50px_rgba(255,255,255,0.02)] relative group hover:scale-110 transition-all duration-700">
+                <div className="absolute inset-0 bg-zinc-900 shadow-[0_0_80px_rgba(255,255,255,0.05)] rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                 <Sparkles size={32} className="text-slate-900 dark:text-white relative z-10" />
               </div>
               <h3 className="text-4xl sm:text-6xl font-display font-black italic uppercase tracking-tightest leading-none text-slate-900 dark:text-white mb-6">
-                ORBITAL.<br />
-                <span className="text-black/ dark:text-white/">INTELLIGENCE.</span>
+                Ready to learn.<br />
+                <span className="text-black/ dark:text-white/">Ask me anything.</span>
               </h3>
-              <p className="text-black/ dark:text-white/ text-xs sm:text-sm max-w-sm leading-relaxed uppercase tracking-widest font-black italic">
-                Aura Study Module initialized. Enter a sequence to begin neural extraction.
+<p className="text-zinc-400 text-xs sm:text-sm max-w-sm leading-relaxed uppercase tracking-widest font-black italic">
+                Your AI study assistant is ready. Type a topic or question to get started.
               </p>
 
               <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-2xl">
@@ -245,15 +245,15 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
                   <button
                     key={i}
                     onClick={() => setInput(s.label)}
-                    className="p-6 rounded-[24px] bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ hover:bg-black/5 dark:bg-white/ hover:border-black/ dark:border-white/ transition-all active:scale-[0.98] text-left group"
+                    className="p-6 rounded-[24px] bg-zinc-900/5 border border-zinc-800 hover:bg-zinc-900/10 hover:border-zinc-700 transition-all active:scale-[0.98] text-left group"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all">
+                      <div className="w-10 h-10 rounded-xl bg-zinc-900/5 border border-zinc-800 flex items-center justify-center group-hover:bg-zinc-800 group-hover:text-white transition-all">
                         <s.icon size={18} />
                       </div>
                       <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-black/ dark:text-white/ group-hover:text-slate-900 dark:text-white transition-colors">{s.label}</p>
-                        <p className="text-[8px] font-bold uppercase tracking-widest text-black/ dark:text-white/ mt-1">{s.detail}</p>
+<p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 group-hover:text-white transition-colors">{s.label}</p>
+                        <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-400 mt-1">{s.detail}</p>
                       </div>
                     </div>
                   </button>
@@ -278,11 +278,11 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
                     >
                       {/* Interaction Headers */}
                       <div className={`flex items-center gap-3 mb-4 px-1 ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                         <div className="w-6 h-6 rounded-lg bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ flex items-center justify-center">
-                            {message.role === 'assistant' ? <Bot size={12} className="text-black/ dark:text-white/" /> : <div className="w-1 h-1 rounded-full bg-black/5 dark:bg-white/" />}
+<div className="w-6 h-6 rounded-lg bg-zinc-900/5 border border-zinc-800 flex items-center justify-center">
+                             {message.role === 'assistant' ? <Bot size={12} className="text-zinc-400" /> : <div className="w-1 h-1 rounded-full bg-zinc-900/5" />}
                          </div>
-                         <span className="text-[9px] font-black uppercase tracking-[0.4em] text-black/ dark:text-white/">
-                            {message.role === 'assistant' ? 'Operator Signal' : 'User Uplink'}
+<span className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-400">
+                             {message.role === 'assistant' ? 'Aura' : 'You'}
                          </span>
                       </div>
 
@@ -291,11 +291,11 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
                         <div className="mb-6 w-full max-w-2xl">
                           <button
                             onClick={() => toggleThinking(message.id!)}
-                            className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.2em] text-black/ dark:text-white/ hover:text-slate-900 dark:text-white transition-all bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ px-4 py-2 rounded-full backdrop-blur-xl group"
+                            className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-white transition-all bg-zinc-900/5 border border-zinc-800 px-4 py-2 rounded-full backdrop-blur-xl group"
                           >
                             <Cpu size={12} className={`transition-transform duration-500 ${expandedThinking[message.id!] ? 'rotate-90' : ''}`} />
-                            {isThinkingCurrently ? 'Logic Stream Active...' : 'View Neural Process'}
-                            <div className="w-1 h-1 rounded-full bg-black/5 dark:bg-white/ group-hover:bg-black/5 dark:bg-white/" />
+                            {isThinkingCurrently ? 'Thinking...' : 'Show thought process'}
+                            <div className="w-1 h-1 rounded-full bg-zinc-800 group-hover:bg-zinc-700" />
                           </button>
 
                           <AnimatePresence>
@@ -306,7 +306,7 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
                                 exit={{ height: 0, opacity: 0 }}
                                 className="overflow-hidden"
                               >
-                                <div className="mt-4 p-7 bg-black/5 dark:bg-white/ border-l-2 border-black/ dark:border-white/ rounded-r-3xl text-[11px] text-black/ dark:text-white/ font-medium leading-relaxed italic whitespace-pre-wrap">
+                                <div className="mt-4 p-7 bg-zinc-900/5 border-l-2 border-zinc-800 rounded-r-3xl text-[11px] text-zinc-300 font-medium leading-relaxed italic whitespace-pre-wrap">
                                   {message.thinking}
                                 </div>
                               </motion.div>
@@ -318,10 +318,10 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
                       {/* Content Bubble */}
                       <div className={`relative max-w-[85%] group ${message.role === 'user' ? 'text-right' : 'w-full'}`}>
                         {cleanText.length > 0 && (
-                          <div className={`text-sm sm:text-base leading-relaxed whitespace-pre-wrap font-medium p-7 rounded-[32px] border transition-all duration-500 ${
+<div className={`text-sm sm:text-base leading-relaxed whitespace-pre-wrap font-medium p-7 rounded-[32px] border transition-all duration-500 ${
                             message.role === 'user'
-                              ? 'bg-white text-black border-white shadow-[0_10px_40px_rgba(255,255,255,0.05)] font-bold italic'
-                              : 'bg-black/5 dark:bg-white/ border-black/ dark:border-white/ text-black/ dark:text-white/ backdrop-blur-xl'
+                              ? 'bg-zinc-900 text-white border-zinc-800 shadow-[0_10px_40px_rgba(255,255,255,0.05)] font-bold italic'
+                              : 'bg-zinc-900/5 border-zinc-800 text-zinc-300 backdrop-blur-xl'
                           }`}>
                             {cleanText}
                           </div>
@@ -359,13 +359,13 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
             {/* Input Glow */}
             <div className="absolute -inset-[2px] bg-gradient-to-r from-white/10 to-transparent rounded-[30px] blur-md opacity-20 group-focus-within/input:opacity-100 transition-opacity duration-700 pointer-events-none" />
             
-            <div className="relative flex items-center bg-black/5 dark:bg-white/ border border-black/ dark:border-white/ rounded-[28px] overflow-hidden backdrop-blur-3xl transition-all group-focus-within/input:bg-black/5 dark:bg-white/ group-focus-within/input:border-black/ dark:border-white/ p-2">
+            <div className="relative flex items-center bg-zinc-900/5 border border-zinc-800 rounded-[28px] overflow-hidden backdrop-blur-3xl transition-all group-focus-within/input:bg-zinc-900/5 group-focus-within/input:border-zinc-700 p-2">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Incept a query or command..."
+                placeholder="Ask Aura anything..."
                 className="flex-1 bg-transparent border-none outline-none px-6 py-4 text-sm sm:text-base text-slate-900 dark:text-white placeholder:text-black/ dark:text-white/ font-bold italic tracking-tight"
                 disabled={isLoading}
               />
@@ -373,9 +373,9 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
                 onClick={handleSendMessage}
                 disabled={isLoading || !input.trim()}
                 className={`w-14 h-14 rounded-[22px] flex items-center justify-center transition-all duration-500 shrink-0 ${
-                  isLoading || !input.trim()
-                    ? 'bg-black/5 dark:bg-white/ text-black/ dark:text-white/ border border-black/ dark:border-white/'
-                    : 'bg-white text-black hover:scale-[1.05] active:scale-[0.95] shadow-[0_10px_30px_rgba(255,255,255,0.1)]'
+isLoading || !input.trim()
+                      ? 'bg-zinc-900/5 text-zinc-400 border border-zinc-800'
+                      : 'bg-zinc-900 text-white hover:scale-[1.05] active:scale-[0.95] shadow-[0_10px_30px_rgba(255,255,255,0.1)]'
                 }`}
               >
                 {isLoading ? (
@@ -389,13 +389,13 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
             <div className="flex items-center justify-between mt-4 px-4">
               <div className="flex gap-4">
                 <button className="text-[9px] font-black uppercase tracking-[0.2em] text-black/ dark:text-white/ hover:text-black/ dark:text-white/ transition-colors flex items-center gap-2">
-                  <Music size={10} /> Neural Audio
+                  <Music size={10} /> Study Music
                 </button>
                 <button className="text-[9px] font-black uppercase tracking-[0.2em] text-black/ dark:text-white/ hover:text-black/ dark:text-white/ transition-colors flex items-center gap-2">
-                   <Target size={10} /> Target Focus
+                   <Target size={10} /> Focus Timer
                 </button>
               </div>
-              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-black/ dark:text-white/">Input Ready</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-black/ dark:text-white/">Ready</p>
             </div>
           </div>
         </div>

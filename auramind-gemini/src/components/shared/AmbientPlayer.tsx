@@ -8,14 +8,14 @@ interface Track {
     id: string;
     title: string;
     url: string;
+    assetPath?: string;
     type: string;
     duration?: string;
 }
 
-const audioModules = import.meta.glob('../assets/audio/*.{mp3,wav,ogg,m4a}', {
-    eager: true,
+const audioLoaders = import.meta.glob('../assets/audio/*.{mp3,wav,ogg,m4a}', {
     import: 'default',
-}) as Record<string, string>;
+}) as Record<string, () => Promise<string>>;
 
 const AURAMIND_TRACK_METADATA: Record<string, { title: string; type: string }> = {
     'nursery lo-fi.mp3': { title: 'Aura Drift', type: 'Lo-Fi Focus' },
@@ -43,18 +43,27 @@ const inferTrackType = (fileName: string) => {
     return 'Uploaded';
 };
 
-const DEFAULT_TRACKS: Track[] = Object.entries(audioModules)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([path, url], index) => {
+const DEFAULT_TRACKS: Track[] = Object.keys(audioLoaders)
+    .sort((a, b) => a.localeCompare(b))
+    .map((path, index) => {
         const fileName = path.split('/').pop() || `track-${index + 1}`;
         const metadata = AURAMIND_TRACK_METADATA[fileName.toLowerCase()];
         return {
             id: `${index + 1}`,
             title: metadata?.title || formatTrackName(fileName),
-            url,
+            url: '',
+            assetPath: path,
             type: metadata?.type || inferTrackType(fileName),
         };
     });
+
+const resolveTrackUrl = async (track: Track): Promise<string> => {
+    if (track.url) return track.url;
+    if (!track.assetPath) return '';
+    const loader = audioLoaders[track.assetPath];
+    if (!loader) return '';
+    return loader();
+};
 
 const AmbientPlayer: React.FC = () => {
     const [playlist, setPlaylist] = useState<Track[]>(DEFAULT_TRACKS);
@@ -73,6 +82,23 @@ const AmbientPlayer: React.FC = () => {
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
+        let cancelled = false;
+        const track = playlist[currentTrackIndex];
+        if (!track || track.url || !track.assetPath) return;
+
+        resolveTrackUrl(track).then((url) => {
+            if (cancelled || !url) return;
+            setPlaylist((prev) =>
+                prev.map((item, idx) => (idx === currentTrackIndex ? { ...item, url } : item)),
+            );
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentTrackIndex, playlist.length]);
+
+    useEffect(() => {
         if (audioRef.current) {
             audioRef.current.volume = volume;
         }
@@ -82,7 +108,8 @@ const AmbientPlayer: React.FC = () => {
         const audio = audioRef.current;
         if (!audio) return;
 
-        if (isPlaying) {
+        const trackUrl = playlist[currentTrackIndex]?.url;
+        if (isPlaying && trackUrl) {
             audio.play().catch(e => {
                 console.error("Audio play failed", e);
                 setIsPlaying(false);
@@ -90,7 +117,7 @@ const AmbientPlayer: React.FC = () => {
         } else {
             audio.pause();
         }
-    }, [isPlaying, currentTrackIndex]);
+    }, [isPlaying, currentTrackIndex, playlist]);
 
     const togglePlay = () => setIsPlaying(!isPlaying);
 
@@ -185,7 +212,8 @@ const AmbientPlayer: React.FC = () => {
         <div className={`fixed bottom-6 right-6 z-50 transition-all duration-300 ${isMinimized ? 'w-auto' : 'w-80'}`}>
             <audio
                 ref={audioRef}
-                src={currentTrack.url}
+                src={currentTrack.url || undefined}
+                preload="none"
                 loop={false}
                 onEnded={nextTrack}
                 onTimeUpdate={handleTimeUpdate}
@@ -198,9 +226,9 @@ const AmbientPlayer: React.FC = () => {
                 {isMinimized ? (
                     <button
                         onClick={() => setIsMinimized(false)}
-                        className="flex items-center gap-4 p-3 pr-6 hover:bg-black/5 dark:bg-white/ transition-colors group"
+                        className="flex items-center gap-4 p-3 pr-6 hover:bg-black/5 bg-zinc-900/5 transition-colors group"
                     >
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPlaying ? 'accent-gradient shadow-[0_0_15px_rgba(168,85,247,0.4)] animate-spin-slow' : 'bg-black/5 dark:bg-white/'}`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isPlaying ? 'accent-gradient shadow-[0_0_15px_rgba(168,85,247,0.4)] animate-spin-slow' : 'bg-zinc-900/5'}`}>
                             <Music size={18} className="text-slate-900 dark:text-white" />
                         </div>
 
@@ -220,14 +248,14 @@ const AmbientPlayer: React.FC = () => {
                         <div className="p-5 flex justify-between items-center bg-gradient-to-b from-white/5 to-transparent">
                             <button
                                 onClick={() => setShowPlaylist(!showPlaylist)}
-                                className={`p-2 rounded-full transition-colors ${showPlaylist ? 'bg-black/5 dark:bg-white/ text-slate-900 dark:text-white' : 'text-black/ dark:text-white/ hover:text-slate-900 dark:text-white'}`}
+                                className={`p-2 rounded-full transition-colors ${showPlaylist ? 'bg-zinc-900/10 text-zinc-100' : 'text-black/ dark:text-white/ hover:text-slate-900 dark:text-white'}`}
                             >
                                 <List size={18} />
                             </button>
                             <span className="text-xs font-bold tracking-[0.2em] uppercase text-black/ dark:text-white/">Now Playing</span>
                             <button
                                 onClick={() => setIsMinimized(true)}
-                                className="p-2 rounded-full text-black/ dark:text-white/ hover:text-slate-900 dark:text-white hover:bg-black/5 dark:bg-white/ transition-colors"
+                                className="p-2 rounded-full text-black/ dark:text-white/ hover:text-slate-900 dark:text-white hover:bg-zinc-900/10 transition-colors"
                             >
                                 <Minimize2 size={18} />
                             </button>
@@ -238,13 +266,13 @@ const AmbientPlayer: React.FC = () => {
                             <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
                                 <button
                                     onClick={() => setShowUrlInput(!showUrlInput)}
-                                    className="w-full py-3 px-4 rounded-xl border border-dashed border-black/ dark:border-white/ text-black/ dark:text-white/ hover:text-slate-900 dark:text-white hover:border-black/ dark:border-white/ hover:bg-black/5 dark:bg-white/ transition-all flex items-center justify-center gap-2 text-sm font-medium mb-4"
+                                    className="w-full py-3 px-4 rounded-xl border border-dashed border-zinc-700/30 text-zinc-300 hover:border-zinc-700/50 hover:bg-zinc-900/10 transition-all flex items-center justify-center gap-2 text-sm font-medium mb-4"
                                 >
                                     <Plus size={16} /> Add Custom URL
                                 </button>
 
                                 {showUrlInput && (
-                                    <div className="mb-4 bg-black/5 dark:bg-white/ p-3 rounded-xl space-y-2">
+                                    <div className="mb-4 bg-zinc-900/10 p-3 rounded-xl space-y-2">
                                         <input
                                             type="text"
                                             value={customUrl}
@@ -254,7 +282,7 @@ const AmbientPlayer: React.FC = () => {
                                         />
                                         <div className="flex gap-2">
                                             <button onClick={addCustomTrack} className="flex-1 bg-purple-600 hover:bg-purple-500 text-slate-900 dark:text-white text-xs font-bold py-2 rounded-lg transition-colors">Add</button>
-                                            <button onClick={() => setShowUrlInput(false)} className="px-3 bg-black/5 dark:bg-white/ hover:bg-black/5 dark:bg-white/ text-slate-900 dark:text-white text-xs font-bold rounded-lg transition-colors"><X size={14} /></button>
+                                            <button onClick={() => setShowUrlInput(false)} className="px-3 bg-zinc-900/10 hover:bg-zinc-900/10 text-slate-900 dark:text-white text-xs font-bold rounded-lg transition-colors"><X size={14} /></button>
                                         </div>
                                     </div>
                                 )}
@@ -263,14 +291,14 @@ const AmbientPlayer: React.FC = () => {
                                     <div
                                         key={track.id}
                                         onClick={() => { setCurrentTrackIndex(idx); setIsPlaying(true); }}
-                                        className={`p-3 rounded-xl flex items-center gap-3 cursor-pointer transition-all group ${currentTrackIndex === idx ? 'bg-black/5 dark:bg-white/ shadow-lg' : 'hover:bg-black/5 dark:bg-white/'}`}
+                                        className={`p-3 rounded-xl flex items-center gap-3 cursor-pointer transition-all group ${currentTrackIndex === idx ? 'bg-zinc-900/20 shadow-lg' : 'hover:bg-zinc-900/10'}`}
                                     >
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${currentTrackIndex === idx ? 'accent-gradient text-slate-900 dark:text-white' : 'bg-black/5 dark:bg-white/ text-neutral-500 group-hover:text-slate-900 dark:text-white'}`}>
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${currentTrackIndex === idx ? 'accent-gradient text-slate-900 dark:text-white' : 'bg-zinc-900/10 text-zinc-400 group-hover:text-white'}`}>
                                             {currentTrackIndex === idx && isPlaying ? (
                                                 <div className="flex gap-[2px] items-end h-3">
-                                                    <div className="w-[2px] bg-white animate-music-bar h-full"></div>
-                                                    <div className="w-[2px] bg-white animate-music-bar h-2/3" style={{ animationDelay: '0.1s' }}></div>
-                                                    <div className="w-[2px] bg-white animate-music-bar h-1/2" style={{ animationDelay: '0.2s' }}></div>
+                                                    <div className="w-[2px] bg-primary animate-music-bar h-full"></div>
+                                                    <div className="w-[2px] bg-primary animate-music-bar h-2/3" style={{ animationDelay: '0.1s' }}></div>
+                                                    <div className="w-[2px] bg-primary animate-music-bar h-1/2" style={{ animationDelay: '0.2s' }}></div>
                                                 </div>
                                             ) : (
                                                 <span className="text-xs font-bold">{idx + 1}</span>
@@ -309,7 +337,7 @@ const AmbientPlayer: React.FC = () => {
 
                                 {/* Progress Bar */}
                                 <div className="w-full space-y-2 mb-6 group">
-                                    <div className="relative h-1 bg-black/5 dark:bg-white/ rounded-full overflow-hidden cursor-pointer">
+                                    <div className="relative h-1 bg-zinc-900/10 rounded-full overflow-hidden cursor-pointer">
                                         <div
                                             className="absolute top-0 left-0 h-full accent-gradient"
                                             style={{ width: `${(progress / duration) * 100}%` }}

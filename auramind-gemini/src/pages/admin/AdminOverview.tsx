@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import PageShell from '../../components/dashboard/PageShell';
 import {
   UsersIcon as Users,
   CreditCardIcon as CreditCard,
@@ -112,10 +113,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ className }) => {
 
   const stats = useMemo(() => {
     const total = users.length;
-    const activeSubs = users.filter(u => u.plan !== 'Starter').length;
+    const activeSubs = users.filter(u => u.plan !== 'Starter' && u.role !== 'admin' && u.role !== 'ceo' && u.role !== 'owner').length;
     const adminCount = users.filter(u => u.isAdmin || u.role === 'owner').length;
     const paidUsers = users.filter(u =>
-      u.plan === 'Pro' || u.plan === 'Scholar' || u.plan === 'Enterprise'
+      (u.plan === 'Pro' || u.plan === 'Scholar' || u.plan === 'Enterprise') &&
+      u.role !== 'admin' && u.role !== 'ceo' && u.role !== 'owner'
     ).length;
 
     const recentSignups = [...users]
@@ -159,7 +161,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ className }) => {
   }
 
   return (
-    <div className={cn("space-y-8 pb-20", className)}>
+    <PageShell>
+    <div className={cn("max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-20", className)}>
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <CosmicStat
@@ -198,7 +201,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ className }) => {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-6 bg-white/[0.01] border border-white/[0.06] rounded-2xl backdrop-blur-sm"
+          className="p-6 bg-zinc-900/10 border border-zinc-700/30 rounded-2xl backdrop-blur-sm"
         >
           <div className="flex items-center justify-between mb-5">
             <div>
@@ -221,7 +224,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ className }) => {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.06, duration: 0.3 }}
-                  className="flex items-start gap-3 p-3 rounded-xl hover:bg-white/[0.02] transition-colors group"
+                  className="flex items-start gap-3 p-3 rounded-xl hover:bg-zinc-900/10 transition-colors group"
                 >
                   <div className={cn(
                     'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5',
@@ -252,7 +255,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ className }) => {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="p-6 bg-white/[0.01] border border-white/[0.06] rounded-2xl backdrop-blur-sm"
+          className="p-6 bg-zinc-900/10 border border-zinc-700/30 rounded-2xl backdrop-blur-sm"
         >
           <div className="flex items-center justify-between mb-5">
             <div>
@@ -262,7 +265,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ className }) => {
             <button
               onClick={refresh}
               disabled={refreshing}
-              className="p-1.5 rounded-lg hover:bg-white/[0.05] text-zinc-500 hover:text-zinc-300 transition-all disabled:opacity-50"
+              className="p-1.5 rounded-lg hover:bg-zinc-900/10 text-zinc-500 hover:text-zinc-300 transition-all disabled:opacity-50"
             >
               <RefreshCw size={14} className={cn(refreshing && "animate-spin")} />
             </button>
@@ -272,9 +275,9 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ className }) => {
             {testResults.map((check) => (
               <div
                 key={check.name}
-                className="flex items-center gap-3 p-3 rounded-xl hover:bg-white/[0.02] transition-colors"
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-zinc-900/10 transition-colors"
               >
-                <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/[0.05] flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-zinc-900/10 border border-zinc-700/30 flex items-center justify-center shrink-0">
                   <check.icon size={16} className="text-zinc-500" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -303,7 +306,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ className }) => {
           </div>
 
           {/* All systems indicator */}
-          <div className="mt-4 pt-4 border-t border-white/[0.04]">
+          <div className="mt-4 pt-4 border-t border-zinc-700/30">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.4)]" />
               <p className="text-[9px] text-zinc-500 font-bold tracking-wider">
@@ -323,7 +326,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ className }) => {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="p-6 bg-white/[0.01] border border-white/[0.06] rounded-2xl backdrop-blur-sm"
+        className="p-6 bg-zinc-900/10 border border-zinc-700/30 rounded-2xl backdrop-blur-sm"
       >
         <div className="flex items-center justify-between mb-5">
           <div>
@@ -337,7 +340,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ className }) => {
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-white/[0.04]">
+                <tr className="border-b border-zinc-700/30">
                   <th className="text-[8px] font-black text-zinc-600 uppercase tracking-[0.15em] pb-3 pr-4">User</th>
                   <th className="text-[8px] font-black text-zinc-600 uppercase tracking-[0.15em] pb-3 pr-4">Role</th>
                   <th className="text-[8px] font-black text-zinc-600 uppercase tracking-[0.15em] pb-3 pr-4">Plan</th>
@@ -349,7 +352,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ className }) => {
                   .sort((a, b) => new Date(b.created).getTime() - new Date(a.created).getTime())
                   .slice(0, 8)
                   .map((u) => (
-                    <tr key={u.id} className="border-b border-white/[0.02] last:border-b-0 hover:bg-white/[0.02] transition-colors">
+                    <tr key={u.id} className="border-b border-zinc-700/30 last:border-b-0 hover:bg-zinc-900/10 transition-colors">
                       <td className="py-3 pr-4">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
@@ -374,9 +377,11 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ className }) => {
                       <td className="py-3 pr-4">
                         <span className={cn(
                           'text-[9px] font-bold',
-                          u.plan === 'Starter' ? 'text-zinc-500' : 'text-emerald-400'
+                          u.role === 'admin' || u.role === 'ceo' || u.role === 'owner'
+                            ? 'text-emerald-400'
+                            : u.plan === 'Starter' ? 'text-zinc-500' : 'text-emerald-400'
                         )}>
-                          {u.plan}
+                          {u.role === 'admin' || u.role === 'ceo' || u.role === 'owner' ? 'Admin' : u.plan}
                         </span>
                       </td>
                       <td className="py-3">
@@ -392,6 +397,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({ className }) => {
         )}
       </motion.div>
     </div>
+    </PageShell>
   );
 };
 
@@ -412,10 +418,10 @@ const CosmicStat: React.FC<{
   return (
     <motion.div
       whileHover={{ y: -3, transition: { duration: 0.2 } }}
-      className="p-5 rounded-2xl border border-white/[0.06] bg-white/[0.01] backdrop-blur-sm hover:border-primary/20 hover:bg-primary/[0.02] transition-all group"
+      className="p-5 rounded-2xl border border-zinc-700/30 bg-zinc-900/10 backdrop-blur-sm hover:border-primary/30 transition-all group"
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="w-8 h-8 rounded-xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center group-hover:border-primary/20 transition-colors">
+        <div className="w-8 h-8 rounded-xl bg-zinc-900/10 border border-zinc-700/30 flex items-center justify-center group-hover:border-primary/20 transition-colors">
           <Icon size={14} className="text-zinc-500 group-hover:text-primary/70 transition-colors" />
         </div>
         <span className={cn('text-[8px] font-bold flex items-center gap-0.5', trendColors[trend])}>

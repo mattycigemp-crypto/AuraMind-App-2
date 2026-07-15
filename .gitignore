@@ -9,26 +9,13 @@ build/
 .next/
 out/
 
-# Environment variables (match in any directory, including subprojects)
+# Environment variables
 .env
-**/.env
 .env.local
-**/.env.local
 .env.development.local
 .env.test.local
 .env.production.local
 .env.*.local
-**/.env.*.local
-
-# Secrets / credentials — never commit
-*.pem
-*.key
-*.p12
-*.pfx
-secrets.*
-credentials.*
-service*role*key*
-**/google-service-account*.json
 
 # Logs
 *.log
@@ -76,3 +63,27 @@ auramind-gemini/src-tauri/target/
 
 # Stakpak session files
 .stakpak/session*
+
+# AI model assets and service (local only, not for git)
+content/
+model-service/
+
+# Environment backups
+.env.backup
+
+# TypeScript output dumps
+tsc.out
+
+# Empty root scaffold dirs (anchored to root only)
+/public/
+/src-components/
+
+# Lottie animation source (kept in auramind-gemini/public/lottie/)
+*.jsonl
+
+# IDE / agent tooling
+.claude/
+.cline/
+.cursor/
+.opencode/
+opencode.json

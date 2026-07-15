@@ -46,14 +46,14 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
         return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
       case 'hard':
         return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
-      default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400';
+default:
+        return 'bg-zinc-800 text-zinc-300';
     }
   };
 
   return (
     <>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+      <div className="bg-zinc-900 rounded-lg shadow-sm border border-zinc-700">
         <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-semibold text-gray-900 dark:text-white">Flashcard Preview</h3>
@@ -75,7 +75,7 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
           <div className="text-sm text-gray-600 dark:text-gray-400">
             Card {currentIndex + 1} of {cards.length}
           </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2">
+          <div className="w-full bg-zinc-700 rounded-full h-2 mt-2">
             <div 
               className="bg-purple-600 h-2 rounded-full transition-all duration-300" 
               style={{ width: `${((currentIndex + 1) / cards.length) * 100}%` }}
@@ -91,7 +91,7 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
           )}
           <div className="mb-4">
             <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Question:</div>
-            <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg min-h-[80px] flex items-center">
+            <div className="p-4 bg-zinc-800 rounded-lg min-h-[80px] flex items-center">
               <div className="text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
                 <MathRichText text={currentCard.question} />
               </div>
@@ -112,7 +112,7 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
             <div className={`p-4 rounded-lg min-h-[80px] flex items-center transition-colors ${
               showAnswer 
                 ? 'bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-700' 
-                : 'bg-gray-50 dark:bg-gray-700'
+                : 'bg-zinc-800'
             }`}>
               <div className={`whitespace-pre-wrap ${
                 showAnswer 
@@ -129,9 +129,9 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
               onClick={handlePrevious}
               disabled={currentIndex === 0}
               className={`px-4 py-2 rounded-lg transition-colors ${
-                currentIndex === 0
-                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-                  : 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+currentIndex === 0
+                  ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                  : 'border border-zinc-700 text-zinc-300 hover:bg-zinc-800'
               }`}
             >
               Previous
@@ -143,8 +143,8 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
               onClick={handleNext}
               disabled={currentIndex === cards.length - 1}
               className={`px-4 py-2 rounded-lg transition-colors ${
-                currentIndex === cards.length - 1
-                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+currentIndex === cards.length - 1
+                  ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
                   : 'bg-purple-600 hover:bg-purple-700 text-slate-900 dark:text-white'
               }`}
             >
@@ -156,7 +156,7 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
 
       {showSaveDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-zinc-900 rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center gap-2 mb-4">
               <FolderOpen size={20} className="text-purple-600 dark:text-purple-400" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -173,7 +173,7 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
               value={deckTitle}
               onChange={(e) => setDeckTitle(e.target.value)}
               placeholder="Enter deck title..."
-              className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white mb-4"
+              className="w-full p-3 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-zinc-800 text-white mb-4"
               autoFocus
             />
 
@@ -183,7 +183,7 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
                   setShowSaveDialog(false);
                   setDeckTitle('');
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="flex-1 px-4 py-2 border border-zinc-700 text-zinc-300 rounded-lg hover:bg-zinc-800 transition-colors"
               >
                 Cancel
               </button>
@@ -193,7 +193,7 @@ const ChatFlashcardPreview: React.FC<ChatFlashcardPreviewProps> = ({ cards, onSa
                 className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
                   deckTitle.trim()
                     ? 'bg-purple-600 hover:bg-purple-700 text-slate-900 dark:text-white'
-                    : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                    : 'bg-zinc-700 text-zinc-500 cursor-not-allowed'
                 }`}
               >
                 Save {cards.length} Card{cards.length !== 1 ? 's' : ''}
