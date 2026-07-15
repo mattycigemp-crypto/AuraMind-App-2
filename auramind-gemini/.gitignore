@@ -25,5 +25,9 @@ dist-ssr
 
 .vercel
 
+# Environment files (secrets — never commit)
+.env
+.env.*.local
+
 # Tauri signing key
 privatekey.pem
