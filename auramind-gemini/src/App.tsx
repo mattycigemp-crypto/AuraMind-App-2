@@ -70,6 +70,7 @@ const StudyModeRoute = React.lazy(() => import("./pages/study/StudyModePage"));
 const DocsPage = React.lazy(() => import("./pages/legal/DocsPage"));
 const PrivacyPolicyPage = React.lazy(() => import("./pages/legal/PrivacyPolicyPage"));
 const TermsOfServicePage = React.lazy(() => import("./pages/legal/TermsOfServicePage"));
+const AboutPage = React.lazy(() => import("./pages/system/AboutPage"));
 const ResetPasswordPage = React.lazy(() => import("./pages/auth/ResetPasswordPage"));
 const RestoreAccountPage = React.lazy(() => import("./pages/auth/RestoreAccountPage"));
 const CallbackPage = React.lazy(() => import("./pages/auth/CallbackPage"));
@@ -1045,6 +1046,14 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               element={
                 <PageTransition>
                   <DownloadPage />
+                </PageTransition>
+              }
+            />
+            <Route
+              path="/about"
+              element={
+                <PageTransition>
+                  <AboutPage />
                 </PageTransition>
               }
             />
