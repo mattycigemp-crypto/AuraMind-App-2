@@ -1,0 +1,92 @@
+name: 🐛 Bug Report
+description: Report something that's broken or behaving unexpectedly.
+title: "[bug]: "
+labels: ["type:bug", "needs-triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for opening a bug report. Filling out the template below
+        gives maintainers enough context to reproduce and confirm —
+        please answer every field.
+
+  - type: input
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: One-sentence summary of the bug.
+      placeholder: |
+        Example: Pressing "Good" on a flashcard twice in a row sends the
+        review to the right deck in the UI but writes to a stale row.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: A numbered list — exactly what a maintainer has to do to hit this.
+      placeholder: |
+        1. Sign in as a free-tier user
+        2. Open deck "Med-Surg Ch. 4"
+        3. Review the first card with rating Good
+        4. Click Good again immediately
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What you see — paste console errors, network responses, screenshots inline.
+      render: shell
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where did the bug surface?
+      options:
+        - Web (auramind.app)
+        - Desktop (Tauri build)
+        - Android (Play Store build)
+        - iOS (App Store build)
+        - Supabase API / RPC layer
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: build
+    attributes:
+      label: Build / commit SHA
+      description: |
+        For web: the build hash in the page footer. For native/desktop:
+        the build version. For Supabase issues: the applied migration
+        version. Anything is better than nothing.
+      placeholder: "v2.4.1-rc3  •  211b11b1"
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / extra context
+      description: Browser DevTools console logs, network HAR, Sentry trace id, anything.
+      render: shell
+    validations:
+      required: false

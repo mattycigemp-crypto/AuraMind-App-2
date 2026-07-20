@@ -1,0 +1,31 @@
+root = true
+
+[*]
+charset                  = utf-8
+end_of_line              = lf
+insert_final_newline     = true
+trim_trailing_whitespace = true
+indent_style             = space
+indent_size              = 2
+
+# Tab-indented Makefile / Gradle / shell-script in build tooling.
+[Makefile]
+indent_style = tab
+
+[*.{ts,tsx,js,jsx,mjs,cjs,cts,json,yml,yaml,md,mdx,html,css,scss,sql}]
+indent_style = space
+indent_size  = 2
+
+# Supabase migrations are conventionally indented 4 spaces — leaves
+# room to nest DO $$ ... $$ blocks visibly without overflow.
+[supabase/migrations/**.sql]
+indent_size = 4
+
+# iOS / Android native files keep their native house style.
+[*.{kt,kts,swift,m,mm,h}]
+indent_style = space
+indent_size  = 4
+
+# Markdown: trailing whitespace is meaningful (hard line breaks) — don't strip it.
+[*.md,*.mdx]
+trim_trailing_whitespace = false

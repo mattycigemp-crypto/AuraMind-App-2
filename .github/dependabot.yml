@@ -1,0 +1,114 @@
+# Dependabot configuration
+# Docs: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+
+version: 2
+
+updates:
+
+  # ── GitHub Actions runner images ──────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # ── Frontend npm (auramind-gemini) ───────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/auramind-gemini"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      react-and-typescript:
+        patterns:
+          - "react*"
+          - "@types/*"
+          - "typescript"
+          - "vite*"
+          - "@vitejs/*"
+      ui-and-styling:
+        patterns:
+          - "tailwindcss*"
+          - "@tailwindcss/*"
+          - "framer-motion"
+          - "lucide-react"
+          - "@radix-ui/*"
+      data-and-state:
+        patterns:
+          - "@supabase/*"
+          - "@tanstack/*"
+          - "zustand"
+          - "swr"
+      ai-and-vector:
+        patterns:
+          - "groq-sdk"
+          - "@mlc-ai/*"
+          - "@dicebear/*"
+      testing-and-tooling:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "jsdom"
+          - "happy-dom"
+          - "@testing-library/*"
+      capacitor:
+        # Capacitor + native plugins touch the native iOS / Android
+        # compiles — group them together so a single review can flag
+        # anything that breaks native tooling.
+        #
+        # NB: per-group patch-only restriction is NOT supported by
+        # Dependabot v2 (update-types is only valid at the updates:
+        # top level, which would force patch-only across the entire
+        # ecosystem). We accept semver-minor bumps on @capacitor/* /
+        # @capgo/* here, with the M6 store-submission playbook's
+        # manual Capacitor pin list as the gate for risky minors
+        # that touch native compile.
+        patterns:
+          - "@capacitor/*"
+          - "@capgo/*"
+      everything-else:
+        patterns: ["*"]
+
+  # ── Backend npm (api/) ───────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/api"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+    groups:
+      stripe-and-supabase:
+        patterns:
+          - "stripe"
+          - "@supabase/*"
+      runtime-and-types:
+        patterns:
+          - "typescript"
+          - "@types/*"
+          - "@vercel/*"
+      everything-else:
+        patterns: ["*"]
+
+  # ── Root npm (orchestration scripts) ──────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+    groups:
+      tooling:
+        patterns:
+          - "prettier"
+          - "eslint*"
+          - "@types/*"
+
+  # ── Ignore noisy ecosystems ──────────────────────────────────────
+  # - docker: skipped — no Dockerfiles in the repo.
+  # - cargo: skipped — Tauri internals auto-bump with tauri-action.
+  # - gradle: skipped — Capacitor pin releases to a known-good set
+  #   per the M6 store-submission playbook.

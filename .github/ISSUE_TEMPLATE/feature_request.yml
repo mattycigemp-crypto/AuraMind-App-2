@@ -1,0 +1,60 @@
+name: ✨ Feature Request
+description: Propose a new capability or behavior change.
+title: "[feat]: "
+labels: ["type:feature", "needs-triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening, please search existing issues and Discussions —
+        someone may already be working on this. The strongest requests
+        spell out the user problem first.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What's the user problem?
+      description: Frame it as a job-to-be-done, not a feature spec. Who is hurting, and how often?
+      placeholder: |
+        As a med-school student using AuraMind between lectures, I
+        often have 90 seconds to flip through a quick card stack
+        while walking to the next class — but the dashboard load
+        takes ~3s and I miss the review window.
+    validations:
+      required: true
+
+  - type: textarea
+    id: ideal-flow
+    attributes:
+      label: Ideal flow
+      description: What does the user do once the feature exists? Walk through it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives / workarounds considered
+      description: Why won't simpler solutions work?
+    validations:
+      required: false
+
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Tier fit (best guess)
+      description: Which plans can plausibly use this?
+      multiple: true
+      options:
+        - Free
+        - Pro
+        - Pro Plus
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How will we know it's done?
+    validations:
+      required: false

@@ -1,0 +1,22 @@
+# CODEOWNERS
+#
+# Path-scoped reviewer assignments. GitHub will auto-tag a matching
+# reviewer on every PR that touches one of the lines below; if no
+# narrower rule matches, the * @mattycigemp-crypto default applies.
+#
+# Pattern format is the same as .gitignore. Last-match wins, so
+# more-specific paths MUST come AFTER less-specific ones below.
+
+# ── Default reviewer for everything in the repo ──
+* @mattycigemp-crypto
+
+# ── Schema migrations: misapplied migration = production data loss ──
+/supabase/migrations/ @mattycigemp-crypto
+
+# ── Release / mobile build pipelines — they gate what ships ──
+/.github/workflows/release*.yml @mattycigemp-crypto
+/.github/workflows/mobile-*.yml @mattycigemp-crypto
+
+# ── Tauri desktop config ──
+/auramind-gemini/src-tauri/   @mattycigemp-crypto
+/auramind-gemini/capacitor.config.ts @mattycigemp-crypto

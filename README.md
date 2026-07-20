@@ -1,12 +1,40 @@
-# AuraMind App
+# AuraMind
 
-An AI-powered study companion application with spaced repetition, flashcard management, and personalized learning features.
+<div align="center">
+
+[![CI](https://img.shields.io/github/actions/workflow/status/mattycigemp-crypto/AuraMind-App-2/ci.yml?branch=main&style=flat-square)](https://github.com/mattycigemp-crypto/AuraMind-App-2/actions/workflows/ci.yml)
+[![Dependabot](https://img.shields.io/badge/dependabot-enabled-025e8b?style=flat-square)](https://github.com/mattycigemp-crypto/AuraMind-App-2/network/dependencies)
+[![Code style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4?style=flat-square)](https://github.com/prettier/prettier)
+[![TypeScript: strict](https://img.shields.io/badge/typescript-strict-blue?style=flat-square)](https://www.typescriptlang.org)
+[![License: Proprietary](https://img.shields.io/badge/license-proprietary-orange?style=flat-square)](#license)
+
+[🚀 Quick Start](#quick-start) ·
+[🤝 Contributing](./CONTRIBUTING.md) ·
+[🔒 Security](./SECURITY.md) ·
+[📜 Code of Conduct](./CODE_OF_CONDUCT.md)
+
+</div>
+
+An AI-powered study companion — flashcard management, spaced
+repetition (FSRS v5 with personalized weights), AI generation +
+chat, Stripe billing, and a desktop / Android / iOS build pipeline,
+all in one repo.
+
+> **Status:** active development · pre-M6 release · deployments via Vercel (web) and Capacitor (mobile).
+
+## ✅ What's in here
+
+- **Web app** — React 19 + Vite 6 + Tailwind, served by Vercel.
+- **Mobile apps** — Capacitor 8 → Android (Play Store) and iOS (App Store).
+- **Desktop app** — Tauri 2 with auto-updater.
+- **Backend** — Vercel serverless functions under `/api`.
+- **Database** — Supabase (Postgres) with append-only migrations in `./supabase/migrations/`.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 - Git
 
@@ -14,8 +42,8 @@ An AI-powered study companion application with spaced repetition, flashcard mana
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd "AuraMind Website/AuraMind App 2"
+   git clone https://github.com/mattycigemp-crypto/AuraMind-App-2.git
+   cd AuraMind-App-2
    ```
 
 2. **Install dependencies**
@@ -185,57 +213,25 @@ npm run type-check
 
 ### Supabase Setup
 
-1. Create a new project at [supabase.com](https://supabase.com)
-2. Run the SQL setup script to create required tables:
-   ```sql
-   -- Decks table
-   create table decks (
-     id uuid default gen_random_uuid() primary key,
-     user_id uuid references auth.users not null,
-     title text not null,
-     description text,
-     card_count integer default 0,
-     created_at timestamp with time zone default now()
-   );
-   
-   -- Cards table
-   create table cards (
-     id uuid default gen_random_uuid() primary key,
-     user_id uuid references auth.users not null,
-     deck_id uuid references decks(id) on delete cascade,
-     question text not null,
-     answer text not null,
-     next_review timestamp with time zone,
-     interval integer default 0,
-     ease_factor numeric default 2.5,
-     repetition integer default 0,
-     last_reviewed timestamp with time zone,
-     created_at timestamp with time zone default now()
-   );
-   
-   -- Enable RLS
-   alter table decks enable row level security;
-   alter table cards enable row level security;
-   
-   -- Create policies
-   create policy "Users can view own decks" on decks
-     for select using (auth.uid() = user_id);
-   create policy "Users can insert own decks" on decks
-     for insert with check (auth.uid() = user_id);
-   create policy "Users can update own decks" on decks
-     for update using (auth.uid() = user_id);
-   create policy "Users can delete own decks" on decks
-     for delete using (auth.uid() = user_id);
-   
-   create policy "Users can view own cards" on cards
-     for select using (auth.uid() = user_id);
-   create policy "Users can insert own cards" on cards
-     for insert with check (auth.uid() = user_id);
-   create policy "Users can update own cards" on cards
-     for update using (auth.uid() = user_id);
-   create policy "Users can delete own cards" on cards
-     for delete using (auth.uid() = user_id);
-   ```
+1. Create a new project at [supabase.com](https://supabase.com).
+2. Apply the migrations from [`supabase/migrations/`](./supabase/migrations/)
+   in **time-stamp order** via the Supabase SQL Editor. They are append-only
+   and idempotent — each picks up where the previous one left off, and every
+   one writes a bookkeeping row to `schema_migrations`.
+
+   **The schema is intentionally NOT reproduced in this README.**
+   It goes stale as soon as the next migration ships. The directory of
+   numbered `.sql` files is the single source of truth, and
+   `schema_migrations.ORDER BY applied_at DESC` tells you which ones
+   the live DB currently has.
+
+To check what has been applied:
+
+```sql
+SELECT version, applied_at, description
+FROM   schema_migrations
+ORDER  BY applied_at DESC;
+```
 
 ### Stripe Setup
 
@@ -304,8 +300,24 @@ npm install
 
 ## 📝 License
 
-Proprietary - All rights reserved
+Proprietary — All rights reserved. © 2026 CogniVect, Inc.
+AuraMind and the AuraMind mark are trademarks of CogniVect, Inc.
+No part of this codebase is licensed for redistribution.
+
+## 📚 Governance
+
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — local setup, branch + commit
+  conventions, schema migration rules, and PR expectations.
+- [SECURITY.md](./SECURITY.md) — how to privately report a vulnerability
+  and the SLAs the maintainer commits to.
+- [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) — community norms
+  (Contributor Covenant v2.1).
 
 ## 🤝 Support
 
-For issues and questions, please contact the development team.
+- Bug reports → open an issue using the
+  [Bug Report template](./.github/ISSUE_TEMPLATE/bug_report.yml).
+- Feature ideas → open an issue using the
+  [Feature Request template](./.github/ISSUE_TEMPLATE/feature_request.yml).
+- Security issues → see [SECURITY.md](./SECURITY.md); do **not** open
+  a public issue.
