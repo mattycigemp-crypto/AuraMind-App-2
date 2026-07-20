@@ -43,7 +43,7 @@ const ComponentVerification: React.FC = () => {
         <FocusCore percentage={75} status="Test Mode Active" />
 
         <div className="flex">
-          <Sidebar activeItem="dashboard" className="relative" />
+          <Sidebar />
         </div>
 
         <TopAppBar
@@ -62,6 +62,7 @@ const ComponentVerification: React.FC = () => {
           createDeck={async () => null}
           deleteDeck={async () => {}}
           addCardsToDeck={async () => undefined}
+          updateProfile={async () => {}}
           onLogout={() => {}}
         >
           <DashboardLayout initialPage="dashboard" />

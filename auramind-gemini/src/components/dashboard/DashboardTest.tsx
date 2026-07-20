@@ -25,6 +25,7 @@ const DashboardTest: React.FC = () => {
       createDeck={async () => null}
       deleteDeck={async () => {}}
       addCardsToDeck={async () => undefined}
+      updateProfile={async () => {}}
       onLogout={() => {}}
     >
       <DashboardLayout initialPage="dashboard" />
