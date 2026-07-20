@@ -153,6 +153,9 @@ export {
   Monitor as MonitorIcon,
   ThumbsUp as ThumbsUpIcon,
   ThumbsDown as ThumbsDownIcon,
+  Network as NetworkIcon,
+  ZoomIn as ZoomInIcon,
+  ZoomOut as ZoomOutIcon,
 } from 'lucide-react';
 
 export {
