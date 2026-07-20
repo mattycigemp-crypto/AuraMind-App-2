@@ -78,6 +78,11 @@ const SchoologyCallbackPage = React.lazy(() => import("./pages/auth/SchoologyCal
 const NotFoundPage = React.lazy(() => import("./pages/NotFoundPage"));
 const PaymentPage = React.lazy(() => import("./components/auth/PaymentPage"));
 const DownloadPage = React.lazy(() => import("./pages/DownloadPage"));
+const GeneratorPage = React.lazy(() => import("./pages/generator/GeneratorPage"));
+const QuizPage = React.lazy(() => import("./pages/quiz/QuizPage"));
+const LeaguesPage = React.lazy(() => import("./components/gamification/LeaguesPage"));
+const MarketplacePage = React.lazy(() => import("./components/marketplace/MarketplacePage"));
+const PersonalizationPage = React.lazy(() => import("./pages/personalization/PersonalizationPage"));
 const OnboardingPage = React.lazy(() => import("./pages/OnboardingPage"));
 const AIChatPage = React.lazy(() => import("./components/chat/AIChatPage"));
 const SettingsPage = React.lazy(() => import("./pages/settings/SettingsPage"));
@@ -1057,6 +1062,14 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                 </PageTransition>
               }
             />
+            <Route
+              path="/dashboard/marketplace"
+              element={
+                <PageTransition>
+                  <MarketplacePage />
+                </PageTransition>
+              }
+            />
 
             <Route
               element={
@@ -1138,7 +1151,65 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                   </PageTransition>
                 }
               />
-              <Route path="/dashboard/quiz" element={<Navigate to="/dashboard/decks" replace />} />
+              <Route
+                path="/dashboard/quiz"
+                element={
+                  <PageTransition variant="lite">
+                    {user ? (
+                      <QuizPage />
+                    ) : (
+                      <Navigate to="/auth" replace />
+                    )}
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/dashboard/generator"
+                element={
+                  <PageTransition variant="lite">
+                    {user ? (
+                      <DashboardWorkspaceProvider
+                        user={user}
+                        decks={decks}
+                        cards={cards}
+                        createDeck={createDeck}
+                        deleteDeck={deleteDeck}
+                        addCardsToDeck={addCardsToDeck}
+                        updateProfile={updateUserProfile}
+                        onLogout={onLogout}
+                      >
+                        <GeneratorPage />
+                      </DashboardWorkspaceProvider>
+                    ) : (
+                      <Navigate to="/auth" replace />
+                    )}
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/dashboard/leagues"
+                element={
+                  <PageTransition variant="lite">
+                    {user ? (
+                      <LeaguesPage />
+                    ) : (
+                      <Navigate to="/auth" replace />
+                    )}
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/dashboard/personalization"
+                element={
+                  <PageTransition variant="lite">
+                    {user ? (
+                      <PersonalizationPage />
+                    ) : (
+                      <Navigate to="/auth" replace />
+                    )}
+                  </PageTransition>
+                }
+              />
               <Route path="/dashboard/planner" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard/insights" element={<Navigate to="/dashboard/analytics" replace />} />
               <Route path="/dashboard/professor" element={<Navigate to="/dashboard" replace />} />
