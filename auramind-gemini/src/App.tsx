@@ -872,6 +872,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                       createDeck={createDeck}
                       deleteDeck={deleteDeck}
                       addCardsToDeck={addCardsToDeck}
+                      updateProfile={updateUserProfile}
                       onLogout={onLogout}
                     >
                       <AdminOverview />
@@ -896,6 +897,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                       createDeck={createDeck}
                       deleteDeck={deleteDeck}
                       addCardsToDeck={addCardsToDeck}
+                      updateProfile={updateUserProfile}
                       onLogout={onLogout}
                     >
                       <HealthCheckPage />
@@ -912,7 +914,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               element={(() => {
                 if (!currentUser) return <Navigate to="/auth" replace />;
                 if (!isCeoOrHigher(currentUser.role)) return <Navigate to="/dashboard" replace />;
-                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminNexusPage /></DashboardWorkspaceProvider></PageTransition>;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} updateProfile={updateUserProfile} onLogout={onLogout}><AdminNexusPage /></DashboardWorkspaceProvider></PageTransition>;
               })()}
             />
             {/* Admin: Feature Flags */}
@@ -921,7 +923,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               element={(() => {
                 if (!currentUser) return <Navigate to="/auth" replace />;
                 if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
-                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminFeatureFlags /></DashboardWorkspaceProvider></PageTransition>;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} updateProfile={updateUserProfile} onLogout={onLogout}><AdminFeatureFlags /></DashboardWorkspaceProvider></PageTransition>;
               })()}
             />
             {/* Admin: Database Explorer */}
@@ -930,7 +932,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               element={(() => {
                 if (!currentUser) return <Navigate to="/auth" replace />;
                 if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
-                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><DatabaseExplorer /></DashboardWorkspaceProvider></PageTransition>;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} updateProfile={updateUserProfile} onLogout={onLogout}><DatabaseExplorer /></DashboardWorkspaceProvider></PageTransition>;
               })()}
             />
             {/* Admin: Audit Trail */}
@@ -939,7 +941,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               element={(() => {
                 if (!currentUser) return <Navigate to="/auth" replace />;
                 if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
-                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AuditLog /></DashboardWorkspaceProvider></PageTransition>;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} updateProfile={updateUserProfile} onLogout={onLogout}><AuditLog /></DashboardWorkspaceProvider></PageTransition>;
               })()}
             />
             {/* CEO+: Revenue Dashboard */}
@@ -948,7 +950,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               element={(() => {
                 if (!currentUser) return <Navigate to="/auth" replace />;
                 if (!isCeoOrHigher(currentUser.role)) return <Navigate to="/dashboard" replace />;
-                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminAnalytics /></DashboardWorkspaceProvider></PageTransition>;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} updateProfile={updateUserProfile} onLogout={onLogout}><AdminAnalytics /></DashboardWorkspaceProvider></PageTransition>;
               })()}
             />
             {/* CEO+: System Config */}
@@ -957,7 +959,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               element={(() => {
                 if (!currentUser) return <Navigate to="/auth" replace />;
                 if (!isCeoOrHigher(currentUser.role)) return <Navigate to="/dashboard" replace />;
-                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminSettings /></DashboardWorkspaceProvider></PageTransition>;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} updateProfile={updateUserProfile} onLogout={onLogout}><AdminSettings /></DashboardWorkspaceProvider></PageTransition>;
               })()}
             />
             {/* Owner: Role Manager */}
@@ -966,7 +968,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               element={(() => {
                 if (!currentUser) return <Navigate to="/auth" replace />;
                 if (!isOwnerOnly(currentUser.role)) return <Navigate to="/dashboard" replace />;
-                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminRoles /></DashboardWorkspaceProvider></PageTransition>;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} updateProfile={updateUserProfile} onLogout={onLogout}><AdminRoles /></DashboardWorkspaceProvider></PageTransition>;
               })()}
             />
             {/* Admin: User Management */}
@@ -975,7 +977,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               element={(() => {
                 if (!currentUser) return <Navigate to="/auth" replace />;
                 if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
-                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminUsers /></DashboardWorkspaceProvider></PageTransition>;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} updateProfile={updateUserProfile} onLogout={onLogout}><AdminUsers /></DashboardWorkspaceProvider></PageTransition>;
               })()}
             />
             {/* Admin: Subscriptions */}
@@ -984,7 +986,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               element={(() => {
                 if (!currentUser) return <Navigate to="/auth" replace />;
                 if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
-                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminSubscriptions /></DashboardWorkspaceProvider></PageTransition>;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} updateProfile={updateUserProfile} onLogout={onLogout}><AdminSubscriptions /></DashboardWorkspaceProvider></PageTransition>;
               })()}
             />
             {/* Admin: Test Users */}
@@ -993,7 +995,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               element={(() => {
                 if (!currentUser) return <Navigate to="/auth" replace />;
                 if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
-                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminTestUsers /></DashboardWorkspaceProvider></PageTransition>;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} updateProfile={updateUserProfile} onLogout={onLogout}><AdminTestUsers /></DashboardWorkspaceProvider></PageTransition>;
               })()}
             />
             {/* Admin: Content Library */}
@@ -1002,7 +1004,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               element={(() => {
                 if (!currentUser) return <Navigate to="/auth" replace />;
                 if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
-                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminContent /></DashboardWorkspaceProvider></PageTransition>;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} updateProfile={updateUserProfile} onLogout={onLogout}><AdminContent /></DashboardWorkspaceProvider></PageTransition>;
               })()}
             />
             {/* Admin: Platform Preview */}
@@ -1011,7 +1013,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               element={(() => {
                 if (!currentUser) return <Navigate to="/auth" replace />;
                 if (!getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel) return <Navigate to="/dashboard" replace />;
-                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} onLogout={onLogout}><AdminPlatformPreview /></DashboardWorkspaceProvider></PageTransition>;
+                return <PageTransition><DashboardWorkspaceProvider user={currentUser} decks={decks} cards={cards} createDeck={createDeck} deleteDeck={deleteDeck} addCardsToDeck={addCardsToDeck} updateProfile={updateUserProfile} onLogout={onLogout}><AdminPlatformPreview /></DashboardWorkspaceProvider></PageTransition>;
               })()}
             />
             <Route
@@ -1065,6 +1067,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                           createDeck={createDeck}
                           deleteDeck={deleteDeck}
                           addCardsToDeck={addCardsToDeck}
+                          updateProfile={updateUserProfile}
                           onLogout={onLogout}
                         >
                           <AnalyticsPage />
@@ -1089,6 +1092,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                           createDeck={createDeck}
                           deleteDeck={deleteDeck}
                           addCardsToDeck={addCardsToDeck}
+                          updateProfile={updateUserProfile}
                           onLogout={onLogout}
                         >
                           <LeaderboardPage />
@@ -1113,6 +1117,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                           createDeck={createDeck}
                           deleteDeck={deleteDeck}
                           addCardsToDeck={addCardsToDeck}
+                          updateProfile={updateUserProfile}
                           onLogout={onLogout}
                         >
                           <AchievementsPage />
@@ -1154,6 +1159,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                           createDeck={createDeck}
                           deleteDeck={deleteDeck}
                           addCardsToDeck={addCardsToDeck}
+                          updateProfile={updateUserProfile}
                           onLogout={onLogout}
                         >
                           <AIChatPage />
