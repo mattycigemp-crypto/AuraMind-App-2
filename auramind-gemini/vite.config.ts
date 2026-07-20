@@ -36,6 +36,18 @@ export default defineConfig(({ mode }) => {
       pwaConfig,
     ],
 
+    // Vitest config — co-located with the bundler config so a single source of
+    // truth drives both `vite build` and `vitest run`. `setupFiles` registers
+    // @testing-library/jest-dom matchers (see src/test-setup.ts).
+    // environment is left at its default (node) globally; tests that need a
+    // DOM opt in via the inline `// @vitest-environment jsdom` directive
+    // (e.g. StudyCard.test.tsx) so non-DOM tests stay fast.
+    test: {
+      setupFiles: ['./src/test-setup.ts'],
+      globals: false,
+      include: ['src/**/*.test.{ts,tsx}'],
+    },
+
     build: {
       rollupOptions: {
         output: {
