@@ -27,10 +27,14 @@ import {
   Monitor,
   Globe,
   ChevronRight,
+  ListChecks,
+  Store,
+  Sliders,
 } from "lucide-react";
 import { useAuraMind } from "@/lib/auramind/store";
 import type { ViewKey } from "@/lib/auramind/types";
 import { useNavigate, useLocation } from "react-router-dom";
+import { CogniWordmark } from "@/components/brand/CogniWordmark";
 import { useDashboardWorkspace } from "@/contexts/DashboardWorkspaceContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { getRoleBadgeConfig, isAdminOrHigher, isCeoOrHigher, isOwnerOnly } from "@/utils/permissions";
@@ -63,9 +67,13 @@ const PRIMARY_NAV: NavItem[] = [
   { key: "noop", label: "Generator", icon: Sparkles, path: "/dashboard/generator" },
   { key: "study", label: "Study", icon: Brain, path: "/dashboard/study" },
   { key: "chat", label: "AI Tutor", icon: MessageSquare, path: "/dashboard/chat" },
+  { key: "noop", label: "Quiz Lab", icon: ListChecks, path: "/dashboard/quiz" },
   { key: "noop", label: "Analytics", icon: Activity, path: "/dashboard/analytics" },
   { key: "noop", label: "Achievements", icon: Trophy, path: "/dashboard/achievements" },
   { key: "noop", label: "Leaderboard", icon: TrendingUp, path: "/dashboard/leaderboard" },
+  { key: "noop", label: "Leagues", icon: Crown, path: "/dashboard/leagues" },
+  { key: "noop", label: "Marketplace", icon: Store, path: "/dashboard/marketplace" },
+  { key: "noop", label: "Personalization", icon: Sliders, path: "/dashboard/personalization" },
   { key: "settings", label: "Settings", icon: Settings, path: "/dashboard/settings" },
 ];
 
@@ -106,17 +114,24 @@ const MOBILE_ADMIN_NAV: { key: ViewKey; label: string; icon: LucideIcon; path?: 
 function Wordmark({ className = "" }: { className?: string }) {
   const navigate = useNavigate();
   return (
-    <button
-      onClick={() => navigate("/dashboard")}
-      className={`flex items-center gap-2 ${className}`}
-    >
-      <div className="flex h-7 w-7 items-center justify-center rounded-lg">
-        <img src="/favicons,logos/favicon-32.png" alt="AuraMind" className="h-full w-full object-contain" />
-      </div>
-      <span className="text-[15px] font-medium tracking-tight text-[#F0EFFE]">
-        Aura<span className="font-serif italic text-violet-400">Mind</span>
-      </span>
-    </button>
+    <div className={`flex flex-col gap-0.5 ${className}`}>
+      <button
+        onClick={() => navigate("/dashboard")}
+        className="flex items-center gap-2"
+      >
+        <div className="flex h-7 w-7 items-center justify-center rounded-lg">
+          <img src="/favicons,logos/favicon-32.png" alt="AuraMind" className="h-full w-full object-contain" />
+        </div>
+        <span className="text-[15px] font-medium tracking-tight text-[#F0EFFE]">
+          Aura<span className="font-serif italic text-violet-400">Mind</span>
+        </span>
+      </button>
+      {/* CogniVect parent line lives BENEATH the AuraMind wordmark — never
+          inline with it, never replacing it. Variant 'footnote' keeps the
+          28px-tall logo strip from blowing out, while the VectorMark
+          glyph communicates the cross-product family at a glance. */}
+      <CogniWordmark variant="footnote" className="ml-[2rem] opacity-60" />
+    </div>
   );
 }
 
