@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Library, Zap, Sparkles, TrendingUp, Settings, Shield, Heart, Search, Trophy } from 'lucide-react';
+import { LayoutDashboard, Library, Zap, Sparkles, TrendingUp, Settings, Shield, Heart, Search, Trophy, Crown, Store, Sliders, ListChecks, Wand2 } from 'lucide-react';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
 import { isAdminOrHigher } from '../../utils/permissions';
+import { CogniWordmark } from '../brand/CogniWordmark';
 
 
 const USER_NAV_ITEMS = [
@@ -10,6 +11,11 @@ const USER_NAV_ITEMS = [
   { id: 'decks', label: 'Library', icon: Library, path: '/dashboard/decks' },
   { id: 'study', label: 'Study', icon: Zap, path: '/dashboard/study' },
   { id: 'chat', label: 'AI Tutor', icon: Sparkles, path: '/dashboard/chat' },
+  { id: 'quiz', label: 'Quiz Lab', icon: ListChecks, path: '/dashboard/quiz' },
+  { id: 'generator', label: 'Generator', icon: Wand2, path: '/dashboard/generator' },
+  { id: 'leagues', label: 'Leagues', icon: Crown, path: '/dashboard/leagues' },
+  { id: 'marketplace', label: 'Marketplace', icon: Store, path: '/dashboard/marketplace' },
+  { id: 'personalization', label: 'Personalization', icon: Sliders, path: '/dashboard/personalization' },
   { id: 'analytics', label: 'Analytics', icon: TrendingUp, path: '/dashboard/analytics' },
   { id: 'achievements', label: 'Achievements', icon: Trophy, path: '/dashboard/achievements' },
   { id: 'leaderboard', label: 'Leaderboard', icon: TrendingUp, path: '/dashboard/leaderboard' },
@@ -58,13 +64,18 @@ export default function Sidebar() {
   return (
     <aside className="w-60 min-h-screen bg-[#0A0A0F] border-r border-[#2A2A3A]/50 flex flex-col shrink-0">
       {/* Logo */}
-      <div className="px-5 h-14 flex items-center border-b border-[#2A2A3A]/30">
+      <div className="px-5 h-16 flex flex-col justify-center border-b border-[#2A2A3A]/30 gap-0.5">
         <button onClick={() => navigate('/')} className="flex items-center gap-2.5">
           <div className="w-7 h-7 rounded-lg flex items-center justify-center">
-            <img src="/favicons,logos/icon-192.svg" alt="AuraMind" className="h-full w-full object-contain" />
+            <img src="/favicons,logos/favicon-32.png" alt="AuraMind" className="h-full w-full object-contain" />
           </div>
           <span className="text-[#F0EFFE] text-sm font-medium tracking-tight">AuraMind</span>
         </button>
+        {/* CogniVect parent line — small caps + VectorMark glyph sits
+            BENEATH the AuraMind wordmark, never inline with it. Variant
+            'footnote' keeps the typography tight enough not to crowd the
+            240px-wide sidebar. */}
+        <CogniWordmark variant="footnote" className="ml-[2.35rem] mt-0.5 opacity-60" />
       </div>
 
       {/* Navigation */}
