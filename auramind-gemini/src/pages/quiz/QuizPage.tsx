@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GlassCard from '../../components/shared/GlassCard';
+import PageShell from '../../components/dashboard/PageShell';
 import ChatQuiz from '../../components/chat/ChatQuiz';
 import { auraAiClient } from '../../services/api/auraAiService';
 import { dbService } from '../../services/database/dbService';
-import { supabase } from '../../services/database/supabase';
+import { useCurrentUserId } from '../../hooks/useCurrentUserId';
 import { Quiz, Deck, Card } from '../../types';
 import {
   BrainCircuitIcon as BrainCircuit,
@@ -36,6 +37,7 @@ const QuizPage: React.FC = () => {
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [completedSessions, setCompletedSessions] = useState<{ deckId: string; score: number; total: number }[]>([]);
+  const userId = useCurrentUserId();
 
   useEffect(() => {
     const raw = localStorage.getItem('auramind-saved-quizzes');
@@ -45,24 +47,27 @@ const QuizPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (userId === undefined) return;
+    let cancelled = false;
+    if (userId === null) { setLoading(false); return; }
     (async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        const allDecks = await dbService.fetchDecks(user.id);
-        const allCards = await dbService.fetchCards(user.id);
+        const allDecks = await dbService.fetchDecks(userId);
+        const allCards = await dbService.fetchCards(userId);
+        if (cancelled) return;
         const grouped = allDecks.map(d => ({
           ...d,
           cards: allCards.filter(c => c.deckId === d.id),
         })).filter(d => d.cards.length > 0);
         setDecks(grouped);
       } catch (err) {
-        setError('Failed to load decks');
+        if (!cancelled) setError('Failed to load decks');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     })();
-  }, []);
+    return () => { cancelled = true; };
+  }, [userId]);
 
   const handleGenerateQuiz = async (deck: QuizDeck) => {
     setSelectedDeck(deck);
@@ -110,9 +115,11 @@ const QuizPage: React.FC = () => {
 
   if (loading) {
     return (
+      <PageShell>
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full" />
       </div>
+      </PageShell>
     );
   }
 
@@ -120,6 +127,7 @@ const QuizPage: React.FC = () => {
   const activeQuiz = quiz || selectedSaved;
   if (activeQuiz && (selectedDeck || selectedSaved)) {
     return (
+      <PageShell>
       <div className="max-w-3xl mx-auto">
         <button onClick={handleBack} className="flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100 mb-6 transition-colors">
           <ChevronLeft className="w-4 h-4" /> Back to {selectedSaved ? 'saved quizzes' : 'decks'}
@@ -138,12 +146,14 @@ const QuizPage: React.FC = () => {
           </div>
         )}
       </div>
+      </PageShell>
     );
   }
 
   // Generating view
   if (generating && selectedDeck) {
     return (
+      <PageShell>
       <div className="max-w-3xl mx-auto">
         <button onClick={handleBack} className="flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100 mb-6 transition-colors">
           <ChevronLeft className="w-4 h-4" /> Back to decks
@@ -158,6 +168,7 @@ const QuizPage: React.FC = () => {
           </div>
         </GlassCard>
       </div>
+      </PageShell>
     );
   }
 
@@ -175,6 +186,7 @@ const QuizPage: React.FC = () => {
 
   // Main deck selection view
   return (
+    <PageShell>
     <div className="max-w-5xl mx-auto">
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
@@ -282,6 +294,7 @@ const QuizPage: React.FC = () => {
         )}
       </div>
     </div>
+    </PageShell>
   );
 };
 
