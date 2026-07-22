@@ -23,7 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "react-responsive": "^10.0.1",
-    "recharts": "^3.8.1"
+    "recharts": "^3.10.0"
   },
   "devDependencies": {
     "concurrently": "^10.0.0"
