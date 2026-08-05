@@ -129,7 +129,7 @@ const Navbar = () => {
       }`}
     >
       <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-        <span className="flex items-center gap-2 text-[#F0EFFE] text-sm font-medium tracking-tight">
+        <span className="flex items-center gap-2 text-[#F0EFFE] text-sm font-medium tracking-tight font-script">
           <div className="w-5 h-5 rounded flex items-center justify-center">
             <img src="/favicons,logos/favicon-32.png" alt="AuraMind" className="h-full w-full object-contain" />
           </div>
@@ -578,7 +578,7 @@ export default function ModernLandingPage() {
             <div className="w-6 h-6 rounded-md flex items-center justify-center">
               <img src="/favicons,logos/favicon-32.png" alt="AuraMind" className="h-full w-full object-contain" />
             </div>
-            <span className="text-[#F0EFFE] text-xs font-medium">AuraMind</span>
+            <span className="text-[#F0EFFE] text-xs font-medium font-script">AuraMind</span>
           </div>
           <p className="text-[#3A3A4F] text-xs">Built by one person. Powered by real science.</p>
           <div className="flex items-center gap-6">

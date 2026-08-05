@@ -135,7 +135,7 @@ export default function AuthPage() {
               <div className="w-8 h-8 rounded-lg flex items-center justify-center">
                 <img src="/favicons,logos/favicon-32.png" alt="AuraMind" className="h-full w-full object-contain" />
               </div>
-              <span className="text-[#F0EFFE] text-base font-medium tracking-tight">AuraMind</span>
+              <span className="text-[#F0EFFE] text-base font-medium tracking-tight font-script">AuraMind</span>
             </div>
             <h1 className="text-[#F0EFFE] text-lg font-light tracking-tight mb-1">
               {mode === "signup" ? "Create your account" : "Welcome back"}

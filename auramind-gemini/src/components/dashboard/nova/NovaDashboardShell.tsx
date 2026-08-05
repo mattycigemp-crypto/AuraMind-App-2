@@ -553,7 +553,7 @@ export function NovaDashboardShell({ children }: NovaDashboardShellProps) {
             </>
           ) : (
             <>
-              Aura<span className="bg-gradient-to-r from-violet-200 to-fuchsia-300 bg-clip-text text-transparent">Mind</span>
+              Aura<span className="bg-gradient-to-r from-violet-200 to-fuchsia-300 bg-clip-text text-transparent font-script font-normal tracking-normal">Mind</span>
             </>
           )}
         </div>

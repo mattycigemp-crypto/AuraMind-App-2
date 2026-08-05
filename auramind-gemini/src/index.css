@@ -5,10 +5,10 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
+/* Optimized: WOFF2 only (95%+ browser support), TTF removed for faster load */
 @font-face {
   font-family: "Aura Sans";
-  src: url("/fonts/AuraSans-Regular.woff2") format("woff2"),
-       url("/fonts/AuraSans-Regular.ttf") format("truetype");
+  src: url("/fonts/AuraSans-Regular.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -16,28 +16,9 @@
 
 @font-face {
   font-family: "Aura Sans";
-  src: url("/fonts/AuraSans-Bold.woff2") format("woff2"),
-       url("/fonts/AuraSans-Bold.ttf") format("truetype");
+  src: url("/fonts/AuraSans-Bold.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Aura Sans";
-  src: url("/fonts/AuraSans-Italic.woff2") format("woff2"),
-       url("/fonts/AuraSans-Italic.ttf") format("truetype");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Aura Sans";
-  src: url("/fonts/AuraSans-BoldItalic.woff2") format("woff2"),
-       url("/fonts/AuraSans-BoldItalic.ttf") format("truetype");
-  font-weight: 700;
-  font-style: italic;
   font-display: swap;
 }
 
@@ -55,10 +36,11 @@
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-ui: "Outfit", "Inter", system-ui, sans-serif;
-  --font-display: "Aura Script", "Aura Sans", "Instrument Serif", Georgia, serif;
+  --font-ui: "Aura Sans", "Outfit", "Inter", system-ui, sans-serif;
+  --font-display: "Aura Sans", "Instrument Serif", Georgia, serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
-  --font-nova: "Aura Script", "Aura Sans", "Outfit", "Geist Variable", system-ui, sans-serif;
+  --font-nova: "Aura Sans", "Outfit", "Geist Variable", system-ui, sans-serif;
+  --font-script: "Aura Script", "Aura Sans", cursive;
 
   --color-neural-bg: #0A0A0F;
   --color-neural-surface: #111118;
@@ -596,7 +578,7 @@ body::after {
 @keyframes blink { to { visibility: hidden; } }
 
 @theme inline {
-  --font-heading: "Aura Script", "Aura Sans", "Geist Variable", sans-serif;
+  --font-heading: "Aura Sans", "Geist Variable", sans-serif;
   --font-sans: 'Geist Variable', sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
