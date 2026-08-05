@@ -1,0 +1,10 @@
+// AuraMind — iOS Release.xcconfig
+// Mirrors debug.xcconfig in shape but flips CAPACITOR_DEBUG off so the
+// production iOS bundle behaves the same as a web production build (no
+// verbose error overlays, no Cap dev server routing).
+
+CAPACITOR_DEBUG = false
+SWIFT_VERSION = 5.9
+IPHONEOS_DEPLOYMENT_TARGET = 15.0
+ENABLE_BITCODE = NO
+ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES

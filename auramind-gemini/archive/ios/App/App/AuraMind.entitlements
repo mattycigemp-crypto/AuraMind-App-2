@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Push Notifications (APNs) — REQUIRED for @capacitor/push-notifications to register a remote token.
+	     Set to "development" while iterating on TestFlight internal builds; flip to "production"
+	     (or "production" string — Apple's documented values are literally the strings
+	     "development" and "production") for App Store release builds. The CI workflow
+	     replaces this via a sed step based on the build environment. -->
+	<key>aps-environment</key>
+	<string>development</string>
+
+	<!-- Keychain access groups — REQUIRED for @capgo/capacitor-native-biometric so it can
+	     persist + read the Face ID / Touch ID protected credential blob across launches.
+	     group.com.auramind.app ties the credential to the same App Group as our shared
+	     preferences store. -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)group.com.auramind.app</string>
+	</array>
+
+	<!-- App Groups — used to share a Preferences directory with the share extension
+	     (if we add one later for "Share to AuraMind deck") and with the watchOS /
+	     widget extension in a future release. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.auramind.app</string>
+	</array>
+</dict>
+</plist>

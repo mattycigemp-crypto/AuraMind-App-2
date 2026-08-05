@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "AuraMind",
         "width": 1200,
         "height": 800,
@@ -40,6 +41,12 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "category": "Education",
+    "shortDescription": "Study smarter, not longer. Adaptive flashcards + FSRS + AI decks.",
+    "longDescription": "AuraMind — the flagship study platform from CogniVect, Inc. Built for students who want to study smarter, not longer. Adaptive spaced repetition (FSRS), AI-assisted deck generation, and Pomodoro-style focus modes so every minute lands somewhere that matters. No third-party trackers; your data stays under your control. Visit cogniavect.app to learn about the broader family. © CogniVect, Inc.",
+    "copyright": "© CogniVect, Inc.",
+    "publisher": "CogniVect, Inc.",
+    "homepage": "https://auramind.app",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -59,8 +66,23 @@
       "entitlements": null,
       "exceptionDomain": "",
       "frameworks": [],
-      "providerShortName": null,
-      "signingIdentity": null
+      "providerShortName": "CogniVect, Inc.",
+      "signingIdentity": null,
+      "dmg": {
+        "background": null,
+        "windowSize": {
+          "width": 660,
+          "height": 400
+        }
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": []
+      },
+      "appimage": {
+        "bundleMediaFramework": false
+      }
     }
   },
   "plugins": {
@@ -72,7 +94,9 @@
     },
     "updater": {
       "active": true,
-      "endpoints": ["https://releases.auramind.app/update/{{target}}/{{current_version}}"],
+      "endpoints": [
+        "https://releases.cogniavect.app/update/{{target}}/{{current_version}}"
+      ],
       "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM4NEYyNTA5QjZFOTg0RDYKUldUV2hPbTJDU1ZQeUpuZ1FsTWx4VDhrRTJTL1RNb0c0NkdyM2MrZWlWemlweFN5SUEvYXUvYnUK"
     }

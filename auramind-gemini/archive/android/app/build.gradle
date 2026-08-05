@@ -1,0 +1,115 @@
+apply plugin: 'com.android.application'
+
+android {
+    namespace = "com.auramind.app"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "com.auramind.app"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+
+    /**
+     * signingConfigs.release — strictly env-driven.
+     *
+     * Why env-driven (not hardcoded):
+     *   - The keystore + passwords never enter git, so they must come from CI/CD
+     *     secrets or a developer's password manager.
+     *   - A real maintained release keystore ends up in `android/keystore/release.keystore`
+     *     and is paired with `ANDROID_KEYSTORE_PASSWORD` + `ANDROID_KEY_ALIAS` +
+     *     `ANDROID_KEY_PASSWORD` environment variables (see android/keystore/README.md).
+     *
+     * Loud-fail on release:
+     *   - If the env vars are missing AND we're building with the `release` build
+     *     type, Gradle will fail with a clear message rather than silently signing
+     *     with the debug keystore (which Play Store rejects outright).
+     *
+     * Dev-fallback for assembleDebug:
+     *   - Debug builds use the standard Android debug keystore, unchanged.
+     */
+    signingConfigs {
+        release {
+            // Resolve the keystore relative to the REPO ROOT (the directory above
+            // android/), not relative to this `android/` directory which is the
+            // Gradle rootProject's working directory. A naive `rootProject.file('android/...')`
+            // would resolve to `auramind-gemini/android/android/keystore/release.keystore`
+            // — an extra `android/` prefix and a directory that does not exist.
+            String keystoreRelOrAbs = System.getenv('ANDROID_KEYSTORE_PATH')
+                ?: 'android/keystore/release.keystore'
+            File keystoreFile = new File(
+                keystoreRelOrAbs.length > 0 && keystoreRelOrAbs.charAt(0) == '/' || keystoreRelOrAbs.charAt(1) == ':'
+                    ? new File(keystoreRelOrAbs)  // absolute path
+                    : new File(rootProject.projectDir.parentDir, keystoreRelOrAbs)  // relative to repo root
+            )
+            String storePassword = System.getenv('ANDROID_KEYSTORE_PASSWORD')
+            String keyAlias = System.getenv('ANDROID_KEY_ALIAS') ?: 'auramind-upload'
+            String keyPassword = System.getenv('ANDROID_KEY_PASSWORD') ?: storePassword
+            if (!keystoreFile.exists() || !storePassword) {
+                throw new GradleException(
+                    "[AuraMind] Release build cannot proceed. Required inputs missing:\n" +
+                    "  • keystore: ${keystoreFile.absolutePath} ${keystoreFile.exists() ? '(found)' : '(NOT FOUND)'}\n" +
+                    "  • ANDROID_KEYSTORE_PASSWORD env var ${storePassword ? '(set)' : '(NOT SET)'}\n" +
+                    "  • ANDROID_KEY_ALIAS env var (defaults to 'auramind-upload' if unset)\n" +
+                    "  • ANDROID_KEY_PASSWORD env var (defaults to keystore password if unset)\n" +
+                    "Generate a release keystore: see android/keystore/README.md.\n" +
+                    "Then re-run with all four env vars set.\n" +
+                    "If you intended to build a debug APK instead, use ./gradlew assembleDebug."
+                )
+            }
+            storeFile keystoreFile
+            storePassword storePassword
+            keyAlias keyAlias
+            keyPassword keyPassword
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-DEBUG"
+        }
+        release {
+            minifyEnabled true
+            shrinkResources true
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

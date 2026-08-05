@@ -1,0 +1,109 @@
+name: Mobile iOS
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      lane:
+        description: 'fastlane lane (beta | release)'
+        required: true
+        type: choice
+        default: 'beta'
+        options:
+          - beta
+          - release
+
+jobs:
+  ios:
+    runs-on: macos-14
+    timeout-minutes: 60
+
+    permissions:
+      contents: read
+
+    env:
+      APP_NAME: AuraMind
+      BUNDLE_ID: com.auramind.app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: auramind-gemini/package-lock.json
+
+      # Pin Xcode via setup-xcode action — handles 16.0 / 16.1 / 16.2 transparently.
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.0'
+
+      - name: Setup Ruby + Bundler (for fastlane)
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          working-directory: auramind-gemini
+          bundler-cache: true
+
+      - name: Install dependencies
+        working-directory: auramind-gemini
+        run: |
+          npm ci
+          # Bundle install reads the committed Gemfile.lock; fails loudly if it
+          # is missing or out-of-date. Maintainers regenerate via `bundle lock`
+          # on the same Ruby version as the CI runner (3.2).
+          bundle config set --local path 'vendor/bundle'
+          bundle install --jobs 4 --retry 3
+
+      - name: Verify fastlane + match are installed
+        working-directory: auramind-gemini
+        run: |
+          bundle exec fastlane --version
+          # match ships with fastlane; sanity check the subcommand resolves.
+          bundle exec fastlane match --help | head -5
+
+      - name: Build web bundle
+        working-directory: auramind-gemini
+        run: npm run build
+
+      - name: Sync web assets into iOS
+        working-directory: auramind-gemini
+        run: npx cap sync ios
+
+      - name: Verify PrivacyInfo.xcprivacy is in the Xcode target bundle
+        working-directory: auramind-gemini
+        run: |
+          if ! grep -q "PrivacyInfo.xcprivacy" ios/App/App.xcodeproj/project.pbxproj; then
+            echo "::error::PrivacyInfo.xcprivacy must be added to the App target in Xcode (drag into 'Copy Bundle Resources'). Apple rejects binaries that ship without a privacy manifest."
+            exit 1
+          fi
+
+      # The signing, archive, export, and TestFlight/App Store upload live in
+      # Fastfile. The CI is intentionally thin here — fastlane handles match
+      # for certs, dSYM upload, and upload_to_testflight / upload_to_app_store
+      # (which uses xcrun iTMSTransporter under the hood; xcrun altool is
+      # deprecated by Apple for App Store uploads as of Xcode 14).
+      - name: Run fastlane
+        working-directory: auramind-gemini
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_ITC_TEAM_ID: ${{ secrets.APPLE_ITC_TEAM_ID }}
+          ASC_API_KEY_PATH: ${{ secrets.ASC_API_KEY_PATH }}
+          MATCH_GIT_URL: ${{ secrets.MATCH_GIT_URL }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          LANE: ${{ github.event.inputs.lane || 'beta' }}
+        run: bundle exec fastlane ios "$LANE"
+
+      - name: Cleanup provisioning profiles + keychain
+        if: always()
+        run: |
+          rm -rf ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision
+          security delete-keychain ios-build.keychain 2>/dev/null || true
+          echo "Signing identities + profiles cleaned up."

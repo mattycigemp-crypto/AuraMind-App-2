@@ -1,7 +1,7 @@
 {
   "identifier": "default",
-  "description": "Default capabilities for AuraMind",
-  "windows": ["main"],
+  "description": "Default capabilities for AuraMind (a CogniVect, Inc product)",
+  "windows": ["main", "about"],
   "permissions": [
     "core:default",
     "shell:allow-open",
@@ -10,6 +10,7 @@
     "clipboard-manager:default",
     "os:default",
     "store:default",
+    "updater:default",
     {
       "identifier": "fs:allow-read",
       "allow": [

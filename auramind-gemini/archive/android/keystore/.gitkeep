@@ -1,0 +1,8 @@
+# Android Keystore Directory Marker
+#
+# The release.keystore file lives in this directory at build time but is
+# gitignored (see auramind-gemini/.gitignore + android/keystore/README.md).
+# This .gitkeep keeps the directory itself in the repo so contributors can
+# drop a keystore in without `mkdir`.
+#
+# DO NOT commit a real keystore here. Ever.

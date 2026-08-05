@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CAPACITOR_DEBUG</key>
+	<string>$(CAPACITOR_DEBUG)</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleDisplayName</key>
+	<string>AuraMind</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+
+	<!-- App Category for App Store Browse. Productivity = where Anki / Quizlet live. -->
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.productivity</string>
+
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<!-- arm64-only. Apple Silicon + A7+ chips only — armv7 is iPhone 5 and older. -->
+		<string>arm64</string>
+	</array>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<true/>
+
+	<!-- ── BACKGROUND MODES ───────────────────────────────────────────────
+	     Without `remote-notification` in UIBackgroundModes, iOS drops silent
+	     APNs payloads on the floor — meaning a study reminder pushed while
+	     the app is backgrounded would never reach the user. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+
+	<!-- ── USAGE DESCRIPTIONS ─────────────────────────────────────────────
+	     Apple App Store Review rejects any binary that performs a permission-
+	     gated capability without the matching usage string. We declare ONLY
+	     what we actually use so the review reads as honest. -->
+
+	<!-- NativeBiometric — Face ID / Touch ID authentication when unlocking
+	     study sessions or sensitive app sections. -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>AuraMind uses Face ID to unlock your study sessions and protect your learning data.</string>
+
+	<!-- Speech recognition — for the voice-driven "say the answer" study
+	     mode (useSpeechRecognition). The WebView delegates to the native
+	     Speech framework on iOS, which prompts for mic access. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>AuraMind needs microphone access for voice-driven study mode so you can speak answers aloud.</string>
+
+	<!-- Speech recognition disclosure — explicitly required by Apple
+	     starting with iOS 17 even though it shares the microphone prompt. -->
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>AuraMind sends your spoken answer to Apple's speech recognition engine to score it against the flashcard.</string>
+
+	<!-- Local notifications — prompt for permission to send study reminders.
+	     iOS surfaces this as part of UNUserNotificationCenter.requestAuthorization
+	     and Apple expects a usage string even though we don't gate behind it. -->
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>AuraMind sends you study reminders so you can keep your spaced-repetition streak alive.</string>
+
+	<!-- ── TRANSPORT SECURITY + ENCRYPTION ───────────────────────────────
+	     AuraMind uses HTTPS exclusively; no cleartext; the
+	     allowMixedContent: true in capacitor.config.ts is for the dev
+	     Android Chromium debugger only. -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+		<key>NSAllowsLocalNetworking</key>
+		<false/>
+	</dict>
+
+	<!-- Encryption compliance — AuraMind only uses HTTPS / TLS (standard
+	     Apple-exempt encryption). Setting this to false tells App Store
+	     Connect that we do NOT need an annual ERN export compliance filing. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
+	<!-- ── APP STORE LINKS ─────────────────────────────────────────────── -->
+	<key>NSAppStoreUsageDescription</key>
+	<string>AuraMind opens the App Store so you can rate or update the app.</string>
+</dict>
+</plist>

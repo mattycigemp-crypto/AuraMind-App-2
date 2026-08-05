@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- method: how the IPA gets distributed
+	     - app-store      → ships to App Store Connect (production)
+	     - ad-hoc         → installs on a fixed list of device UUIDs (internal QA)
+	     - development    → installs over Xcode / iOS App signer (devs only)
+	     - enterprise     → in-house distribution (only with an Enterprise account)
+	     - validation     → validates the archive without uploading (fast smoke test)
+	     - package        → produces an .pkg (Mac Installer, not iOS)
+	     The CI workflow sets this based on the lane flag. -->
+	<key>method</key>
+	<string>app-store</string>
+
+	<!-- teamID: your 10-character Apple Developer Team ID.
+	     Read from $APPLE_TEAM_ID in CI. The literal placeholder
+	     "REPLACE_WITH_APPLE_TEAM_ID" is intentionally grep-able
+	     (run `git grep REPLACE_WITH_` before tagging a release). -->
+	<key>teamID</key>
+	<string>REPLACE_WITH_APPLE_TEAM_ID</string>
+
+	<!-- Signing identity: "Apple Distribution" for distribution,
+	     "Apple Development" for local devs. Set to distribution in CI;
+	     devs have their own Apple Development signing identity. -->
+	<key>signingStyle</key>
+	<string>manual</string>
+
+	<key>distributionMethod</key>
+	<string>app-store</string>
+
+	<!-- Strip Swift symbols in the App Store IPA (Apple's recommendation). -->
+	<key>stripSwiftSymbols</key>
+	<true/>
+
+	<!-- Upload symbols to App Store so Crashlytics / Sentry can symbolicate.
+	     We never want a production crash dump to come back with hex addresses. -->
+	<key>uploadSymbols</key>
+	<true/>
+
+	<!-- Compiling bitcode is deprecated by Apple (as of Xcode 14). Keep false. -->
+	<key>embedOnDemandResourcesAssetPacksInBundle</key>
+	<false/>
+
+	<!-- Manifest entries (these populate automatically per build).
+	     The literal placeholder `REPLACE_WITH_APPLE_APP_ID` is grep-able
+	     so a contributor notices before tagging a release. -->
+	<key>manifest</key>
+	<dict>
+		<key>appURL</key>
+		<string>https://apps.apple.com/app/auramind/REPLACE_WITH_APPLE_APP_ID</string>
+		<key>displayImageURL</key>
+		<string>https://auramind.app/icon-512.png</string>
+		<key>fullDisplayImageURL</key>
+		<string>https://auramind.app/icon-1024.png</string>
+	</dict>
+</dict>
+</plist>

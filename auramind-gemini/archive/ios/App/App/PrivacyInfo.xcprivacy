@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!--
+	  PrivacyInfo.xcprivacy — Apple Privacy Manifest.
+
+	  Required (since May 1, 2024) for any new App Store submission and any
+	  update. We declare only the "Required Reason" API usage we actually use
+	  so Apple's privacy report reads as honest.
+
+	  Reference: https://developer.apple.com/documentation/bundleresources/privacy_manifest_files
+	-->
+
+	<!-- NSPrivacyTracking: Do we track the user across apps for advertising? -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+
+	<!-- NSPrivacyTrackingDomains: empty because we don't track — we use PostHog
+	     product analytics (with consent) but never for cross-app tracking. -->
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+
+	<!-- NSPrivacyCollectedDataTypes: empty because we collect server-side only;
+	     the app itself doesn't store "collected data" in the OS-tracked sense.
+	     Our server-side collection is documented in the privacy policy. -->
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+
+	<!-- NSPrivacyAccessedAPITypes: the OS-level APIs we touch. As of 2024 Apple
+	     requires declaration of any of these "Required Reason" API categories. -->
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<!-- File timestamp API. Capacitor / Cordova plugins use NSFileCreationDate
+		     and friends for Filesystem plugin operations. Declared reason: C617.1
+		     (display to user). -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
+			</array>
+		</dict>
+
+		<!-- Disk space API. Capacitor uses NSFileSystemFreeSize to decide whether
+		     to download attachments to disk or stream. Reason: E174.1 (analytics). -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>E174.1</string>
+			</array>
+		</dict>
+
+		<!-- Boot time / device info. We use NSProcessInfo.systemUptime for
+		     performance diagnostics. Reason: 8B52.1 (analytics). -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>8B52.1</string>
+			</array>
+		</dict>
+
+		<!-- UserDefaults. Capacitor Preferences plugin reads/writes to user
+		     defaults. Reason: 1F2F.1 (access from same app, per Apple). -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

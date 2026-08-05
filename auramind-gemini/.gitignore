@@ -31,3 +31,55 @@ dist-ssr
 
 # Tauri signing key
 privatekey.pem
+
+# ── ANDROID: keystore + signing material ────────────────────────
+android/keystore/*.keystore
+android/keystore/*.jks
+android/keystore/release.keystore
+android/keystore/upload.keystore
+android/app/google-services.json
+android/app/.cxx/
+android/build/
+android/app/build/
+android/local.properties
+
+# ── iOS: per-machine + per-build artifacts ──────────────────────
+ios/App/App.xcodeproj/xcuserdata/
+ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
+ios/App/App.xcworkspace/xcuserdata/
+ios/App/Pods/
+ios/App/build/
+ios/build/
+ios/DerivedData/
+ios/.build/
+*.mobileprovision
+ios/App/App.xcodeproj/project.pbxproj.userdata
+# Local certs (anchor under fastlane/secrets to avoid catching .cer code files)
+fastlane/**/*.cert
+fastlane/**/*.p12
+*.mobileprovision
+*.p12
+
+# ── fastlane: per-run reports + screenshots cache ───────────────
+auramind-gemini/fastlane/report.xml
+auramind-gemini/fastlane/Preview.html
+auramind-gemini/fastlane/screenshots/
+auramind-gemini/fastlane/test_output/
+auramind-gemini/fastlane/.fastlane_history
+
+# ── Capacitor build artifacts + synced web bundle ───────────────
+android/app/src/main/assets/public/
+ios/App/App/public/
+ios/App/App/capacitor.config.json
+!ios/App/App/capacitor.config.json.override
+
+# ── Local-only / scope-private configs (NEVER commit) ───────────
+*.google-services.json
+firebase-service-account.json
+keystore.properties
+
+# ── Misc build outputs ─────────────────────────────────────────
+.turbo
+coverage/
+.nyc_output/
+junit-*.xml
