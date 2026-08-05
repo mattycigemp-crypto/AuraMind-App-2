@@ -336,12 +336,16 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
   }, [location.pathname, isMobile]);
 
   const checkSubscription = async (userId: string, email: string, forceCheck = false) => {
+    /** Timeout guard: if /api/subscription is unreachable (local dev w/o API, or a
+     * slow deploy), bail to "none" instead of leaving subscriptionStatus stuck on
+     * "loading" — which held LoadingOverlay on every protected route forever. */
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || "";
       const response = await fetch(`${apiBase}/api/subscription`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, email }),
+        signal: AbortSignal.timeout(8000),
       });
       if (!response.ok) {
         console.error("Subscription check failed:", response.status);
