@@ -300,6 +300,75 @@ export async function groqChat(opts: GroqChatOptions): Promise<GroqChatResult> {
  *     appendToUI(chunk);
  *   }
  */
+/**
+ * groqTranscribe — transcribe audio via Groq Whisper (whisper-large-v3).
+ *
+ * Groq hosts Whisper at the OpenAI-compatible `/audio/transcriptions`
+ * endpoint. The audio is sent as multipart form-data (a Blob + filename +
+ * model). Returns the transcribed text, or throws `GroqUnavailableError`
+ * on the same classification as chat (401/403 never retry, 429 quota,
+ * 5xx upstream).
+ *
+ * Usage:
+ *   const text = await groqTranscribe(audioBlob, 'recording.webm');
+ */
+export async function groqTranscribe(
+  audio: Blob,
+  filename = 'recording.webm',
+  model = 'whisper-large-v3',
+): Promise<string> {
+  const key = getGroqKey();
+  if (!key) {
+    throw new GroqUnavailableError(
+      'groqTranscribe: no API key. Set VITE_GROQ_API_KEY in .env.',
+      {},
+    );
+  }
+
+  const form = new FormData();
+  form.append('file', audio, filename);
+  form.append('model', model);
+  form.append('language', 'en');
+
+  const res = await fetch(`${GROQ_BASE_URL}/audio/transcriptions`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${key}` },
+    body: form,
+  });
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({} as any));
+    const upstreamMessage: string =
+      errBody?.error?.message ?? `HTTP ${res.status} ${res.statusText}`;
+    throw new GroqUnavailableError(
+      `Groq transcription error (${res.status}): ${upstreamMessage}`,
+      {
+        status: res.status,
+        groqMessage: upstreamMessage,
+        isAuthFailure: AUTH_STATUSES.has(res.status),
+        isQuotaExhausted: res.status === 429,
+      },
+    );
+  }
+
+  const json = await res.json();
+  return json?.text ?? '';
+}
+
+/**
+ * groqSpeech — text-to-speech via Groq (currently unavailable upstream).
+ *
+ * Groq has no public TTS endpoint as of August 2026, so this returns
+ * `null` and callers should fall back to the browser's built-in
+ * `speechSynthesis` (which `useVoiceStudy` uses). Kept as a typed
+ * seam so swapping in an external TTS (OpenAI, ElevenLabs, Cartesia)
+ * later is a one-file change.
+ */
+export async function groqSpeech(_text: string): Promise<ArrayBuffer | null> {
+  // No Groq TTS endpoint yet — return null to signal "use browser TTS".
+  return null;
+}
+
 export async function* groqChatStream(
   opts: GroqChatOptions,
 ): AsyncGenerator<string> {

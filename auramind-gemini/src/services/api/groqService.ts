@@ -552,21 +552,73 @@ Include 4-6 flashcards and 4-6 quiz questions.`;
 };
 
 /**
- * Note: DeepSeek doesn't support audio transcription like Gemini did.
- * This function is kept for compatibility but will need to be replaced
- * with a different service (e.g., OpenAI Whisper API) for audio functionality.
+ * transcribeAudio — transcribe a recorded/uploaded audio clip via Groq
+ * Whisper. Accepts either a Blob directly or a base64 string (which it
+ * converts to a Blob using the supplied mimeType).
  */
-export const transcribeAudio = async (base64Audio: string, mimeType: string = 'audio/wav'): Promise<string> => {
-    throw new Error("Audio transcription is not supported with DeepSeek. Please use a different service like OpenAI Whisper API.");
+export const transcribeAudio = async (
+    audio: Blob | string,
+    mimeType: string = 'audio/webm',
+): Promise<string> => {
+    const { groqTranscribe } = await import('./groqClient');
+    const blob =
+        typeof audio === 'string'
+            ? base64ToBlob(audio, mimeType)
+            : audio;
+    if (!blob || blob.size === 0) return '';
+    const extension = mimeExt(mimeType);
+    return groqTranscribe(blob, `recording.${extension}`);
 };
 
+/** Convert a base64 data string into a Blob (used when the recorder hands
+ *  back base64 rather than a raw Blob). */
+function base64ToBlob(base64: string, mimeType: string): Blob | null {
+    try {
+        const binary = atob(base64.replace(/^data:[^;]+;base64,/, ''));
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return new Blob([bytes], { type: mimeType });
+    } catch {
+        return null;
+    }
+}
+
+/** Map a MIME type to a file extension for the Whisper API. */
+function mimeExt(mimeType: string): string {
+    if (mimeType.includes('mp3')) return 'mp3';
+    if (mimeType.includes('wav')) return 'wav';
+    if (mimeType.includes('ogg')) return 'ogg';
+    if (mimeType.includes('mp4')) return 'mp4';
+    if (mimeType.includes('m4a')) return 'm4a';
+    return 'webm';
+}
+
 /**
- * Note: DeepSeek doesn't support text-to-speech like Gemini did.
- * This function is kept for compatibility but will need to be replaced
- * with a different TTS service.
+ * generateSpeech — text-to-speech.
+ *
+ * Groq has no TTS endpoint (August 2026), so this prefers the browser's
+ * built-in speechSynthesis for instant, offline-capable playback. It
+ * returns the browser's utterance (an opaque handle) so callers can
+ * cancel it; a null return signals "no TTS available".
  */
-export const generateSpeech = async (text: string): Promise<AudioBuffer | null> => {
-    throw new Error("Text-to-speech is not supported with DeepSeek. Please use a different TTS service.");
+export const generateSpeech = async (
+    text: string,
+    options?: { rate?: number; pitch?: number; voiceURI?: string },
+): Promise<SpeechSynthesisUtterance | null> => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
+    const utterance = new SpeechSynthesisUtterance(text);
+    const { rate = 1, pitch = 1, voiceURI } = options ?? {};
+    utterance.rate = rate;
+    utterance.pitch = pitch;
+    if (voiceURI) {
+        const voice = window.speechSynthesis.getVoices().find(v => v.voiceURI === voiceURI);
+        if (voice) utterance.voice = voice;
+    }
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+    return utterance;
 };
 
 

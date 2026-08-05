@@ -19,14 +19,17 @@ import {
   TypeIcon as Type,
   FileTextIcon as FileText,
   BookOpenIcon as BookOpen,
+  Mic2Icon as Mic,
 } from '../../components/icons/CustomIcons';
 import { toast } from 'sonner';
 import { localInference, getModelDisplayName, type InitProgress } from '../../services/api/localInferenceService';
 import PresentationViewer from '../../components/study/PresentationViewer';
 import { extractStudyAssetText } from '../../services/import/documentImportService';
+import { useAudioRecorder } from '../../hooks/useAudioRecorder';
+import { transcribeAudio } from '../../services/api/groqService';
 
 type GeneratorType = 'quiz' | 'flashcards' | 'presentation';
-type InputSource = 'topic' | 'url' | 'youtube' | 'file';
+type InputSource = 'topic' | 'url' | 'youtube' | 'file' | 'audio';
 type Difficulty = 'easy' | 'medium' | 'hard' | 'mixed';
 
 const GeneratorPage: React.FC = () => {
@@ -50,6 +53,8 @@ const GeneratorPage: React.FC = () => {
   const [isExtracting, setIsExtracting] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
+  const recorder = useAudioRecorder();
   const generationStartRef = useRef<number>(0);
   const [elapsed, setElapsed] = useState(0);
   const [genProgress, setGenProgress] = useState(0);
@@ -154,6 +159,49 @@ const GeneratorPage: React.FC = () => {
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFileSelect(file);
+  };
+
+  const handleAudioSelect = async (file: File) => {
+    setIsExtracting(true);
+    setFetchError(null);
+    try {
+      const text = await transcribeAudio(file, file.type);
+      if (!text.trim()) {
+        setFetchError('No speech detected in the audio. Try a clearer recording.');
+        return;
+      }
+      setExtractedContent(text);
+      setExtractedTitle(file.name.replace(/\.[^.]+$/, ''));
+      setTopic(file.name.replace(/\.[^.]+$/, ''));
+      toast.success(`Transcribed ${file.name} (${text.length.toLocaleString()} characters)`);
+    } catch (e) {
+      setFetchError(e instanceof Error ? e.message : 'Failed to transcribe audio');
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const handleAudioRecorded = async () => {
+    const blob = recorder.blob;
+    if (!blob) return;
+    setIsExtracting(true);
+    setFetchError(null);
+    try {
+      const text = await transcribeAudio(blob, blob.type);
+      if (!text.trim()) {
+        setFetchError('No speech detected. Please try again.');
+        return;
+      }
+      setExtractedContent(text);
+      setExtractedTitle('Voice Recording');
+      setTopic('Voice Recording');
+      recorder.clear();
+      toast.success(`Transcribed your recording (${text.length.toLocaleString()} characters)`);
+    } catch (e) {
+      setFetchError(e instanceof Error ? e.message : 'Failed to transcribe recording');
+    } finally {
+      setIsExtracting(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -452,6 +500,7 @@ const GeneratorPage: React.FC = () => {
     { value: 'url' as InputSource, label: 'URL', icon: Globe },
     { value: 'youtube' as InputSource, label: 'YouTube', icon: Play },
     { value: 'file' as InputSource, label: 'File', icon: FileText },
+    { value: 'audio' as InputSource, label: 'Audio', icon: Mic },
   ];
 
   const difficultyOptions = [
@@ -703,7 +752,128 @@ const GeneratorPage: React.FC = () => {
             </div>
           )}
 
-          {fetchError && inputSource !== 'file' && (
+          {/* Audio Input (record or upload) */}
+          {inputSource === 'audio' && (
+            <div className="mb-6">
+              <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">
+                Audio (record a lecture or upload a recording)
+              </label>
+
+              {/* Record */}
+              <div className="mb-3">
+                {!recorder.recording && !recorder.blob ? (
+                  <button
+                    onClick={() => recorder.start()}
+                    disabled={!recorder.supported}
+                    className="flex items-center gap-3 w-full p-4 rounded-xl border border-dashed border-[#2A2A3A] hover:border-[#7C3AED]/50 transition-colors bg-[#1A1A24]/50 text-left disabled:opacity-40"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-red-500/15 border border-red-500/30 flex items-center justify-center">
+                      <Mic size={18} className="text-red-400" />
+                    </div>
+                    <div>
+                      <p className="text-[#F0EFFE] text-sm font-medium">Record lecture</p>
+                      <p className="text-[10px] text-[#5A5A72]">
+                        {recorder.supported ? 'Tap to start recording from your mic' : 'Mic not available in this browser'}
+                      </p>
+                    </div>
+                  </button>
+                ) : recorder.recording ? (
+                  <div className="flex items-center gap-3 w-full p-4 rounded-xl border border-red-500/30 bg-red-500/5">
+                    <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center">
+                      <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-red-400 text-sm font-medium">Recording…</p>
+                      <p className="text-[10px] text-[#5A5A72]">
+                        {Math.floor(recorder.durationMs / 60000)}:{String(Math.floor((recorder.durationMs % 60000) / 1000)).padStart(2, '0')}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleAudioRecorded()}
+                      className="px-4 py-2 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 transition-colors"
+                    >
+                      Finish & Transcribe
+                    </button>
+                    <button
+                      onClick={() => recorder.cancel()}
+                      className="px-3 py-2 rounded-lg border border-[#2A2A3A] text-[#5A5A72] text-xs hover:text-[#F0EFFE] transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 w-full p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5">
+                    <Mic size={18} className="text-emerald-400" />
+                    <div className="flex-1">
+                      <p className="text-emerald-400 text-sm font-medium">Recording ready</p>
+                      <p className="text-[10px] text-[#5A5A72]">
+                        {Math.floor(recorder.durationMs / 60000)}:{String(Math.floor((recorder.durationMs % 60000) / 1000)).padStart(2, '0')} captured
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleAudioRecorded()}
+                      className="px-4 py-2 rounded-lg bg-emerald-500 text-white text-xs font-medium hover:bg-emerald-600 transition-colors"
+                    >
+                      Transcribe
+                    </button>
+                    <button
+                      onClick={() => recorder.clear()}
+                      className="px-3 py-2 rounded-lg border border-[#2A2A3A] text-[#5A5A72] text-xs hover:text-[#F0EFFE] transition-colors"
+                    >
+                      Discard
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Upload */}
+              <div
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const file = e.dataTransfer.files?.[0];
+                  if (file) handleAudioSelect(file);
+                }}
+                onDragOver={(e) => e.preventDefault()}
+                onClick={() => audioInputRef.current?.click()}
+                className="border border-dashed border-[#2A2A3A] hover:border-[#7C3AED]/50 rounded-xl p-8 text-center cursor-pointer transition-colors bg-[#1A1A24]/50"
+              >
+                <input
+                  ref={audioInputRef}
+                  type="file"
+                  accept="audio/*,.mp3,.wav,.m4a,.ogg,.webm"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleAudioSelect(file);
+                  }}
+                  className="hidden"
+                />
+                {isExtracting ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-2 border-[#7C3AED]/30 border-t-[#7C3AED] rounded-full animate-spin" />
+                    <p className="text-[#5A5A72] text-sm">Transcribing audio…</p>
+                  </div>
+                ) : extractedContent ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <Mic size={32} className="text-emerald-400" />
+                    <p className="text-emerald-400 font-medium text-sm">{extractedTitle}</p>
+                    <p className="text-[10px] text-[#5A5A72]">{extractedContent.length.toLocaleString()} characters transcribed</p>
+                    <p className="text-[10px] text-[#5A5A72]">Click or drop new audio to replace</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-3">
+                    <Mic size={32} className="text-[#5A5A72]" />
+                    <p className="text-[#F0EFFE] font-medium text-sm">Drop audio here or click to browse</p>
+                    <p className="text-[10px] text-[#5A5A72]">MP3, WAV, M4A, OGG, WEBM</p>
+                  </div>
+                )}
+              </div>
+              {fetchError && (
+                <p className="mt-2 text-xs text-red-400">{fetchError}</p>
+              )}
+            </div>
+          )}
+
+          {fetchError && inputSource !== 'file' && inputSource !== 'audio' && (
             <p className="mb-6 text-xs text-red-400">{fetchError}</p>
           )}
 

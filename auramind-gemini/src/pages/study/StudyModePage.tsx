@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Zap, Lightbulb, X, Star, ChevronDown, Wind, Timer as TimerIcon, RotateCcw } from 'lucide-react';
+import { Sparkles, Zap, Lightbulb, Mic, X, Star, ChevronDown, Wind, Timer as TimerIcon, RotateCcw } from 'lucide-react';
 import { usePersonalizedFsrs } from '../../hooks/usePersonalizedFsrs';
 import { useCurrentUserId } from '../../hooks/useCurrentUserId';
 import { PersonalizationIndicator } from '../../components/study/PersonalizationIndicator';
@@ -26,6 +26,7 @@ import { useMultiplayerStudy } from '../../hooks/useMultiplayerStudy';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
 import { trackStudySession } from '../../services/gamification/gamificationService';
 import { useTimer, MotionPath } from '../../lib/effects';
+import { VoiceStudyControls } from '../../components/study/VoiceStudyControls';
 
 const RATING_BTNS = [
   { label: 'Again', rating: Rating.AGAIN, interval: '5m', color: 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20' },
@@ -116,6 +117,7 @@ export default function StudyModePage() {
   const [tiltEnabled, setTiltEnabled] = useState(true);
   const [isRating, setIsRating] = useState(false);
   const [flowModeOpen, setFlowModeOpen] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const studyTimer = useTimer({ duration: Infinity, autoplay: true });
   useEffect(() => {
@@ -502,6 +504,18 @@ export default function StudyModePage() {
             {Math.floor(elapsedMs / 60000)}:{String(Math.floor((elapsedMs % 60000) / 1000)).padStart(2, '0')}
           </div>
 
+          <button
+            onClick={() => setVoiceMode(v => !v)}
+            title="Voice study: AI speaks questions aloud, listens to your answers, and grades them"
+            className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg border transition-colors text-[11px] ${
+              voiceMode
+                ? 'bg-[#7C3AED]/20 border-[#7C3AED]/40 text-[#8B5CF6]'
+                : 'bg-[#111118] border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40'
+            }`}
+          >
+            <Mic size={12} />
+            Voice
+          </button>
           <button onClick={() => setFlowModeOpen(true)}
             title="Flow Mode awards weekly XP toward your League. Card scheduling is unchanged."
             className="hidden sm:inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-[#111118] border border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-colors text-[11px]"
@@ -680,6 +694,27 @@ export default function StudyModePage() {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      {/* Voice study controls (hands-free) */}
+      {voiceMode && currentCard && (
+        <div className="px-6 pb-2">
+          <div className="max-w-lg mx-auto">
+            <VoiceStudyControls
+              question={currentCard.front || currentCard.question || ''}
+              answer={currentCard.back || currentCard.answer || ''}
+              onAnswerEvaluated={(/* correct, spoken, verdict */) => {
+                // Reveal the answer so the student can self-check, then
+                // the rating bar appears as usual.
+                setFlipped(true);
+              }}
+              onRequestNextCard={() => {
+                setFlipped(false);
+                if (index < studyCards.length - 1) setIndex(i => i + 1);
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Rating bar */}
       <AnimatePresence>
