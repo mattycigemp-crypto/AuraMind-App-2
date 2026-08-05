@@ -253,6 +253,45 @@ export async function clearOfflineCache(userId: string): Promise<void> {
 }
 
 /**
+ * Sync all queued offline data to Supabase
+ */
+export async function syncOfflineData(): Promise<{ synced: number; failed: number }> {
+  const items = await getPendingSyncItems();
+  if (items.length === 0) return { synced: 0, failed: 0 };
+
+  const { supabase } = await import('../database/supabase');
+  let synced = 0;
+  let failed = 0;
+
+  for (const item of items) {
+    try {
+      if (item.type === 'card_review') {
+        // Route through the SECURITY DEFINER `record_card_review` RPC
+        // instead of a REST upsert. The RPC's authorization de-couples
+        // JWT↔row coupling that the dropped 1-hour UPDATE policy used
+        // to enforce; the offline queue can carry an item without
+        // user_id (the RPC fills it in from auth.uid() server-side).
+        const { error } = await (supabase as any).rpc('record_card_review', {
+          p_card_id: item.data.cardId,
+          p_rating: item.data.rating,
+          p_srs_result: item.data.srsResult ?? {},
+          p_srs_algorithm: item.data.srsAlgorithm ?? 'fsrs',
+          // p_user_id intentionally omitted — let server-side
+          // auth.uid() populate the row owner.
+        });
+        if (error) throw error;
+      }
+      await clearSyncItem(item.id);
+      synced++;
+    } catch {
+      failed++;
+    }
+  }
+
+  return { synced, failed };
+}
+
+/**
  * Check if app is online
  */
 export function isOnline(): boolean {

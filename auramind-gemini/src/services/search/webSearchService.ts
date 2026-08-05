@@ -42,25 +42,51 @@ export class WebSearchService {
   }
 
   /**
-   * Search the web for educational content
+   * Search the web for educational content via the Google Custom Search
+   * JSON API. Throws when the API keys are not configured — no simulated
+   * results are ever returned.
    */
   public async searchEducationalContent(options: WebSearchOptions): Promise<SearchResult[]> {
+    if (!this.apiKey || !this.searchEngineId) {
+      throw new Error(
+        'Web search unavailable: set VITE_GOOGLE_SEARCH_API_KEY and VITE_GOOGLE_SEARCH_ENGINE_ID in auramind-gemini/.env (Google Custom Search JSON API) to enable live results.'
+      );
+    }
+
     try {
-      // For now, we'll simulate search results since we don't have actual API keys
-      // In a production environment, this would call Google Custom Search API or similar
-      const mockResults = this.generateMockSearchResults(options.query, options.maxResults || 10);
-      
-      // Filter for educational content if requested
+      const params = new URLSearchParams({
+        key: this.apiKey,
+        cx: this.searchEngineId,
+        q: options.query,
+        num: String(Math.min(options.maxResults || 10, 10)),
+      });
+      if (options.safeSearch) params.set('safe', 'active');
+
+      const res = await fetch(`https://www.googleapis.com/customsearch/v1?${params.toString()}`);
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        throw new Error(`Google Custom Search API error (${res.status}): ${detail.slice(0, 200)}`);
+      }
+
+      const json = await res.json();
+      const results: SearchResult[] = (json.items ?? []).map((item: any) => ({
+        title: item.title || 'Untitled',
+        url: item.link || '#',
+        snippet: item.snippet || '',
+        source: (item.displayLink || new URL(item.link || 'https://example.com').hostname).replace(/^www\./, ''),
+        relevanceScore: item.score ?? 0.5,
+      }));
+
       if (options.educationalFocus) {
-        return mockResults.filter(result => 
+        return results.filter(result =>
           this.isEducationalContent(result.title, result.snippet)
         );
       }
-      
-      return mockResults;
+
+      return results;
     } catch (error) {
       console.error('Web search error:', error);
-      throw new Error('Failed to perform web search');
+      throw error;
     }
   }
 
@@ -97,7 +123,7 @@ export class WebSearchService {
       return flashcards;
     } catch (error) {
       console.error('Failed to generate flashcards from web:', error);
-      throw new Error('Could not generate flashcards from web search results');
+      throw new Error('Could not generate flashcards from web search results', { cause: error });
     }
   }
 
@@ -153,7 +179,7 @@ export class WebSearchService {
       });
     } catch (error) {
       console.error('Failed to generate quiz from web:', error);
-      throw new Error('Could not generate quiz from web search results');
+      throw new Error('Could not generate quiz from web search results', { cause: error });
     }
   }
 
@@ -224,32 +250,6 @@ export class WebSearchService {
     }
     
     return words.join(' ');
-  }
-
-  /**
-   * Generate mock search results for demonstration
-   */
-  private generateMockSearchResults(query: string, count: number): SearchResult[] {
-    const mockResults: SearchResult[] = [];
-    
-    const topics = [
-      'Quantum Mechanics', 'World War II', 'Photosynthesis', 
-      'Calculus Derivatives', 'French Revolution', 'DNA Structure',
-      'Machine Learning', 'Climate Change', 'Shakespeare Plays',
-      'Financial Accounting'
-    ];
-    
-    for (let i = 0; i < Math.min(count, topics.length); i++) {
-      mockResults.push({
-        title: `${topics[i]} - Comprehensive Guide and Tutorial`,
-        url: `https://example.com/${topics[i].toLowerCase().replace(/\s+/g, '-')}`,
-        snippet: `Learn about ${topics[i]} with detailed explanations, examples, and practice problems. This educational resource covers fundamental concepts and advanced topics in ${topics[i].toLowerCase()}.`,
-        source: 'Educational Website',
-        relevanceScore: 0.9 - (i * 0.05)
-      });
-    }
-    
-    return mockResults;
   }
 }
 

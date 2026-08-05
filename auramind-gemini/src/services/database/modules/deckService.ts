@@ -2,6 +2,7 @@ import { supabase } from '../supabase';
 import { Deck } from '../../../types';
 import { ensureUserSynced } from '../syncUser';
 import { cachedDecks, lastOwnerId, setCachedDecks, setLastOwnerId } from './cache';
+import { parseIsoToMsOrNow } from '../../../lib/timestamps';
 
 export const deckService = {
     async fetchDecks(userId: string): Promise<Deck[]> {
@@ -41,7 +42,8 @@ export const deckService = {
             id: d.id,
             title: d.name,
             description: d.description,
-            createdAt: d.created_at || Date.now(),
+            // Read-side TIMESTAMPTZ normalization for decks.created_at.
+            createdAt: parseIsoToMsOrNow(d.created_at),
             cardCount: cardCounts[d.id] || 0,
             isSample: d.is_sample || false,
             sourceLabel: d.source_label
@@ -77,7 +79,7 @@ export const deckService = {
             id: data.id,
             title: data.name,
             description: data.description,
-            createdAt: data.created_at || Date.now(),
+            createdAt: parseIsoToMsOrNow(data.created_at),
             cardCount: 0,
             isSample: data.is_sample || false,
             sourceLabel: data.source_label
@@ -92,33 +94,40 @@ export const deckService = {
 
     async updateDeck(id: string, updates: Partial<Deck>): Promise<Deck> {
         if (!supabase) throw new Error('Supabase not initialized');
-        
+
         const dbUpdates: Record<string, any> = {};
         if (updates.title !== undefined) dbUpdates.name = updates.title;
         if (updates.description !== undefined) dbUpdates.description = updates.description;
-        
+
+        // Use `.maybeSingle()` rather than `.single()`. RLS UPDATE policies
+        // on decks gate by auth.uid() = user_id, so a forged id (or one the
+        // user doesn't own) returns 0 rows; `.single()` would throw
+        // PGRST116 and crash the caller.
         const { data, error } = await supabase
             .from('decks')
             .update(dbUpdates)
             .eq('id', id)
             .select()
-            .single();
+            .maybeSingle();
 
         if (error) throw error;
+        if (!data) {
+            throw new Error(`Deck ${id} not found or not updatable by the current user`);
+        }
 
         const cached = cachedDecks?.find(d => d.id === id);
         const mapped = {
             id: data.id,
             title: data.name,
             description: data.description,
-            createdAt: data.created_at || Date.now(),
+            createdAt: parseIsoToMsOrNow(data.created_at),
             cardCount: cached?.cardCount ?? 0,
             isSample: data.is_sample || false,
             sourceLabel: data.source_label
         };
 
         if (cachedDecks) {
-            setCachedDecks(cachedDecks.map(deck => 
+            setCachedDecks(cachedDecks.map(deck =>
                 deck.id === id ? mapped : deck
             ));
         }

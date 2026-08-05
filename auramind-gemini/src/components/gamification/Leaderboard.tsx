@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Trophy, Medal, Crown, ChevronUp, ChevronDown, Minus, Users, Calendar, Flame } from 'lucide-react';
+import { StaggerList } from '../../lib/effects';
 
 interface LeaderboardUser {
   id: string;
@@ -121,30 +122,39 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, timeFilter = '
         </div>
       ) : (
         <div className="space-y-2">
-          {/* Top 3 Podium */}
-          {selectedFilter !== 'daily' && users.slice(0, 3).map((user, index) => (
-            <div
-              key={user.id}
-              className={`flex items-center gap-3 p-3 rounded-lg ${
-                user.id === currentUserId ? 'bg-primary/10 border border-primary/30' : 'bg-muted/50'
-              }`}
-            >
-              <div className="w-8 flex justify-center">
-                {getRankIcon(user.rank)}
+          {/* Top 3 Podium — staggered entrance so the leaderboard reads as
+              data "loading in" rather than slamming all at once. */}
+          <StaggerList
+            delayMs={110}
+            durationMs={520}
+            from="up"
+            distance={20}
+            className="space-y-2"
+          >
+            {selectedFilter !== 'daily' && users.slice(0, 3).map((user, index) => (
+              <div
+                key={user.id}
+                className={`flex items-center gap-3 p-3 rounded-lg ${
+                  user.id === currentUserId ? 'bg-primary/10 border border-primary/30' : 'bg-muted/50'
+                }`}
+              >
+                <div className="w-8 flex justify-center">
+                  {getRankIcon(user.rank)}
+                </div>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/50 to-primary flex items-center justify-center text-white font-bold">
+                  {user.name.charAt(0)}
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{user.name}</p>
+                  <p className="text-xs text-muted">Level {user.level} • {getLevelTitle(user.level)}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-primary">{user.xp.toLocaleString()} XP</p>
+                  <p className="text-xs text-muted"><Flame size={12} className="inline mr-0.5" />{user.streak} days</p>
+                </div>
               </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/50 to-primary flex items-center justify-center text-white font-bold">
-                {user.name.charAt(0)}
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-sm">{user.name}</p>
-                <p className="text-xs text-muted">Level {user.level} • {getLevelTitle(user.level)}</p>
-              </div>
-              <div className="text-right">
-                <p className="font-bold text-primary">{user.xp.toLocaleString()} XP</p>
-                <p className="text-xs text-muted"><Flame size={12} className="inline mr-0.5" />{user.streak} days</p>
-              </div>
-            </div>
-          ))}
+            ))}
+          </StaggerList>
 
           {/* Rest of the list */}
           {users.slice(selectedFilter !== 'daily' ? 3 : 0).map((user) => (

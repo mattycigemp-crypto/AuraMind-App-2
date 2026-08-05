@@ -8,11 +8,13 @@ import {
   BookOpenIcon as BookOpen,
   PlayIcon as Play,
   AwardIcon as Award,
+  UserIcon as User,
 } from '../icons/CustomIcons';
+import { PROF_AURA_PERSONALITY_OPTIONS, setStoredPersonality, type ProfAuraPersonality } from '../../lib/profAuraPersonality';
 
 // ─── Types ───
 
-type OnboardingStep = 'welcome' | 'personalize' | 'create-deck' | 'flip-card' | 'celebrate';
+type OnboardingStep = 'welcome' | 'personalize' | 'personality' | 'create-deck' | 'flip-card' | 'celebrate';
 
 interface OnboardingTutorialProps {
   isOpen: boolean;
@@ -49,6 +51,7 @@ const DEMO_CARD = {
 const STEPS: { id: OnboardingStep; icon: React.FC<{ size?: number; className?: string }>; title: string; subtitle: string }[] = [
   { id: 'welcome', icon: Sparkles, title: 'Welcome to AuraMind', subtitle: 'AI-powered study, backed by memory science' },
   { id: 'personalize', icon: BrainCircuit, title: 'What are you studying?', subtitle: 'We\'ll tailor your experience' },
+  { id: 'personality', icon: User, title: 'Pick Prof. Aura\'s style', subtitle: 'How should your AI coach talk to you?' },
   { id: 'create-deck', icon: BookOpen, title: 'Create your first deck', subtitle: 'AI generates cards instantly from any topic' },
   { id: 'flip-card', icon: Play, title: 'Learn by doing', subtitle: 'Flip a real flashcard — this is how you study' },
   { id: 'celebrate', icon: Award, title: 'You\'re all set!', subtitle: '3 steps to build unstoppable momentum' },
@@ -59,6 +62,7 @@ const STEPS: { id: OnboardingStep; icon: React.FC<{ size?: number; className?: s
 const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, onClose, onComplete }) => {
   const [currentStep, setCurrentStep] = useState<OnboardingStep>('welcome');
   const [selectedTopic, setSelectedTopic] = useState('');
+  const [selectedPersonality, setSelectedPersonality] = useState<ProfAuraPersonality>('default');
   const [deckName, setDeckName] = useState('');
   const [cardFlipped, setCardFlipped] = useState(false);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
@@ -98,6 +102,9 @@ const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, onClose
       if (selectedTopic) {
         localStorage.setItem('auramind:studyTopic', selectedTopic);
       }
+      if (selectedPersonality) {
+        setStoredPersonality(selectedPersonality);
+      }
       if (deckName) {
         localStorage.setItem('auramind:suggestedDeck', deckName);
       }
@@ -109,7 +116,7 @@ const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, onClose
 
     onComplete?.();
     onClose();
-  }, [selectedTopic, deckName, onComplete, onClose]);
+  }, [selectedTopic, selectedPersonality, deckName, onComplete, onClose]);
 
   const handleSkip = useCallback(() => {
     try {
@@ -270,6 +277,41 @@ const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, onClose
                           >
                             <div className="text-lg mb-0.5">{t.emoji}</div>
                             <div className="text-[9px] text-[#9090A8] font-medium">{t.label}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── PERSONALITY ── */}
+                  {currentStep === 'personality' && (
+                    <div className="space-y-5">
+                      <div className="text-center">
+                        <div className="w-14 h-14 mx-auto rounded-2xl bg-violet-600/10 border border-violet-600/20 flex items-center justify-center mb-3">
+                          <User size={24} className="text-violet-400" />
+                        </div>
+                        <h2 className="text-lg font-black text-[#F0EFFE] mb-1">Pick Prof. Aura's style</h2>
+                        <p className="text-xs text-[#9090A8]">How should your AI coach talk to you? You can change this anytime.</p>
+                      </div>
+                      <div className="space-y-2">
+                        {PROF_AURA_PERSONALITY_OPTIONS.map(opt => (
+                          <button
+                            key={opt.id}
+                            onClick={() => setSelectedPersonality(opt.id)}
+                            className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center gap-3 ${
+                              selectedPersonality === opt.id
+                                ? 'border-violet-500/50 bg-violet-600/10 ring-1 ring-violet-500/30'
+                                : 'border-[#2A2A3A] bg-[#111118] hover:border-violet-600/30'
+                            }`}
+                          >
+                            <span className="text-xl shrink-0">{opt.emoji}</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-semibold text-[#F0EFFE]">{opt.label}</p>
+                              <p className="text-[10px] text-[#5A5A72] leading-snug mt-0.5">{opt.description}</p>
+                            </div>
+                            {selectedPersonality === opt.id && (
+                              <CheckCircle2 size={16} className="text-violet-400 shrink-0" />
+                            )}
                           </button>
                         ))}
                       </div>

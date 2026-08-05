@@ -74,13 +74,18 @@ export const trialService = {
 
   /**
    * Check if trial has ended
+   *
+   * Uses `.maybeSingle()` (returns null on zero rows) instead of
+   * `.single()` (throws PGRST116 on zero rows). For brand-new accounts
+   * there's no `profiles` row yet at all; the trial is implicitly over,
+   * but the function must NOT crash the caller with a 4xx.
    */
   isTrialEnded: async (userId: string): Promise<boolean> => {
     const { data, error } = await supabase
       .from('profiles')
       .select('trial_end')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     if (!data?.trial_end) return true;

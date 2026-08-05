@@ -1,81 +1,95 @@
 import { supabase } from '../database/supabase';
 
+/**
+ * System metrics — every number here is a live aggregate over the real
+ * database tables (user_profiles, cards, decks, study_sessions,
+ * card_reviews). No simulated values.
+ */
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function emptyMetrics() {
+  return {
+    totalUsers: 0,
+    activeUsers7d: 0,
+    totalCards: 0,
+    totalDecks: 0,
+    totalStudySessions: 0,
+    totalReviews: 0,
+  };
+}
+
 export const systemMetricsService = {
   async getSystemMetrics() {
-    if (!supabase) {
-      return {
-        activeUsers: 0,
-        totalUsers: 0,
-        apiRequests: 0,
-        errorRate: 0,
-        avgLatency: 0
-      };
-    }
+    if (!supabase) return emptyMetrics();
 
-    // Get real user count
-    const { data: users } = await supabase
-      .from('user_profiles')
-      .select('id');
+    const todayStart = new Date(Date.now() - 7 * DAY_MS).toISOString();
 
-    // Get real card count
-    const { data: cards } = await supabase
-      .from('cards')
-      .select('id');
+    const [users, cards, decks, sessions, reviews, active] = await Promise.all([
+      supabase.from('user_profiles').select('id'),
+      supabase.from('cards').select('id'),
+      supabase.from('decks').select('id'),
+      supabase.from('study_sessions').select('id'),
+      supabase.from('card_reviews').select('id'),
+      supabase
+        .from('study_sessions')
+        .select('user_id')
+        .gte('started_at', todayStart),
+    ]);
 
-    // Get real deck count
-    const { data: decks } = await supabase
-      .from('decks')
-      .select('id');
+    const activeUserIds = new Set<string>();
+    (active.data ?? [] as Array<{ user_id: string | null }>).forEach((row) => {
+      if (row.user_id) activeUserIds.add(row.user_id);
+    });
 
     return {
-      activeUsers: users?.length || 0,
-      totalUsers: users?.length || 0,
-      totalCards: cards?.length || 0,
-      totalDecks: decks?.length || 0,
-      apiRequests: Math.floor(Math.random() * 1000000),
-      errorRate: Number((Math.random() * 2).toFixed(1)),
-      avgLatency: Math.floor(Math.random() * 200) + 50
+      totalUsers: users.data?.length || 0,
+      activeUsers7d: activeUserIds.size,
+      totalCards: cards.data?.length || 0,
+      totalDecks: decks.data?.length || 0,
+      totalStudySessions: sessions.data?.length || 0,
+      totalReviews: reviews.data?.length || 0,
     };
   },
 
   async getUserActivity(userId: string) {
-    if (!supabase) {
+    if (!supabase || !userId) {
       return {
-        studyTime: 0,
+        studyTimeMs: 0,
         cardsReviewed: 0,
         accuracy: 0,
-        streak: 0
+        streak: 0,
       };
     }
 
-    const { data: userCards, error } = await supabase
-      .from('cards')
-      .select('*')
-      .eq('user_id', userId);
+    const [sessions, reviews, profile] = await Promise.all([
+      supabase
+        .from('study_sessions')
+        .select('duration_ms, accuracy')
+        .eq('user_id', userId),
+      supabase
+        .from('card_reviews')
+        .select('id')
+        .eq('user_id', userId),
+      supabase
+        .from('user_profiles')
+        .select('streak_days')
+        .eq('user_id', userId)
+        .maybeSingle(),
+    ]);
 
-    if (error || !userCards) {
-      return {
-        studyTime: 0,
-        cardsReviewed: 0,
-        accuracy: 0,
-        streak: 0
-      };
-    }
-
-    const totalCards = userCards.length;
-    const reviewedCards = userCards.filter(card => card.last_reviewed && card.last_reviewed > 0).length;
-    const avgEaseFactor = totalCards > 0 
-      ? userCards.reduce((sum, card) => sum + (card.ease_factor || 2.5), 0) / totalCards 
+    const sessionRows = (sessions.data ?? []) as Array<{ duration_ms: number | null; accuracy: number | null }>;
+    const studyTimeMs = sessionRows.reduce((sum, s) => sum + (s.duration_ms ?? 0), 0);
+    const accuracyRows = sessionRows.filter((s) => typeof s.accuracy === 'number');
+    const accuracy = accuracyRows.length > 0
+      ? Math.round(accuracyRows.reduce((sum, s) => sum + (s.accuracy ?? 0), 0) / accuracyRows.length)
       : 0;
 
     return {
-      studyTime: totalCards * 2.5,
-      cardsReviewed: reviewedCards,
-      accuracy: Math.round((avgEaseFactor / 3.0) * 100),
-      streak: Math.floor(Math.random() * 30)
+      studyTimeMs,
+      cardsReviewed: reviews.data?.length || 0,
+      accuracy,
+      streak: (profile.data as { streak_days?: number } | null)?.streak_days ?? 0,
     };
-  }
+  },
 };
-
-
-

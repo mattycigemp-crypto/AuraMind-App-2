@@ -22,6 +22,8 @@ export interface Card {
   id: string;
   front: string;
   back: string;
+  question?: string; // Alias for front — used by some components
+  answer?: string;   // Alias for back — used by some components
   deckId: string;
   image?: string; // Optional image URL
   citations?: CardCitation[];
@@ -38,6 +40,9 @@ export interface Card {
   lastReviewed?: number; // Timestamp of last review
   // FSRS state (optional, for cards migrated to FSRS)
   fsrsState?: FSRSState;
+  // Per-card lapse counter, surfaced by migrations/20260718_*. Cards that
+  // never lapsed never have it set. Surfaced to the UI for "weak card" badges.
+  lapses?: number;
 }
 
 export interface Deck {
@@ -47,6 +52,7 @@ export interface Deck {
   createdAt: number;
   cardCount: number;
   isSample?: boolean;
+  is_public?: boolean;
   sourceLabel?: string;
 }
 

@@ -28,7 +28,7 @@ const FullScreenNav: React.FC<FullScreenNavProps> = ({ isOpen, onClose }) => {
         >
           <div className="flex items-center justify-between px-8 py-6">
             <div className="flex items-center gap-3">
-              <img src="/favicons,logos/icon-192.svg" alt="AuraMind" style={{ width: 36, height: 36 }} className="object-contain" />
+              <img src="/favicons,logos/favicon-32.png" alt="AuraMind" className="h-9 w-9 object-contain" />
               <p className="text-[11px] font-black tracking-[0.35em] text-primary-foreground uppercase">AuraMind</p>
             </div>
             <button

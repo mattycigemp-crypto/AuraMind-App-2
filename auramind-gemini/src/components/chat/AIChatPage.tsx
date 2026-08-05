@@ -1,24 +1,36 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Loader2, Send, Sparkles, ArrowLeft } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Send, Sparkles, ArrowLeft, Square, Mic, MicOff, ArrowRight, Clock, MessageCircle, Volume2, VolumeX } from 'lucide-react';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
-import { useAIChat, type ChatContext, type ChatMode } from '../../hooks/useAIChat';
-import { supabase } from '../../services/database/supabase';
+import { useAIChat, type ChatContext, type ChatMode, type ProfAuraPersonality } from '../../hooks/useAIChat';
+import { useCurrentUserId } from '../../hooks/useCurrentUserId';
+import { useMoodForProfAura } from '../../hooks/useMoodForProfAura';
+import { useMicVolume } from '../../hooks/useMicVolume';
+import { useTTS } from '../../hooks/useTTS';
+import useSpeechRecognition from '../../hooks/useSpeechRecognition';
 import { dbService } from '../../services/database/dbService';
+import { getStoredPersonality, setStoredPersonality, PROF_AURA_PERSONALITY_OPTIONS } from '../../lib/profAuraPersonality';
 import type { Deck, Card } from '../../types';
 import ContextStrip from './ContextStrip';
 import ChatMessage from './ChatMessage';
 import SuggestedPrompts from './SuggestedPrompts';
+import ConversationHistory, { type ChatSession } from './ConversationHistory';
+import FileAttachment, { type AttachmentDraft, attachmentsToPrompt } from './FileAttachment';
+import ChatTour from './ChatTour';
+import SessionReplayModal from '../study/SessionReplayModal';
+import ReplayEventBridge from './ReplayEventBridge';
+import ProfAuraEmptyState from '../ui/ProfAuraEmptyState';
+import ProfAura from './ProfAura';
+import { queueSession } from '../../services/chatSessionService';
 import PageShell from '../dashboard/PageShell';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const MODE_LABELS: Record<ChatMode, string> = {
-  explain: 'Explain',
-  quiz: 'Quiz me',
-  generate: 'Generate',
-  free: 'Free chat',
+  study: 'Study Coach',
+  companion: 'Companion',
 };
 
-const MODES: ChatMode[] = ['explain', 'quiz', 'generate', 'free'];
+const MODES: ChatMode[] = ['study', 'companion'];
 
 function buildInitialContext(decks: Deck[], cards: Card[]): ChatContext {
   const deck = decks[0];
@@ -32,16 +44,82 @@ function buildInitialContext(decks: Deck[], cards: Card[]): ChatContext {
   };
 }
 
+/**
+ * Companion-mode context: no deck required. We fill EVERY ChatContext field
+ * with a sensible value (deckId='', deckCardCount=0, etc.) so the prompt
+ * factory never interpolates "undefined" into Prof. Aura's preamble. The
+ * "Companion" deckName is a sentinel so the prompt branch can recognize
+ * companion mode without reading mode (defensive in case mode isn't bridged).
+ */
+const COMPANION_CONTEXT: ChatContext = {
+  deckId: '',
+  deckName: 'Companion',
+  deckCardCount: 0,
+  cardsDueToday: 0,
+  weakCards: [],
+};
+
+/** Compact relative-time formatter (e.g. "2h ago", "3d ago") for inline meta. */
+function fmtRelShort(ts: number, now: number = Date.now()): string {
+  const diff = now - ts;
+  if (diff < 60_000) return 'just now';
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+  if (diff < 604_800_000) return `${Math.floor(diff / 86_400_000)}d ago`;
+  return new Date(ts).toLocaleDateString();
+}
+
+/** Prof. Aura's suggested starter prompts — deck-aware */
+function getStarterPrompts(context: ChatContext) {
+  const { deckName, cardsDueToday, weakCards } = context;
+  const hasWeak = weakCards.length > 0;
+
+  return [
+    {
+      icon: '🧠',
+      label: `Quiz me on ${deckName}`,
+      prompt: `Quiz me on my ${deckName} deck. Focus on my weak spots and give me challenging questions.`,
+      detail: `${cardsDueToday} cards due`,
+    },
+    {
+      icon: '💡',
+      label: 'Explain a concept',
+      prompt: `I'm studying ${deckName}. Explain the hardest concept in this deck using a real-world analogy.`,
+      detail: 'Deep dive',
+    },
+    {
+      icon: '📝',
+      label: 'Generate flashcards',
+      prompt: `Generate 5 new flashcards for ${deckName}. Include mnemonics where possible.`,
+      detail: 'Auto-save',
+    },
+    {
+      icon: hasWeak ? '🔥' : '📊',
+      label: hasWeak ? `Fix my ${weakCards[0]?.term || 'weakest'} card` : 'Show my weak spots',
+      prompt: hasWeak
+        ? `I keep forgetting "${weakCards[0]?.term}". Help me understand it better with examples and mnemonics.`
+        : `Analyze my review history and tell me which concepts I'm weakest on.`,
+      detail: hasWeak ? 'Personalized' : 'Analysis',
+    },
+  ];
+}
+
 export default function AIChatPage() {
   const navigate = useNavigate();
   const workspace = useDashboardWorkspace();
+  const userId = useCurrentUserId();
   const [localDecks, setLocalDecks] = useState<Deck[]>([]);
   const [localCards, setLocalCards] = useState<Card[]>([]);
-  const [loading, setLoading] = useState(false);
+
   const [selectedDeckId, setSelectedDeckId] = useState('');
   const [context, setContext] = useState<ChatContext>(() =>
     buildInitialContext(workspace?.decks ?? [], workspace?.cards ?? []),
   );
+  // useAIChat must be declared BEFORE any useEffect that depends on chat.mode,
+  // since hooks must appear in a stable order. The next two useEffects
+  // adapt `context` based on deck selection AND chat.mode, so chat lives here.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const chat = useAIChat(context);
 
   const decks = workspace?.decks ?? localDecks;
   const cards = workspace?.cards ?? localCards;
@@ -50,30 +128,24 @@ export default function AIChatPage() {
 
   useEffect(() => {
     if (workspace) return;
+    if (userId === undefined) return;
     let cancelled = false;
-    setLoading(true);
     (async () => {
-      try {
-        const { data } = await supabase.auth.getUser();
-        const uid = data?.user?.id;
-        if (!uid || cancelled) { setLoading(false); return; }
-        const [fetchedDecks, fetchedCards] = await Promise.all([
-          dbService.fetchDecks(uid),
-          dbService.fetchCards(uid),
-        ]);
-        if (cancelled) return;
-        setLocalDecks(fetchedDecks);
-        setLocalCards(fetchedCards);
-        if (fetchedDecks.length > 0) {
-          setSelectedDeckId(fetchedDecks[0].id);
-          setContext(buildInitialContext(fetchedDecks, fetchedCards));
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+      if (!userId || cancelled) return;
+      const [fetchedDecks, fetchedCards] = await Promise.all([
+        dbService.fetchDecks(userId),
+        dbService.fetchCards(userId),
+      ]);
+      if (cancelled) return;
+      setLocalDecks(fetchedDecks);
+      setLocalCards(fetchedCards);
+      if (fetchedDecks.length > 0) {
+        setSelectedDeckId(fetchedDecks[0].id);
+        setContext(buildInitialContext(fetchedDecks, fetchedCards));
       }
     })();
     return () => { cancelled = true; };
-  }, [workspace]);
+  }, [workspace, userId]);
 
   useEffect(() => {
     if (workspace && workspace.decks.length > 0 && !selectedDeckId) {
@@ -83,83 +155,373 @@ export default function AIChatPage() {
   }, [workspace, selectedDeckId]);
 
   useEffect(() => {
+    if (chat.mode === 'companion') {
+      // Companion mode deliberately clears deck context so the prompt
+      // branch in lib/chat-prompts.ts (companion mode preamble) takes over.
+      // COMPANION_CONTEXT is a full ChatContext with all fields populated to
+      // safe values so the prompt never interpolates "undefined".
+      setContext(COMPANION_CONTEXT);
+      return;
+    }
     if (selectedDeck) {
       const due = cards.filter(c => c.deckId === selectedDeck.id && c.nextReview <= Date.now()).length;
+      const weak = cards
+        .filter(c => c.deckId === selectedDeck.id && (c.fsrsState?.lapses ?? 0) > 2)
+        .sort((a, b) => (b.fsrsState?.lapses ?? 0) - (a.fsrsState?.lapses ?? 0))
+        .slice(0, 5)
+        .map(c => ({ term: c.front, againCount: c.fsrsState?.lapses ?? 0 }));
       setContext(prev => ({
         ...prev,
         deckId: selectedDeck.id,
         deckName: selectedDeck.title,
         deckCardCount: selectedDeck.cardCount ?? cards.filter(c => c.deckId === selectedDeck.id).length,
         cardsDueToday: due,
+        weakCards: weak,
+        personality,
+        retention7d: userMeta?.accuracy7d,
+        lastSessionAccuracy: userMeta?.accuracy7d ? Math.round(userMeta.accuracy7d * 100) : undefined,
+        streakCount: userMeta?.streakCount,
       }));
     }
-  }, [selectedDeck, cards]);
+  }, [selectedDeck, cards, chat.mode]);
 
-  const chat = useAIChat(context);
   const [input, setInput] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [replayOpen, setReplayOpen] = useState(false);
+  // Sessions mirror — ConversationHistory owns the localStorage truth; we
+  // re-derive the "Continue your last chat" CTA on every change. Only
+  // meaningful when the welcome state is showing (chat.messages is empty),
+  // which by construction means there's no currently-active session.
+  const [allSessions, setAllSessions] = useState<ChatSession[]>([]);
+  const lastSessionForResume = useMemo(() => {
+    // Most-recent session, gated by recency (<= 30d) so a paused
+    // ancient session doesn't masquerade as "Continue where you left
+    // off". Pinned sessions always reach the top of allSessions already.
+    if (allSessions.length === 0) return null;
+    const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    return [...allSessions]
+      .filter(s => s.messages.length > 0 && now - s.updatedAt <= THIRTY_DAYS)
+      .sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
+  }, [allSessions]);
+  // Mic + mood for Prof. Aura — mic starts/stops on user click so we never
+  // surprise the user with a permission prompt. Mood is a pure derivation
+  // and accepts whatever streak/lastStudyAt data is available today.
+  const mic = useMicVolume();
+  // Web Speech API transcription into the input. The single mic toggle
+  // below coordinates BOTH: stopping always drains the final transcript
+  // into the textarea before resetting the recognition state, so we
+  // never lose the user's last utterance (per design review A).
+  const sr = useSpeechRecognition();
+  const [attachments, setAttachments] = useState<AttachmentDraft[]>([]);
+  const [personality, setPersonalityState] = useState<ProfAuraPersonality>(getStoredPersonality);
+  const [showPersonalityPicker, setShowPersonalityPicker] = useState(false);
+  const tts = useTTS();
+  const userMeta = workspace?.user as ({ streakCount?: number; lastStudyAt?: number; accuracy7d?: number } | undefined);
+
+  const setPersonality = useCallback((p: ProfAuraPersonality) => {
+    setPersonalityState(p);
+    setStoredPersonality(p);
+    setShowPersonalityPicker(false);
+  }, []);
+  const mood = useMoodForProfAura({
+    streakCount: userMeta?.streakCount,
+    lastActivityAt: userMeta?.lastStudyAt,
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const [showJumpToBottom, setShowJumpToBottom] = useState(false);
 
+  // Pre-fill from ?q= param (from ProfessorPage suggestions)
+  useEffect(() => {
+    const q = searchParams.get('q');
+    if (q && q.trim()) {
+      setInput(q);
+      setSearchParams((prev) => { prev.delete('q'); return prev; }, { replace: true });
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus();
+        if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto';
+          textareaRef.current.style.height =
+            Math.min(textareaRef.current.scrollHeight, 140) + 'px';
+        }
+      });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chat.messages.length]);
+  }, [chat.messages.length, chat.isStreaming]);
 
+  // Detect scroll position for "Jump to latest" button
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (!container) return;
+    const onScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      setShowJumpToBottom(scrollHeight - scrollTop - clientHeight > 200);
+    };
+    container.addEventListener('scroll', onScroll, { passive: true });
+    return () => container.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Auto-grow textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 140) + 'px';
     }
   }, [input]);
 
-  const handleSend = () => {
-    if (!input.trim() || chat.isStreaming) return;
-    chat.sendMessage(input);
+  const handleSend = useCallback(() => {
+    if (chat.isStreaming) return;
+    // Attachments are flattened onto the prompt body so Prof. Aura sees
+    // them inline without a separate schema for "messages with files".
+    const attachmentBody = attachmentsToPrompt(attachments);
+    const composed = [input.trim(), attachmentBody].filter(Boolean).join('\n\n');
+    if (!composed) return;
+    chat.sendMessage(composed);
     setInput('');
-  };
+    setAttachments([]);
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  }, [chat, input, attachments]);
+
+  /**
+   * Mic toggle. Coordinates useMicVolume (audioLevel → ProfAura orbit)
+   * with useSpeechRecognition (final transcript → textarea). Stop order
+   * is fixed: stopListening FIRST so we capture the final transcript,
+   * THEN close the mic hardware so iOS Safari doesn't fight us for it.
+   */
+  const toggleMic = useCallback(() => {
+    if (mic.isActive || sr.isListening) {
+      sr.stopListening();
+      // Drain the transcript. If a final result landed in the
+      // millisecond before stop, we don't want it stranded.
+      const drained = sr.transcript.trim();
+      if (drained) setInput(prev => prev ? `${prev} ${drained}` : drained);
+      sr.resetTranscript();
+      mic.stop();
+    } else {
+      // Both start paths need a user gesture to satisfy permission
+      // policies. Triggering them together is fine on Chrome/Edge;
+      // Safari may surface a separate prompt for speech recognition.
+      sr.startListening();
+      void mic.start();
+    }
+  }, [mic, sr]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
+
+  // Persist the active chat session to Supabase on every meaningful change.
+  // We piggyback on ConversationHistory's localStorage truth — if the active
+  // session id is known, we mirror it to Supabase via the debounced UPSERT
+  // inside chatSessionService. This is intentionally a separate effect so an
+  // offline user (or one whose Supabase is rate-limited) keeps the local
+  // truth unchanged.
+  const activeSessionIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (chat.messages.length === 0) return;
+    try {
+      const id = window.localStorage.getItem('auramind.aurachat.active.v1');
+      if (!id || id === activeSessionIdRef.current) return;
+      activeSessionIdRef.current = id;
+      queueSession({
+        id,
+        title: chat.messages.find(m => m.role === 'user')?.content.slice(0, 80) ?? 'New chat',
+        pinned: false,
+        preview: chat.messages[chat.messages.length - 1]?.content.slice(0, 120) ?? '',
+        messages: chat.messages,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        deckName: chat.mode === 'companion' ? undefined : context.deckName,
+        mode: chat.mode,
+      }).catch(() => {
+        /* offline or rate-limited; the next change will retry inside the queue */
+      });
+    } catch {
+      /* localStorage unavailable; ignore */
+    }
+  }, [chat.messages, chat.mode, context.deckName]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Auto-speak new assistant messages when TTS is enabled
+  const lastSpokenIdRef = useRef<string>('');
+  useEffect(() => {
+    if (!tts.isEnabled || chat.isStreaming) return;
+    const lastAssistant = [...chat.messages].reverse().find(m => m.role === 'assistant' && m.content);
+    if (lastAssistant && lastAssistant.id !== lastSpokenIdRef.current && lastAssistant.content.length > 5) {
+      lastSpokenIdRef.current = lastAssistant.id;
+      tts.speak(lastAssistant.content);
+    }
+  }, [chat.messages, chat.isStreaming, tts]);
+
+  const starterPrompts = getStarterPrompts(context);
+  const hasMessages = chat.messages.length > 0;
 
   return (
     <PageShell>
-      <div className="max-w-6xl mx-auto px-6 lg:px-8 h-screen flex flex-col">
+      {/* First-visit tour overlay. localStorage flag is set ONLY on
+          user dismissal (per design review G) so React Strict-Mode
+          double-mount doesn't burn the flag prematurely. */}
+      <ChatTour />
+      {/* Session Replay modal — opens from outside via the
+          `auramind:open-replay` window event. We mount the modal shell here
+          so it can pop into view when triggered without an extra render
+          pass. */}
+      <SessionReplayModal open={replayOpen} onClose={() => setReplayOpen(false)} />
+      {/* Listener for the global open-replay event so ConversationHistory
+          (or any embedded surface) can ask us to open the replay modal
+          without prop-drilling. Single-shot for the duration of this page. */}
+      <ReplayEventBridge onOpen={() => setReplayOpen(true)} />
+      <div className="flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden">
+        {/* Ambient background glow */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-violet-600/[0.04] blur-[120px] rounded-full animate-pulse" style={{ animationDuration: '8s' }} />
+          <div className="absolute bottom-[-20%] left-[-10%] w-[400px] h-[400px] bg-fuchsia-600/[0.03] blur-[100px] rounded-full" />
+        </div>
+
         {/* Header */}
-        <div className="flex items-center justify-between py-4 border-b border-[#2A2A3A]/50 shrink-0 flex-wrap gap-3">
+        <div className="relative z-10 flex items-center justify-between px-6 py-3 border-b border-[#2A2A3A]/50 shrink-0">
           <div className="flex items-center gap-3">
             {!workspace && (
-              <button onClick={() => navigate('/dashboard')}
+              <button
+                onClick={() => navigate('/dashboard')}
                 className="w-7 h-7 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#5A5A72] hover:text-[#F0EFFE] transition-colors"
-              ><ArrowLeft size={14} /></button>
+              >
+                <ArrowLeft size={14} />
+              </button>
             )}
-            <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-md bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] flex items-center justify-center text-white"><Sparkles size={12} /></span>
-              <h1 className="text-[#F0EFFE] text-sm font-medium">AI Tutor</h1>
+            <div className="flex items-center gap-2.5">
+              <div className="relative">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#7C3AED] via-[#EC4899] to-[#06B6D4] flex items-center justify-center shadow-lg shadow-violet-500/20">
+                  <ProfAura variant={chat.isStreaming ? 'thinking' : 'badge'} size={22} mood={mood} audioLevel={mic.isActive ? mic.level : undefined} />
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#0A0A0F]">
+                  <div className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-50" />
+                </div>
+              </div>
+              <div>
+                <h1 className="text-[#F0EFFE] text-sm font-semibold flex items-center gap-1.5">
+                  Prof. Aura
+                  <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[9px] font-medium">
+                    Online
+                  </span>
+                </h1>
+                <p className="text-[#5A5A72] text-[10px]">AI Study Coach</p>
+              </div>
             </div>
-            {selectedDeck && (
-              <span className="px-2 py-0.5 rounded-full bg-[#7C3AED]/10 text-[#8B5CF6] text-[10px] font-medium">
-                {selectedDeck.title}
-              </span>
-            )}
           </div>
-          <div className="flex items-center gap-3">
-            {decks.length > 0 && (
+
+          <div className="flex items-center gap-2">
+            {/* Voice OUT toggle */}
+            <button
+              onClick={tts.toggle}
+              title={tts.isEnabled ? 'Voice OUT: ON — click to disable' : 'Voice OUT: OFF — click to enable'}
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                tts.isEnabled
+                  ? 'bg-[#7C3AED]/15 text-[#8B5CF6] border border-[#7C3AED]/30'
+                  : 'bg-[#111118] text-[#5A5A72] border border-[#2A2A3A] hover:text-[#F0EFFE]'
+              }`}
+            >
+              {tts.isEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+            </button>
+
+            {/* Personality picker — button surface shows the current
+                personality's emoji so the affordance reads as a real
+                selector, not a generic settings cog. Claude/ChatGPT both
+                show a tiny avatar chip on the right rail for the same
+                psychological reason. */}
+            <div className="relative">
+              <button
+                onClick={() => setShowPersonalityPicker(!showPersonalityPicker)}
+                title="Change Prof. Aura's personality"
+                className="h-8 px-2.5 rounded-full bg-[#111118] border border-[#2A2A3A] flex items-center gap-1.5 text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-colors"
+              >
+                <span className="text-sm leading-none">
+                  {PROF_AURA_PERSONALITY_OPTIONS.find(o => o.id === personality)?.emoji ?? '✨'}
+                </span>
+                <span className="text-[10px] font-medium text-[#9090A8] hidden sm:inline">
+                  {PROF_AURA_PERSONALITY_OPTIONS.find(o => o.id === personality)?.label ?? 'Personality'}
+                </span>
+              </button>
+              {showPersonalityPicker && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowPersonalityPicker(false)} />
+                  <div className="absolute right-0 top-10 z-50 w-72 p-3 rounded-2xl bg-[#111118] border border-[#2A2A3A] shadow-2xl shadow-black/50">
+                    <p className="text-[9px] uppercase tracking-widest text-[#5A5A72] mb-2 px-1">Prof. Aura's Personality</p>
+                    <div className="space-y-1">
+                      {PROF_AURA_PERSONALITY_OPTIONS.map(opt => (
+                        <button
+                          key={opt.id}
+                          onClick={() => setPersonality(opt.id)}
+                          className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 ${
+                            personality === opt.id
+                              ? 'bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-[#F0EFFE]'
+                              : 'border border-transparent hover:bg-[#1A1A24] text-[#9090A8] hover:text-[#F0EFFE]'
+                          }`}
+                        >
+                          <span className="text-base mt-0.5 shrink-0">{opt.emoji}</span>
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium">{opt.label}</p>
+                            <p className="text-[10px] text-[#5A5A72] leading-snug mt-0.5">{opt.description}</p>
+                          </div>
+                          {personality === opt.id && (
+                            <div className="ml-auto shrink-0 w-4 h-4 rounded-full bg-[#7C3AED] flex items-center justify-center mt-0.5">
+                              <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Chat history (persisted, slide-in) */}
+            <ConversationHistory
+              messages={chat.messages}
+              deckName={selectedDeck?.title}
+              onResume={(sess: ChatSession) => chat.loadMessages(sess.messages)}
+              onNewChat={() => chat.clearMessages()}
+              onSessionsChange={setAllSessions}
+            />
+            {/* Deck selector — hidden in companion mode since chats there
+                are decoupled from any specific deck. */}
+            {decks.length > 0 && chat.mode !== 'companion' && (
               <select
                 value={selectedDeck?.id || ''}
                 onChange={e => setSelectedDeckId(e.target.value)}
-                className="bg-[#111118] border border-[#2A2A3A] rounded-lg px-3 py-1.5 text-[#F0EFFE] text-xs outline-none focus:border-[#7C3AED]/50"
+                className="bg-[#111118] border border-[#2A2A3A] rounded-lg px-3 py-1.5 text-[#F0EFFE] text-xs outline-none focus:border-[#7C3AED]/50 max-w-[160px] truncate"
               >
                 {decks.map(d => <option key={d.id} value={d.id}>{d.title}</option>)}
               </select>
             )}
-            <div className="flex bg-[#111118] border border-[#2A2A3A] rounded-lg p-0.5">
+            {/* Mode switcher — rounded-full pills for a ChatGPT-style
+                compact rail; active state has a hairline gradient rather
+                than a flat tint so the selected mode reads as the
+                "primary action" without shouting. */}
+            <div className="hidden md:flex bg-[#111118] border border-[#2A2A3A] rounded-full p-0.5">
               {MODES.map(mode => (
                 <button
                   key={mode}
                   onClick={() => chat.setMode(mode)}
-                  className={`px-3 py-1.5 rounded-md text-[11px] font-medium transition-all ${
+                  title={mode === 'companion' ? 'Talk with Prof. Aura without a deck — chat, coaching, motivation' : MODE_LABELS[mode]}
+                  className={`px-3 py-1 rounded-full text-[10px] font-medium transition-all whitespace-nowrap ${
                     chat.mode === mode
-                      ? 'bg-[#7C3AED]/15 text-[#8B5CF6]'
+                      ? (mode === 'companion'
+                          ? 'bg-gradient-to-r from-fuchsia-500/20 to-violet-500/20 text-[#F0ABFC] shadow-[inset_0_0_0_1px_rgba(244,114,182,0.25)]'
+                          : 'bg-gradient-to-b from-[#7C3AED]/20 to-[#EC4899]/10 text-[#C4B5FD] shadow-[inset_0_0_0_1px_rgba(124,58,237,0.35)]')
                       : 'text-[#5A5A72] hover:text-[#F0EFFE]'
                   }`}
                 >
@@ -170,81 +532,344 @@ export default function AIChatPage() {
           </div>
         </div>
 
-        {/* Context Strip */}
-        {selectedDeck && (
-          <div className="py-2 border-b border-[#2A2A3A]/30">
+        {/* Context strip — hidden in companion mode (no deck to surface). */}
+        {selectedDeck && hasMessages && chat.mode !== 'companion' && (
+          <div className="relative z-10 border-b border-[#2A2A3A]/30">
             <ContextStrip
               deckName={selectedDeck.title}
               cardsDueToday={dueCount}
-              lastReviewed="2h ago"
+              lastReviewed="just now"
             />
           </div>
         )}
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto py-6">
-          <div className="max-w-4xl mx-auto space-y-4">
-            {chat.messages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full min-h-[400px]">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] flex items-center justify-center text-white mb-4"><Sparkles size={24} /></div>
-                <h2 className="text-[#F0EFFE] text-base font-light mb-2">What do you want to study?</h2>
-                <p className="text-[#5A5A72] text-xs mb-6">Ask Aura to explain a concept, quiz you, or generate new cards.</p>
-                <div className="grid grid-cols-2 gap-2 w-full max-w-md">
-                  {[
-                    { label: 'Explain this card', prompt: 'Explain the current card in simpler terms' },
-                    { label: 'Quiz me on weak spots', prompt: 'Quiz me on concepts I struggle with' },
-                    { label: 'Generate follow-up cards', prompt: 'Make 5 follow-up cards from this topic' },
-                    { label: 'Give me a mnemonic', prompt: 'Give me a mnemonic for this concept' },
-                  ].map((s, i) => (
-                    <button
+        {/* Messages area */}
+        <div
+          ref={chatContainerRef}
+          className="flex-1 overflow-y-auto relative z-10 px-6 py-6"
+        >
+          <div className="max-w-3xl mx-auto">
+            {chat.messages.length === 0 && chat.mode === 'companion' ? (
+              /* ─── Companion-mode welcome ─── */
+              <div className="flex flex-col items-center justify-center min-h-[70vh] animate-fade-in">
+                <ProfAuraEmptyState
+                  mood={chat.isStreaming ? 'curious' : 'inviting'}
+                  size="lg"
+                  eyebrow="COMPANION MODE"
+                  title="Talk with me about anything"
+                  description="I'm here to think out loud about your studies, life, focus, motivation — anything that helps you do the work. No flashcards in sight unless you say so."
+                  audioLevel={mic.isActive ? mic.level : undefined}
+                  actions={[
+                    {
+                      label: 'Switch back to Study Coach',
+                      icon: ArrowLeft,
+                      onClick: () => chat.setMode('study'),
+                      primary: true,
+                    },
+                    {
+                      label: 'Ask me about my day',
+                      icon: MessageCircle,
+                      onClick: () => chat.sendMessage('Hey Prof. Aura — how am I doing today?'),
+                    },
+                  ]}
+                  badges={['No deck required', 'Voice + text', 'Lives in /dashboard/chat']}
+                />
+              </div>
+            ) : chat.messages.length === 0 ? (
+              /* ─── Empty state: Prof. Aura welcome ─── */
+              <div className="flex flex-col items-center justify-center min-h-[70vh] animate-fade-in text-center">
+                {/* Avatar + heading pair — the hero intentionally avoids
+                    a "brand eyebrow" strip because the route header already
+                    surfaces "Prof. Aura · Online" and the heading below
+                    shows deck/card counts. Adding a third repetition would
+                    erode the premium feel; the avatar's breathing aura ring
+                    is the only ambient decoration. */}
+                {/* Prof. Aura avatar */}
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+                  className="relative mb-7"
+                >
+                  <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#7C3AED] via-[#EC4899] to-[#06B6D4] flex items-center justify-center shadow-2xl shadow-violet-500/25">
+                    <ProfAura variant={chat.isStreaming ? 'streaming' : 'rest'} size={68} mood={mood} audioLevel={mic.isActive ? mic.level : undefined} />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-[3px] border-[#0A0A0F]">
+                    <div className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-40" />
+                  </div>
+                  {/* Premium breathing aura ring — slow pulse around the
+                      badge. Tuned to feel like ChatGPT's gentle availability
+                      pulse, not a notification. Replaces a previous broken
+                      single-dot orbit rotation whose transformOrigin math was
+                      in the wrong coordinate space.
+
+                      The 4-keyframe shape (rise, sustain, fall, fade) prevents
+                      the "blink" stutter that a 3-keyframe linear interp
+                      produces when alpha snaps from 0.18 back to 0 in one
+                      frame. */}
+                  <motion.div
+                    className="absolute inset-0 rounded-3xl pointer-events-none"
+                    animate={{
+                      boxShadow: [
+                        '0 0 0 0px rgba(124,58,237,0.0)',
+                        '0 0 0 6px rgba(124,58,237,0.18)',
+                        '0 0 0 6px rgba(124,58,237,0.18)',
+                        '0 0 0 0px rgba(124,58,237,0.0)',
+                      ],
+                    }}
+                    transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut', times: [0, 0.35, 0.65, 1] }}
+                  />
+                </motion.div>
+
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.15 }}
+                >
+                  <h2 className="text-3xl sm:text-4xl font-bold text-[#F0EFFE] mb-3 tracking-tight">
+                    Hey, I'm <span className="bg-gradient-to-r from-[#7C3AED] via-[#EC4899] to-[#06B6D4] bg-clip-text text-transparent">Prof. Aura</span>
+                  </h2>
+                  <p className="text-[#8A8AA3] text-sm sm:text-base max-w-lg leading-relaxed mb-2">
+                    Your AI study coach. I can see your <strong className="text-[#F0EFFE]">{decks.length} decks</strong>,{' '}
+                    <strong className="text-[#F0EFFE]">{cards.length} cards</strong>, and your FSRS schedule.
+                  </p>
+                  <p className="text-[#5A5A72] text-xs sm:text-sm mb-10">
+                    Ask me anything — I'll quiz you, explain concepts, or generate new cards.
+                  </p>
+                </motion.div>
+
+                {/* Continue last chat CTA — only visible when there's a recent
+                    non-empty session and the in-memory chat is empty (welcome
+                    state). Lets users 1-click resume a conversation they
+                    left off on. Dismissal just hides it for the session. */}
+                {lastSessionForResume && (
+                  <motion.button
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.22 }}
+                    onClick={() => {
+                      chat.loadMessages(lastSessionForResume.messages);
+                      // Auto-focus the input so the user can ask a follow-up
+                      // immediately after resuming.
+                      requestAnimationFrame(() => textareaRef.current?.focus());
+                    }}
+                    className="group w-full max-w-xl text-left p-4 mb-8 rounded-2xl bg-[#111118] border border-[#2A2A3A] hover:border-[#7C3AED]/50 transition-all flex items-center gap-3"
+                    title="Resume your last conversation"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#7C3AED]/30 to-[#06B6D4]/30 border border-[#7C3AED]/30 flex items-center justify-center shrink-0">
+                      <MessageCircle size={15} className="text-[#A78BFA]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[9px] font-semibold uppercase tracking-widest text-[#A78BFA] mb-0.5">Continue where you left off</p>
+                      <p className="text-sm text-[#F0EFFE] font-medium truncate group-hover:text-[#C4B5FD] transition-colors">
+                        {lastSessionForResume.title}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5 text-[9px] text-[#5A5A72]">
+                        <Clock size={9} />
+                        <span>{fmtRelShort(lastSessionForResume.updatedAt)}</span>
+                        <span>·</span>
+                        <span>{lastSessionForResume.messages.length} msg{lastSessionForResume.messages.length === 1 ? '' : 's'}</span>
+                        {lastSessionForResume.deckName && (
+                          <>
+                            <span>·</span>
+                            <span className="truncate max-w-[140px]">{lastSessionForResume.deckName}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <ArrowRight size={14} className="text-[#9090A8] group-hover:text-[#F0EFFE] group-hover:translate-x-0.5 transition-all shrink-0" />
+                  </motion.button>
+                )}
+
+                {/* Starter prompt cards */}
+                <motion.div
+                  initial={{ y: 30, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-xl"
+                >
+                  {starterPrompts.map((s, i) => (
+                    <motion.button
                       key={i}
+                      whileHover={{ y: -2, scale: 1.01 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => chat.sendMessage(s.prompt)}
-                      className="text-left p-3 rounded-lg bg-[#111118] border border-[#2A2A3A] hover:border-[#3A3A4F] text-[#F0EFFE] text-xs transition-all"
+                      className="text-left p-4 rounded-2xl bg-[#111118] border border-[#2A2A3A] hover:border-[#7C3AED]/40 hover:bg-[#15151D] transition-all group"
                     >
-                      {s.label}
-                    </button>
+                      <div className="flex items-start gap-3">
+                        <span className="text-xl shrink-0 mt-0.5">{s.icon}</span>
+                        <div className="min-w-0">
+                          <p className="text-[#F0EFFE] text-sm font-medium group-hover:text-[#8B5CF6] transition-colors">{s.label}</p>
+                          <p className="text-[#5A5A72] text-[10px] mt-0.5">{s.detail}</p>
+                        </div>
+                      </div>
+                    </motion.button>
                   ))}
-                </div>
+                </motion.div>
+
+                {/* Quick actions */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="mt-8 flex flex-wrap items-center justify-center gap-3"
+                >
+                  <button
+                    onClick={() => workspace?.startQuickStudy()}
+                    disabled={!decks.length}
+                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white text-xs font-medium hover:opacity-90 transition-opacity flex items-center gap-2 shadow-lg shadow-violet-500/20 disabled:opacity-30"
+                  >
+                    <Sparkles size={12} />
+                    Start a study session
+                  </button>
+                  <button
+                    onClick={() => navigate('/dashboard/generator')}
+                    className="px-4 py-2 rounded-xl bg-[#1A1A24] border border-[#2A2A3A] hover:border-[#7C3AED]/40 text-[#F0EFFE] text-xs font-medium transition-all"
+                  >
+                    Generate a deck
+                  </button>
+                </motion.div>
               </div>
             ) : (
-              <>
-                {chat.messages.map(msg => (
-                  <ChatMessage key={msg.id} message={msg} onSaveCard={chat.saveCard} />
-                ))}
+              /* ─── Messages list ─── */
+              <div className="space-y-6 pb-8">
+                <AnimatePresence mode="popLayout">
+                  {chat.messages.map((msg) => (
+                    <ChatMessage
+                      key={msg.id}
+                      message={msg}
+                      onSaveCard={chat.saveCard}
+                      isStreaming={chat.isStreaming}
+                      onAnswerQuiz={chat.answerQuiz}
+                    />
+                  ))}
+                </AnimatePresence>
                 <div ref={messagesEndRef} />
-              </>
-            )}
-
-            {!chat.isStreaming && chat.messages.length > 0 && (
-              <SuggestedPrompts
-                mode={chat.mode}
-                onSelect={chat.sendMessage}
-                deckName={context.deckName}
-              />
+              </div>
             )}
           </div>
         </div>
 
-        {/* Input */}
-        <div className="py-4 border-t border-[#2A2A3A]/50 shrink-0">
-          <div className="max-w-4xl mx-auto flex items-end gap-3">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask Aura anything..."
-              rows={1}
-              className="flex-1 bg-[#111118] border border-[#2A2A3A] rounded-xl px-4 py-3 text-[#F0EFFE] text-sm placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50 resize-none max-h-[120px]"
-              disabled={chat.isStreaming}
-            />
-            <button
-              onClick={handleSend}
-              disabled={!input.trim() || chat.isStreaming}
-              className="w-10 h-10 rounded-xl bg-[#7C3AED] text-white flex items-center justify-center hover:bg-[#6D28D9] transition-all disabled:opacity-30 disabled:cursor-not-allowed shrink-0 shadow-[0_0_15px_rgba(124,58,237,0.2)]"
+        {/* Jump to latest button */}
+        <AnimatePresence>
+          {showJumpToBottom && (
+            <motion.button
+              initial={{ opacity: 0, y: 10, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.9 }}
+              onClick={scrollToBottom}
+              className="absolute bottom-32 left-1/2 -translate-x-1/2 z-20 px-4 py-2 rounded-full bg-[#1A1A24] border border-[#2A2A3A] text-[#8A8AA3] text-xs font-medium hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-all shadow-lg backdrop-blur-sm flex items-center gap-2"
             >
-              {chat.isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send size={16} />}
-            </button>
+              <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6] animate-pulse" />
+              Jump to latest
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        {/* Suggested prompts (shown after messages, before input) */}
+        {hasMessages && !chat.isStreaming && (
+          <div className="relative z-10 px-6 pb-1">
+            <SuggestedPrompts
+              mode={chat.mode}
+              onSelect={chat.sendMessage}
+              deckName={context.deckName}
+              currentCardTerm={context.currentCard?.term}
+              messages={chat.messages}
+            />
+          </div>
+        )}
+
+        {/* Input area */}
+        <div className="relative z-10 p-4 sm:p-6 border-t border-[#2A2A3A]/50 shrink-0 bg-gradient-to-t from-[#0A0A0F] via-[#0A0A0F] to-transparent">
+          <div className="max-w-3xl mx-auto">
+            <div className="relative group/input">
+              {/* Glow on focus */}
+              <div className="absolute -inset-[1px] bg-gradient-to-r from-[#7C3AED]/20 via-[#EC4899]/10 to-[#06B6D4]/20 rounded-2xl opacity-0 group-focus-within/input:opacity-100 transition-opacity duration-500 blur-sm pointer-events-none" />
+
+              <div className="relative flex items-end bg-[#111118] border border-[#2A2A3A] rounded-2xl overflow-hidden transition-all group-focus-within/input:border-[#3A3A4F]">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={mic.isActive ? 'Listening — speak or type…' : 'Ask Prof. Aura anything...'}
+                  rows={1}
+                  className="flex-1 bg-transparent border-none outline-none px-5 py-3.5 text-sm text-[#F0EFFE] placeholder-[#5A5A72] resize-none max-h-[140px] leading-relaxed"
+                  disabled={chat.isStreaming}
+                />
+
+                {/* File attachment (paperclip). Drag/drop anywhere on the
+                    page also engages via the global drop handler inside
+                    FileAttachment itself. */}
+                <FileAttachment
+                  attachments={attachments}
+                  setAttachments={setAttachments}
+                />
+
+                {/* Mic toggle. Idle = violet outline; listening = solid violet.
+                    The button coordinates BOTH recognizers (volume + speech). */}
+                <button
+                  onClick={toggleMic}
+                  title={
+                    mic.isActive || sr.isListening
+                      ? 'Stop listening'
+                      : mic.error || sr.error
+                      ? `Mic/speech unavailable: ${(mic.error || sr.error || '').slice(0, 60)}`
+                      : 'Speak your question'
+                  }
+                  aria-pressed={mic.isActive || sr.isListening}
+                  className={`m-2 w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                    mic.isActive || sr.isListening
+                      ? 'bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(124,58,237,0.4)]'
+                      : 'bg-[#1A1A24] border border-[#2A2A3A] text-[#A8A8C0] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40'
+                  }`}
+                >
+                  {mic.isActive || sr.isListening ? <MicOff size={14} /> : <Mic size={14} />}
+                </button>
+
+                {/* Send / Stop button */}
+                {chat.isStreaming ? (
+                  <button
+                    onClick={() => chat.abort()}
+                    className="m-2 w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 flex items-center justify-center hover:bg-red-500/20 transition-all shrink-0 animate-[pulse_2.4s_ease-in-out_infinite] shadow-[0_0_14px_rgba(239,68,68,0.18)]"
+                    title="Stop generating"
+                  >
+                    <Square size={14} fill="currentColor" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSend}
+                    disabled={!input.trim()}
+                    className={`m-2 w-9 h-9 rounded-xl flex items-center justify-center transition-all shrink-0 ${
+                      input.trim()
+                        ? 'bg-[#7C3AED] text-white hover:bg-[#6D28D9] shadow-[0_0_15px_rgba(124,58,237,0.3)]'
+                        : 'bg-[#1A1A24] text-[#3A3A4F] border border-[#2A2A3A]'
+                    }`}
+                  >
+                    <Send size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Hint text */}
+              <div className="flex items-center justify-between mt-2 px-1">
+                <div className="flex items-center gap-3">
+                  <span className="text-[9px] text-[#3A3A4F]">
+                    <kbd className="px-1 py-0.5 rounded border border-[#2A2A3A] bg-[#111118] font-mono text-[8px]">Enter</kbd> send · <kbd className="px-1 py-0.5 rounded border border-[#2A2A3A] bg-[#111118] font-mono text-[8px]">Shift+Enter</kbd> newline
+                  </span>
+                </div>
+                <span className="text-[9px] text-[#3A3A4F]">
+                  {chat.isStreaming ? (
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6] animate-pulse" />
+                      Prof. Aura is thinking...
+                    </span>
+                  ) : (
+                    'Ready'
+                  )}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>

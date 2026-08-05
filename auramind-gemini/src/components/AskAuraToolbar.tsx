@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   Lightbulb, HelpCircle, Wand2, MessageCircle, Sparkles, ChevronRight
 } from 'lucide-react';
-import { useAuraContext, StudyContext, AuraEntrypoint } from '../../contexts/AuraContext';
+import { useAuraContext, StudyContext, AuraEntrypoint } from '../contexts/AuraContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';

@@ -3,6 +3,32 @@
 // CEO/Owner only. Powers: Crypto, Market Intel, AI Agent,
 // Dark Web Monitor, Predictive Models
 // ═══════════════════════════════════════════════════════════
+import { groqChat } from './groqClient';
+
+/**
+ * True when VITE_GROQ_API_KEY is set to a real-looking key. Centralises the
+ * dev-UX guard that's repeated in fetchMarketIntel (×2), runAIAgent, and
+ * generatePredictions — each does the same `'gsk_your_key_here'` check.
+ *
+ * Without this guard, dev boxes carrying the starter `.env` placeholder
+ * would leak a `Groq API error (401): Invalid API Key` from groqChat's
+ * fetch into `runAIAgent`'s step ticker via `addStep(\`❌ Error: ${err.message}\`).
+ * `fetchMarketIntel`'s and `generatePredictions`'s `try/catch` blocks already
+ * silently swallow the throw, so they don't surface the raw error — but
+ * returning the fallback message here is friendlier across the whole Nexus
+ * surface, not just the agent step ticker.
+ *
+ * Replace with a centralised env validator (extend `src/lib/env.ts`) once
+ * dev onboarding ships real keys by default.
+ *
+ * Exported as a test seam so `__tests__/nexusServiceGroqKey.test.ts` can
+ * stub `VITE_GROQ_API_KEY` and assert that a future "cleanup dead-looking
+ * checks" pass can't silently regress this guard.
+ */
+export function _hasRealGroqKey(): boolean {
+  const key = import.meta.env.VITE_GROQ_API_KEY;
+  return !!key && key !== 'gsk_your_key_here';
+}
 
 interface CryptoPrice {
   symbol: string;
@@ -80,8 +106,8 @@ export async function fetchCryptoPrices(): Promise<CryptoPrice[]> {
     );
 
     if (!res.ok) {
-      console.warn('CoinGecko API failed, using cached/fallback data');
-      return cryptoCache?.data ?? getFallbackCryptoPrices();
+      console.warn('CoinGecko API failed, returning cached data');
+      return cryptoCache?.data ?? [];
     }
 
     const raw = await res.json();
@@ -102,7 +128,7 @@ export async function fetchCryptoPrices(): Promise<CryptoPrice[]> {
     cryptoCache = { data: prices, ts: Date.now() };
     return prices;
   } catch {
-    return cryptoCache?.data ?? getFallbackCryptoPrices();
+    return cryptoCache?.data ?? [];
   }
 }
 
@@ -111,16 +137,6 @@ function formatMarketCap(n: number): string {
   if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
   if (n >= 1e6) return `$${(n / 1e6).toFixed(0)}M`;
   return `$${n.toLocaleString()}`;
-}
-
-function getFallbackCryptoPrices(): CryptoPrice[] {
-  return [
-    { symbol: 'BTC', name: 'Bitcoin', price: 67432, change24h: 2.34, marketCap: '$1.32T' },
-    { symbol: 'ETH', name: 'Ethereum', price: 3491, change24h: -1.21, marketCap: '$419B' },
-    { symbol: 'SOL', name: 'Solana', price: 187, change24h: 5.67, marketCap: '$81B' },
-    { symbol: 'ARB', name: 'Arbitrum', price: 1.24, change24h: -3.42, marketCap: '$1.6B' },
-    { symbol: 'AAVE', name: 'Aave', price: 112, change24h: 1.89, marketCap: '$1.7B' },
-  ];
 }
 
 // ────────────────────────────────────────────────────────
@@ -158,8 +174,7 @@ export async function fetchMarketIntel(query: string): Promise<MarketIntelResult
 
   // Fallback: use Groq AI to generate market intelligence
   if (results.length === 0) {
-    const groqKey = import.meta.env.VITE_GROQ_API_KEY;
-    if (groqKey && groqKey !== 'gsk_your_key_here') {
+    if (_hasRealGroqKey()) {
       try {
         const aiSummary = await callGroqAI(
           `You are a competitive intelligence analyst. Research the following topic using your knowledge: "${query}". 
@@ -171,28 +186,21 @@ export async function fetchMarketIntel(query: string): Promise<MarketIntelResult
           results.push(...parsed.slice(0, 5));
         }
       } catch {
-        // fall through to mock
+        // Groq search synthesis failed — results stay empty rather than fabricated
       }
     }
   }
 
-  // Absolute fallback
-  if (results.length === 0) {
-    results.push(
-      { title: `${query} — Industry Analysis`, url: '#', snippet: `Real-time search requires Google Search API key. Set VITE_GOOGLE_SEARCH_API_KEY and VITE_GOOGLE_SEARCH_ENGINE_ID in .env for live data.`, sentiment: 'neutral', sentimentScore: 0 }
-    );
-  }
-
-  let summary = '';
-  const groqKey = import.meta.env.VITE_GROQ_API_KEY;
-  if (groqKey && groqKey !== 'gsk_your_key_here') {
+  // Absolute fallback: no fabricated results — the summary explains the gap.
+  let summary = 'Connect Groq API key for AI-powered summaries.';
+  if (_hasRealGroqKey()) {
     try {
       summary = await callGroqAI(
         `Summarize these search results about "${query}" in 2-3 sentences for a CEO briefing: ${JSON.stringify(results.slice(0, 3))}`
       );
-    } catch { summary = 'AI summary unavailable.'; }
-  } else {
-    summary = 'Connect Groq API key for AI-powered summaries.';
+    } catch {
+      summary = 'AI summary unavailable.';
+    }
   }
 
   return { query, results, summary, searchedAt: Date.now() };
@@ -214,12 +222,10 @@ async function analyzeSentiment(text: string): Promise<{ label: 'positive' | 'ne
 // ────────────────────────────────────────────────────────
 
 export async function runAIAgent(prompt: string, onStep?: (step: string) => void): Promise<AIAgentResult> {
-  const groqKey = import.meta.env.VITE_GROQ_API_KEY;
-
   const steps: string[] = [];
   const addStep = (s: string) => { steps.push(s); onStep?.(s); };
 
-  if (!groqKey || groqKey === 'gsk_your_key_here') {
+  if (!_hasRealGroqKey()) {
     addStep('⚠ No Groq API key configured. Set VITE_GROQ_API_KEY in .env.');
     return { prompt, result: 'Groq API key required for AI agent tasks. Get a free key at https://console.groq.com/keys', steps, completedAt: Date.now() };
   }
@@ -301,11 +307,10 @@ export async function checkBreaches(emails: string[]): Promise<BreachResult[]> {
 // ────────────────────────────────────────────────────────
 
 export async function generatePredictions(assets: string[]): Promise<PredictionResult[]> {
-  const groqKey = import.meta.env.VITE_GROQ_API_KEY;
   const predictions: PredictionResult[] = [];
 
   for (const asset of assets) {
-    if (!groqKey || groqKey === 'gsk_your_key_here') {
+    if (!_hasRealGroqKey()) {
       predictions.push({
         asset,
         prediction: 'Groq API key required for AI predictions. Set VITE_GROQ_API_KEY.',
@@ -366,116 +371,6 @@ interface GitHubScanResult {
   findings: Array<{ type: string; path: string; severity: 'high' | 'medium' | 'low' }>;
 }
 
-// ═══════════════════════════════════════════════════════════
-// Sentinel — Global Risk Intelligence (simulated)
-// ═══════════════════════════════════════════════════════════
-
-export interface ThreatNode {
-  id: string;
-  region: string;
-  lat: number;
-  lng: number;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  type: 'geopolitical' | 'climate' | 'biological' | 'cyber';
-  title: string;
-  description: string;
-  timestamp: number;
-}
-
-export async function fetchGlobalThreats(): Promise<ThreatNode[]> {
-  const threats: ThreatNode[] = [
-    { id: 't1', region: 'Eastern Europe', lat: 50.4, lng: 30.5, severity: 'critical', type: 'geopolitical', title: 'Escalating border tensions', description: 'Military buildup reported near key trade corridors.', timestamp: Date.now() - 1000 * 60 * 60 * 2 },
-    { id: 't2', region: 'South China Sea', lat: 12.0, lng: 113.0, severity: 'high', type: 'geopolitical', title: 'Shipping lane disruption risk', description: 'Naval exercises scheduled through Q3 affecting 14% of global container traffic.', timestamp: Date.now() - 1000 * 60 * 60 * 5 },
-    { id: 't3', region: 'Gulf of Mexico', lat: 25.0, lng: -90.0, severity: 'high', type: 'climate', title: 'Category 4 hurricane forming', description: 'Projected landfall in 72h; petrochemical facilities on alert.', timestamp: Date.now() - 1000 * 60 * 30 },
-    { id: 't4', region: 'Amazon Basin', lat: -3.4, lng: -62.0, severity: 'medium', type: 'climate', title: 'Drought conditions expanding', description: 'Agricultural output forecasts revised downward 8%.', timestamp: Date.now() - 1000 * 60 * 60 * 12 },
-    { id: 't5', region: 'Southeast Asia', lat: 14.0, lng: 108.0, severity: 'critical', type: 'biological', title: 'Novel respiratory outbreak', description: 'Local hospitals reporting 300% increase in severe respiratory cases.', timestamp: Date.now() - 1000 * 60 * 60 * 8 },
-    { id: 't6', region: 'North Atlantic', lat: 40.0, lng: -30.0, severity: 'medium', type: 'climate', title: 'Severe storm system', description: 'Transatlantic shipping delays averaging 36 hours.', timestamp: Date.now() - 1000 * 60 * 60 * 4 },
-    { id: 't7', region: 'Eastern Mediterranean', lat: 35.0, lng: 33.0, severity: 'high', type: 'cyber', title: 'Critical infrastructure targeting', description: 'State-aligned actors observed probing energy grids.', timestamp: Date.now() - 1000 * 60 * 60 * 6 },
-    { id: 't8', region: 'Arctic Circle', lat: 75.0, lng: 60.0, severity: 'low', type: 'climate', title: 'Ice sheet calving event', description: 'Shipping route opening earlier than historical average.', timestamp: Date.now() - 1000 * 60 * 60 * 24 },
-  ];
-  return threats;
-}
-
-// ═══════════════════════════════════════════════════════════
-// Supply Chain Twin — Global logistics digital twin (simulated)
-// ═══════════════════════════════════════════════════════════
-
-export interface SupplyNode {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
-  status: 'nominal' | 'congested' | 'disrupted' | 'offline';
-  type: 'factory' | 'port' | 'warehouse' | 'data_center';
-  throughput: number;
-}
-
-export interface SupplyRoute {
-  id: string;
-  from: string;
-  to: string;
-  fromLat: number;
-  fromLng: number;
-  toLat: number;
-  toLng: number;
-  activeShips: number;
-  risk: 'low' | 'medium' | 'high' | 'critical';
-  delayHours: number;
-}
-
-export async function fetchSupplyChainTwin(): Promise<{ nodes: SupplyNode[]; routes: SupplyRoute[] }> {
-  const nodes: SupplyNode[] = [
-    { id: 'n1', name: 'Shenzhen Factory', lat: 22.5, lng: 114.0, status: 'nominal', type: 'factory', throughput: 94 },
-    { id: 'n2', name: 'Port of Shanghai', lat: 31.2, lng: 121.5, status: 'congested', type: 'port', throughput: 72 },
-    { id: 'n3', name: 'Port of LA', lat: 33.7, lng: -118.2, status: 'nominal', type: 'port', throughput: 88 },
-    { id: 'n4', name: 'Dallas Warehouse', lat: 32.8, lng: -96.8, status: 'nominal', type: 'warehouse', throughput: 91 },
-    { id: 'n5', name: 'Rotterdam Hub', lat: 51.9, lng: 4.5, status: 'disrupted', type: 'port', throughput: 45 },
-    { id: 'n6', name: 'Singapore Transhipment', lat: 1.3, lng: 103.8, status: 'nominal', type: 'port', throughput: 96 },
-    { id: 'n7', name: 'Iceland DC', lat: 64.9, lng: -19.0, status: 'nominal', type: 'data_center', throughput: 99 },
-    { id: 'n8', name: 'São Paulo Factory', lat: -23.5, lng: -46.6, status: 'offline', type: 'factory', throughput: 0 },
-  ];
-
-  const routes: SupplyRoute[] = [
-    { id: 'r1', from: 'n1', to: 'n2', fromLat: 22.5, fromLng: 114.0, toLat: 31.2, toLng: 121.5, activeShips: 14, risk: 'medium', delayHours: 12 },
-    { id: 'r2', from: 'n2', to: 'n6', fromLat: 31.2, fromLng: 121.5, toLat: 1.3, toLng: 103.8, activeShips: 22, risk: 'low', delayHours: 0 },
-    { id: 'r3', from: 'n6', to: 'n3', fromLat: 1.3, fromLng: 103.8, toLat: 33.7, toLng: -118.2, activeShips: 8, risk: 'high', delayHours: 36 },
-    { id: 'r4', from: 'n3', to: 'n4', fromLat: 33.7, fromLng: -118.2, toLat: 32.8, toLng: -96.8, activeShips: 31, risk: 'low', delayHours: 4 },
-    { id: 'r5', from: 'n5', to: 'n4', fromLat: 51.9, fromLng: 4.5, toLat: 32.8, toLng: -96.8, activeShips: 3, risk: 'critical', delayHours: 96 },
-    { id: 'r6', from: 'n8', to: 'n5', fromLat: -23.5, fromLng: -46.6, toLat: 51.9, toLng: 4.5, activeShips: 0, risk: 'critical', delayHours: 168 },
-  ];
-
-  return { nodes, routes };
-}
-
-// ═══════════════════════════════════════════════════════════
-// R&D Radar — Patent & emerging technology intelligence (simulated)
-// ═══════════════════════════════════════════════════════════
-
-export interface PatentSignal {
-  id: string;
-  tech: string;
-  angle: number; // degrees, 0-360
-  distance: number; // 0-100, closer to center = more mature
-  threatLevel: 'low' | 'medium' | 'high' | 'breakthrough';
-  source: string;
-  summary: string;
-  filedAt: number;
-}
-
-export async function fetchRDRadar(): Promise<PatentSignal[]> {
-  const signals: PatentSignal[] = [
-    { id: 'p1', tech: 'Quantum ML Accelerators', angle: 15, distance: 72, threatLevel: 'breakthrough', source: 'MIT / IBM', summary: 'Novel superconducting qubit architectures for training neural networks.', filedAt: Date.now() - 1000 * 60 * 60 * 24 * 14 },
-    { id: 'p2', tech: 'Neuromorphic Memory', angle: 78, distance: 55, threatLevel: 'high', source: 'Stanford', summary: 'Memristor-based analog memory for edge AI inference.', filedAt: Date.now() - 1000 * 60 * 60 * 24 * 8 },
-    { id: 'p3', tech: 'CRISPR Learning Models', angle: 142, distance: 88, threatLevel: 'medium', source: 'Broad Institute', summary: 'Biological data encoding using gene-editing motifs.', filedAt: Date.now() - 1000 * 60 * 60 * 24 * 21 },
-    { id: 'p4', tech: 'Ambient Energy Harvesting', angle: 205, distance: 41, threatLevel: 'high', source: 'ETH Zurich', summary: 'Self-powered IoT sensors from radio-frequency harvesting.', filedAt: Date.now() - 1000 * 60 * 60 * 24 * 5 },
-    { id: 'p5', tech: 'Holographic Storage', angle: 290, distance: 63, threatLevel: 'medium', source: 'Microsoft Research', summary: '5D optical data storage in quartz glass.', filedAt: Date.now() - 1000 * 60 * 60 * 24 * 12 },
-    { id: 'p6', tech: 'Synthetic Biology APIs', angle: 340, distance: 80, threatLevel: 'low', source: 'Ginkgo Bioworks', summary: 'Programmable organisms as computational substrates.', filedAt: Date.now() - 1000 * 60 * 60 * 24 * 30 },
-    { id: 'p7', tech: 'Topological Qubits', angle: 55, distance: 35, threatLevel: 'breakthrough', source: 'Microsoft / Delft', summary: 'Error-resilient qubits for scalable quantum computing.', filedAt: Date.now() - 1000 * 60 * 60 * 24 * 3 },
-    { id: 'p8', tech: 'DNA Data Storage', angle: 118, distance: 67, threatLevel: 'medium', source: 'Twist Bioscience', summary: 'Exabyte-scale archival storage in synthetic DNA.', filedAt: Date.now() - 1000 * 60 * 60 * 24 * 18 },
-  ];
-  return signals;
-}
-
 export async function scanGitHubForSecrets(orgName: string): Promise<GitHubScanResult[]> {
   const results: GitHubScanResult[] = [];
 
@@ -518,42 +413,25 @@ export async function scanGitHubForSecrets(orgName: string): Promise<GitHubScanR
 // Helpers
 // ────────────────────────────────────────────────────────
 
+// Now delegates to the shared groqClient — picks up the corrected model
+// (llama-3.3-70b-versatile, was 404'ing on llama3-8b-8192), the VITE_USE_LOCAL_AI
+// toggle that Nexus previously lacked, and max_tokens=4000 which matters
+// because runAIAgent composes a 4-step research plan that truncates badly
+// at the legacy 500-token cap.
 async function callGroqAI(prompt: string): Promise<string> {
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-  if (!apiKey) throw new Error('No Groq API key');
-
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'llama3-8b-8192',
-      messages: [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens: 500,
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error?.message || `HTTP ${res.status}`);
-  }
-
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content || '';
+  const { content } = await groqChat({ prompt });
+  return content;
 }
 
 function parseAIJson(text: string): any {
   // Try to extract JSON from AI response
   const match = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   if (match) {
-    try { return JSON.parse(match[1]); } catch {}
+    try { return JSON.parse(match[1]); } catch { /* malformed fenced block */ }
   }
   const bareMatch = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
   if (bareMatch) {
-    try { return JSON.parse(bareMatch[0]); } catch {}
+    try { return JSON.parse(bareMatch[0]); } catch { /* not JSON at all */ }
   }
   return null;
 }

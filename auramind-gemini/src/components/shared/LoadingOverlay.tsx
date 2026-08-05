@@ -133,7 +133,7 @@ export const LoadingOverlay = () => (
           />
         ))}
         <img
-          src="/favicons,logos/icon-192.svg"
+          src="/favicons,logos/favicon-32.png"
           alt="AuraMind"
           className="w-12 h-12 relative z-10 object-contain"
         />

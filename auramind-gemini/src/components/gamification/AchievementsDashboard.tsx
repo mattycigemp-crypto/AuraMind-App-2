@@ -1,9 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
-import { getUserStats, awardXP, XP_REWARDS, calculateLevel, getLevelProgress, getXPToNextLevel, ACHIEVEMENTS, checkAchievements, getEarnedAchievements, getNextAchievements, UserStats, trackStudySession } from '../../services/gamification/gamificationService';
+import { getUserStats, awardXP, XP_REWARDS, calculateLevel, getLevelProgress, getXPToNextLevel, ACHIEVEMENTS, checkAchievements, getEarnedAchievements, getNextAchievements, UserStats, trackStudySession, STREAK_BONUSES } from '../../services/gamification/gamificationService';
+import {
+  Confetti,
+  AnimeCelebration,
+  StaggerList,
+  useScrollReveal,
+  type ConfettiHandle,
+  type AnimeCelebrationHandle,
+} from '../../lib/effects';
+
+// Streak milestones are derived from STREAK_BONUSES keys (single source
+// of truth — gamificationService is canonical). Any future milestone added
+// to STREAK_BONUSES will automatically gate confetti here too.
+const STREAK_MILESTONES = new Set<number>(
+  Object.keys(STREAK_BONUSES).map(Number),
+);
+
+// Confetti intensity — milestone crossings are quieter than fresh
+// achievement unlocks because the user has just seen a streak-week number
+// on their dashboard; achievement-unlock is a more dramatic moment.
+const CONFETTI_PARTICLES = {
+  milestone: 80,
+  achievement: 120,
+} as const;
 import { challengesService, Challenge } from '../../services/api/challengesService';
 
 const AchievementsDashboard: React.FC = () => {
@@ -18,7 +41,7 @@ const AchievementsDashboard: React.FC = () => {
     loadUserData();
   }, []);
 
-  const loadUserData = async () => {
+  const loadUserData = useCallback(async () => {
     setLoading(true);
     try {
       const stats = getUserStats();
@@ -44,11 +67,58 @@ const AchievementsDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [workspace?.user?.id, workspace]);
+
+  const confettiRef = useRef<ConfettiHandle>(null);
+  const animeRef = useRef<AnimeCelebrationHandle>(null);
+  const statsReveal = useScrollReveal<HTMLDivElement>({
+    enter: { duration: 500, opacity: [0, 1], translateY: [16, 0] },
+  });
 
   const handleStudySession = () => {
+    // Capture streak BEFORE the session so we can detect cross-milestone
+    // (e.g. today = 2, after = 3 → fire confetti for hitting the 3-day
+    // milestone). Achievements are returned by trackStudySession —
+    // `newAchievements.length > 0` is the other trigger condition.
+    const before = getUserStats().streakDays;
     const result = trackStudySession(900, 85);
-    alert(`You earned ${result.xpAdded} XP!`);
+    const after = getUserStats().streakDays;
+    const crossedMilestone =
+      after !== before && (STREAK_MILESTONES.has(after) || STREAK_MILESTONES.has(before));
+    const unlocked = result.newAchievements.length > 0;
+    if (unlocked || crossedMilestone) {
+      confettiRef.current?.fire({
+        particleCount: unlocked
+          ? CONFETTI_PARTICLES.achievement
+          : CONFETTI_PARTICLES.milestone,
+      });
+      // Anime.js v4 halo + label animation alongside the Confetti burst.
+      // Particles + halo read as one celebration unit; either alone is
+      // thinner. Label text is whichever earned-event is loudest at this
+      // moment so the user sees WHAT they earned, not just THAT they did.
+      const celebrateLabel = unlocked
+        ? result.newAchievements.length === 1
+          // Optional-chain `:0]?.title` keeps this safe under tsconfigs
+          // that enable `noUncheckedIndexedAccess` (default-off but some
+          // strict-TS configs flip it). The `?? 'Achievement unlocked'`
+          // keeps a sensible fallback when `newAchievements[0]` is undefined.
+          ? result.newAchievements[0]?.title ?? 'Achievement unlocked'
+          : `${result.newAchievements.length} achievements!`
+        : crossedMilestone
+          ? `${after}-day streak`
+          : `${result.xpAdded} XP`;
+      const intensity: 'subtle' | 'normal' | 'epic' = unlocked
+        ? 'epic'
+        : crossedMilestone
+          ? 'normal'
+          : 'subtle';
+      animeRef.current?.celebrate({ label: celebrateLabel, intensity });
+    }
+    const labels: string[] = [];
+    if (result.xpAdded) labels.push(`${result.xpAdded} XP`);
+    if (unlocked) labels.push(`${result.newAchievements.length} new achievement${result.newAchievements.length === 1 ? '' : 's'}`);
+    if (crossedMilestone) labels.push(`${after}-day streak milestone`);
+    if (labels.length > 0) alert(`Nice work! ${labels.join(', ')}.`);
     loadUserData();
   };
 
@@ -75,6 +145,13 @@ const AchievementsDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Full-window canvas confetti burst — fires imperatively via confettiRef when
+          an achievement unlocks or a streak milestone (3/7/30/100/365) is crossed. */}
+      <Confetti ref={confettiRef} />
+      {/* Anime.js v4 halo + label — fires alongside the confetti burst for the
+          same trigger condition. Together: halo + particles + label = a single
+          celebration unit. Either effect on its own reads as half-finished. */}
+      <AnimeCelebration ref={animeRef} />
       {/* User Profile and Level */}
       <Card className="flex flex-col items-center text-center py-6">
         <div className="space-y-4">
@@ -100,8 +177,19 @@ const AchievementsDashboard: React.FC = () => {
         </div>
       </Card>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Stats Overview
+          Anime.js v4 composition:
+            • useScrollReveal on the outer ScrollObserver → fades the whole
+              strip in once when the section enters view.
+            • StaggerList child of the same strip → each stat card slides up
+              in sequence so the eye reads them in priority order:
+              streak → accuracy → cards → time. */}
+      <div
+        ref={statsReveal.ref}
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        style={{ willChange: 'opacity, transform' }}
+      >
+        <StaggerList delayMs={70} durationMs={420} from="up" distance={16} className="contents">
         <Card>
           <div className="flex items-center justify-between">
             <div>
@@ -113,7 +201,7 @@ const AchievementsDashboard: React.FC = () => {
             </div>
           </div>
         </Card>
-        
+
         <Card>
           <div className="flex items-center justify-between">
             <div>
@@ -125,7 +213,7 @@ const AchievementsDashboard: React.FC = () => {
             </div>
           </div>
         </Card>
-        
+
         <Card>
           <div className="flex items-center justify-between">
             <div>
@@ -137,7 +225,7 @@ const AchievementsDashboard: React.FC = () => {
             </div>
           </div>
         </Card>
-        
+
         <Card>
           <div className="flex items-center justify-between">
             <div>
@@ -151,6 +239,7 @@ const AchievementsDashboard: React.FC = () => {
             </div>
           </div>
         </Card>
+        </StaggerList>
       </div>
 
       {/* Action Button */}

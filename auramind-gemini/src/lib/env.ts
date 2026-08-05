@@ -32,6 +32,12 @@ const ENV_CONFIG: EnvVarConfig[] = [
     description: 'Groq AI API key (optional, for faster AI responses)',
   },
   {
+    name: 'VITE_USE_PUTER',
+    required: false,
+    description: 'Puter.js toggle for the user-pays fallback AI provider (default true)',
+    defaultValue: 'true',
+  },
+  {
     name: 'VITE_STRIPE_PUBLISHABLE_KEY',
     required: false,
     description: 'Stripe publishable key (optional, for payments)',
@@ -93,9 +99,16 @@ export function validateEnv(): EnvValidationResult {
   // Check for AI provider configuration
   const hasGroq = !!import.meta.env.VITE_GROQ_API_KEY && !import.meta.env.VITE_GROQ_API_KEY.includes('your_');
   const hasLocalAI = import.meta.env.VITE_USE_LOCAL_AI === 'true';
+  const puterEnabled = (import.meta.env.VITE_USE_PUTER ?? 'true') !== 'false';
 
-  if (!hasGroq && !hasLocalAI) {
+  // Puter.js being enabled counts as "an AI provider configured" for the
+  // purposes of the boot-time warning because it lets the user sign in
+  // themselves. Don't trigger a "no AI provider configured" warning
+  // when Puter is available, even if no Groq key is set.
+  if (!hasGroq && !hasLocalAI && !puterEnabled) {
     warnings.push('No AI provider configured - AI features will use demo mode');
+  } else if (!hasGroq && !hasLocalAI && puterEnabled) {
+    warnings.push('No developer AI key set; users can sign in with Puter for free AI in-browser.');
   }
 
   return {
@@ -154,6 +167,29 @@ export function getEnvNumber(name: string, defaultValue?: number): number | unde
   if (!value) return defaultValue;
   const num = parseInt(value, 10);
   return isNaN(num) ? defaultValue : num;
+}
+
+/**
+ * hasValidGroqKey — single-source-of-truth the free-AI router uses to
+ * decide whether to count `VITE_GROQ_API_KEY` as a usable BYOK fallback
+ * (so users without their own key still get AI through the env-level
+ * Groq key the app ships with in some deployments).
+ *
+ * Treats undefined, empty strings, and obvious placeholders (`xxx`,
+ * strings containing "your_") as "not valid".
+ */
+export function hasValidGroqKey(): boolean {
+  const value = import.meta.env.VITE_GROQ_API_KEY;
+  if (!value) return false;
+  if (value.length < 20) return false;
+  if (
+    value.includes("your_") ||
+    value.includes("PLACEHOLDER") ||
+    value === "xxx"
+  ) {
+    return false;
+  }
+  return true;
 }
 
 

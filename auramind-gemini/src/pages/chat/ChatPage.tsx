@@ -3,10 +3,13 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Send, X, BookOpen, Lightbulb, HelpCircle, Wand2,
   Copy, Check, RotateCcw, ArrowUp, ChevronDown,
-  Plus, Edit3, Sparkles
+  Plus, Edit3, Sparkles, Target, MessageCircle, BrainCircuit,
 } from 'lucide-react';
-import { useAuraContext, StudyContext, AuraEntrypoint } from '../contexts/AuraContext';
+import { useAuraContext, StudyContext, AuraEntrypoint } from '../../contexts/AuraContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
+import { TextSplit } from '../../lib/effects';
+import { groqChat, groqChatStream } from '../../services/api/groqClient';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -299,20 +302,62 @@ For each card, rate it (Good/Needs Work/Poor) and suggest specific fixes. If a c
   },
 ];
 
-// ─── Main ChatPage ───────────────────────────────────────────────────────
+// ─── Quick diagnostic quiz (from ProfessorPage) ──────────────────────────
+
+const DIAGNOSTIC_QUESTIONS = [
+  {
+    id: 'q1',
+    question: 'What\'s your biggest study challenge?',
+    options: [
+      { value: 'retention', label: 'Forgetting what I learned' },
+      { value: 'focus', label: 'Staying focused during study' },
+      { value: 'time', label: 'Finding time to study' },
+      { value: 'motivation', label: 'Staying motivated' },
+    ],
+  },
+  {
+    id: 'q2',
+    question: 'How many cards do you review daily?',
+    options: [
+      { value: '0-10', label: '0–10 — just starting' },
+      { value: '10-30', label: '10–30 — building momentum' },
+      { value: '30-50', label: '30–50 — consistent' },
+      { value: '50+', label: '50+ — power user' },
+    ],
+  },
+  {
+    id: 'q3',
+    question: 'What subjects are you studying?',
+    options: [
+      { value: 'med', label: 'Medicine / Biology' },
+      { value: 'tech', label: 'CS / Engineering' },
+      { value: 'lang', label: 'Languages' },
+      { value: 'other', label: 'Other / General' },
+    ],
+  },
+];
+
+// ─── Main ChatPage with Prof. Aura personality ────────────────────────────
 
 export default function ChatPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { studyContext, setStudyContext, clearContext, hasContext } = useAuraContext();
+  const ws = useDashboardWorkspace();
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showQuickPrompts, setShowQuickPrompts] = useState(true);
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const [diagAnswers, setDiagAnswers] = useState<Record<string, string>>({});
+  const [diagStep, setDiagStep] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  const deckCount = ws?.decks?.length ?? 0;
+  const cardCount = ws?.cards?.length ?? 0;
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -332,6 +377,18 @@ export default function ChatPage() {
     }
   }, [searchParams, studyContext, setStudyContext]);
 
+  // Handle diagnostic completion
+  const handleDiagComplete = () => {
+    const answers = Object.values(diagAnswers).join(', ');
+    const params = new URLSearchParams();
+    params.set('q', `I'm a ${diagAnswers.q3 || 'student'} who struggles with ${diagAnswers.q1 || 'retention'}. I review ${diagAnswers.q2 || '10-30'} cards daily. Help me build a personalized study plan.`);
+    setShowDiagnostic(false);
+    setDiagAnswers({});
+    setDiagStep(0);
+    // Send the diagnostic result as first message
+    sendMessage(params.get('q') || '');
+  };
+
   // Auto-send first message if context has an entrypoint
   useEffect(() => {
     if (studyContext && messages.length === 0 && showQuickPrompts) {
@@ -349,7 +406,15 @@ export default function ChatPage() {
       timestamp: Date.now(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const assistantId = `assistant-${Date.now()}`;
+    const assistantMessage: Message = {
+      id: assistantId,
+      role: 'assistant',
+      content: '',
+      timestamp: Date.now(),
+    };
+
+    setMessages((prev) => [...prev, userMessage, assistantMessage]);
     setInputValue('');
     setShowQuickPrompts(false);
     setIsTyping(true);
@@ -362,30 +427,110 @@ export default function ChatPage() {
 
       const fullSystemPrompt = systemPrompt || contextPrompt;
 
-      // In production, this would call the API:
-      // const response = await supabase.functions.invoke('chat', {
-      //   body: {
-      //     messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })),
-      //     systemPrompt: fullSystemPrompt,
-      //     context: studyContext,
-      //   },
-      // });
+      // Stream response via SSE Edge Function (Vercel or Supabase)
+      let streamedContent = '';
+      try {
+        const useSupabaseSSE = import.meta.env.VITE_USE_SUPABASE_SSE === 'true';
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+        const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+        const sseUrl = useSupabaseSSE && supabaseUrl
+          ? `${supabaseUrl}/functions/v1/chat-stream`
+          : `${apiBase}/api/chat/stream`;
+        const res = await fetch(sseUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [
+              { role: 'system', content: fullSystemPrompt },
+              { role: 'user', content },
+            ],
+            maxTokens: 2000,
+            temperature: 0.7,
+          }),
+        });
 
-      // Simulated response for demo
-      await new Promise((r) => setTimeout(r, 1500 + Math.random() * 1000));
+        if (!res.ok) throw new Error(`SSE server ${res.status}`);
 
-      const responseContent = generateDemoResponse(content, studyContext);
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error('No reader');
+
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || !trimmed.startsWith('data: ')) continue;
+            const data = trimmed.slice(6);
+            if (data === '[DONE]') break;
+
+            try {
+              const parsed = JSON.parse(data);
+              const delta = parsed.content || parsed?.choices?.[0]?.delta?.content;
+              if (delta) {
+                streamedContent += delta;
+                setMessages(prev => prev.map(m =>
+                  m.id === assistantId
+                    ? { ...m, content: streamedContent }
+                    : m
+                ));
+              }
+              if (parsed.error) {
+                console.warn('SSE stream error:', parsed.error);
+                break;
+              }
+            } catch { /* skip malformed */ }
+          }
+        }
+      } catch {
+        // Fallback to direct Groq API on network/SSE failure
+        console.warn('SSE failed, falling back to direct Groq streaming');
+        try {
+          const stream = groqChatStream({
+            messages: [
+              { role: 'system', content: fullSystemPrompt },
+              { role: 'user', content },
+            ],
+            maxTokens: 2000,
+            temperature: 0.7,
+          });
+
+          for await (const chunk of stream) {
+            streamedContent += chunk;
+            setMessages(prev => prev.map(m =>
+              m.id === assistantId
+                ? { ...m, content: streamedContent }
+                : m
+            ));
+          }
+        } catch {
+          // Non-streaming fallback as last resort
+          const { content: fallbackContent } = await groqChat({
+            messages: [
+              { role: 'system', content: fullSystemPrompt },
+              { role: 'user', content },
+            ],
+            maxTokens: 2000,
+            temperature: 0.7,
+          });
+          streamedContent = fallbackContent;
+        }
+      }
+
       const actions = generateDemoActions(content, studyContext);
-
-      const assistantMessage: Message = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: responseContent,
-        timestamp: Date.now(),
-        actions,
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
+      // Attach actions to the streaming message after tokens arrive
+      setMessages(prev => prev.map(m =>
+        m.id === assistantId
+          ? { ...m, actions, content: streamedContent }
+          : m
+      ));
     } catch (error) {
       console.error('Chat error:', error);
       const errorMessage: Message = {
@@ -451,24 +596,52 @@ export default function ChatPage() {
 
   return (
     <div className="chat-page">
-      {/* Header */}
-      <div className="chat-header">
+      {/* Prof. Aura Personality Header */}
+      <div className="chat-header relative overflow-visible">
         <div className="chat-header-left">
-          <div className="chat-avatar">
-            <Sparkles size={20} />
+          <div className="relative">
+            <div className="chat-avatar bg-gradient-to-br from-[#7C3AED] via-[#EC4899] to-[#06B6D4]">
+              <BrainCircuit size={20} className="text-white" />
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#111118]">
+              <div className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-50" />
+            </div>
           </div>
           <div>
-            <h1 className="chat-title">Ask Aura</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="chat-title text-[#F0EFFE]">Prof. Aura</h1>
+              <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[9px] font-medium leading-none">
+                Online
+              </span>
+            </div>
             <p className="chat-subtitle">
-              {studyContext ? 'Context-aware tutor' : 'Your study assistant'}
+              {studyContext
+                ? <span className="text-[#8A8AA3]">Context-aware tutor</span>
+                : <span className="text-[#8A8AA3]">
+                    <TextSplit as="words" wrapperTag="span" stagger={30} duration={320}>
+                      AI Study Coach
+                    </TextSplit>
+                  </span>
+              }
             </p>
           </div>
         </div>
-        {hasContext && (
-          <button className="chat-clear-btn" onClick={clearContext}>
-            Clear context
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {!hasContext && messages.length === 0 && (
+            <button
+              onClick={() => setShowDiagnostic(true)}
+              className="hidden sm:flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-[#1A1A24] border border-[#2A2A3A] hover:border-[#7C3AED]/40 text-[#8A8AA3] hover:text-[#F0EFFE] transition-all text-[10px]"
+            >
+              <Target size={12} />
+              Quick diagnostic
+            </button>
+          )}
+          {hasContext && (
+            <button className="chat-clear-btn" onClick={clearContext}>
+              Clear context
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Context Banner */}
@@ -480,12 +653,27 @@ export default function ChatPage() {
       <div className="chat-messages">
         {messages.length === 0 && (
           <div className="chat-empty">
+            {/* Prof. Aura personality banner */}
+            <div className="mb-6 rounded-2xl border border-[#7C3AED]/20 bg-gradient-to-r from-[#111118] via-[#15151D] to-[#111118] p-5 text-left relative overflow-hidden">
+              <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full opacity-[0.06]"
+                style={{ background: 'radial-gradient(circle, #7C3AED 0%, transparent 70%)', filter: 'blur(40px)' }}
+              />
+              <div className="relative z-10">
+                <p className="text-[#F0EFFE] text-sm font-medium">Hey, I'm Prof. Aura! 👋</p>
+                <p className="text-[#8A8AA3] text-xs mt-1 leading-relaxed max-w-lg">
+                  I see your <strong className="text-[#F0EFFE]">{deckCount}</strong> decks and{' '}
+                  <strong className="text-[#F0EFFE]">{cardCount}</strong> cards.
+                  I can quiz you, explain concepts, generate decks, or build a cram plan.
+                </p>
+              </div>
+            </div>
+
             <div className="chat-empty-icon">
-              <Sparkles size={48} />
+              <Sparkles size={36} />
             </div>
             <h2 className="chat-empty-title">What can I help you study?</h2>
             <p className="chat-empty-desc">
-              I'm your AI tutor. I can explain concepts, quiz you, generate flashcards,
+              I'm your AI study coach. I can explain concepts, quiz you, generate flashcards,
               and help you understand difficult material.
             </p>
             {!studyContext && (
@@ -506,18 +694,21 @@ export default function ChatPage() {
       </div>
 
       {/* Quick Prompts */}
-      {showQuickPrompts && studyContext && (
-        <div className="quick-prompts">
-          {QUICK_PROMPTS.map((prompt) => (
-            <button
-              key={prompt.id}
-              className="quick-prompt-btn"
-              onClick={() => handleQuickPrompt(prompt)}
-            >
-              {prompt.icon}
-              <span>{prompt.label}</span>
-            </button>
-          ))}
+      {showQuickPrompts && messages.length === 0 && (
+        <div className="quick-prompts px-4 py-3">
+          <p className="text-[#5A5A72] text-[10px] uppercase tracking-wider mb-2 font-medium">Quick actions</p>
+          <div className="flex flex-wrap gap-2">
+            {QUICK_PROMPTS.map((prompt) => (
+              <button
+                key={prompt.id}
+                className="quick-prompt-btn"
+                onClick={() => handleQuickPrompt(prompt)}
+              >
+                {prompt.icon}
+                <span>{prompt.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -543,6 +734,90 @@ export default function ChatPage() {
           </button>
         </div>
       </form>
+
+      {/* Diagnostic Quiz Modal */}
+      {showDiagnostic && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">
+          <div className="max-w-md w-full bg-[#111118] border border-[#2A2A3A] rounded-2xl p-6 shadow-2xl">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-[#F0EFFE] text-sm font-semibold flex items-center gap-2">
+                <Target size={14} className="text-[#7C3AED]" />
+                Quick diagnostic
+              </h3>
+              <span className="text-[#5A5A72] text-xs">{diagStep + 1} / {DIAGNOSTIC_QUESTIONS.length}</span>
+            </div>
+
+            <div className="w-full h-1 rounded-full bg-[#2A2A3A] mb-6">
+              <div
+                className="h-1 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899] transition-all duration-300"
+                style={{ width: `${((diagStep + 1) / DIAGNOSTIC_QUESTIONS.length) * 100}%` }}
+              />
+            </div>
+
+            <p className="text-[#F0EFFE] text-sm font-medium mb-4">
+              {DIAGNOSTIC_QUESTIONS[diagStep].question}
+            </p>
+
+            <div className="space-y-2">
+              {DIAGNOSTIC_QUESTIONS[diagStep].options.map((opt) => {
+                const selected = diagAnswers[DIAGNOSTIC_QUESTIONS[diagStep].id] === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => {
+                      setDiagAnswers((prev) => ({
+                        ...prev,
+                        [DIAGNOSTIC_QUESTIONS[diagStep].id]: opt.value,
+                      }));
+                    }}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-xs transition-all border ${
+                      selected
+                        ? 'bg-[#7C3AED]/10 border-[#7C3AED]/40 text-[#F0EFFE]'
+                        : 'bg-[#1A1A24] border-[#2A2A3A] text-[#8A8AA3] hover:border-[#3A3A4F]'
+                    }`}
+                  >
+                    <span className="flex items-center gap-3">
+                      <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                        selected ? 'border-[#7C3AED] bg-[#7C3AED]' : 'border-[#3A3A4F]'
+                      }`}>
+                        {selected && <Check size={10} className="text-white" />}
+                      </span>
+                      {opt.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-between mt-6">
+              <button
+                onClick={() => { setShowDiagnostic(false); setDiagAnswers({}); setDiagStep(0); }}
+                className="px-4 py-2 rounded-lg border border-[#2A2A3A] text-[#5A5A72] text-xs hover:text-[#F0EFFE] transition-colors"
+              >
+                Skip
+              </button>
+              {diagStep < DIAGNOSTIC_QUESTIONS.length - 1 ? (
+                <button
+                  onClick={() => setDiagStep((s) => s + 1)}
+                  disabled={!diagAnswers[DIAGNOSTIC_QUESTIONS[diagStep].id]}
+                  className="px-4 py-2 rounded-lg bg-[#7C3AED] text-white text-xs font-medium hover:bg-[#6D28D9] transition-all disabled:opacity-30"
+                >
+                  Next
+                </button>
+              ) : (
+                <button
+                  onClick={handleDiagComplete}
+                  disabled={!diagAnswers.q1 || !diagAnswers.q2 || !diagAnswers.q3}
+                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white text-xs font-medium hover:opacity-90 transition-all disabled:opacity-30 flex items-center gap-2"
+                >
+                  <MessageCircle size={12} />
+                  Start personalized chat
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -585,89 +860,6 @@ function buildContextPrompt(ctx: StudyContext): string {
   prompt += '\n\nUse markdown formatting. Be concise (3-5 paragraphs max unless asked for more). Use bold for key terms. Use analogies and examples to explain complex concepts.';
 
   return prompt;
-}
-
-function generateDemoResponse(input: string, ctx: StudyContext | null): string {
-  // This is a placeholder. In production, the API would generate real responses.
-  if (input.toLowerCase().includes('explain') || input.toLowerCase().includes('what is')) {
-    return `## Understanding the Concept
-
-Great question! Let me break this down for you.
-
-**Key Idea:** The core concept here is about how information moves through a system. Think of it like a river — water (data) flows from the source (input) through various channels (processing) to the destination (output).
-
-### How it works:
-1. **Input phase** — Data enters the system through defined interfaces
-2. **Processing phase** — The system transforms the data using specific rules
-3. **Output phase** — Results are delivered in a usable format
-
-### Why this matters:
-- It ensures **consistency** in how data is handled
-- Makes the system **predictable** and easier to debug
-- Allows for **modular** design — you can swap out parts without breaking the whole
-
-Does this make sense? I can explain it differently or quiz you on it.`;
-  }
-
-  if (input.toLowerCase().includes('quiz')) {
-    return `## Quick Quiz
-
-Let's test your understanding!
-
-**Q1:** What is the primary purpose of this mechanism?
-a) To store data permanently
-b) To transform and route information
-c) To display results to users
-d) To authenticate requests
-
-**Q2:** Which phase comes first in the process?
-a) Output
-b) Processing
-c) Input
-d) Validation
-
-**Q3:** What analogy did I use to explain the concept?
-a) A tree with branches
-b) A river flowing
-c) A building with floors
-d) A chain of links
-
-Reply with your answers (e.g., "1-b, 2-c, 3-b") and I'll explain each one!`;
-  }
-
-  if (input.toLowerCase().includes('generate') || input.toLowerCase().includes('card')) {
-    return `## Generated Flashcards
-
-Here are some cards to help you practice:
-
-**Card 1:**
-**Front:** What are the three main phases of data processing?
-**Back:** Input → Processing → Output. Data enters through interfaces, gets transformed by rules, and results are delivered in a usable format.
-**Tags:** fundamentals, process
-
-**Card 2:**
-**Front:** Why is modular design important in data systems?
-**Back:** It allows individual components to be swapped or updated without breaking the entire system, improving maintainability and flexibility.
-**Tags:** design-principles, architecture
-
-**Card 3:**
-**Front:** What analogy helps explain data flow?
-**Back:** A river — water (data) flows from the source (input) through channels (processing) to the destination (output).
-**Tags:** analogies, fundamentals
-
-Want me to add these to your deck?`;
-  }
-
-  return `I understand your question. Let me help you with that.
-
-The concept you're asking about is fundamental to how systems handle information. Here's the key insight:
-
-**Think of it this way:** Every piece of data follows a journey from where it starts to where it needs to go. Along the way, it gets transformed, validated, and shaped into something useful.
-
-Would you like me to:
-- **Explain** this in more detail
-- **Quiz** you on what we've covered
-- **Generate** practice cards for this topic`;
 }
 
 function generateDemoActions(input: string, ctx: StudyContext | null): MessageAction[] {

@@ -1,14 +1,7 @@
+import { groqChat, GroqUnavailableError } from './groqClient';
 import { Quiz } from "../../types";
-
-// AI service using Groq for fast inference
-const getEnv = (key: string): string => {
-    return (import.meta as any).env?.[key] || (process as any).env?.[key] || '';
-};
-
-const groqKey = getEnv('VITE_GROQ_API_KEY');
-const useLocalAI = getEnv('VITE_USE_LOCAL_AI') === 'true';
-const customModel = getEnv('VITE_AI_MODEL');
-const localBaseUrl = '/local-ai/v1';
+import { buildOfflineDeck, OFFLINE_SOURCE } from './templateDeckGenerator';
+import { puterChat, PuterUnavailableError } from './puterProvider';
 
 // Simple in-memory cache for AI responses
 const responseCache = new Map<string, { data: any; timestamp: number }>();
@@ -38,48 +31,21 @@ const setCachedResponse = (key: string, data: any): void => {
     }
 };
 
-const getDeepSeekClient = () => {
-    let apiKey: string;
-    let baseUrl: string;
-    let defaultModel: string;
-
-    if (useLocalAI) {
-        apiKey = 'not-needed';
-        baseUrl = localBaseUrl;
-        defaultModel = 'local-model';
-    } else if (groqKey) {
-        apiKey = groqKey;
-        baseUrl = 'https://api.groq.com/openai/v1';
-        defaultModel = customModel || 'llama-3.3-70b-versatile';
-    } else {
-        throw new Error('No valid API key found. Please set VITE_GROQ_API_KEY in your .env file or enable VITE_USE_LOCAL_AI=true');
-    }
-
-    if (!apiKey && !useLocalAI) {
-        throw new Error('API Key is missing. Please set VITE_GROQ_API_KEY in your .env file.');
-    }
-    
+// Delegate to the shared groqClient (services/api/groqClient.ts) — same
+// env model resolution, same local-AI routing, same max_tokens=4000 default
+// that Nexus + study-time clients used to drift on. Keeping this thin facade
+// preserves the legacy `getDeepSeekClient().chat(messages, model?)` shape
+// so all existing callers (generateFlashcards, generateDeckFromTopic,
+// generateQuizFromContent, etc.) compile untouched.
+// The "no key" validation lives in groqChat() (per-call env reads) so
+// vitest's vi.stubEnv can flip VITE_GROQ_API_KEY AFTER import and exercise
+// the no-key path. The legacy throw here was module-load and would have
+// frozen at the empty env value captured at parse time.
+export const getDeepSeekClient = () => {
     return {
-        chat: async (messages: any[], model: string = defaultModel) => {
-            const response = await fetch(`${baseUrl}/chat/completions`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${apiKey || 'not-needed'}`,
-                },
-                body: JSON.stringify({
-                    model,
-                    messages,
-                    temperature: 0.7,
-                    max_tokens: 4000
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`API error: ${response.status} ${response.statusText}`);
-            }
-
-            return response.json();
+        chat: async (messages: any[], model?: string) => {
+            const { raw } = await groqChat({ messages, model });
+            return raw;
         }
     };
 };
@@ -89,6 +55,12 @@ export interface GeneratedCard {
     answer: string;
     difficulty?: 'easy' | 'medium' | 'hard';
     explanation?: string;
+    /**
+     * Provenance tag (e.g. 'offline-template') set by the offline fallback
+     * generator so analytics can attribute auto-generated cards separately
+     * from AI-generated ones. Optional because AI responses do NOT set it.
+     */
+    source?: string;
 }
 
 export interface FlashcardGenerationOptions {
@@ -205,7 +177,21 @@ Example:
 };
 
 /**
- * Generates a full deck (title, description, cards) from a topic using DeepSeek.
+ * Generates a full deck (title, description, cards) from a topic.
+ *
+ * Behaviour:
+ *   1. Cache hit → return immediately.
+ *   2. AI available → call Groq (or local-AI proxy) via `getDeepSeekClient()`.
+ *   3. AI unavailable (typed `GroqUnavailableError` from `groqClient`) →
+ *      fall back to the deterministic template generator so the user still
+ *      gets a usable deck instead of a hard failure. Offline decks are
+ *      tagged with `source: 'offline-template'` per-card so analytics can
+ *      attribute them separately.
+ *
+ * Why the fallback exists:
+ *   The Promise on the UI's AI button is a hard UX failure when the Groq
+ *   key is rejected upstream (401 invalid_api_key, 429 quota, 5xx, network).
+ *   Users shouldn't have to debug their .env to use their own deck-creator.
  */
 export const generateDeckFromTopic = async (topic: string): Promise<{ title: string, description: string, cards: GeneratedCard[] }> => {
     const cacheKey = getCacheKey('deck', { topic });
@@ -254,17 +240,83 @@ Respond with ONLY a valid JSON object. No conversational text, no markdown code 
                 jsonMatch = [jsonMatch[1]];
             }
         }
-        
+
         if (!jsonMatch) throw new Error("Invalid JSON response");
-        
+
         const deck = JSON.parse(jsonMatch[0]) as { title: string, description: string, cards: GeneratedCard[] };
         setCachedResponse(cacheKey, deck);
         return deck;
     } catch (error) {
+        // Typed fallback path: if Groq (or local-AI routing) returned a
+        // GroqUnavailableError, do NOT throw — assemble an offline deck so
+        // the user still gets a usable result. Anything else (e.g. our own
+        // JSON parse failure) IS worth re-throwing.
+        if (error instanceof GroqUnavailableError) {
+            // No extra log here — groqClient.ts already emitted the single
+            // session-level console.warn banner explaining the upstream
+            // failure. Re-logging per call is just noise.
+            //
+            // Provider chain: Groq → Puter → offline template.
+            //   1. Try Puter.js (user-pays free fallback) first.
+            //   2. If Puter asks for auth, RE-THROW so the page can show a
+            //      "Sign in with Puter" button (auto-popup is browser-blocked).
+            //   3. Otherwise, drop through to the deterministic offline template.
+            try {
+                const puterResult = await puterChat({ prompt });
+                const jsonMatch = ((): RegExpMatchArray | null => {
+                    let m = puterResult.content.match(/\{[\s\S]*\}/);
+                    if (m) return m;
+                    m = puterResult.content.match(/```json\s*([\s\S]*?)\s*```/);
+                    return m ? [m[1]] : null;
+                })();
+                if (jsonMatch) {
+                    const deck = JSON.parse(jsonMatch[0]) as { title: string; description: string; cards: GeneratedCard[] };
+                    // Cache in a separate namespace so AI and Puter cannot collide.
+                    setCachedResponse(`deck.puter:${JSON.stringify({ topic })}`, deck);
+                    return deck;
+                }
+                // Got a Puter response but couldn't parse JSON — fall through.
+            } catch (putErr) {
+                if (putErr instanceof PuterUnavailableError) {
+                    if (putErr.isAuthRequired) {
+                        // Can't auto-prompt popup; surface to UI and let the
+                        // "Sign in with Puter" button handle it.
+                        throw putErr;
+                    }
+                    // Quota exhausted / upstream down / SDK load error — drop
+                    // through to offline template gracefully.
+                } else {
+                    // Unknown error from Puter path — re-raise so we don't
+                    // accidentally swallow real bugs.
+                    console.error('[AuraMind/groqService] unexpected puterChat error:', putErr);
+                    throw putErr;
+                }
+            }
+
+            const offline = buildOfflineDeck(topic);
+            // Use a separate cache-key prefix (`deck.offline:<topic>`) so the
+            // offline happy-path result can never collide with the AI or
+            // Puter happy-path results.
+            setCachedResponse(`deck.offline:${JSON.stringify({ topic })}`, offline);
+            return offline;
+        }
+
         console.error("Error generating deck:", error);
         throw error;
     }
 };
+
+/**
+ * Public helper for analytics / logs: "did the last deck come from the
+ * AI or from the offline template?". Walks the card array; returns true
+ * if any card carries the `source: 'offline-template'` marker we attach
+ * in `buildOfflineDeck`. Cheap short-circuit via `Array.some`.
+ */
+export function isOfflineDeck(
+  deck: { cards: GeneratedCard[] },
+): boolean {
+  return deck.cards.some(c => c.source === OFFLINE_SOURCE);
+}
 
 /**
  * Generates a summary of a topic using DeepSeek.

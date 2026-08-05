@@ -3,19 +3,25 @@ import { scheduleFSRS, fsrsToCardResult, createInitialFSRSState, getFSRSState } 
 
 /**
  * FSRS (Free Spaced Repetition Scheduler) Algorithm - Primary SRS Engine
- * 
+ *
  * FSRS v5 replaces SM-2 as the default algorithm. It provides up to 30% better
  * retention efficiency by modeling the forgetting curve with optimized parameters.
- * 
+ *
  * Backward compatibility: Existing cards using SM-2 values are automatically
  * converted to FSRS state on first review.
+ *
+ * weightsOverride is an optional per-user tuned weight vector produced by
+ * loadPersonalizedFsrs in ./fsrsAdaptation. When omitted the global defaults
+ * are used and behaviour is identical to the previous single-arg form.
  */
-
-export const calculateSRS = (card: Card, quality: Rating): SRSResult & { fsrsState?: any } => {
-  // Use FSRS as the primary algorithm
-  const fsrsResult = scheduleFSRS(card, quality);
+export const calculateSRS = (
+  card: Card,
+  quality: Rating,
+  weightsOverride?: number[],
+): SRSResult & { fsrsState?: any } => {
+  const fsrsResult = scheduleFSRS(card, quality, weightsOverride);
   const cardResult = fsrsToCardResult(fsrsResult);
-  
+
   return {
     interval: cardResult.interval,
     repetition: cardResult.repetition,
@@ -26,11 +32,11 @@ export const calculateSRS = (card: Card, quality: Rating): SRSResult & { fsrsSta
 
 export const getInitialCardState = (deckId: string, front: string, back: string): Card => {
   const fsrsState = createInitialFSRSState();
-  
+
   // FSRS initial interval is 0 (card is due immediately)
   // We set a small interval for the first review
   const initialInterval = 0;
-  
+
   return {
     id: '',
     deckId,
@@ -57,6 +63,3 @@ export const isFSRSMigrated = (card: Card): boolean => {
   const fsrsState = (card as any).fsrsState;
   return fsrsState !== undefined && fsrsState.stability > 0;
 };
-
-
-

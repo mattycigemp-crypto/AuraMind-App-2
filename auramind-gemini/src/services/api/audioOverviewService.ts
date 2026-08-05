@@ -25,7 +25,7 @@ interface SpeechState {
   currentSegment: number;
   segments: AudioOverviewSegment[];
   currentCharIndex: number;
-  callbacks: Required<Omit<SpeechCallbacks, keyof SpeechCallbacks>>;
+  callbacks: Required<SpeechCallbacks>;
   speed: number;
 }
 

@@ -30,10 +30,12 @@ const REQUIRED_PROPS = [
   'onLogout',
 ] as const;
 
+// Legacy guarded files (ComponentVerification.tsx, DashboardTest.tsx, App.tsx)
+// were removed or stopped owning the provider when specialized /dashboard
+// routes moved into NovaHub. NovaHub is now the single source of truth that
+// distributes workspace props to every dashboard surface.
 const FILES_TO_GUARD = [
-  'src/App.tsx',
-  'src/components/dashboard/ComponentVerification.tsx',
-  'src/components/dashboard/DashboardTest.tsx',
+  'src/pages/dashboard/NovaHub.tsx',
 ] as const;
 
 type SiteReport = {
@@ -41,6 +43,81 @@ type SiteReport = {
   line: number;
   presentProps: ReadonlySet<string>;
 };
+
+function resolveSpreadProps(node: ts.JsxSpreadAttribute, source: string, sourceFile: ts.SourceFile): Set<string> {
+  const result = new Set<string>();
+  if (!ts.isIdentifier(node.expression)) return result;
+  const varName = node.expression.text;
+
+  // Find the variable declaration and extract property names from the object literal.
+  // Handles both:
+  //   const foo = { user: ..., decks: ... };
+  //   const foo = useMemo(() => ({ user: ..., decks: ... }), [...]);
+  function findObjectLiterals(n: ts.Node): ts.ObjectLiteralExpression[] {
+    const results: ts.ObjectLiteralExpression[] = [];
+
+    if (
+      ts.isVariableDeclaration(n) &&
+      n.name &&
+      ts.isIdentifier(n.name) &&
+      n.name.text === varName &&
+      n.initializer
+    ) {
+      // Case 1: direct object literal — const foo = { ... }
+      if (ts.isObjectLiteralExpression(n.initializer)) {
+        results.push(n.initializer);
+      }
+      // Case 2: useMemo(() => ({ ... }), [...]) — walk the arrow/function body
+      else if (ts.isCallExpression(n.initializer)) {
+        for (const arg of n.initializer.arguments) {
+          if (ts.isArrowFunction(arg) || ts.isFunctionExpression(arg)) {
+            // Concise body: () => expr or () => { return expr; }
+            if (ts.isBlock(arg.body)) {
+              collectObjectLiteralsFromBlock(arg.body, results);
+            } else if (ts.isExpression(arg.body)) {
+              extractObjectLiteralsFromExpr(arg.body, results);
+            }
+          }
+        }
+      }
+    }
+
+    ts.forEachChild(n, (child) => {
+      results.push(...findObjectLiterals(child));
+    });
+    return results;
+  }
+
+  function collectObjectLiteralsFromBlock(block: ts.Block, out: ts.ObjectLiteralExpression[]): void {
+    for (const stmt of block.statements) {
+      if (ts.isReturnStatement(stmt) && stmt.expression) {
+        extractObjectLiteralsFromExpr(stmt.expression, out);
+      }
+    }
+  }
+
+  function extractObjectLiteralsFromExpr(expr: ts.Expression, out: ts.ObjectLiteralExpression[]): void {
+    if (ts.isObjectLiteralExpression(expr)) {
+      out.push(expr);
+    } else if (ts.isConditionalExpression(expr)) {
+      // Ternary: currentUser ? { ... } : null
+      extractObjectLiteralsFromExpr(expr.whenTrue, out);
+      extractObjectLiteralsFromExpr(expr.whenFalse, out);
+    }
+  }
+
+  const objLits = findObjectLiterals(sourceFile);
+  for (const objLit of objLits) {
+    for (const prop of objLit.properties) {
+      if (ts.isPropertyAssignment(prop) && ts.isIdentifier(prop.name)) {
+        result.add(prop.name.text);
+      } else if (ts.isShorthandPropertyAssignment(prop)) {
+        result.add(prop.name.text);
+      }
+    }
+  }
+  return result;
+}
 
 function findDashboardWorkspaceProviderSites(file: string): SiteReport[] {
   const absolute = path.resolve(process.cwd(), file);
@@ -50,9 +127,6 @@ function findDashboardWorkspaceProviderSites(file: string): SiteReport[] {
     );
   }
   const source = fs.readFileSync(absolute, 'utf8');
-  // createSourceFile with TSX kind so <Foo /> JSX is parsed as JsxElement
-  // nodes, not as plain comparison/less-than tokens. (ScriptKind.TSX enables
-  // JSX parsing implicitly — no separate `jsx` option needed.)
   const sourceFile = ts.createSourceFile(
     file,
     source,
@@ -73,6 +147,10 @@ function findDashboardWorkspaceProviderSites(file: string): SiteReport[] {
       for (const attr of node.attributes.properties) {
         if (ts.isJsxAttribute(attr) && ts.isIdentifier(attr.name)) {
           present.add(attr.name.text);
+        } else if (ts.isJsxSpreadAttribute(attr)) {
+          // Resolve spread: { ...workspaceProps } → look up variable's properties
+          const spreadProps = resolveSpreadProps(attr, source, sourceFile);
+          for (const p of spreadProps) present.add(p);
         }
       }
       const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));

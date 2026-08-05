@@ -94,12 +94,15 @@ async function handlePaymentFailed(event: WebhookEvent) {
 async function handleSubscriptionCancelled(event: WebhookEvent) {
   const subscription = event.data.object;
   
-  // Get customer email from Supabase
+  // Get customer email from Supabase. Use `.maybeSingle()` (returns null on
+  // zero rows) rather than `.single()` (throws PGRST116). A subscription
+  // cancellation arrived for a customer whose profile row doesn't exist yet
+  // — we'd rather skip the email silently than crash the webhook handler.
   const { data: profile } = await supabase
     .from('profiles')
     .select('email, full_name')
     .eq('stripe_customer_id', subscription.customer)
-    .single();
+    .maybeSingle();
 
   if (profile?.email) {
     await emailService.sendSubscriptionCancelledEmail({

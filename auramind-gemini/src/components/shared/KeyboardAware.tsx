@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { Keyboard } from '@capacitor/keyboard';
+import { Capacitor, Keyboard } from '../../lib/nativeShim';
 
 const SCROLL_OFFSET = 120;
 

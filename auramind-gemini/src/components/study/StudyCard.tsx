@@ -62,11 +62,9 @@ const StudyCard = React.forwardRef<HTMLDivElement, StudyCardProps>(
   ({ children, tags, active = false, className, 'aria-label': ariaLabel }, ref) => {
     const textContent = React.useMemo(() => {
       if (typeof children === 'string') return children;
-      if (
-        React.isValidElement(children) &&
-        typeof children.props?.children === 'string'
-      ) {
-        return children.props.children;
+      if (React.isValidElement(children)) {
+        const childContent = (children.props as Record<string, unknown>).children;
+        if (typeof childContent === 'string') return childContent;
       }
       return '';
     }, [children]);

@@ -17,13 +17,11 @@ interface Props {
 }
 
 const MODE_LABELS: Record<ChatMode, string> = {
-  explain: 'Explain',
-  quiz: 'Quiz me',
-  generate: 'Generate',
-  free: 'Free',
+  study: 'Study Coach',
+  companion: 'Companion',
 };
 
-const MODES: ChatMode[] = ['explain', 'quiz', 'generate', 'free'];
+const MODES: ChatMode[] = ['study', 'companion'];
 
 export default function AIChatPanel({ isOpen, onClose, context, onSaveCard }: Props) {
   const workspaceAddCards = useDashboardWorkspace()?.addCardsToDeck;

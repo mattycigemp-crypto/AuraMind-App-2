@@ -1,34 +1,33 @@
-import React from 'react';
-import { vi, describe, expect, it } from 'vitest';
+// @vitest-environment jsdom
+import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import 'intersection-observer';
 import { RetentionConicChart } from '../RetentionConicChart';
 
 describe('RetentionConicChart', () => {
-  beforeEach(() => {
-    const observe = vi.fn();
-    const unobserve = vi.fn();
-    const disconnect = vi.fn();
-    vi.stubGlobal('IntersectionObserver', vi.fn(() => ({
-      observe, unobserve, disconnect,
-    })));
+  it('renders with default label', () => {
+    render(<RetentionConicChart progress={0} />);
+    expect(screen.getByText('Retention')).toBeInTheDocument();
+    expect(screen.getByText('0%')).toBeInTheDocument();
   });
 
-  it('renders without crashing', () => {
+  it('renders with a custom label', () => {
+    render(<RetentionConicChart progress={50} label="Memory" />);
+    expect(screen.getByText('Memory')).toBeInTheDocument();
+  });
+
+  it('renders the animated progress value', async () => {
     render(<RetentionConicChart progress={75} />);
-    expect(screen.getByText('75%')).toBeDefined();
+    expect(await screen.findByText('75%')).toBeInTheDocument();
   });
 
-  it('accepts custom size prop', () => {
-    render(<RetentionConicChart progress={50} size={300} label="Test" />);
-    const svg = screen.getByRole('img');
-    expect(svg.getAttribute('width')).toBe('300');
-    expect(svg.getAttribute('height')).toBe('300');
+  it('applies additional className', () => {
+    const { container } = render(<RetentionConicChart progress={0} className="my-4" />);
+    expect(container.querySelector('.my-4')).toBeInTheDocument();
   });
 
-  it('displays label when provided', () => {
-    render(<RetentionConicChart progress={60} label="Memory" />);
-    expect(screen.getByText('Memory')).toBeDefined();
+  it('renders an SVG element', () => {
+    const { container } = render(<RetentionConicChart progress={0} />);
+    expect(container.querySelector('svg')).toBeInTheDocument();
   });
 });
-
-

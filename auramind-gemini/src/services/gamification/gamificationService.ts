@@ -1,4 +1,5 @@
 import { UserRole } from '../../types';
+import { userService } from '../user/userService';
 
 // Achievement types
 export interface Achievement {
@@ -354,6 +355,11 @@ export const trackStudySession = (duration: number, accuracy: number) => {
   const lastStudy = localStorage.getItem('auramind_last_study_date');
   let newStreak = stats.streakDays;
 
+  // Persist this session's contribution to the rolling XP history used
+  // by AreaChart on the dashboard RetentionPanel. Append happens AFTER
+  // awardXP returns below so we know `xpResult.xpAdded` — single push,
+  // no placeholder/overwrite dance.
+
   if (lastStudy !== today) {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
@@ -384,6 +390,49 @@ export const trackStudySession = (duration: number, accuracy: number) => {
 
   // Award XP for session
   const xpResult = awardXP('STUDY_SESSION_COMPLETED');
+
+  // Append this session's contribution to the rolling XP history used
+  // by AreaChart on the dashboard RetentionPanel. Without this writer
+  // the chart reads from a localStorage key no one populates and falls
+  // back to a smoothed bucketing of lifetime XP — decorative but
+  // dishonest. Append one row per call, cap at 365 entries so the
+  // localStorage budget stays bounded. Quota-exceeded writes surface
+  // a one-time toast so the user knows data is being trimmed.
+  if (typeof window !== 'undefined') {
+    try {
+      const HISTORY_KEY = 'auramind_study_history';
+      const HISTORY_CAP = 365;
+      const raw = window.localStorage.getItem(HISTORY_KEY);
+      const history: Array<{ date: string; xp: number; accuracy: number }> = raw
+        ? JSON.parse(raw)
+        : [];
+      history.push({
+        date: new Date().toISOString(),
+        xp: xpResult?.xpAdded ?? 0,
+        accuracy,
+      });
+      if (history.length > HISTORY_CAP) history.splice(0, history.length - HISTORY_CAP);
+      window.localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    } catch (err) {
+      const isQuota =
+        err instanceof DOMException &&
+        (err.name === 'QuotaExceededError' || (err as any).code === 22);
+      if (isQuota && typeof window !== 'undefined') {
+        // Best-effort fire-and-forget; do not block the return.
+        try {
+          window.dispatchEvent(
+            new CustomEvent('auramind:study-history-truncated', { detail: {} }),
+          );
+        } catch {
+          /* no-op */
+        }
+      }
+      // Localstorage write failure (quota or stale JSON) — the streak
+      // counter and XP are already persisted by updateUserStats, so
+      // the user-facing study session is unaffected.
+      void err;
+    }
+  }
 
   return {
     ...xpResult,
@@ -433,11 +482,20 @@ export const getNextAchievements = (): { earned: Achievement[]; available: Achie
   return { earned, available };
 };
 
-// Reset user data (for testing)
+// Reset user data (for testing + signed-out fresh state)
+// Keeps the keyset in lockstep with what `updateUserStats()` writes above —
+// a stale key here means testing/QA could never actually clear the streak
+// widget or progress widgets between runs. Update both places together.
 export const resetUserData = () => {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('auramind_user_xp');
-    localStorage.removeItem('auramind_user_streak');
+    localStorage.removeItem('auramind_streak_days');
+    localStorage.removeItem('auramind_cards_studied');
+    localStorage.removeItem('auramind_decks_created');
+    localStorage.removeItem('auramind_sessions_completed');
+    localStorage.removeItem('auramind_accuracy');
+    localStorage.removeItem('auramind_study_time');
+    localStorage.removeItem('auramind_achievements');
     localStorage.removeItem('auramind_last_study_date');
   }
 };

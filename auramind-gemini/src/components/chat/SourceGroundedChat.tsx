@@ -55,7 +55,9 @@ const ChatWithSources: React.FC = () => {
     setGenerationState(null);
   }, []);
 
-  const { createDeck, addCardsToDeck } = useDashboardWorkspace();
+  const workspace = useDashboardWorkspace();
+  const createDeck = workspace?.createDeck;
+  const addCardsToDeck = workspace?.addCardsToDeck;
   const navigate = useNavigate();
 
   const handleSaveCards = useCallback(async (cards: SourceGroundedCard[], deckTitle: string) => {

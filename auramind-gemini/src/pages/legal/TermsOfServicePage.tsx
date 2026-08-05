@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { BRAND, PRODUCT_NAME, PARENT_COMPANY_LEGAL, PARENT_COMPANY_NAME } from '../../lib/branding';
+import { CogniVectFooter } from '../../components/shared/CogniVectFooter';
 
 const sections = [
   {
@@ -44,7 +46,7 @@ const sections = [
           <li>You must provide accurate, current, and complete information during registration.</li>
           <li>You are responsible for maintaining the confidentiality of your login credentials.</li>
           <li>You are responsible for all activity that occurs under your account.</li>
-          <li>You must notify us immediately of any unauthorized use of your account at <strong className="text-[#F0EFFE]">hello@auramind.app</strong>.</li>
+          <li>You must notify us immediately of any unauthorized use of your account at <strong className="text-[#F0EFFE]">{BRAND.contactEmail}</strong>.</li>
           <li>We reserve the right to suspend or terminate accounts that violate these Terms.</li>
           <li>You may not create accounts by automated means or create multiple accounts for abusive purposes.</li>
         </ul>
@@ -68,7 +70,7 @@ const sections = [
           <li>All payments are processed securely by Stripe. We do not store full credit card details.</li>
           <li>Subscriptions automatically renew at the end of each billing period unless cancelled.</li>
           <li>You may cancel at any time. Access continues through the end of the current billing period.</li>
-          <li>Refunds are provided on a case-by-case basis. Contact <strong className="text-[#F0EFFE]">hello@auramind.app</strong> for refund requests.</li>
+          <li>Refunds are provided on a case-by-case basis. Contact <strong className="text-[#F0EFFE]">{BRAND.contactEmail}</strong> for refund requests.</li>
           <li>Prices are in USD and may be subject to applicable taxes.</li>
         </ul>
 
@@ -165,10 +167,10 @@ const sections = [
     content: (
       <>
         <p>
-          The Service, including its code, design, branding, algorithms (including FSRS spaced repetition implementation), and proprietary features, is owned by AuraMind and protected by copyright, trademark, and other intellectual property laws.
+          The Service, including its code, design, branding, algorithms (including FSRS spaced repetition implementation), and proprietary features, is owned by {PARENT_COMPANY_LEGAL} and operated as the {PRODUCT_NAME} product, with the underlying code, design, and proprietary features protected by copyright, trademark, and other intellectual property laws.
         </p>
         <p>
-          "AuraMind," the AuraMind logo, and related marks are trademarks of AuraMind. You may not use these marks without our prior written permission.
+          The {PRODUCT_NAME} name, logo, and related marks are trademarks of {PARENT_COMPANY_LEGAL}. You may not use those marks without our prior written permission.
         </p>
         <p>
           No license is granted to you under any of our intellectual property rights except as expressly stated in these Terms.
@@ -203,7 +205,7 @@ const sections = [
       <>
         <p>To the maximum extent permitted by applicable law:</p>
         <ul className="list-disc pl-5 space-y-1.5 text-[#9090A8]">
-          <li>AuraMind and its affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service.</li>
+          <li>{PARENT_COMPANY_NAME} and its affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service.</li>
           <li>Our total liability for any claim arising from these Terms or the Service shall not exceed the amount you have paid us in the 12 months preceding the claim.</li>
           <li>AI outputs are provided "as is" without warranty of any kind. We do not guarantee the accuracy, completeness, or reliability of AI-generated content.</li>
           <li>We are not liable for decisions made in reliance on AI-generated content without independent verification.</li>
@@ -282,8 +284,8 @@ const sections = [
           We respect intellectual property rights and comply with the Digital Millennium Copyright Act (DMCA). If you believe content on our Service infringes your copyright, please contact us at:
         </p>
         <ul className="list-none space-y-1 text-[#9090A8]">
-          <li><strong className="text-[#F0EFFE]">Email:</strong> hello@auramind.app</li>
-          <li><strong className="text-[#F0EFFE]">Address:</strong> AuraMind, Inc., 548 Market St, San Francisco, CA 94104</li>
+          <li><strong className="text-[#F0EFFE]">Email:</strong> {BRAND.contactEmail}</li>
+          <li><strong className="text-[#F0EFFE]">Address:</strong> {BRAND.legalAddress}</li>
         </ul>
         <p className="mt-2">
           Your notice must include: identification of the copyrighted work, the infringing material, your contact information, a statement of good faith belief, and your signature. We may terminate accounts of repeat infringers.
@@ -315,8 +317,8 @@ const sections = [
       <>
         <p>For questions about these Terms, please contact us:</p>
         <ul className="list-none space-y-1 text-[#9090A8]">
-          <li><strong className="text-[#F0EFFE]">Email:</strong> hello@auramind.app</li>
-          <li><strong className="text-[#F0EFFE]">Address:</strong> AuraMind, Inc., 548 Market St, San Francisco, CA 94104</li>
+          <li><strong className="text-[#F0EFFE]">Email:</strong> {BRAND.contactEmail}</li>
+          <li><strong className="text-[#F0EFFE]">Address:</strong> {BRAND.legalAddress}</li>
         </ul>
       </>
     ),
@@ -356,16 +358,20 @@ export default function TermsOfServicePage(): React.ReactElement {
           ))}
         </div>
 
-        {/* Back to home */}
+        {/* Back to home — kept for nav continuity; the corporate footer below
+            carries the CogniVect parent-company attribution. */}
         <div className="mt-10 pt-8 border-t border-[#2A2A3A]/30 text-center">
           <Link
             to="/"
             className="inline-flex items-center gap-2 text-xs text-[#8B5CF6] hover:text-[#7C3AED] transition-colors"
           >
             <ArrowLeft size={14} />
-            Back to AuraMind
+            Back to {PRODUCT_NAME}
           </Link>
         </div>
+
+        {/* Corporate parent attribution */}
+        <CogniVectFooter />
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
-import React, { createContext, useCallback, useContext, useMemo } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { UserProfile, Deck, Card } from '../types';
 import { analyticsService } from '../services/analytics/analyticsService';
+import { parseIsoToMsOrNow, parseIsoToMsOrUndef } from '../lib/timestamps';
 
 export type DashboardCreateDeck = (title: string, description: string) => Promise<Deck | null>;
 export type DashboardDeleteDeck = (id: string) => Promise<void>;
@@ -18,9 +19,67 @@ export interface DashboardWorkspaceValue {
   goToDeck: (deckId: string) => void;
   startStudyForDeck: (deckId: string) => void;
   startQuickStudy: () => void;
+  /**
+   * Patch a single card in the workspace cards cache without going through
+   * Supabase. Use this from the study-mode rating path so dashboard widgets
+   * like StudyOverview's "Studied today" counter react immediately, BEFORE
+   * the round-trip to the cards table resolves and BEFORE the study_sessions
+   * row is written. Patch state lives inside the provider and is reset
+   * automatically whenever the parent re-feeds a fresh `cards` prop (typical
+   * after the next login / hard reload) — server remains source of truth.
+   */
+  updateCardOptimistically: (cardId: string, partial: Partial<Card>) => void;
 }
 
 const DashboardWorkspaceContext = createContext<DashboardWorkspaceValue | null>(null);
+
+/**
+ * Pure merge for the optimistic card patches. Exported separately so the
+ * regression tests can pin the merge behavior without rendering React.
+ *
+ * Rules:
+ *   - Patches never introduce cards that weren't already in `cards`.
+ *   - lastReviewed / nextReview are normalised: if a caller hands us the raw
+ *     ISO string a Supabase cascade left lying around, we parse it back to a
+ *     ms-epoch number so the downstream filter `cards.filter(c => c.lastReviewed >= todayStart)`
+ *     keeps doing real numeric comparison instead of `string <= number` magic.
+ *   - when `patches` is empty we return the original array reference so the
+ *     provider's useMemo stays cheap across re-renders.
+ */
+export function applyOptimisticCardPatches(
+  cards: readonly Card[],
+  patches: Readonly<Record<string, Partial<Card>>>,
+): Card[] {
+  const ids = Object.keys(patches);
+  if (ids.length === 0) return cards as Card[];
+
+  const out: Card[] = new Array(cards.length);
+  for (let i = 0; i < cards.length; i++) {
+    const c = cards[i];
+    const patch = patches[c.id];
+    if (!patch) {
+      out[i] = c;
+      continue;
+    }
+    // Normalise TIMESTAMPTZ-shaped ISO strings back to ms-epoch so derived
+    // counters (e.g. "Studied today") don't silently break post a round-trip.
+    const lr = patch.lastReviewed;
+    const nr = patch.nextReview;
+    out[i] = {
+      ...c,
+      ...patch,
+      lastReviewed:
+        typeof lr === 'string'
+          ? parseIsoToMsOrUndef(lr) ?? c.lastReviewed
+          : lr ?? c.lastReviewed,
+      nextReview:
+        typeof nr === 'string'
+          ? parseIsoToMsOrNow(nr)
+          : nr ?? c.nextReview,
+    };
+  }
+  return out;
+}
 
 export interface DashboardWorkspaceProviderProps {
   user: UserProfile;
@@ -46,6 +105,23 @@ export const DashboardWorkspaceProvider: React.FC<DashboardWorkspaceProviderProp
   children,
 }) => {
   const navigate = useNavigate();
+  // Local optimistic card-cache overrides. Keyed by card id; values last-write-wins.
+  // Reset implicitly whenever the parent re-feeds a fresh `cards` prop (the
+  // useMemo dependency) and explicitly via the timeout below (so a bad patch
+  // can't lock a dashboard widget into "Studied today: 7" forever).
+  const [cardPatches, setCardPatches] = useState<Record<string, Partial<Card>>>({});
+
+  const updateCardOptimistically = useCallback((cardId: string, partial: Partial<Card>) => {
+    setCardPatches(prev => ({
+      ...prev,
+      [cardId]: { ...(prev[cardId] ?? {}), ...partial },
+    }));
+  }, []);
+
+  const mergedCards = useMemo(
+    () => applyOptimisticCardPatches(cards, cardPatches),
+    [cards, cardPatches],
+  );
 
   const goToDeck = useCallback((deckId: string) => {
     analyticsService.trackHeart('engagement', 'open_deck', { deckId });
@@ -55,7 +131,7 @@ export const DashboardWorkspaceProvider: React.FC<DashboardWorkspaceProviderProp
   const startStudyForDeck = useCallback((deckId: string) => {
     analyticsService.trackCoreAction('study_session', { source: 'dashboard', deckId });
     analyticsService.trackHeart('task_success', 'start_study', { deckId });
-    navigate(`/study/${deckId}`);
+    navigate(`/dashboard/study/${deckId}`);
   }, [navigate]);
 
   const startQuickStudy = useCallback(() => {
@@ -70,14 +146,14 @@ export const DashboardWorkspaceProvider: React.FC<DashboardWorkspaceProviderProp
       deckId: pick.id,
       dueCount: cards.filter((c) => c.deckId === pick.id && c.nextReview <= now).length,
     });
-    navigate(`/study/${pick.id}`);
+    navigate(`/dashboard/study/${pick.id}`);
   }, [decks, cards, navigate]);
 
   const value = useMemo(
     () => ({
       user,
       decks,
-      cards,
+      cards: mergedCards,
       onLogout,
       createDeck,
       deleteDeck,
@@ -86,8 +162,9 @@ export const DashboardWorkspaceProvider: React.FC<DashboardWorkspaceProviderProp
       goToDeck,
       startStudyForDeck,
       startQuickStudy,
+      updateCardOptimistically,
     }),
-    [user, decks, cards, onLogout, createDeck, deleteDeck, addCardsToDeck, goToDeck, startStudyForDeck, startQuickStudy]
+    [user, decks, mergedCards, onLogout, createDeck, deleteDeck, addCardsToDeck, updateProfile, goToDeck, startStudyForDeck, startQuickStudy, updateCardOptimistically]
   );
 
   return (

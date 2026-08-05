@@ -1,4 +1,4 @@
-import { isTauri } from '@tauri-apps/api/core';
+import { isTauri } from './nativeShim';
 
 /** Web-only motion helpers — native apps (Tauri/Capacitor) are unchanged elsewhere. */
 

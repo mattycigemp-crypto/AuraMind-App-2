@@ -73,7 +73,8 @@ export const canManageRole = (managerRole: UserRole, targetRole: UserRole): bool
 };
 
 export const getDefaultRole = (email?: string): UserRole => {
-  if (email === 'matty.cigemp@gmail.com') return UserRole.OWNER;
+  const ownerEmail = import.meta.env.VITE_OWNER_EMAIL;
+  if (ownerEmail && email === ownerEmail) return UserRole.OWNER;
   return UserRole.USER;
 };
 

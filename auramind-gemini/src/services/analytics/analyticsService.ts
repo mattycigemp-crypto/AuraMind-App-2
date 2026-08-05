@@ -32,6 +32,16 @@ export const analyticsService = {
           capture_pageview: true,
           capture_pageleave: true,
           advanced_disable_feature_flags: true,
+          // Session recording fires from inside `posthog-js`'s dynamically-
+          // imported chunk — visible in DevTools as `mf.js`. AuraMind does
+          // not use session replay (a different internal hook powers study
+          // replay), so the recorder throws `Error: Params are not set`
+          // during eager init because no recorder params are wired up.
+          // Top-level `disable_session_recording` is the single source of
+          // truth — the older `session_recording: { disabled: true }`
+          // object path is deprecated in posthog-js v1 and would double-
+          // drift if we ever flipped it back. Keep only this flag.
+          disable_session_recording: true,
         });
       } catch (e) {
         console.warn('[Analytics] PostHog init failed:', e);
@@ -102,7 +112,7 @@ export const analyticsService = {
         .from('study_sessions')
         .select('*')
         .eq('user_id', userId)
-        .order('start_time', { ascending: false })
+        .order('started_at', { ascending: false })
         .limit(30); // Last 30 sessions
 
       if (cardsError || sessionsError) {

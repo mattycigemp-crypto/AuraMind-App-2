@@ -2,7 +2,9 @@ import * as React from "react";
 import { ChevronLeftIcon as ChevronLeft, ChevronRightIcon as ChevronRight, MoreHorizontalIcon as MoreHorizontal } from "../icons/CustomIcons";
 
 import { cn } from "@/lib/utils";
-import { ButtonProps, buttonVariants } from "@/components/ui/button";
+import { type VariantProps } from "class-variance-authority";
+import { buttonVariants } from "@/components/ui/button";
+type ButtonProps = VariantProps<typeof buttonVariants> & { asChild?: boolean };
 
 const Pagination = ({ className, ...props }: React.ComponentProps<"nav">) => (
   <nav

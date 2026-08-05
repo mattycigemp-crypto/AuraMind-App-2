@@ -17,7 +17,7 @@ import { Card, Rating } from '../../types';
 
 // FSRS default weights (optimized for general use)
 // These are the default parameters from FSRS v5
-const DEFAULT_WEIGHTS: number[] = [
+export const DEFAULT_WEIGHTS: number[] = [
   0.4072, 1.1829, 3.1262, 15.4722, 7.2102, 0.5316, 1.0659,
   0.0234, 1.616, 0.1544, 0.6621, 1.0, 0.8, 0.2, 0.05,
   0.1, 0.7, 0.2, 2.5, 0.3
@@ -68,8 +68,11 @@ const RATING_TO_GRADE: Record<number, number> = {
 
 /**
  * Calculate the forgetting curve: R = (1 + factor * elapsed / stability) ^ -1
+ *
+ * Exported so downstream simulators (e.g. profileSimulator) can reuse the
+ * exact same shape without copying the formula.
  */
-function forgettingCurve(elapsedDays: number, stability: number, factor: number = 1.0): number {
+export function forgettingCurve(elapsedDays: number, stability: number, factor: number = 1.0): number {
   if (stability <= 0) return 0;
   return Math.pow(1 + (factor * elapsedDays) / stability, -1);
 }
@@ -218,9 +221,15 @@ export function calculateRetrievability(state: FSRSCardState): number {
 /**
  * Main FSRS scheduling function
  * Takes a card and rating, returns new FSRS state and interval
+ *
+ * `weightsOverride` is the optional per-user tuned weight vector produced
+ * by loadPersonalizedFsrs in ./fsrsAdaptation. When undefined the global
+ * DEFAULT_WEIGHTS are used.
  */
-export function scheduleFSRS(card: Card, rating: Rating): FSRSScheduleResult {
-  const config = DEFAULT_CONFIG;
+export function scheduleFSRS(card: Card, rating: Rating, weightsOverride?: number[]): FSRSScheduleResult {
+  const config: FSRSConfig = weightsOverride && weightsOverride.length === DEFAULT_WEIGHTS.length
+    ? { ...DEFAULT_CONFIG, weights: weightsOverride }
+    : DEFAULT_CONFIG;
   const state = getFSRSState(card);
   const grade = RATING_TO_GRADE[rating] ?? 2;
   
@@ -272,6 +281,78 @@ export function createInitialFSRSState(): FSRSCardState {
     repetitions: 0,
     lapses: 0,
     lastReview: 0,
+  };
+}
+
+/**
+ * Per-profile initial difficulty center (FSRS W[4] mean-reversion target).
+ *
+ * FSRS mean-reverts card.difficulty toward `W[4]` (~7.21) over time. By
+ * picking a different per-user center we bias every NEW card and every
+ * card on its first personalized review, so a tough-learner doesn't open
+ * a fast-learner's pacing curve and feel punished.
+ *
+ * Values are hand-fit to the (avgStability, lapseRate, retention) features
+ * already driving catalog lookup. Single source of truth for both the
+ * DifficultyChip copy (in fsrsAdaptation) and the actual bias applied
+ * to cards here.
+ */
+export const PROFILE_DIFFICULTY_CENTER: Readonly<Record<string, number>> = {
+  aggressive: 7,
+  moderate: 6.5,
+  conservative: 5,
+  'fast-learner': 4.5,
+  'tough-learner': 7.5,
+  'visual-dominant': 5.5,
+};
+
+/**
+ * Apply the personalized difficulty center to a card whose initial state has
+ * not yet been exercised by the user.
+ *
+ * Idempotent: cards whose `fsrsState.repetitions > 0` (already reviewed at
+ * least once under the personal schedule) are returned untouched. Cards
+ * whose existing `fsrsState.difficulty` is already close to a known center
+ * are also returned untouched, so calling this on every review is cheap.
+ *
+ * The optional fourth arg `difficultyTargetOverride` lets per-session pacing
+ * controls swap the profile-derived target for an explicit number without
+ * having to manufacture a synthetic profile label.
+ *
+ * Returns a new card object with the bias applied and an `applied` flag so
+ * callers can decide whether to persist (dbService.updateCard) or run the
+ * schedule inline.
+ */
+export function applyPersonalizedDifficultyInit(
+  card: Card,
+  profileLabel: string | null,
+  weightsOverride?: number[],
+  difficultyTargetOverride?: number,
+): { card: Card; applied: boolean } {
+  // Already mid-life — don't perturb a card the user has started studying
+  // under the existing curve.
+  if (card.fsrsState && card.fsrsState.repetitions > 0) {
+    return { card, applied: false };
+  }
+  const resolvedOverride = difficultyTargetOverride !== undefined
+    ? Math.max(1, Math.min(10, difficultyTargetOverride))
+    : null;
+  const targetDifficulty = resolvedOverride
+    ?? ((profileLabel && PROFILE_DIFFICULTY_CENTER[profileLabel]) ?? DEFAULT_WEIGHTS[4]);
+  // If existing fsrs_state already has exactly the personalized center, skip
+  // a no-op write.
+  if (card.fsrsState && Math.abs(card.fsrsState.difficulty - targetDifficulty) < 0.0001) {
+    return { card, applied: false };
+  }
+  const baseInit = createInitialFSRSState();
+  const personalizedInit: FSRSCardState = {
+    ...(card.fsrsState ?? baseInit),
+    difficulty: targetDifficulty,
+    stability: weightsOverride?.[0] ?? baseInit.stability,
+  };
+  return {
+    card: { ...card, fsrsState: personalizedInit },
+    applied: true,
   };
 }
 

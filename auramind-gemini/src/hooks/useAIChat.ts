@@ -1,8 +1,10 @@
 import { useState, useRef, useCallback } from 'react';
 import { auraAiClient } from '../services/api/auraAiService';
 import { buildSystemPrompt, type ChatMode } from '../lib/chat-prompts';
+import { getStoredPersonality, type ProfAuraPersonality } from '../lib/profAuraPersonality';
 
 export type { ChatMode };
+export type { ProfAuraPersonality };
 
 export interface Message {
   id: string;
@@ -27,6 +29,16 @@ export interface ChatContext {
   cardsDueToday: number;
   weakCards: Array<{ term: string; againCount: number }>;
   currentCard?: { term: string; definition: string };
+  /** User-selected personality for tone control. */
+  personality?: ProfAuraPersonality;
+  /** 7-day retention 0..1. */
+  retention7d?: number;
+  /** Last session accuracy 0..100. */
+  lastSessionAccuracy?: number;
+  /** Cards due this week. */
+  dueThisWeek?: number;
+  /** Current study streak. */
+  streakCount?: number;
 }
 
 const SAVE_CARD_REGEX = /\{"save_card"\s*:\s*true\s*,\s*"term"\s*:\s*"([^"]+)"\s*,\s*"definition"\s*:\s*"([^"]+)"\s*\}/;
@@ -73,7 +85,7 @@ let messageIdCounter = 0;
 
 export function useAIChat(initialContext: ChatContext) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [mode, setMode] = useState<ChatMode>('explain');
+  const [mode, setMode] = useState<ChatMode>('study');
   const [context, setContext] = useState<ChatContext>(initialContext);
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -103,7 +115,10 @@ export function useAIChat(initialContext: ChatContext) {
     setMessages(prev => [...prev, userMessage, assistantMessage]);
     setIsStreaming(true);
 
-    const systemPrompt = buildSystemPrompt({ ...context, mode });
+    // Create a fresh AbortController for this request
+    abortRef.current = new AbortController();
+
+    const systemPrompt = buildSystemPrompt({ ...context, mode, personality: context.personality ?? getStoredPersonality() });
     const apiMessages = [
       ...messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.rawContent })),
       { role: 'user' as const, content: content.trim() },
@@ -116,6 +131,7 @@ export function useAIChat(initialContext: ChatContext) {
         messages: [{ role: 'system', content: systemPrompt }, ...apiMessages],
         temperature: 0.7,
         max_tokens: 2000,
+        signal: abortRef.current?.signal,
       });
 
       for await (const chunk of stream) {
@@ -189,7 +205,21 @@ export function useAIChat(initialContext: ChatContext) {
   }, []);
 
   const clearMessages = useCallback(() => {
+    // Abort any in-flight stream first
+    abortRef.current?.abort();
+    abortRef.current = null;
     setMessages([]);
+  }, []);
+
+  const abort = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setIsStreaming(false);
+  }, []);
+
+  const loadMessages = useCallback((msgs: Message[]) => {
+    // Hydrate persisted messages from a saved session.
+    setMessages(msgs);
   }, []);
 
   return {
@@ -200,8 +230,10 @@ export function useAIChat(initialContext: ChatContext) {
     updateContext,
     isStreaming,
     sendMessage,
+    abort,
     saveCard,
     answerQuiz,
     clearMessages,
+    loadMessages,
   };
 }

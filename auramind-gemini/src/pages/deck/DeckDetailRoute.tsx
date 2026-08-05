@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeftIcon, PlusIcon, Trash2Icon, BookOpenIcon, PlayIcon, PencilIcon, CheckIcon, XIcon, AlertTriangleIcon, ExternalLinkIcon, RotateCcwIcon, SparklesIcon, ClockIcon } from '../../components/icons/CustomIcons';
+import { ArrowLeftIcon, PlusIcon, Trash2Icon, BookOpenIcon, PlayIcon, PencilIcon, CheckIcon, XIcon, AlertTriangleIcon, ExternalLinkIcon, RotateCcwIcon, SparklesIcon, ClockIcon, GlobeIcon } from '../../components/icons/CustomIcons';
 import GlassCard from '../../components/shared/GlassCard';
 import { useContextMenu } from '../../components/ui/ContextMenu';
 import { dbService } from '../../services/database/dbService';
-import { supabase } from '../../services/database/supabase';
 import { getInitialCardState } from '../../services/study/srs';
+import { useCurrentUserId } from '../../hooks/useCurrentUserId';
+import { usePersonalizedFsrs } from '../../hooks/usePersonalizedFsrs';
 import DashboardQuiz from '../../components/quiz/DashboardQuiz';
 import type { Deck, Card, Quiz } from '../../types';
 import {
@@ -15,6 +16,7 @@ import {
   isCached,
   type GenerationProgress,
 } from '../../services/quiz/quizGenerationCache';
+import { publishDeckToMarketplace, unpublishDeck, MARKETPLACE_CATEGORIES } from '../../services/decks/marketplaceService';
 
 interface CardForm {
   question: string;
@@ -30,11 +32,21 @@ export default function DeckDetailRoute() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<CardForm>({ question: '', answer: '' });
-  const [userId, setUserId] = useState<string | null>(null);
+  const userId = useCurrentUserId();
+  const personalization = usePersonalizedFsrs(userId);
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<CardForm>({ question: '', answer: '' });
   const [editSaving, setEditSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishCategory, setPublishCategory] = useState('');
+  const [publishTags, setPublishTags] = useState('');
+  const [publishDescription, setPublishDescription] = useState('');
+  const [publishing, setPublishing] = useState(false);
+  const [publishSuccess, setPublishSuccess] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+  const [isPublished, setIsPublished] = useState(false);
+  const [unpublishing, setUnpublishing] = useState(false);
 
   // Quiz generation state (backed by module-level cache so it survives navigation)
   const [quizProgress, setQuizProgress] = useState<GenerationProgress>({ deckId: id || '', status: 'idle', progress: 0, elapsedSeconds: 0, estimatedTotalSeconds: 0 });
@@ -43,29 +55,24 @@ export default function DeckDetailRoute() {
 
   useEffect(() => {
     if (!id) return;
+    if (userId === undefined) return;
     let cancelled = false;
-
+    if (userId === null) { setLoading(false); return; }
     const run = async () => {
-      if (!supabase) { setLoading(false); return; }
-      const { data } = await supabase.auth.getUser();
-      if (cancelled) return;
-      const uid = data?.user?.id || null;
-      setUserId(uid);
-      if (!uid) { setLoading(false); return; }
-      const decks = await dbService.fetchDecks(uid);
+      const decks = await dbService.fetchDecks(userId);
       if (cancelled) return;
       const found = decks.find((d) => d.id === id);
       if (cancelled) return;
       setDeck(found || null);
-      const allCards = await dbService.fetchCards(uid);
+      if (found) setIsPublished(!!found.is_public);
+      const allCards = await dbService.fetchCards(userId);
       if (cancelled) return;
       setCards(allCards.filter((c) => c.deckId === id));
       setLoading(false);
     };
-
     run();
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, userId]);
 
   const handleAddCard = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +80,16 @@ export default function DeckDetailRoute() {
     setSaving(true);
     try {
       const newCard = getInitialCardState(id, form.question.trim(), form.answer.trim());
-      const saved = await dbService.saveCards(userId, [newCard]);
+      // Thread personalization into saveCards so the new card starts at the
+      // profile-specific difficulty center instead of population-default 7.21.
+      const saved = await dbService.saveCards(
+        userId,
+        [newCard],
+        {
+          profileLabel: personalization.profileLabel,
+          weightsOverride: personalization.weights,
+        },
+      );
       setForm({ question: '', answer: '' });
       setCards((prev) => [...prev, ...saved]);
     } catch (err) {
@@ -374,12 +390,45 @@ export default function DeckDetailRoute() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {isPublished ? (
+              <button
+                onClick={async () => {
+                  if (!id) return;
+                  setUnpublishing(true);
+                  try {
+                    const res = await unpublishDeck(id);
+                    if (res.success) {
+                      setIsPublished(false);
+                    }
+                  } finally {
+                    setUnpublishing(false);
+                  }
+                }}
+                disabled={unpublishing}
+                className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-amber-500/30 text-amber-400 text-sm font-medium hover:bg-amber-500/10 disabled:opacity-50 transition-colors"
+              >
+                {unpublishing ? (
+                  <span className="w-4 h-4 border-2 border-amber-400/30 border-t-amber-400 rounded-full animate-spin" />
+                ) : (
+                  <GlobeIcon className="w-4 h-4" />
+                )}
+                {unpublishing ? 'Unpublishing…' : 'Unpublish'}
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowPublishModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-[#7C3AED]/40 text-[#8B5CF6] text-sm font-medium hover:bg-[#7C3AED]/10 transition-colors"
+              >
+                <GlobeIcon className="w-4 h-4" />
+                Publish
+              </button>
+            )}
             <button
               onClick={() => setShowDeleteConfirm(true)}
               className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-red-500/30 text-red-400 text-sm font-medium hover:bg-red-500/10 transition-colors"
             >
               <Trash2Icon className="w-4 h-4" />
-              Delete deck
+              Delete
             </button>
             <button
               onClick={() => navigate(`/study/${id}`)}
@@ -391,6 +440,134 @@ export default function DeckDetailRoute() {
             </button>
           </div>
         </div>
+
+        {/* Publish to Marketplace Modal */}
+        {showPublishModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowPublishModal(false)}>
+            <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-[#7C3AED]/10 rounded-lg">
+                  <GlobeIcon className="h-6 w-6 text-[#8B5CF6]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-zinc-900 dark:text-white">Publish to Marketplace</h3>
+                  <p className="text-sm text-zinc-400">
+                    Share "{deck.title}" with the community. Others can find and fork it.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {publishSuccess ? (
+                  <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
+                    <p className="text-emerald-400 text-sm font-medium">Published! 🎉</p>
+                    <p className="text-zinc-400 text-xs mt-1">
+                      Your deck is now live on the marketplace.
+                    </p>
+                    <button
+                      onClick={() => { setShowPublishModal(false); setPublishSuccess(false); }}
+                      className="mt-3 px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-500 transition-colors"
+                    >
+                      Done
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-500 mb-1">Category</label>
+                      <select
+                        value={publishCategory}
+                        onChange={e => setPublishCategory(e.target.value)}
+                        className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 text-sm focus:border-[#7C3AED]/50 focus:outline-none"
+                      >
+                        <option value="">Select a category…</option>
+                        {MARKETPLACE_CATEGORIES.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-500 mb-1">Tags <span className="text-zinc-600 font-normal">(comma-separated)</span></label>
+                      <input
+                        type="text"
+                        value={publishTags}
+                        onChange={e => setPublishTags(e.target.value)}
+                        placeholder="e.g. biology, cells, mitosis"
+                        className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 text-sm placeholder-zinc-500 focus:border-[#7C3AED]/50 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-zinc-500 mb-1">Description</label>
+                      <textarea
+                        value={publishDescription}
+                        onChange={e => setPublishDescription(e.target.value)}
+                        placeholder="What makes this deck useful?"
+                        rows={2}
+                        className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-100 text-sm placeholder-zinc-500 focus:border-[#7C3AED]/50 focus:outline-none resize-none"
+                      />
+                    </div>
+
+                    {publishError && (
+                      <p className="text-xs text-red-400">{publishError}</p>
+                    )}
+
+                    <div className="flex justify-end gap-3 pt-2">
+                      <button
+                        onClick={() => { setShowPublishModal(false); setPublishError(null); }}
+                        className="px-4 py-2 rounded-lg bg-zinc-800 text-zinc-300 text-sm font-medium hover:bg-zinc-700 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!publishCategory) {
+                            setPublishError('Please select a category');
+                            return;
+                          }
+                          if (!id) return;
+                          setPublishing(true);
+                          setPublishError(null);
+                          try {
+                            const tags = publishTags.split(',').map(t => t.trim()).filter(Boolean);
+                            const res = await publishDeckToMarketplace(id, {
+                              category: publishCategory,
+                              tags,
+                              description: publishDescription.trim() || deck.description || '',
+                            });
+                            if (res.success) {
+                              setPublishSuccess(true);
+                              setIsPublished(true);
+                            } else {
+                              setPublishError(res.error ?? 'Failed to publish');
+                            }
+                          } catch (err) {
+                            setPublishError(err instanceof Error ? err.message : 'Something went wrong');
+                          } finally {
+                            setPublishing(false);
+                          }
+                        }}
+                        disabled={publishing || !publishCategory}
+                        className="px-4 py-2 rounded-lg bg-[#7C3AED] text-white text-sm font-semibold hover:bg-[#6D28D9] disabled:opacity-50 transition-colors flex items-center gap-2"
+                      >
+                        {publishing ? (
+                          <>
+                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Publishing…
+                          </>
+                        ) : (
+                          <>
+                            <GlobeIcon className="w-4 h-4" />
+                            Publish
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {showDeleteConfirm && (
 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)}>

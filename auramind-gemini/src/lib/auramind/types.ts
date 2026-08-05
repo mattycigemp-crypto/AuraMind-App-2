@@ -1,4 +1,4 @@
-export type ViewKey = "landing" | "auth" | "dashboard" | "study" | "chat" | "admin" | "health" | "settings" | "flags" | "database" | "audit" | "revenue" | "config" | "roles" | "leaderboard" | "achievements" | "analytics";
+export type ViewKey = "landing" | "auth" | "dashboard" | "study" | "chat" | "admin" | "health" | "settings" | "flags" | "database" | "audit" | "revenue" | "config" | "roles" | "leaderboard" | "achievements" | "analytics" | "users" | "subscriptions" | "test-users" | "content" | "preview" | "nexus";
 export type AuthMode = "login" | "signup";
 export type StudyRating = "again" | "hard" | "good" | "easy";
 export type ChatMode = "explain" | "quiz" | "generate" | "freechat";

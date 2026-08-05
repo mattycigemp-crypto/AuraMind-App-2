@@ -1,13 +1,64 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@1&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Outfit:wght@400;500;600;700;800&display=swap");
 @import "tailwindcss";
 @import "./styles/design-tokens.css";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+@font-face {
+  font-family: "Aura Sans";
+  src: url("/fonts/AuraSans-Regular.woff2") format("woff2"),
+       url("/fonts/AuraSans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aura Sans";
+  src: url("/fonts/AuraSans-Bold.woff2") format("woff2"),
+       url("/fonts/AuraSans-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aura Sans";
+  src: url("/fonts/AuraSans-Italic.woff2") format("woff2"),
+       url("/fonts/AuraSans-Italic.ttf") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aura Sans";
+  src: url("/fonts/AuraSans-BoldItalic.woff2") format("woff2"),
+       url("/fonts/AuraSans-BoldItalic.ttf") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aura Script";
+  src: url("/fonts/AuraScript-Regular.woff2") format("woff2"),
+       url("/fonts/AuraScript-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@custom-variant dark (&:is(.dark *));
 
 @variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-ui: "Inter", system-ui, sans-serif;
-  --font-display: "Instrument Serif", Georgia, serif;
+  --font-ui: "Outfit", "Inter", system-ui, sans-serif;
+  --font-display: "Aura Script", "Aura Sans", "Instrument Serif", Georgia, serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  --font-nova: "Aura Script", "Aura Sans", "Outfit", "Geist Variable", system-ui, sans-serif;
 
   --color-neural-bg: #0A0A0F;
   --color-neural-surface: #111118;
@@ -45,7 +96,9 @@
 }
 
 html {
-  background-color: #0A0A0F;
+  /* Bright fallback so the very first paint (before body CSS parses) is
+     cobalt blue, not black. Doubles as insurance on slow devices. */
+  background: #3247E8;
   color-scheme: dark;
   scroll-behavior: smooth;
 }
@@ -53,8 +106,26 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
-  background: #0A0A0F;
+  /* Bright cobalt→violet page background. Out-of-layer so it wins the
+     cascade over the @layer base `bg-background` declaration that
+     references the dark --background token. shadcn/Radix components still
+     resolve --background internally; only body itself paints bright. */
+  background:
+    radial-gradient(120% 80% at 0% 0%,   #3247E8 0%, rgba(50,71,232,0) 55%),
+    radial-gradient(110% 70% at 100% 0%, #9A6BF0 0%, rgba(154,107,240,0) 55%),
+    radial-gradient(120% 90% at 50% 100%, #4858EC 0%, rgba(72,88,236,0) 60%),
+    linear-gradient(135deg, #3247E8 0%, #5B4DE8 45%, #8B5DEC 100%);
+  background-attachment: fixed;
   color: #F0EFFE;
+}
+/* iOS Safari + touch devices: background-attachment: fixed janks or
+   silently gets ignored. Drop to scroll on hover:none (touch). The
+   dashboard's scrolling panes are mostly covered by chrome/cards, so a
+   scroll-tied gradient repeats cleanly without visual disruption. */
+@media (hover: none) {
+  body {
+    background-attachment: scroll;
+  }
   font-family: "Inter", system-ui, sans-serif;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -80,7 +151,11 @@ body::after {
   inset: 0;
   z-index: 9999;
   pointer-events: none;
-  opacity: 0.025;
+  /* Film-grain texture overlay. mix-blend-mode: overlay on a saturated
+     cobalt→violet page darkens too aggressively, so the opacity is held
+     at 0.006 — adds tactile paper grain without dulling the brand
+     color sweep behind it. */
+  opacity: 0.006;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   mix-blend-mode: overlay;
 }
@@ -114,7 +189,13 @@ body::after {
 }
 
 @layer base {
-  * { @apply border-neutral-800; }
+  * { @apply border-border outline-ring/50; }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
 }
 
 /* =======================================================
@@ -347,6 +428,78 @@ body::after {
 }
 
 /* =======================================================
+   Z-INDEX LADDER — single source of truth for layer ordering
+   =======================================================
+   Use these variables instead of `z-[9999]` magic numbers
+   so the magicUI / Motion / Konfetti layers stack predictably.
+   --z-bg       → background patterns (Retro Grid, Meteors, Particles)
+   --z-content  → primary content (cards, text, modals anchored to page)
+   --z-floating → dropdowns, tooltips, React Bits modals
+   --z-overlay  → StreakBurst confetti, global notifications, Toasts
+   --z-modal    → force flows: sign-in gates, command palette, destructive confirmations
+   --z-skiplink → page-level escape hatches (skip-to-content link)
+   ======================================================= */
+:root {
+  --z-bg:        0;
+  --z-content:   10;
+  --z-floating:  20;
+  --z-overlay:   50;
+  --z-modal:    100;
+  --z-skiplink: 2147483647;
+}
+.z-bg        { z-index: var(--z-bg); }
+.z-content   { z-index: var(--z-content); }
+.z-floating  { z-index: var(--z-floating); }
+.z-overlay   { z-index: var(--z-overlay); }
+.z-modal     { z-index: var(--z-modal); }
+
+/* =======================================================
+   3D FLIP — study-card perspective container
+   =======================================================
+   Use .flip-3d-stage as a perspective root and .flip-3d-front
+   / .flip-3d-back as the two faces. Sets transform-style so
+   the children render in 3D space.
+   ======================================================= */
+.flip-3d-stage {
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+.flip-3d-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+.flip-3d-back {
+  transform: rotateY(180deg);
+}
+
+/* Reduced-motion safe fallback for any 3D-flip animation. */
+@media (prefers-reduced-motion: reduce) {
+  .flip-3d-stage { perspective: none; }
+  .flip-3d-face   { backface-visibility: visible; }
+  .flip-3d-back   { transform: none; }
+  /* Disable Motion's drag transforms and spring physics for swipe gestures. */
+  [data-swipe-gesture] { touch-action: pan-y !important; }
+}
+
+/* =======================================================
+   FOCUS-VISIBLE MIRRORS — every whileHover must have a :focus partner
+   =======================================================
+   MagicUI / React Bits components use whileHover (pointer only). Mirror
+   them with a :focus-visible equivalent so keyboard users see the same
+   affordance. Scoped to common interactive surfaces.
+   ======================================================= */
+@media (prefers-reduced-motion: no-preference) {
+  .focus-mirror-hover:focus-visible {
+    transform: translateY(-2px);
+    transition: transform 200ms ease-out;
+    box-shadow: 0 0 30px rgba(124, 58, 237, 0.25);
+  }
+}
+
+/* =======================================================
    PAGE TRANSITION — wipe
    ======================================================= */
 @keyframes page-wipe {
@@ -441,3 +594,656 @@ body::after {
   animation: blink 1s steps(2, start) infinite;
 }
 @keyframes blink { to { visibility: hidden; } }
+
+@theme inline {
+  --font-heading: "Aura Script", "Aura Sans", "Geist Variable", sans-serif;
+  --font-sans: 'Geist Variable', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  --animate-shine: shine var(--duration) infinite linear;
+  @keyframes shine {
+  0% {
+    background-position: 0% 0%;
+    }
+  50% {
+    background-position: 100% 100%;
+    }
+  to {
+    background-position: 0% 0%;
+    }
+  }
+  --animate-meteor: meteor 5s linear infinite
+;
+  @keyframes meteor {
+  0% {
+    transform: rotate(var(--angle)) translateX(0);
+    opacity: 1;
+    }
+  70% {
+    opacity: 1;
+    }
+  100% {
+    transform: rotate(var(--angle)) translateX(-500px);
+    opacity: 0;
+    }
+  }
+  --animate-ripple: ripple var(--duration,2s) ease calc(var(--i, 0)*.2s) infinite;
+  @keyframes ripple {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    }
+  50% {
+    transform: translate(-50%, -50%) scale(0.9);
+    }
+  }}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* =======================================================
+   CSS SCROLL-DRIVEN ANIMATIONS (Baseline 2026)
+   Zero-JS, compositor-thread, 60fps
+   ======================================================= */
+
+/* Reveal from bottom on scroll */
+@keyframes scroll-reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reveal from left on scroll */
+@keyframes scroll-reveal-left {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Reveal from right on scroll */
+@keyframes scroll-reveal-right {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Scale reveal on scroll */
+@keyframes scroll-reveal-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Blur reveal on scroll */
+@keyframes scroll-reveal-blur {
+  from {
+    opacity: 0;
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+/* Scroll progress bar */
+@keyframes scroll-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+/* Scroll-driven utility classes */
+.sr-up {
+  animation: scroll-reveal-up linear both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 100%;
+}
+
+.sr-left {
+  animation: scroll-reveal-left linear both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 100%;
+}
+
+.sr-right {
+  animation: scroll-reveal-right linear both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 100%;
+}
+
+.sr-scale {
+  animation: scroll-reveal-scale linear both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 100%;
+}
+
+.sr-blur {
+  animation: scroll-reveal-blur linear both;
+  animation-timeline: view();
+  animation-range: entry 0% entry 100%;
+}
+
+/* Scroll progress bar (use on a fixed element) */
+.scroll-progress {
+  animation: scroll-progress linear;
+  animation-timeline: scroll(root);
+  transform-origin: left;
+}
+
+/* Parallax scroll effect */
+@keyframes scroll-parallax {
+  from { transform: translateY(0); }
+  to { transform: translateY(-60px); }
+}
+
+.scroll-parallax {
+  animation: scroll-parallax linear both;
+  animation-timeline: scroll(root);
+}
+
+/* =======================================================
+   VIEW TRANSITIONS API (Baseline 2025)
+   ======================================================= */
+
+/* Default cross-fade for page transitions */
+::view-transition-old(root) {
+  animation: vt-fade-out 0.2s ease-in forwards;
+}
+
+::view-transition-new(root) {
+  animation: vt-fade-in 0.3s ease-out forwards;
+}
+
+@keyframes vt-fade-out {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.98); }
+}
+
+@keyframes vt-fade-in {
+  from { opacity: 0; transform: scale(1.02); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Hero section morph transition */
+::view-transition-old(hero-morph) {
+  animation: vt-morph-out 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+::view-transition-new(hero-morph) {
+  animation: vt-morph-in 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes vt-morph-out {
+  from { opacity: 1; clip-path: inset(0 0 0 0); }
+  to { opacity: 0; clip-path: inset(0 0 100% 0); }
+}
+
+@keyframes vt-morph-in {
+  from { opacity: 0; clip-path: inset(100% 0 0 0); }
+  to { opacity: 1; clip-path: inset(0 0 0 0); }
+}
+
+/* Shared element: page title */
+::view-transition-old(page-title) {
+  animation: vt-slide-out-left 0.3s ease-in forwards;
+}
+::view-transition-new(page-title) {
+  animation: vt-slide-in-right 0.3s ease-out forwards;
+}
+
+@keyframes vt-slide-out-left {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(-20px); }
+}
+@keyframes vt-slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Respect reduced motion for View Transitions */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
+/* =======================================================
+   CSS ANCHOR POSITIONING (Baseline 2026)
+   Replaces Popper.js/Floating UI for tooltips
+   ======================================================= */
+
+.anchor-tooltip {
+  position: anchor-center;
+  inset-area: top center;
+}
+
+/* =======================================================
+   RADIX COLORS — Accessible Dark Theme Scale
+   ======================================================= */
+:root {
+  --radix-purple-1: oklch(0.975 0.005 290);
+  --radix-purple-2: oklch(0.939 0.012 290);
+  --radix-purple-3: oklch(0.886 0.025 290);
+  --radix-purple-4: oklch(0.824 0.04 290);
+  --radix-purple-5: oklch(0.762 0.06 290);
+  --radix-purple-6: oklch(0.693 0.09 290);
+  --radix-purple-7: oklch(0.62 0.12 290);
+  --radix-purple-8: oklch(0.543 0.15 290);
+  --radix-purple-9: oklch(0.488 0.243 264.376);
+  --radix-purple-10: oklch(0.443 0.22 264);
+  --radix-purple-11: oklch(0.732 0.2 264);
+  --radix-purple-12: oklch(0.935 0.04 264);
+
+  --radix-violet-1: oklch(0.975 0.005 295);
+  --radix-violet-2: oklch(0.94 0.012 295);
+  --radix-violet-3: oklch(0.889 0.025 295);
+  --radix-violet-4: oklch(0.832 0.04 295);
+  --radix-violet-5: oklch(0.771 0.06 295);
+  --radix-violet-6: oklch(0.703 0.09 295);
+  --radix-violet-7: oklch(0.63 0.12 295);
+  --radix-violet-8: oklch(0.555 0.15 295);
+  --radix-violet-9: oklch(0.541 0.22 295);
+  --radix-violet-10: oklch(0.495 0.21 295);
+  --radix-violet-11: oklch(0.76 0.19 295);
+  --radix-violet-12: oklch(0.936 0.035 295);
+}
+
+/* =======================================================
+   IGLOO.INC-INSPIRED — Chromatic Aberration Filter
+   ======================================================= */
+
+.chromatic-hover {
+  transition: filter 0.3s ease;
+}
+
+.chromatic-hover:hover {
+  filter: url(#chromatic-aberration);
+}
+
+/* =======================================================
+   FROST GLASS — Igloo Ice Block Effect
+   ======================================================= */
+
+.frost-surface {
+  backdrop-filter: blur(16px) saturate(180%) brightness(1.1);
+  background: rgba(17, 17, 24, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.frost-surface-heavy {
+  backdrop-filter: blur(24px) saturate(200%) brightness(1.15);
+  background: rgba(17, 17, 24, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* =======================================================
+   INTERACTION SOUND HOOKS — Web Audio Feedback Classes
+   ======================================================= */
+
+[data-sound-hover] {
+  cursor: pointer;
+}
+
+[data-sound-hover]:hover {
+  /* Visual feedback that sound is enabled */
+}
+
+/* =======================================================
+   AUTOANIMATE — smooth list transitions
+   ======================================================= */
+
+[auto-animate] {
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+/* =======================================================
+   NOVA MOTION — perf-safe replacements for high-volume
+   framer-motion loops (heatmaps, forever-pulse loops).
+   Each animation is short and bounded; in reduced-motion
+   contexts they degrade to static final state.
+   ======================================================= */
+@keyframes nova-cell-fade {
+  from { opacity: 0; transform: scale(0.6); }
+  to   { opacity: 1; transform: scale(1);   }
+}
+.nova-cell-fade {
+  animation: nova-cell-fade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  transform-origin: center;
+}
+
+@keyframes nova-icon-breath {
+  0%, 70%, 100% { transform: scale(1); }
+  85%           { transform: scale(1.07); }
+}
+.nova-icon-breath { animation: nova-icon-breath 4s ease-in-out infinite; }
+
+@keyframes nova-rarity-glow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%      { opacity: 1;   transform: scale(1.08); }
+}
+.nova-rarity-glow { animation: nova-rarity-glow 4s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nova-cell-fade    { animation: none; opacity: 1; }
+  .nova-icon-breath  { animation: none; }
+  .nova-rarity-glow  { animation: none; opacity: 0.85; }
+}
+
+/* =======================================================
+   NOVA DESIGN TOKENS — bright cobalt→violet page bg,
+   dark navy floating cards. Used by every Nova view.
+   ======================================================= */
+
+.nova-shell {
+  font-family: var(--font-nova), system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.nova-display {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.nova-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(228, 228, 231, 0.55);
+}
+
+/* The floating "ink card" on top of the bright page background. */
+.nova-card {
+  position: relative;
+  background:
+    linear-gradient(165deg, rgba(255,255,255,0.045) 0%, transparent 42%),
+    linear-gradient(180deg, rgba(18, 22, 40, 0.88) 0%, rgba(12, 15, 28, 0.90) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-radius: 1.25rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 0 rgba(255, 255, 255, 0.03),
+    0 20px 48px -16px rgba(0, 0, 0, 0.45),
+    0 4px 12px rgba(0, 0, 0, 0.22);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.nova-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Hero / elevated panels — deeper ink, soft aurora rim light. */
+.nova-card-elevated {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 100% 0%, rgba(139, 92, 246, 0.18) 0%, transparent 55%),
+    radial-gradient(90% 70% at 0% 100%, rgba(34, 211, 238, 0.10) 0%, transparent 50%),
+    linear-gradient(165deg, rgba(255,255,255,0.06) 0%, transparent 40%),
+    linear-gradient(180deg, rgba(24, 28, 48, 0.94) 0%, rgba(14, 17, 32, 0.96) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  border-radius: 1.5rem;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 0 1px rgba(124, 58, 237, 0.08),
+    0 28px 64px -20px rgba(0, 0, 0, 0.55),
+    0 8px 24px rgba(50, 71, 232, 0.18);
+}
+
+.nova-card-elevated::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.22) 0%,
+    rgba(139,92,246,0.18) 35%,
+    rgba(34,211,238,0.10) 70%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Sidebar/top-bar frosted glass */
+.nova-chrome {
+  background:
+    linear-gradient(180deg, rgba(16, 19, 36, 0.88) 0%, rgba(12, 14, 28, 0.82) 100%);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.nova-page-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+  background-size: 56px 56px;
+  background-position: center;
+}
+
+/* Primary CTA — liquid violet→fuchsia with soft bloom */
+.nova-cta {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.15rem;
+  border-radius: 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #fff;
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 45%, #C026D3 100%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.18) inset,
+    0 10px 28px -8px rgba(124, 58, 237, 0.65),
+    0 0 0 1px rgba(255,255,255,0.08) inset;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.nova-cta:hover {
+  filter: brightness(1.06);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.22) inset,
+    0 14px 36px -8px rgba(124, 58, 237, 0.75),
+    0 0 0 1px rgba(255,255,255,0.1) inset;
+}
+.nova-cta:active { transform: scale(0.98); }
+
+.nova-cta-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1rem;
+  border-radius: 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  color: rgba(255,255,255,0.88);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+.nova-cta-ghost:hover {
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.16);
+}
+
+/* Soft progress track used across Nova */
+.nova-track {
+  height: 0.375rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+.nova-track > span,
+.nova-track-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #8B5CF6, #22D3EE);
+}
+
+.nova-chip-violet    { background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 50%, #C026D3 100%); }
+.nova-chip-cyan      { background: linear-gradient(135deg, #22D3EE 0%, #06B6D4 50%, #3B82F6 100%); }
+.nova-chip-fuchsia   { background: linear-gradient(135deg, #E879F9 0%, #D946EF 50%, #7C3AED 100%); }
+.nova-chip-amber     { background: linear-gradient(135deg, #FCD34D 0%, #F59E0B 50%, #EA580C 100%); }
+.nova-chip-emerald   { background: linear-gradient(135deg, #6EE7B7 0%, #10B981 50%, #059669 100%); }
+.nova-chip-rose      { background: linear-gradient(135deg, #FDA4AF 0%, #F43F5E 50%, #BE123C 100%); }
+
+@keyframes nova-sheen {
+  0% { transform: translateX(-120%) skewX(-12deg); }
+  100% { transform: translateX(220%) skewX(-12deg); }
+}
+.nova-sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  width: 40%;
+  animation: nova-sheen 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nova-card, .nova-card-elevated, .nova-chrome {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .nova-sheen::after { animation: none; }
+}

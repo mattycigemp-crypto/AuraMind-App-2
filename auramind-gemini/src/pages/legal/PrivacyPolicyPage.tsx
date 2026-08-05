@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { BRAND, PRODUCT_NAME, PARENT_COMPANY_LEGAL } from '../../lib/branding';
+import { CogniVectFooter } from '../../components/shared/CogniVectFooter';
 
 const sections = [
   {
@@ -9,7 +11,7 @@ const sections = [
     content: (
       <>
         <p>
-          AuraMind ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our AI-powered study platform, including our website, mobile application, and related services (collectively, the "Service").
+          {PARENT_COMPANY_LEGAL} ("we," "our," or "us"), operator of the {PRODUCT_NAME} product, is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our AI-powered study platform, including our website, mobile application, and related services (collectively, the "Service").
         </p>
         <p>
           By using the Service, you agree to the collection and use of information in accordance with this policy. If you do not agree, please do not use the Service.
@@ -169,7 +171,7 @@ const sections = [
           <li><strong className="text-[#F0EFFE]">Withdraw Consent:</strong> Withdraw consent at any time.</li>
         </ul>
         <p className="mt-3">
-          To exercise your rights, contact us at <strong className="text-[#F0EFFE]">hello@auramind.app</strong>. We will respond within 30 days.
+          To exercise your rights, contact us at <strong className="text-[#F0EFFE]">{BRAND.contactEmail}</strong>. We will respond within 30 days.
         </p>
       </>
     ),
@@ -212,7 +214,7 @@ const sections = [
           AuraMind is designed for users aged 13 and above. We do not knowingly collect personal information from children under 13 without verifiable parental consent in accordance with COPPA.
         </p>
         <p>
-          If you believe a child under 13 has provided us with personal data, please contact us immediately at <strong className="text-[#F0EFFE]">hello@auramind.app</strong>. We will take steps to delete such information promptly.
+          If you believe a child under 13 has provided us with personal data, please contact us immediately at <strong className="text-[#F0EFFE]">{BRAND.contactEmail}</strong>. We will take steps to delete such information promptly.
         </p>
       </>
     ),
@@ -260,7 +262,7 @@ const sections = [
           <li><strong className="text-[#F0EFFE]">Right to Non-Discrimination:</strong> We will not discriminate against you for exercising your rights.</li>
         </ul>
         <p className="mt-3">
-          To exercise your California rights, contact us at <strong className="text-[#F0EFFE]">hello@auramind.app</strong>.
+          To exercise your California rights, contact us at <strong className="text-[#F0EFFE]">{BRAND.contactEmail}</strong>.
         </p>
       </>
     ),
@@ -286,8 +288,8 @@ const sections = [
       <>
         <p>If you have questions about this Privacy Policy or our data practices:</p>
         <ul className="list-none space-y-1 text-[#9090A8]">
-          <li><strong className="text-[#F0EFFE]">Email:</strong> hello@auramind.app</li>
-          <li><strong className="text-[#F0EFFE]">Address:</strong> AuraMind, Inc., 548 Market St, San Francisco, CA 94104</li>
+          <li><strong className="text-[#F0EFFE]">Email:</strong> {BRAND.contactEmail}</li>
+          <li><strong className="text-[#F0EFFE]">Address:</strong> {BRAND.legalAddress}</li>
         </ul>
       </>
     ),
@@ -327,16 +329,20 @@ export default function PrivacyPolicyPage(): React.ReactElement {
           ))}
         </div>
 
-        {/* Back to home */}
+        {/* Back to home — kept for nav continuity; the corporate footer below
+            carries the CogniVect parent-company attribution. */}
         <div className="mt-10 pt-8 border-t border-[#2A2A3A]/30 text-center">
           <Link
             to="/"
             className="inline-flex items-center gap-2 text-xs text-[#8B5CF6] hover:text-[#7C3AED] transition-colors"
           >
             <ArrowLeft size={14} />
-            Back to AuraMind
+            Back to {PRODUCT_NAME}
           </Link>
         </div>
+
+        {/* Corporate parent attribution */}
+        <CogniVectFooter />
       </div>
     </div>
   );

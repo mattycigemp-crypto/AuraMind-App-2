@@ -1,8 +1,9 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { isTauri } from '@tauri-apps/api/core';
+import { isTauri } from './lib/nativeShim';
 import App from './App';
 import './index.css';
+import './lib/registerServices';
 
 declare global {
   interface Window {

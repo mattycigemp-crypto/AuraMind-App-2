@@ -1,14 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ConfettiIcon as Confetti, 
-  SparklesIcon as Sparkles, 
-  StarIcon as Star, 
+import {
+  ConfettiIcon as Confetti,
+  SparklesIcon as Sparkles,
+  StarIcon as Star,
   TrophyIcon as Trophy,
   FlameIcon as Flame,
   ZapIcon as Zap,
   AwardIcon as Award
 } from '../icons/CustomIcons';
+import {
+  AnimeCelebration,
+  type AnimeCelebrationHandle,
+} from '../../lib/effects';
 
 // Glassmorphism utility classes
 const glassCard = 'bg-zinc-900/10 backdrop-blur-xl border border-white/20 rounded-2xl shadow-xl';
@@ -52,14 +56,27 @@ const CelebratoryFeedback: React.FC<CelebratoryFeedbackProps> = ({
   autoCloseDelay = 3000,
 }) => {
   const [showConfetti, setShowConfetti] = useState(false);
+  // Anime.js v4-driven halo + label that punctuates the moment; layered
+  // ON TOP of the framer-motion side-card so the existing UI is unchanged.
+  const celebrationRef = useRef<AnimeCelebrationHandle>(null);
 
   useEffect(() => {
     setShowConfetti(true);
+    // Fire the halo once per mount. Intensity scales with celebration type.
+    celebrationRef.current?.celebrate({
+      label: message,
+      intensity:
+        type === 'perfect' || type === 'milestone'
+          ? 'epic'
+          : type === 'streak'
+            ? 'normal'
+            : 'subtle',
+    });
     if (autoClose) {
       const timer = setTimeout(onClose, autoCloseDelay);
       return () => clearTimeout(timer);
     }
-  }, [autoClose, autoCloseDelay, onClose]);
+  }, [autoClose, autoCloseDelay, message, onClose, type]);
 
   const getIcon = () => {
     switch (type) {
@@ -84,7 +101,11 @@ const CelebratoryFeedback: React.FC<CelebratoryFeedbackProps> = ({
   const Icon = getIcon();
 
   return (
-    <div className="fixed top-4 right-4 z-[9998]">
+    <>
+      {/* Page-level halo + label. z-index 45 (defined inside AnimeCelebration)
+          is intentional — below z-50+ toasts but above page content. */}
+      <AnimeCelebration ref={celebrationRef} />
+      <div className="fixed top-4 right-4 z-[9998]">
       <AnimatePresence>
         {showConfetti && (
           <motion.div
@@ -137,7 +158,8 @@ const CelebratoryFeedback: React.FC<CelebratoryFeedbackProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </>
   );
 };
 

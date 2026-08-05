@@ -32,7 +32,7 @@
 
 /* --- Tailwind v4 theme extension (for utility class generation) --- */
 @theme {
-  --font-architect: "Outfit", "Inter", sans-serif;
+  --font-architect: "Aura Script", "Aura Sans", "Outfit", "Inter", sans-serif;
   --color-arch-bg: var(--color-arch-bg);
   --color-arch-fg: var(--color-arch-fg);
   --color-arch-border: var(--color-arch-border);

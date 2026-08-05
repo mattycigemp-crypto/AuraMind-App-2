@@ -10,11 +10,8 @@ export function initSentry(): void {
     environment: ENV,
     integrations: [
       Sentry.browserTracingIntegration(),
-      Sentry.replayIntegration(),
     ],
     tracesSampleRate: ENV === 'production' ? 0.25 : 1.0,
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
   });
 }
 

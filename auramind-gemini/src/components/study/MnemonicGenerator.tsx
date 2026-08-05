@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateMnemonic, MnemonicResult } from '../../services/ai/mnemonicService';
 import { SparklesIcon as Sparkles, Wand2Icon as Wand2, CopyIcon as Copy, CheckIcon as Check, XIcon as X, BrainIcon as Brain, HomeIcon as Home, BookOpenIcon as BookOpen, LightbulbIcon as Lightbulb } from '../icons/CustomIcons';
+import {
+  StaggerList,
+  useScrollReveal,
+} from '../../lib/effects';
 
 interface MnemonicGeneratorProps {
   initialTopic?: string;
@@ -16,6 +20,13 @@ export const MnemonicGenerator: React.FC<MnemonicGeneratorProps> = ({ initialTop
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'acronyms' | 'mnemonics' | 'palace' | 'story'>('acronyms');
+
+  // anime.js v4 ScrollObserver on the results region so the tabs slide in
+  // once when the panel becomes visible. Lazy users (no scroll) still see
+  // the static panel.
+  const resultsReveal = useScrollReveal<HTMLDivElement>({
+    enter: { duration: 500, opacity: [0, 1], translateY: [12, 0] },
+  });
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
@@ -96,8 +107,9 @@ export const MnemonicGenerator: React.FC<MnemonicGeneratorProps> = ({ initialTop
           {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
         </div>
 
-        {/* Results */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Results — anime.js v4 ScrollObserver fades the panel in once
+            it scrolls into view; fallthrough to static display if disabled. */}
+        <div ref={resultsReveal.ref} className="flex-1 overflow-y-auto p-6" style={{ willChange: 'opacity, transform' }}>
           {!result && !loading && (
             <div className="text-center py-12">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-4">
@@ -117,8 +129,16 @@ export const MnemonicGenerator: React.FC<MnemonicGeneratorProps> = ({ initialTop
 
           {result && !loading && (
             <>
-              {/* Tabs */}
-              <div className="flex gap-1 mb-4 p-1 rounded-xl bg-zinc-900/50 border border-zinc-800">
+              {/* Tabs — StaggerList replaces the flex row so each tab fades in
+                  50ms apart. Active-tab styling (zinc-800 bg) is preserved;
+                  StaggerList only adds the entrance + data-stagger-item marker. */}
+              <StaggerList
+                delayMs={50}
+                durationMs={320}
+                from="down"
+                distance={8}
+                className="flex gap-1 mb-4 p-1 rounded-xl bg-zinc-900/50 border border-zinc-800"
+              >
                 {tabs.map(tab => {
                   const Icon = tab.icon;
                   return (
@@ -136,7 +156,7 @@ export const MnemonicGenerator: React.FC<MnemonicGeneratorProps> = ({ initialTop
                     </button>
                   );
                 })}
-              </div>
+              </StaggerList>
 
               <AnimatePresence mode="wait">
                 <motion.div

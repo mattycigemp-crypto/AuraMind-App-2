@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { supabase } from "../../services/database/supabase";
+import { FrostGlass } from "../ui/FrostGlass";
+import { BorderBeam } from "../ui/BorderBeam";
 
 
 export default function AuthPage() {
@@ -131,7 +133,7 @@ export default function AuthPage() {
           <div className="text-center mb-6">
             <div className="inline-flex items-center gap-2.5 mb-3">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-                <img src="/favicons,logos/icon-192.svg" alt="AuraMind" className="h-full w-full object-contain" />
+                <img src="/favicons,logos/favicon-32.png" alt="AuraMind" className="h-full w-full object-contain" />
               </div>
               <span className="text-[#F0EFFE] text-base font-medium tracking-tight">AuraMind</span>
             </div>
@@ -146,7 +148,8 @@ export default function AuthPage() {
           </div>
 
           {/* Card */}
-          <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
+          <BorderBeam duration={5} colorFrom="#7c3aed" colorTo="#3b82f6">
+            <FrostGlass blur="xl" opacity={0.08} className="p-6">
             {/* SSO Buttons */}
             <button
               onClick={handleGoogleSSO}
@@ -246,7 +249,8 @@ export default function AuthPage() {
                 {mode === "signup" ? "Start learning" : "Sign in"} →
               </button>
             </form>
-          </div>
+            </FrostGlass>
+          </BorderBeam>
 
           {/* Toggle */}
           <p className="text-center mt-6 text-[#5A5A72] text-xs">

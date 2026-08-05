@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  TrophyIcon as Trophy, 
-  AwardIcon as Award, 
-  StarIcon as Star, 
-  FlameIcon as Flame, 
-  ZapIcon as Zap, 
-  TargetIcon as Target, 
+import {
+  TrophyIcon as Trophy,
+  AwardIcon as Award,
+  StarIcon as Star,
+  FlameIcon as Flame,
+  ZapIcon as Zap,
+  TargetIcon as Target,
   CrownIcon as Crown,
   MedalIcon as Medal,
   SparklesIcon as Sparkles,
@@ -17,6 +17,10 @@ import {
   FlameIcon as FireFlame,
   AwardIcon as TrophyAward
 } from '../icons/CustomIcons';
+import {
+  AnimeCelebration,
+  type AnimeCelebrationHandle,
+} from '../../lib/effects';
 
 // Level system constants
 const XP_LEVELS = [
@@ -119,14 +123,23 @@ interface AchievementUnlockProps {
 }) => {
   const [showSparkles, setShowSparkles] = useState(false);
   const [userXP, setUserXP] = useState(0);
+  // Crunchy halo reserved for top-tier rarities so common unlocks don't
+  // compete with page-level celebrations.
+  const celebrationRef = useRef<AnimeCelebrationHandle>(null);
 
   useEffect(() => {
     setShowSparkles(true);
+    if (achievement.rarity === 'legendary' || achievement.rarity === 'epic') {
+      celebrationRef.current?.celebrate({
+        label: `+${achievement.xpReward} XP`,
+        intensity: achievement.rarity === 'legendary' ? 'epic' : 'normal',
+      });
+    }
     if (autoClose) {
       const timer = setTimeout(onClose, autoCloseDelay);
       return () => clearTimeout(timer);
     }
-  }, [autoClose, autoCloseDelay, onClose]);
+  }, [autoClose, autoCloseDelay, onClose, achievement]);
 
   // Update level progress when component mounts or achievement changes
   useEffect(() => {
@@ -237,7 +250,9 @@ interface AchievementUnlockProps {
   const Icon = getIcon();
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-6">
+    <>
+      <AnimeCelebration ref={celebrationRef} />
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-6">
       <motion.div
         variants={scaleIn}
         initial="hidden"
@@ -390,7 +405,8 @@ interface AchievementUnlockProps {
           </motion.div>
         )}
       </motion.div>
-    </div>
+      </div>
+    </>
   );
 };
 

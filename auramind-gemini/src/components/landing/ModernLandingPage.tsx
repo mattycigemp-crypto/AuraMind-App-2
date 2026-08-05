@@ -8,7 +8,16 @@ import { ManifestoSection } from "../ui/ManifestoSection";
 import { AIGenerationDemoSection } from "../ui/AIGenerationDemoSection";
 import { TrustStrip } from "../ui/TrustStrip";
 import { VideoBackground } from "../ui/VideoBackground";
+import { ComparisonSection } from "./ComparisonSection";
+import { TextAnimate } from "../ui/TextAnimate";
+import { TextGlitch } from "../ui/TextGlitch";
+import { ChromaticAberration } from "../ui/ChromaticAberration";
+import { BorderBeam } from "../ui/BorderBeam";
+import { ShineBorder } from "../ui/ShineBorder";
+import { FrostGlass } from "../ui/FrostGlass";
+import { useSoundDesign } from "@/hooks/useSoundDesign";
 import type { FlashcardData } from "@/lib/auramind/types";
+import { TextSplit, TextScramble, ClickSparkles, DrawPath, ParticleField, useScrollReveal } from "@/lib/effects";
 
 
 const HERO_CARD: FlashcardData = {
@@ -52,22 +61,26 @@ const ForgettingCurve = () => (
 );
 
 function FeatureCard({ icon, title, desc, index }: { icon: string; title: string; desc: string; index: number }) {
+  const { playHover } = useSoundDesign({ volume: 0.08 });
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ delay: index * 0.1, duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-      className="group relative p-5 rounded-xl bg-[#111118] border border-[#2A2A3A] hover:border-[#7C3AED]/30 transition-all duration-300 cursor-default overflow-hidden"
-    >
-      <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{ background: "radial-gradient(600px circle at var(--mx, 50%) var(--my, 50%), rgba(124,58,237,0.08), transparent 60%)" }}
-        onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`); e.currentTarget.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`); }}
-      />
-      <motion.div className="text-lg mb-3 group-hover:scale-110 transition-transform duration-300">{icon}</motion.div>
-      <h3 className="text-[#F0EFFE] text-sm font-medium mb-1.5">{title}</h3>
-      <p className="text-[#5A5A72] text-xs leading-relaxed">{desc}</p>
-    </motion.div>
+    <BorderBeam duration={4 + index * 0.5} colorFrom="#7c3aeld" colorTo="#c4b5fd">
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ delay: index * 0.1, duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+        className="group relative p-5 rounded-xl bg-[#111118]/80 backdrop-blur-lg border border-[#2A2A3A] hover:border-[#7C3AED]/30 transition-all duration-300 cursor-default overflow-hidden"
+        onMouseEnter={playHover}
+      >
+        <div className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+          style={{ background: "radial-gradient(600px circle at var(--mx, 50%) var(--my, 50%), rgba(124,58,237,0.08), transparent 60%)" }}
+          onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); e.currentTarget.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`); e.currentTarget.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`); }}
+        />
+        <motion.div className="text-lg mb-3 group-hover:scale-110 transition-transform duration-300">{icon}</motion.div>
+        <h3 className="text-[#F0EFFE] text-sm font-medium mb-1.5">{title}</h3>
+        <p className="text-[#5A5A72] text-xs leading-relaxed">{desc}</p>
+      </motion.div>
+    </BorderBeam>
   );
 }
 
@@ -116,7 +129,12 @@ const Navbar = () => {
       }`}
     >
       <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-        <span className="text-[#F0EFFE] text-sm font-medium tracking-tight">AuraMind</span>
+        <span className="flex items-center gap-2 text-[#F0EFFE] text-sm font-medium tracking-tight">
+          <div className="w-5 h-5 rounded flex items-center justify-center">
+            <img src="/favicons,logos/favicon-32.png" alt="AuraMind" className="h-full w-full object-contain" />
+          </div>
+          AuraMind
+        </span>
         <div className="hidden md:flex items-center gap-8">
           {NAV_ITEMS.map((item) => (
             <a
@@ -151,6 +169,21 @@ export default function ModernLandingPage() {
   const navigate = useNavigate();
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll();
+  const { playClick, playSuccess } = useSoundDesign({ volume: 0.1 });
+
+  // anime.js v4 ScrollObserver hooks for sections that should reveal as the
+  // user scrolls into them. The `once: true` param (set in the lib defaults)
+  // fires each only on first intersection, so users don't see the slide-in
+  // re-trigger when they scroll back to the top.
+  const studyModeReveal = useScrollReveal<HTMLDivElement>({
+    enter: { duration: 600, opacity: [0, 1], translateY: [16, 0] },
+  });
+  const pricingReveal = useScrollReveal<HTMLDivElement>({
+    enter: { duration: 700, opacity: [0, 1], translateY: [24, 0] },
+  });
+  const featuresGridReveal = useScrollReveal<HTMLDivElement>({
+    enter: { duration: 600, opacity: [0, 1], translateY: [20, 0] },
+  });
   const heroY = useTransform(scrollYProgress, [0, 0.15], [0, 40]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0.6]);
   const cardRotateX = useTransform(scrollYProgress, [0, 0.1], [0, 8]);
@@ -166,6 +199,28 @@ export default function ModernLandingPage() {
       <section ref={heroRef} className="relative pt-32 pb-24 px-6 overflow-hidden">
         {/* Hero video — layered behind mesh gradients */}
         <VideoBackground name="hero-neural" opacity={0.5} />
+
+        {/* Animejs-style decorative SVG circuit drawing — scroll-synced like animejs.com hero */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-[1]">
+          <DrawPath selector="svg path" autoplay="scroll" draw={['0 0', '0 1', '1 1']} ease="inOut(3)" className="opacity-[0.04]">
+            <svg viewBox="0 0 800 600" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
+              <path d="M100 500 Q200 100 400 300 T700 200" fill="none" stroke="#7C3AED" strokeWidth="2" />
+              <path d="M50 400 Q150 200 300 250 T500 100 T750 400" fill="none" stroke="#8B5CF6" strokeWidth="1.5" />
+              <path d="M200 550 Q300 350 500 400 T650 150" fill="none" stroke="#7C3AED" strokeWidth="1" />
+              <path d="M0 300 Q100 50 250 150 T450 50 T800 300" fill="none" stroke="#3B82F6" strokeWidth="1" />
+            </svg>
+          </DrawPath>
+          {/* Second scroll-synced drawable — a glowing accent line that traces on scroll */}
+          <DrawPath selector="svg path" autoplay="scroll" draw={['0 0', '0 0.5', '1 1']} ease="inOut(3)" className="opacity-[0.08]">
+            <svg viewBox="0 0 800 600" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
+              <path d="M700 500 Q600 200 400 300 T100 100" fill="none" stroke="#EC4899" strokeWidth="3" />
+              <path d="M750 100 Q550 400 300 150 T50 450" fill="none" stroke="#06B6D4" strokeWidth="2" />
+            </svg>
+          </DrawPath>
+        </div>
+
+        {/* Ambient particle field — subtle floating particles */}
+        <ParticleField density={0.15} color="rgba(124, 58, 237, 0.25)" className="z-[1]" />
 
         {/* Mesh gradient hero — 4-blob shifted on 18s loop */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -197,9 +252,17 @@ export default function ModernLandingPage() {
             </motion.div>
 
             <h1 className="text-[#F0EFFE] text-4xl md:text-5xl lg:text-6xl font-light leading-[1.1] tracking-tight mb-4 overflow-hidden">
+              <ChromaticAberration intensity={2}>
+                <TextAnimate
+                  text="Learn anything."
+                  as="span"
+                  className="inline"
+                  triggerOnView
+                  speed={25}
+                />
+              </ChromaticAberration>
+              <br />
               {[
-                { text: "Learn", cls: "" },
-                { text: "anything.", cls: "" },
                 { text: "Actually", cls: "font-serif italic bg-gradient-to-r from-violet-400 via-indigo-400 to-violet-400 bg-[length:200%_auto] text-transparent bg-clip-text animate-[gradient-shift_6s_ease_infinite]" },
                 { text: "remember", cls: "" },
                 { text: "it.", cls: "" },
@@ -208,7 +271,7 @@ export default function ModernLandingPage() {
                   key={word.text}
                   initial={{ opacity: 0, y: 24 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 + i * 0.06, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                  transition={{ delay: 0.5 + i * 0.06, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
                   className={`inline-block mr-[0.3em] ${word.cls}`}
                 >
                   {word.text}
@@ -222,7 +285,9 @@ export default function ModernLandingPage() {
               transition={{ delay: 0.2 }}
               className="text-[#5A5A72] text-sm leading-relaxed mb-8 max-w-md"
             >
-              AI generates your decks, FSRS schedules your reviews. You just show up.
+              <TextScramble duration={1800} autoplay>
+                AI generates your decks, FSRS schedules your reviews. You just show up.
+              </TextScramble>
             </motion.p>
 
             <motion.div
@@ -231,19 +296,21 @@ export default function ModernLandingPage() {
               transition={{ delay: 0.3 }}
             >
               <div className="flex items-center gap-3 mb-6">
-                <MagneticButton
-                  onClick={() => navigate("/auth")}
-                  className="group relative px-6 py-2.5 bg-[#7C3AED] text-white text-sm font-medium rounded-lg hover:bg-[#6D28D9] transition-all duration-300 shadow-[0_0_30px_rgba(124,58,237,0.3)] overflow-hidden"
-                >
-                  <span className="relative z-10">Start for free →</span>
-                  <span
-                    className="absolute inset-0 -translate-x-full group-hover:translate-x-0 transition-transform duration-500"
-                    style={{
-                      background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)",
-                      transform: "skewX(-15deg)",
-                    }}
-                  />
-                </MagneticButton>
+                <ClickSparkles count={8} color={['#7C3AED', '#8B5CF6', '#3B82F6', '#A78BFA']}>
+                  <MagneticButton
+                    onClick={() => { playClick(); navigate("/auth"); }}
+                    className="group relative px-6 py-2.5 bg-[#7C3AED] text-white text-sm font-medium rounded-lg hover:bg-[#6D28D9] transition-all duration-300 shadow-[0_0_30px_rgba(124,58,237,0.3)] overflow-hidden"
+                  >
+                    <span className="relative z-10">Start for free →</span>
+                    <span
+                      className="absolute inset-0 -translate-x-full group-hover:translate-x-0 transition-transform duration-500"
+                      style={{
+                        background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)",
+                        transform: "skewX(-15deg)",
+                      }}
+                    />
+                  </MagneticButton>
+                </ClickSparkles>
                 <MagneticButton className="px-6 py-2.5 border border-[#2A2A3A] text-[#9090A8] text-sm rounded-lg hover:border-[#3A3A4F] hover:text-[#F0EFFE] transition-all">
                   See how it works
                 </MagneticButton>
@@ -332,7 +399,7 @@ export default function ModernLandingPage() {
           >
             <span className="text-[#5A5A72] text-[10px] font-medium tracking-[0.2em] uppercase mb-3 block">THE SCIENCE</span>
             <h2 className="text-[#F0EFFE] text-2xl md:text-3xl font-light tracking-tight mb-3">
-              Your brain forgets on a <span className="font-serif italic text-[#8B5CF6]">schedule</span>.
+              Your brain forgets on a <TextGlitch text="schedule" as="span" className="font-serif italic text-[#8B5CF6]" glitchOnHover autoGlitch autoGlitchInterval={8000} />
             </h2>
             <p className="text-[#5A5A72] text-xs leading-relaxed mb-4">
               AuraMind schedules each card right before you would forget it. You retain more in less time.
@@ -362,7 +429,7 @@ export default function ModernLandingPage() {
             className="text-center mb-12"
           >
             <h2 className="text-[#F0EFFE] text-2xl md:text-3xl font-light tracking-tight mb-2">
-              Everything you need to actually <span className="font-serif italic text-[#8B5CF6]">learn</span>
+              Everything you need to actually <TextGlitch text="learn" as="span" className="font-serif italic text-[#8B5CF6]" glitchOnHover autoGlitch autoGlitchInterval={6000} autoGlitchDuration={150} />
             </h2>
             <p className="text-[#5A5A72] text-xs">No fluff. Just the tools that move the needle.</p>
           </motion.div>
@@ -379,26 +446,28 @@ export default function ModernLandingPage() {
       {/* Study Mode Preview — horizontal strip */}
       <section className="py-20 px-6 border-t border-[#2A2A3A]/30">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+          <div
+            ref={studyModeReveal.ref}
+            // anime.js ScrollObserver tweens opacity + translateY into the
+            // final state; we leave the element naturally opaque at rest so
+            // SSR / no-JS users see the headline.
+            style={{ willChange: 'opacity, transform' }}
             className="text-center md:text-left"
           >
             <span className="text-[#5A5A72] text-[10px] font-medium tracking-[0.2em] uppercase mb-3 block">THE STUDY SESSION</span>
             <h2 className="text-[#F0EFFE] text-2xl md:text-3xl font-light tracking-tight">
-              Space to flip.{" "}
+              <TextSplit as="words" wrapperTag="span" stagger={45} duration={420}>
+                Space to flip.
+              </TextSplit>
+              {" "}
               <kbd className="px-2 py-0.5 rounded bg-[#111118] border border-[#2A2A3A] text-[#F0EFFE] text-sm font-mono">1</kbd> again,{" "}
               <kbd className="px-2 py-0.5 rounded bg-[#111118] border border-[#2A2A3A] text-[#F0EFFE] text-sm font-mono">2</kbd> hard,{" "}
               <kbd className="px-2 py-0.5 rounded bg-[#111118] border border-[#2A2A3A] text-[#F0EFFE] text-sm font-mono">3</kbd> good,{" "}
               <kbd className="px-2 py-0.5 rounded bg-[#111118] border border-[#2A2A3A] text-[#F0EFFE] text-sm font-mono">4</kbd> easy.
             </h2>
             <p className="text-[#5A5A72] text-xs mt-3">Full keyboard control. Never touch your mouse during a study session.</p>
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
+          </div>
+          <div
             className="shrink-0"
           >
             <MagneticButton
@@ -407,52 +476,57 @@ export default function ModernLandingPage() {
             >
               Try a study session →
             </MagneticButton>
-          </motion.div>
+          </div>
         </div>
       </section>
 
+      {/* Comparison: AuraMind vs Anki vs Quizlet vs RemNote */}
+      <ComparisonSection />
+
       {/* Pricing */}
       <section id="pricing" className="py-20 px-6 border-t border-[#2A2A3A]/30">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
+        <div ref={pricingReveal.ref} className="max-w-6xl mx-auto" style={{ willChange: 'opacity, transform' }}>
+          <div
             className="text-center mb-12"
           >
             <span className="text-[#5A5A72] text-[10px] font-medium tracking-[0.2em] uppercase mb-3 block">Pricing</span>
             <h2 className="text-[#F0EFFE] text-2xl md:text-3xl font-light tracking-tight">
-              <span className="font-serif italic text-[#8B5CF6]">Simple</span> pricing
+              <TextGlitch text="Simple" as="span" className="font-serif italic text-[#8B5CF6]" glitchOnHover autoGlitch autoGlitchInterval={7000} /> pricing
             </h2>
-          </motion.div>
+          </div>
 
-          <div className="grid md:grid-cols-2 gap-4 max-w-lg mx-auto">
+          <div
+            ref={featuresGridReveal.ref}
+            className="grid md:grid-cols-2 gap-4 max-w-lg mx-auto"
+            style={{ willChange: 'opacity, transform' }}
+          >
             {/* Free */}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-              className="p-6 rounded-xl bg-[#111118] border border-[#2A2A3A]"
             >
-              <h3 className="text-[#F0EFFE] text-sm font-medium mb-1">Free</h3>
-              <div className="flex items-baseline gap-1 mb-4">
-                <span className="text-2xl font-semibold text-[#F0EFFE]">$0</span>
-                <span className="text-[#5A5A72] text-xs">forever</span>
-              </div>
-              <ul className="space-y-2 mb-6">
-                {["5 decks", "20 cards per deck", "Basic SRS", "Web access"].map((f, i) => (
-                  <li key={i} className="text-[#9090A8] text-xs flex items-center gap-2">
-                    <span className="text-[#7C3AED]">✓</span> {f}
-                  </li>
-                ))}
-              </ul>
-              <MagneticButton
-                onClick={() => navigate("/auth")}
-                className="w-full py-2.5 rounded-lg border border-[#2A2A3A] text-[#F0EFFE] text-xs font-medium hover:border-[#7C3AED]/40 transition-all"
-              >
-                Get Started
-              </MagneticButton>
+              <FrostGlass blur="lg" opacity={0.06} className="p-6">
+                <h3 className="text-[#F0EFFE] text-sm font-medium mb-1">Free</h3>
+                <div className="flex items-baseline gap-1 mb-4">
+                  <span className="text-2xl font-semibold text-[#F0EFFE]">$0</span>
+                  <span className="text-[#5A5A72] text-xs">forever</span>
+                </div>
+                <ul className="space-y-2 mb-6">
+                  {["5 decks", "20 cards per deck", "Basic SRS", "Web access"].map((f, i) => (
+                    <li key={i} className="text-[#9090A8] text-xs flex items-center gap-2">
+                      <span className="text-[#7C3AED]">✓</span> {f}
+                    </li>
+                  ))}
+                </ul>
+                <MagneticButton
+                  onClick={() => { playClick(); navigate("/auth"); }}
+                  className="w-full py-2.5 rounded-lg border border-[#2A2A3A] text-[#F0EFFE] text-xs font-medium hover:border-[#7C3AED]/40 transition-all"
+                >
+                  Get Started
+                </MagneticButton>
+              </FrostGlass>
             </motion.div>
 
             {/* Pro */}
@@ -461,33 +535,37 @@ export default function ModernLandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.5, delay: 0.1, ease: [0.23, 1, 0.32, 1] }}
-              className="relative p-6 rounded-xl bg-[#111118] border border-[#7C3AED]/40 overflow-visible"
+              className="relative"
             >
-              <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-[0.12]"
-                style={{ background: "radial-gradient(circle, #7C3AED 0%, #3B82F6 50%, transparent 70%)", filter: "blur(40px)" }}
-              />
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-[#7C3AED] text-white text-[10px] font-medium rounded-full animate-pulse">
-                Most Popular
-              </div>
-              <h3 className="text-[#F0EFFE] text-sm font-medium mb-1">Pro</h3>
-              <div className="flex items-baseline gap-1 mb-1">
-                <span className="text-2xl font-semibold text-[#F0EFFE]">$8</span>
-                <span className="text-[#5A5A72] text-xs">/month</span>
-              </div>
-              <p className="text-[10px] text-[#5A5A72] mb-4">or $3.99/mo billed annually ($47.88/yr)</p>
-              <ul className="space-y-2 mb-6">
-                {["Unlimited decks & cards", "AI deck generation", "Advanced FSRS v5", "Priority support"].map((f, i) => (
-                  <li key={i} className="text-[#9090A8] text-xs flex items-center gap-2">
-                    <span className="text-[#7C3AED]">✓</span> {f}
-                  </li>
-                ))}
-              </ul>
-              <MagneticButton
-                onClick={() => navigate("/auth")}
-                className="w-full py-2.5 rounded-lg bg-[#7C3AED] text-white text-xs font-medium hover:bg-[#6D28D9] transition-all shadow-[0_0_20px_rgba(124,58,237,0.2)] relative z-10"
-              >
-                Start Free Trial
-              </MagneticButton>
+              <ShineBorder shineColor="rgba(124, 58, 237, 0.6)" duration={3}>
+                <div className="p-6">
+                  <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-[0.12]"
+                    style={{ background: "radial-gradient(circle, #7C3AED 0%, #3B82F6 50%, transparent 70%)", filter: "blur(40px)" }}
+                  />
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-[#7C3AED] text-white text-[10px] font-medium rounded-full animate-pulse">
+                    Most Popular
+                  </div>
+                  <h3 className="text-[#F0EFFE] text-sm font-medium mb-1">Pro</h3>
+                  <div className="flex items-baseline gap-1 mb-1">
+                    <span className="text-2xl font-semibold text-[#F0EFFE]">$8</span>
+                    <span className="text-[#5A5A72] text-xs">/month</span>
+                  </div>
+                  <p className="text-[10px] text-[#5A5A72] mb-4">or $3.99/mo billed annually ($47.88/yr)</p>
+                  <ul className="space-y-2 mb-6">
+                    {["Unlimited decks & cards", "AI deck generation", "Advanced FSRS v5", "Priority support"].map((f, i) => (
+                      <li key={i} className="text-[#9090A8] text-xs flex items-center gap-2">
+                        <span className="text-[#7C3AED]">✓</span> {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <MagneticButton
+                    onClick={() => { playSuccess(); navigate("/auth"); }}
+                    className="w-full py-2.5 rounded-lg bg-[#7C3AED] text-white text-xs font-medium hover:bg-[#6D28D9] transition-all shadow-[0_0_20px_rgba(124,58,237,0.2)] relative z-10"
+                  >
+                    Start Free Trial
+                  </MagneticButton>
+                </div>
+              </ShineBorder>
             </motion.div>
           </div>
         </div>
@@ -498,7 +576,7 @@ export default function ModernLandingPage() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-6 h-6 rounded-md flex items-center justify-center">
-              <img src="/favicons,logos/icon-192.svg" alt="AuraMind" className="h-full w-full object-contain" />
+              <img src="/favicons,logos/favicon-32.png" alt="AuraMind" className="h-full w-full object-contain" />
             </div>
             <span className="text-[#F0EFFE] text-xs font-medium">AuraMind</span>
           </div>

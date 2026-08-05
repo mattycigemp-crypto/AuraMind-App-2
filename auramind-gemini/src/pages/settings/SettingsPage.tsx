@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Zap, Bell, Palette, Shield, AlertTriangle, Volume2, RefreshCw, Languages, Accessibility, Pencil, Check, X } from 'lucide-react';
+import { BookOpen, Zap, Bell, Palette, Shield, AlertTriangle, Volume2, RefreshCw, Languages, Accessibility, Pencil, Check, X, Camera, Trash2, Upload as UploadIcon } from 'lucide-react';
 import { toast } from 'sonner';
-import PageShell from '../../components/dashboard/PageShell';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
+import { useCurrentUserId } from '../../hooks/useCurrentUserId';
 import { supabase } from '../../services/database/supabase';
 import { userService } from '../../services/user/userService';
+import { uploadAvatar, deleteAvatar } from '../../services/user/avatarService';
+import ProfAuraAvatar from '../../components/auramind/ProfAuraAvatar';
 import type { UserProfile } from '../../types';
 
 function useLocalStorage<T>(key: string, defaultValue: T): [T, (v: T | ((prev: T) => T)) => void] {
@@ -71,6 +73,7 @@ function SettingRow({ label, desc, children }: { label: string; desc?: string; c
 export default function SettingsPage() {
   const navigate = useNavigate();
   const workspace = useDashboardWorkspace();
+  const userId = useCurrentUserId();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [editingName, setEditingName] = useState(false);
@@ -113,17 +116,22 @@ export default function SettingsPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
+    if (userId === undefined) return;
+    let cancelled = false;
     (async () => {
       try {
-        const { data: { user } } = await supabase!.auth.getUser();
-        if (user) {
+        if (userId) {
           const p = await userService.getCurrentUser();
+          if (cancelled) return;
           setProfile(p);
           setNameInput(p?.name || '');
         }
-      } catch {} finally { setProfileLoading(false); }
+      } catch {} finally {
+        if (!cancelled) setProfileLoading(false);
+      }
     })();
-  }, []);
+    return () => { cancelled = true; };
+  }, [userId]);
 
   const saveName = useCallback(async () => {
     const trimmed = nameInput.trim();
@@ -209,20 +217,35 @@ export default function SettingsPage() {
   }, []);
 
   return (
-    <PageShell>
-      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8 space-y-8">
+      <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-[#F0EFFE] text-lg font-light tracking-tight">Settings</h1>
-          <p className="text-[#5A5A72] text-xs mt-1">Customize your AuraMind experience</p>
+          <p className="nova-label text-violet-200/80">You</p>
+          <h1 className="nova-display mt-1 text-3xl text-white sm:text-4xl">Settings</h1>
+          <p className="mt-2 text-sm text-zinc-400">Tune study defaults, notifications, and account identity.</p>
         </div>
 
         {/* Profile Card — full width at top */}
+        <AvatarEditor
+          currentAvatarUrl={profile?.avatar ?? null}
+          displayName={displayName}
+          userId={profile?.id || userId || ''}
+          onChange={async (url) => {
+            // Persist via workspace so AppShell sidebar reads it instantly.
+            try {
+              if (workspace?.updateProfile) {
+                await workspace.updateProfile({ avatar: url || undefined });
+              } else if (supabase && profile?.id) {
+                await supabase.from('user_profiles').update({ avatar_url: url }).eq('id', profile.id);
+              }
+              setProfile((p) => (p ? { ...p, avatar: url || undefined } : p));
+            } catch (err) {
+              toast.error('Could not save the new avatar. Try again.');
+            }
+          }}
+        />
         <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#6D28D9] flex items-center justify-center text-white text-xl font-semibold shrink-0">
-              {profile ? (profile.name || profile.email || 'A').charAt(0).toUpperCase() : 'A'}
-            </div>
             <div className="flex-1 min-w-0">
               {editingName ? (
                 <div className="flex items-center gap-2 mb-1">
@@ -503,7 +526,6 @@ export default function SettingsPage() {
               <Toggle on={showHintFirst} onChange={setShowHintFirst} />
             </SettingRow>
           </div>
-          </div>
         </div>
       </div>
 
@@ -530,6 +552,185 @@ export default function SettingsPage() {
             })}
           </div>
         </div>
-    </PageShell>
+      </div>
+  );
+}
+
+/**
+ * AvatarEditor — file picker + drag-drop + upload for the user's avatar.
+ *
+ * Why inline instead of a separate component:
+ *   - Closes over `setProfile` + `workspace.updateProfile` + `toast` so we
+ *     avoid prop-drilling through SettingsPage state. Splitting later
+ *     wouldn't be hard, but right now this is the only surface that edits
+ *     the avatar — YAGNI wins.
+ *
+ * Visual contract:
+ *   - Up to 256×256 raster (auto-encode to webp ≤5 MiB)
+ *   - GIF and SVG pass through unmodified so animated-gif avatars actually
+ *     animate when rendered.
+ *   - Hover state shows the upload affordance overlay.
+ *   - Drag-over state shows a violet wash so the user knows the dropzone
+ *     is active.
+ */
+function AvatarEditor({
+  currentAvatarUrl,
+  displayName,
+  userId,
+  onChange,
+}: {
+  currentAvatarUrl: string | null;
+  displayName: string;
+  userId: string;
+  onChange: (url: string | null) => Promise<void> | void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const initial = (displayName || 'A').slice(0, 2).toUpperCase();
+  const hasUploaded = !!currentAvatarUrl;
+
+  // onPick is intentionally kept stable via a ref pattern so the
+  // drag-drop useEffect below doesn't re-attach document listeners on
+  // every render (parent passes a fresh `onChange` lambda each tick,
+  // which would otherwise blow up our memory churn).
+  const onChangeRef = useRef(onChange);
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+  const stableOnPick = useCallback(async (file: File) => {
+    if (!userId) {
+      setError('No signed-in user \u2014 cannot upload.');
+      return;
+    }
+    setError(null);
+    setUploading(true);
+    const result = await uploadAvatar(file, userId);
+    setUploading(false);
+    // Narrow with `'error' in result` so TS doesn't widen the union back
+    // to the full `UploadResult` type. (read-only `as const` returns
+    // infer the discriminant narrowly, but combining with optional
+    // fields in different branches across the function body can defeat
+    // the control flow analysis — the runtime guard sidesteps it.)
+    if (!result.ok || 'error' in result) {
+      const err = (result as { error: string }).error;
+      setError(err);
+      toast.error(err);
+      return;
+    }
+    await onChangeRef.current(result.url);
+    toast.success(
+      file.type === 'image/gif' || file.type === 'image/svg+xml'
+        ? 'Animated avatar saved.'
+        : 'Avatar saved.',
+    );
+  }, [userId]);
+
+  const stableOnRemove = useCallback(async () => {
+    if (!userId) return;
+    setUploading(true);
+    await deleteAvatar(userId);
+    setUploading(false);
+    await onChangeRef.current(null);
+    toast.success('Avatar removed.');
+  }, [userId]);
+
+  // Drag-drop wiring — listens to document events so the user can drop
+  // anywhere on the editor card, not just the inner button. Listener
+  // identity is stable because stableOnPick is itself stable (deps: [userId]).
+  useEffect(() => {
+    const onOver = (e: DragEvent) => {
+      if (!e.dataTransfer?.types?.includes('Files')) return;
+      e.preventDefault();
+      setIsDragging(true);
+    };
+    const onLeave = (e: DragEvent) => {
+      if (e.relatedTarget === null) setIsDragging(false);
+    };
+    const onDrop = (e: DragEvent) => {
+      if (!e.dataTransfer?.files?.length) return;
+      e.preventDefault();
+      setIsDragging(false);
+      const file = e.dataTransfer.files[0];
+      if (file) void stableOnPick(file);
+    };
+    document.addEventListener('dragover', onOver);
+    document.addEventListener('dragleave', onLeave);
+    document.addEventListener('drop', onDrop);
+    return () => {
+      document.removeEventListener('dragover', onOver);
+      document.removeEventListener('dragleave', onLeave);
+      document.removeEventListener('drop', onDrop);
+    };
+  }, [stableOnPick]);
+
+  return (
+    <div
+      className={`bg-[#111118] border rounded-xl p-6 transition-colors ${
+        isDragging ? 'border-[#7C3AED]/70 bg-[#7C3AED]/[0.04]' : 'border-[#2A2A3A]'
+      }`}
+    >
+      <SectionHeader
+        icon={Camera}
+        title="Avatar"
+        subtitle="Your picture shows up in chat, leaderboards, and the sidebar everywhere."
+      />
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+        <div className="shrink-0">
+          {hasUploaded ? (
+            <img
+              src={currentAvatarUrl!}
+              alt="Your avatar"
+              className="w-20 h-20 rounded-full object-cover ring-2 ring-[#7C3AED]/40"
+            />
+          ) : (
+            <ProfAuraAvatar size={80} halo initial={initial} variant="badge" />
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[#F0EFFE] text-sm font-medium">
+            {hasUploaded ? 'Custom avatar' : 'Using Prof. Aura as default'}
+          </p>
+          <p className="text-[#5A5A72] text-[11px] mt-1 leading-relaxed">
+            PNG, JPG, WEBP up to 5 MB · GIF and SVG also supported (animated GIFs play as themselves).
+            We resize raster images to 256×256 before upload to save bandwidth.
+          </p>
+          {error && (
+            <p className="text-[10px] text-amber-400 mt-2" role="alert">{error}</p>
+          )}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#7C3AED] hover:bg-[#6D28D9] disabled:opacity-50 disabled:cursor-not-allowed text-white text-[11px] font-medium transition-colors"
+            >
+              <UploadIcon size={11} />
+              {uploading ? 'Uploading\u2026' : hasUploaded ? 'Replace avatar' : 'Upload avatar'}
+            </button>
+            {hasUploaded && (
+              <button
+                onClick={stableOnRemove}
+                disabled={uploading}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#2A2A3A] text-[#5A5A72] hover:border-red-500/40 hover:text-red-400 disabled:opacity-50 text-[11px] font-medium transition-colors"
+              >
+                <Trash2 size={11} />
+                Remove
+              </button>
+            )}
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,image/avif"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void stableOnPick(f);
+                e.target.value = '';
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

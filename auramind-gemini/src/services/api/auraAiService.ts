@@ -3,6 +3,17 @@
 
 import { logger } from '../../lib/logger';
 import { localInference } from './localInferenceService';
+import { GroqUnavailableError } from './groqClient';
+// Re-export so callers that imported the typed error from this barrel
+// (the legacy location) keep working without an import-path rewrite.
+export { GroqUnavailableError } from './groqClient';
+
+// All AI calls in this module route through groqChat() / groqChatStream()
+// which already throw GroqUnavailableError on 401 / 403 / 429 / 5xx.
+// The legacy `chatCompletion` method below is kept for the AskAuraToolbar
+// + audioOverview paths that pre-date the GroqClient refactor; it now
+// uses GroqUnavailableError too so the fallback chain can branch on the
+// typed error rather than substring-matching `error.message`.
 
 // Simple in-memory cache for AI responses
 const responseCache = new Map<string, { data: any; timestamp: number }>();
@@ -279,9 +290,23 @@ export class AuraAiClient {
             }
           }
 
-          // Don't retry on other client errors (4xx)
+          // Don't retry on other client errors (4xx). 401/403 = auth, surface as
+          // GroqUnavailableError with isAuthFailure=true so the typed chain
+          // (Groq → Puter → offline template) can short-circuit instead of
+          // retrying a permanently-broken key. These are HTTP-error wrappers
+          // (no caught exception in scope), so there's no `.cause` to chain —
+          // the original Groq message is preserved in `.groqMessage`.
+          if (response.status === 401 || response.status === 403) {
+            throw new GroqUnavailableError(
+              `Groq rejected the API key (HTTP ${response.status}): ${errorMessage}`,
+              { status: response.status, groqMessage: errorMessage, isAuthFailure: true },
+            );
+          }
           if (response.status >= 400 && response.status < 500) {
-            throw new Error(errorMessage);
+            throw new GroqUnavailableError(
+              `Groq client error (HTTP ${response.status}): ${errorMessage}`,
+              { status: response.status, groqMessage: errorMessage },
+            );
           }
 
           // Retry on server errors (5xx) or network issues
@@ -291,7 +316,10 @@ export class AuraAiClient {
             await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))); // Exponential backoff
             continue;
           }
-          throw new Error(errorMessage);
+          throw new GroqUnavailableError(
+            `Groq API error (HTTP ${response.status}): ${errorMessage}`,
+            { status: response.status, groqMessage: errorMessage },
+          );
         }
 
         const data = await response.json();
@@ -305,7 +333,16 @@ export class AuraAiClient {
       } catch (error) {
         logger.error(`Error in AI API call (attempt ${attempt + 1}/${maxRetries}):`, error);
         lastError = error as Error;
-        
+        // Promote typed Groq errors so the fallback chain doesn't retry
+        // a permanently-broken auth/quota condition. Mirror the
+        // GroqClient.retryable-check inline so legacy callers don't need
+        // to reimplement the heuristic.
+        if (error instanceof GroqUnavailableError) {
+          if (error.isAuthFailure || error.isQuotaExhausted) {
+            throw error;
+          }
+        }
+
         if (attempt < maxRetries - 1) {
           logger.debug(`Retrying... (${attempt + 1}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
@@ -315,7 +352,7 @@ export class AuraAiClient {
       }
     }
 
-    throw lastError || new Error('Failed to complete AI API call');
+    throw lastError || new GroqUnavailableError('Failed to complete AI API call (unknown)');
   }
 
   // Fallback method for when API keys are invalid
@@ -420,12 +457,13 @@ export class AuraAiClient {
   }
 
   // Method for streaming responses (if needed for real-time chat)
-  async *streamChatCompletion(options: ChatCompletionOptions): AsyncGenerator<string> {
+  async *streamChatCompletion(options: ChatCompletionOptions & { signal?: AbortSignal }): AsyncGenerator<string> {
     const {
       model = this.defaultModel,
       messages,
       temperature = 0.7,
       max_tokens = 2000,
+      signal,
     } = options;
 
     this.checkApiKey();
@@ -437,7 +475,7 @@ export class AuraAiClient {
           'Authorization': `Bearer ${this.apiKey || 'not-needed'}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': typeof window !== 'undefined' ? window.location.href : 'http://localhost:3000',
-          'X-Title': typeof document !== 'undefined' ? (document.title || 'AuraMind') : 'AuraMind App',
+          'X-Title': typeof window !== 'undefined' ? (document.title || 'AuraMind') : 'AuraMind App',
         },
         body: JSON.stringify({
           model,
@@ -446,6 +484,7 @@ export class AuraAiClient {
           max_tokens,
           stream: true,
         }),
+        signal,
       });
 
       if (!response.ok) {

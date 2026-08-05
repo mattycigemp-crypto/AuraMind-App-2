@@ -24,14 +24,18 @@ import { toast } from 'sonner';
 import { localInference, getModelDisplayName, type InitProgress } from '../../services/api/localInferenceService';
 import PresentationViewer from '../../components/study/PresentationViewer';
 import { extractStudyAssetText } from '../../services/import/documentImportService';
-import PageShell from '../../components/dashboard/PageShell';
 
 type GeneratorType = 'quiz' | 'flashcards' | 'presentation';
 type InputSource = 'topic' | 'url' | 'youtube' | 'file';
 type Difficulty = 'easy' | 'medium' | 'hard' | 'mixed';
 
 const GeneratorPage: React.FC = () => {
-  const { createDeck, addCardsToDeck, deleteDeck } = useDashboardWorkspace();
+  // Provider is supplied by App for /dashboard/generator; stay null-safe so a
+  // missing provider degrades to "sign in to save" instead of crashing the tree.
+  const workspace = useDashboardWorkspace();
+  const createDeck = workspace?.createDeck;
+  const addCardsToDeck = workspace?.addCardsToDeck;
+  const deleteDeck = workspace?.deleteDeck;
   const [generatorType, setGeneratorType] = useState<GeneratorType>('quiz');
   const [topic, setTopic] = useState('');
   const [numItems, setNumItems] = useState(10);
@@ -458,15 +462,15 @@ const GeneratorPage: React.FC = () => {
   ];
 
   return (
-    <PageShell>
-      <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
+      <div className="space-y-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
+        className="mb-2"
       >
-        <h1 className="text-xl font-light text-[#F0EFFE] tracking-tight mb-1">Content Generator</h1>
-        <p className="text-[#5A5A72] text-sm">Create quizzes, flashcards, and presentations with AI</p>
+        <p className="nova-label text-violet-200/80">Create</p>
+        <h1 className="nova-display mt-1 text-3xl text-white sm:text-4xl">Generator</h1>
+        <p className="mt-2 text-sm text-zinc-400">Create quizzes, flashcards, and presentations with AI</p>
       </motion.div>
 
       {useLocalAI && localAIProgress && localAIProgress.status !== 'ready' && (
@@ -1000,7 +1004,6 @@ const GeneratorPage: React.FC = () => {
         )}
       </AnimatePresence>
     </div>
-    </PageShell>
   );
 };
 

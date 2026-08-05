@@ -38,7 +38,7 @@ export const ConceptMap: React.FC<ConceptMapProps> = ({ data, onClose, className
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | null>(null);
 
   const nodeMap = useMemo(() => {
     const map = new Map<string, ConceptNode>();

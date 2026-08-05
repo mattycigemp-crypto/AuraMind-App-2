@@ -16,7 +16,7 @@ const MobileStudyButton: React.FC = () => {
 
   return (
     <Button 
-      variant="primary" 
+      variant="default" 
       onClick={handleStudyStart}
       className="w-full py-4 text-lg font-bold flex items-center justify-center gap-2"
     >

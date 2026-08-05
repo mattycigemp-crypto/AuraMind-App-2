@@ -1,18 +1,19 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
-import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
-import { PushNotifications } from '@capacitor/push-notifications';
-import { LocalNotifications } from '@capacitor/local-notifications';
-import { App } from '@capacitor/app';
-import { Device } from '@capacitor/device';
-import { Network } from '@capacitor/network';
-import { Preferences } from '@capacitor/preferences';
-import { Filesystem, Directory } from '@capacitor/filesystem';
-import { Share } from '@capacitor/share';
-import { Clipboard } from '@capacitor/clipboard';
-import { StatusBar, Style } from '@capacitor/status-bar';
-import { SplashScreen } from '@capacitor/splash-screen';
-import { Keyboard } from '@capacitor/keyboard';
+import { Capacitor } from '../lib/nativeShim';
+import { Haptics, ImpactStyle, NotificationType } from '../lib/nativeShim';
+import { PushNotifications } from '../lib/nativeShim';
+import { LocalNotifications } from '../lib/nativeShim';
+import { App } from '../lib/nativeShim';
+import { Device } from '../lib/nativeShim';
+import { Network } from '../lib/nativeShim';
+import { Preferences } from '../lib/nativeShim';
+import { Filesystem, Directory } from '../lib/nativeShim';
+import { Share } from '../lib/nativeShim';
+import { Clipboard } from '../lib/nativeShim';
+import { StatusBar, Style } from '../lib/nativeShim';
+import { SplashScreen } from '../lib/nativeShim';
+import { Keyboard } from '../lib/nativeShim';
+import { NativeBiometric } from '../lib/nativeShim';
 
 export type PlatformType = 'ios' | 'android' | 'web' | 'desktop';
 
@@ -402,15 +403,47 @@ export function useBiometricAuth() {
   const isAvailable = useCallback(async (): Promise<boolean> => {
     if (!Capacitor.isNativePlatform()) return false;
     try {
-      // Using Device API as biometric auth plugin has different name
-      const info = await Device.getInfo();
-      return info.platform === 'ios' || info.platform === 'android';
+      const result = await NativeBiometric.isAvailable({ useFallback: true });
+      return result.isAvailable;
     } catch {
       return false;
     }
   }, []);
 
-  // Note: Biometric auth would need @capacitor-community/biometric-auth or similar
-  // This is a placeholder for the interface
-  return { isAvailable };
+  const authenticate = useCallback(async (reason?: string): Promise<boolean> => {
+    if (!Capacitor.isNativePlatform()) return false;
+    try {
+      await NativeBiometric.verifyIdentity({
+        reason: reason || 'Authentication required',
+        title: 'Authentication Required',
+        subtitle: 'Please authenticate to continue',
+        useFallback: true,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const setCredentials = useCallback(async (username: string, password: string, server: string) => {
+    if (!Capacitor.isNativePlatform()) return;
+    await NativeBiometric.setCredentials({ username, password, server });
+  }, []);
+
+  const getCredentials = useCallback(async (server: string) => {
+    if (!Capacitor.isNativePlatform()) return null;
+    try {
+      const credentials = await NativeBiometric.getCredentials({ server });
+      return credentials;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const deleteCredentials = useCallback(async (server: string) => {
+    if (!Capacitor.isNativePlatform()) return;
+    await NativeBiometric.deleteCredentials({ server });
+  }, []);
+
+  return { isAvailable, authenticate, setCredentials, getCredentials, deleteCredentials };
 }
