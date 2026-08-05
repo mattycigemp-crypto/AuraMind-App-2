@@ -1,44 +1,78 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" shape-rendering="geometricPrecision">
+  <!--
+    Prof. Aura — constellation-profile favicon.
+    Static version of the animated React component. Tighter (16 stars),
+    bigger nodes, no orbit, no aura ring. Reads cleanly down to 16px.
+  -->
   <defs>
-    <radialGradient id="g" cx="50%" cy="40%" r="50%">
-      <stop offset="0%" stop-color="#8B5CF6"/>
-      <stop offset="60%" stop-color="#7C3AED"/>
-      <stop offset="100%" stop-color="#6D28D9"/>
+    <!-- Brand gradient — flows along the connecting line + fills stars -->
+    <linearGradient id="pa-line" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06B6D4"/>
+      <stop offset="55%" stop-color="#EC4899"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+    <!-- Pill background gradient — solid enough that the icon reads on any page bg -->
+    <linearGradient id="pa-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A1030"/>
+      <stop offset="100%" stop-color="#0E0820"/>
+    </linearGradient>
+    <!-- Soft inner glow that hugs the silhouette -->
+    <radialGradient id="pa-halo" cx="55%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#7C3AED" stop-opacity="0.35"/>
+      <stop offset="55%" stop-color="#EC4899" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#06B6D4" stop-opacity="0"/>
     </radialGradient>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="2" result="b"/>
-      <feMerge>
-        <feMergeNode in="b"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
   </defs>
 
-  <!-- Background -->
-  <rect width="64" height="64" rx="14" fill="#0A0A0F"/>
+  <!-- Pill background, rounded -->
+  <rect x="0" y="0" width="100" height="100" rx="20" fill="url(#pa-bg)"/>
 
-  <!-- Pulsing synapse dot at apex -->
-  <circle cx="32" cy="14" r="3.5" fill="url(#g)" filter="url(#glow)">
-    <animate attributeName="r" values="3.5;5.5;3.5" dur="2s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;1"/>
-    <animate attributeName="opacity" values="0.7;1;0.7" dur="2s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1" keyTimes="0;0.5;1"/>
-  </circle>
+  <!-- Inner halo — gives the silhouette a sense of light -->
+  <circle cx="55" cy="50" r="40" fill="url(#pa-halo)"/>
 
-  <!-- A monogram (geometric) -->
-  <path d="M20 48 L32 22 L44 48 M25 40 L39 40" stroke="#F0EFFE" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.95"/>
+  <!--
+    Profile silhouette path. Same general shape as the React component's
+    PROFILE_PATH, but the (x,y) are shifted +15px right and tightened so
+    the head is centred-plus-right inside the 100×100 pill.
+    Nodes (fwd): 28,22 → 46,14 → 64,22 → 73,36 (eye) → 83,48 → 76,54
+                 → 74,60 → 72,68 → 64,74 → 56,78 → 48,84 → 32,84 → 24,76
+                 → 20,64 → 18,52 → 18,40 → 22,30 → 28,22 (close)
+  -->
+  <path
+    d="M28,22 L46,14 L64,22 L73,36 L83,48 L76,54 L74,60 L72,68 L64,74 L56,78 L48,84 L32,84 L24,76 L20,64 L18,52 L18,40 L22,30 Z"
+    fill="none"
+    stroke="url(#pa-line)"
+    stroke-width="2.4"
+    stroke-linejoin="round"
+    stroke-linecap="round"/>
 
-  <!-- Radiating synapse lines (animated opacity) -->
-  <g stroke="#8B5CF6" stroke-width="1" stroke-linecap="round" opacity="0.5">
-    <line x1="32" y1="14" x2="18" y2="8">
-      <animate attributeName="opacity" values="0;0.6;0" dur="2s" repeatCount="indefinite" begin="0s"/>
-    </line>
-    <line x1="32" y1="14" x2="46" y2="8">
-      <animate attributeName="opacity" values="0;0.6;0" dur="2s" repeatCount="indefinite" begin="0.3s"/>
-    </line>
-    <line x1="32" y1="14" x2="14" y2="20">
-      <animate attributeName="opacity" values="0;0.6;0" dur="2s" repeatCount="indefinite" begin="0.6s"/>
-    </line>
-    <line x1="32" y1="14" x2="50" y2="20">
-      <animate attributeName="opacity" values="0;0.6;0" dur="2s" repeatCount="indefinite" begin="0.9s"/>
-    </line>
+  <!-- Star nodes — only the silhouette-attaching 16 + the eye focal -->
+  <g>
+    <circle cx="28" cy="22" r="2.2" fill="#C4C4D4"/>
+    <circle cx="46" cy="14" r="2.4" fill="#C4C4D4"/>
+    <circle cx="64" cy="22" r="2.2" fill="#C4C4D4"/>
+    <!-- Eye — focal point, white -->
+    <circle cx="73" cy="36" r="3.0" fill="#F0EFFE"/>
+    <!-- Nose — accent pink -->
+    <circle cx="83" cy="48" r="2.6" fill="#EC4899"/>
+    <!-- Lips — accent pink -->
+    <circle cx="74" cy="60" r="2.2" fill="#EC4899"/>
+    <circle cx="72" cy="68" r="2.3" fill="#EC4899"/>
+    <circle cx="64" cy="74" r="2.1" fill="#C4C4D4"/>
+    <circle cx="56" cy="78" r="2.2" fill="#C4C4D4"/>
+    <circle cx="48" cy="84" r="2.2" fill="#C4C4D4"/>
+    <circle cx="32" cy="84" r="2.2" fill="#C4C4D4"/>
+    <circle cx="24" cy="76" r="2.1" fill="#C4C4D4"/>
+    <circle cx="20" cy="64" r="1.9" fill="#C4C4D4"/>
+    <circle cx="18" cy="52" r="2.2" fill="#C4C4D4"/>
+    <circle cx="18" cy="40" r="1.9" fill="#C4C4D4"/>
+    <circle cx="22" cy="30" r="2.0" fill="#C4C4D4"/>
   </g>
+
+  <!--
+    Eye halo ring — single subtle outline so the focal point pops.
+    Helps the favicon read at 16px even when the gradient disappears.
+  -->
+  <circle cx="73" cy="36" r="5" fill="none" stroke="#F0EFFE" stroke-opacity="0.35" stroke-width="1"/>
 </svg>

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="leg-stroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#06B6D4"/>
+      <stop offset="33%"  stop-color="#7C3AED"/>
+      <stop offset="66%"  stop-color="#EC4899"/>
+      <stop offset="100%" stop-color="#FBBF24"/>
+    </linearGradient>
+    <radialGradient id="leg-halo" cx="50%" cy="50%" r="60%">
+      <stop offset="0%"   stop-color="#FBBF24" stop-opacity="0.55"/>
+      <stop offset="40%"  stop-color="#EC4899" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#06B6D4" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#09090B"/>
+  <circle cx="32" cy="32" r="32" fill="url(#leg-halo)"/>
+
+  <!-- 6 orbit stars (legendary density). -->
+  <circle cx="6"  cy="14" r="1.0" fill="#FBBF24"/>
+  <circle cx="58" cy="14" r="1.1" fill="#67E8F9"/>
+  <circle cx="58" cy="50" r="1.0" fill="#EC4899"/>
+  <circle cx="6"  cy="50" r="1.1" fill="#A78BFA"/>
+  <circle cx="32" cy="4"  r="1.0" fill="#FBBF24"/>
+  <circle cx="32" cy="60" r="1.0" fill="#67E8F9"/>
+
+  <!-- Crown-trim profile -->
+  <path d="M12,16 L18,10 L26,8 L34,8 L42,10 L48,16 L52,22 L54,30 L54,38 L52,44 L48,50 L42,54 L34,58 L26,58 L18,54 L12,50 L8,42 L8,30 Z"
+        stroke="url(#leg-stroke)" stroke-width="2.2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <circle cx="18" cy="10" r="1.5" fill="#FBBF24"/>
+  <circle cx="34" cy="8"  r="1.6" fill="#67E8F9"/>
+  <circle cx="48" cy="16" r="1.5" fill="#EC4899"/>
+  <!-- Eye = solid white with rainbow halo. -->
+  <circle cx="54" cy="26" r="2.4" fill="#F0EFFE"/>
+  <circle cx="54" cy="26" r="6"   fill="none" stroke="#FBBF24" stroke-opacity="0.6" stroke-width="0.9"/>
+  <circle cx="40" cy="50" r="1.8" fill="#EC4899"/>
+  <circle cx="26" cy="58" r="1.6" fill="#A78BFA"/>
+  <circle cx="8"  cy="42" r="1.5" fill="#67E8F9"/>
+  <text x="32" y="63" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" font-weight="700" fill="#FBBF24">100+</text>
+</svg>

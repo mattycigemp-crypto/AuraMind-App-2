@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="stroke-strong" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06B6D4"/>
+      <stop offset="55%" stop-color="#EC4899"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#7C3AED" stop-opacity="0.5"/>
+      <stop offset="60%"  stop-color="#EC4899" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#06B6D4" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#09090B"/>
+  <circle cx="32" cy="32" r="28" fill="url(#halo)"/>
+  <!-- Slightly fuller profile for "on a run". -->
+  <path d="M16,18 L22,14 L30,12 L38,14 L44,18 L48,24 L52,30 L54,36 L52,42 L48,46 L46,50 L42,54 L36,56 L28,56 L22,52 L18,46 L14,40 L14,30 Z"
+        stroke="url(#stroke-strong)" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
+  <circle cx="22" cy="14" r="1.4" fill="#EC4899"/>
+  <circle cx="30" cy="12" r="1.3" fill="#A78BFA"/>
+  <circle cx="44" cy="18" r="1.4" fill="#A78BFA"/>
+  <circle cx="52" cy="30" r="1.4" fill="#67E8F9"/>
+  <!-- Eye = solid white, lit. -->
+  <circle cx="50" cy="24" r="2.0" fill="#F0EFFE"/>
+  <circle cx="50" cy="24" r="3.8" fill="none" stroke="#67E8F9" stroke-opacity="0.55" stroke-width="0.6"/>
+  <circle cx="42" cy="54" r="1.6" fill="#EC4899"/>
+  <circle cx="14" cy="40" r="1.3" fill="#A78BFA"/>
+  <text x="32" y="62" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" font-weight="700" fill="#67E8F9">14+</text>
+</svg>
