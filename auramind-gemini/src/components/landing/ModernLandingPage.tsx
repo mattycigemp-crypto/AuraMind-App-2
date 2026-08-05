@@ -286,7 +286,7 @@ export default function ModernLandingPage() {
               className="text-[#5A5A72] text-sm leading-relaxed mb-8 max-w-md"
             >
               <TextScramble duration={1800} autoplay>
-                AI generates your decks, FSRS schedules your reviews. You just show up.
+                Aura speaks the questions, listens to your answers, and FSRS schedules your reviews. Study hands-free.
               </TextScramble>
             </motion.p>
 
@@ -435,10 +435,10 @@ export default function ModernLandingPage() {
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
-            <FeatureCard index={0} icon="A" title="Generate decks instantly" desc="Paste a topic or upload notes. Aura builds a complete deck — definitions, examples, mnemonics." />
-            <FeatureCard index={1} icon="S" title="Reviews that actually stick" desc="FSRS v5 schedules each card right before you would forget it. No more cramming." />
-            <FeatureCard index={2} icon="H" title="Build a daily habit" desc="5-minute reviews keep your streak alive. Aura nudges you, not annoys you." />
-            <FeatureCard index={3} icon="F" title="Flashcards that feel real" desc="Index cards with ruled lines, progress dots, and keyboard shortcuts for speed." />
+            <FeatureCard index={0} icon="🎧" title="Study hands-free" desc="Aura speaks each question aloud, listens to your answer, and grades it. Perfect for commutes and chores." />
+            <FeatureCard index={1} icon="🎙" title="Audio → flashcards" desc="Record a lecture or upload a recording. Whisper transcribes it and Aura builds your deck in seconds." />
+            <FeatureCard index={2} icon="🧠" title="Scheduling that sticks" desc="FSRS v5 — 30% better retention than Anki — schedules each card right before you would forget it." />
+            <FeatureCard index={3} icon="📄" title="Docs → study material" desc="Upload a PDF or slide deck. Get organized notes, a presentation, or flashcards — instantly." />
           </div>
         </div>
       </section>
