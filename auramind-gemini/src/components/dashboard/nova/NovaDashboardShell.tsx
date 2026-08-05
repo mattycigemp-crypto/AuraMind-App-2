@@ -330,7 +330,7 @@ function Sidebar({
       <div className="shrink-0 space-y-1 border-t border-white/[0.06] px-3 py-3">
         <button
           type="button"
-          onClick={() => handleNav(isAdminRoute ? '/admin/vault' : '/dashboard/settings')}
+          onClick={() => handleNav(isAdminRoute ? '/admin' : '/dashboard/settings')}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] text-zinc-500 transition-all hover:bg-white/[0.04] hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50"
         >
           <Settings className="h-4 w-4" aria-hidden />

@@ -91,6 +91,9 @@ if (typeof window !== "undefined" && !window.requestIdleCallback) {
 // ─────────────────────────────────────────────────────────────────────────
 
 const NovaHub   = React.lazy(() => import("./pages/dashboard/NovaHub"));
+const AdminShellRoute    = React.lazy(() => import("./pages/admin/AdminShell"));
+const AdminUsersRoute    = React.lazy(() => import("./pages/admin/AdminUsersPage"));
+const AdminAppCheckRoute = React.lazy(() => import("./pages/admin/AdminAppCheckPage"));
 
 const AuraLandingPage      = React.lazy(() => import("./components/landing/ModernLandingPage"));
 const IntegrationShowcase  = React.lazy(() => import("./pages/IntegrationShowcase"));
@@ -652,6 +655,26 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                     </PageTransition>
                   }
                 />
+              </Route>
+
+              {/* ───── /admin/* — Users + App Check, admin-gated ────────── */}
+              <Route element={<ProtectedRoute user={user} status={subscriptionStatus} onLogout={onLogout} />}>
+                <Route
+                  path="/admin"
+                  element={
+                    currentUser && getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel ? (
+                      <Suspense fallback={<GenericPageSkeleton />}>
+                        <AdminShellRoute />
+                      </Suspense>
+                    ) : (
+                      <Navigate to="/dashboard" replace />
+                    )
+                  }
+                >
+                  <Route index element={<Navigate to="users" replace />} />
+                  <Route path="users" element={<Suspense fallback={<GenericPageSkeleton />}><AdminUsersRoute /></Suspense>} />
+                  <Route path="check" element={<Suspense fallback={<GenericPageSkeleton />}><AdminAppCheckRoute /></Suspense>} />
+                </Route>
               </Route>
 
               {/* ───── Auth callback / restore pages ────────────────────── */}
