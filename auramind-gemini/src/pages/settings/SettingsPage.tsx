@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Zap, Bell, Palette, Shield, AlertTriangle, Volume2, RefreshCw, Languages, Accessibility, Pencil, Check, X, Camera, Trash2, Upload as UploadIcon } from 'lucide-react';
+import { BookOpen, Zap, Bell, Palette, Shield, AlertTriangle, Volume2, RefreshCw, Languages, Accessibility, Pencil, Check, X, Camera, Trash2, Upload as UploadIcon, LogOut, CreditCard, ArrowUpRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
 import { useCurrentUserId } from '../../hooks/useCurrentUserId';
@@ -8,6 +8,7 @@ import { supabase } from '../../services/database/supabase';
 import { userService } from '../../services/user/userService';
 import { uploadAvatar, deleteAvatar } from '../../services/user/avatarService';
 import ProfAuraAvatar from '../../components/auramind/ProfAuraAvatar';
+import { DeleteAccountModal } from '../../components/settings/DeleteAccountModal';
 import type { UserProfile } from '../../types';
 
 function useLocalStorage<T>(key: string, defaultValue: T): [T, (v: T | ((prev: T) => T)) => void] {
@@ -114,6 +115,7 @@ export default function SettingsPage() {
   const [showHintFirst, setShowHintFirst] = useLocalStorage('auramind_showHintFirst', false);
   const [autoPlayAudio, setAutoPlayAudio] = useLocalStorage('auramind_autoPlayAudio', false);
   const [showPassword, setShowPassword] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
     if (userId === undefined) return;
@@ -171,9 +173,48 @@ export default function SettingsPage() {
     navigate('/reset-password');
   }, [navigate]);
 
-  const handleManageSubscription = useCallback(() => {
-    toast.info('Subscription management coming soon');
-  }, []);
+  const handleManageSubscription = useCallback(async () => {
+    try {
+      // If the user already has a Stripe customer, open the billing portal
+      // so they can manage/upgrade/cancel their real subscription. Otherwise
+      // send them to the plan page to start one.
+      const { data: { session } } = await supabase.auth.getSession();
+      const customerId = session?.user?.user_metadata?.stripe_customer_id as string | undefined;
+      const api = import.meta.env.VITE_API_BASE_URL || '';
+      if (customerId) {
+        const token = session?.access_token;
+        const res = await fetch(`${api}/api/stripe/portal`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          body: JSON.stringify({ customerId }),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (json.url) {
+          window.open(json.url, '_blank', 'noopener');
+          return;
+        }
+      }
+      navigate('/subscribe');
+    } catch {
+      navigate('/subscribe');
+    }
+  }, [navigate]);
+
+  const handleSignOut = useCallback(() => {
+    // workspace.onLogout clears local state, resets gamification, and signs
+    // out of Supabase. Navigate immediately as a belt-and-suspenders so the
+    // user always lands somewhere, even if the auth event fires async.
+    try {
+      void workspace?.onLogout?.();
+    } catch { /* ignore */ }
+    navigate('/auth');
+  }, [workspace, navigate]);
+
+  const handleDeletedAccount = useCallback(() => {
+    // Account is gone server-side. Wipe local device state and leave.
+    try { void workspace?.onLogout?.(); } catch { /* ignore */ }
+    navigate('/');
+  }, [workspace, navigate]);
 
   const handleClearCache = useCallback(() => {
     const keys = Object.keys(localStorage).filter(k => k.startsWith('auramind_') && k !== 'auramind_theme');
@@ -210,10 +251,8 @@ export default function SettingsPage() {
     toast.success('Anki package exported');
   }, []);
 
-  const handleDeleteAccount = useCallback(async () => {
-    if (!window.confirm('Are you sure you want to permanently delete your account? This cannot be undone.')) return;
-    if (!window.confirm('Type "OK" to confirm deletion')) return;
-    toast.info('Account deletion requires admin assistance. Please contact support.');
+  const handleDeleteAccount = useCallback(() => {
+    setDeleteOpen(true);
   }, []);
 
   return (
@@ -289,9 +328,12 @@ export default function SettingsPage() {
                 Manage subscription
               </button>
             </div>
-            <div className="flex gap-2 mt-2 sm:mt-0">
+            <div className="flex gap-2 mt-2 sm:mt-0 flex-wrap">
               <button onClick={handleChangePassword} className="px-4 py-2 border border-[#2A2A3A] text-[#F0EFFE] text-xs font-medium rounded-lg hover:border-[#3A3A4F] transition-all">
                 Change Password
+              </button>
+              <button onClick={handleSignOut} className="inline-flex items-center gap-1.5 px-4 py-2 border border-[#2A2A3A] text-[#5A5A72] text-xs font-medium rounded-lg hover:border-[#7C3AED]/40 hover:text-[#F0EFFE] transition-all">
+                <LogOut size={12} /> Sign out
               </button>
             </div>
           </div>
@@ -552,6 +594,13 @@ export default function SettingsPage() {
             })}
           </div>
         </div>
+
+        {/* Account deletion — asks why, then confirms permanently */}
+        <DeleteAccountModal
+          open={deleteOpen}
+          onClose={() => setDeleteOpen(false)}
+          onDeleted={handleDeletedAccount}
+        />
       </div>
   );
 }

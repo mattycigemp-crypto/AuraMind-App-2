@@ -941,6 +941,41 @@ async function handleAccount(req: VercelRequest, res: VercelResponse, action?: s
 
   switch (action) {
     case 'delete': {
+      // Capture why the user left before their record is gone, so we can
+      // learn from churn. Destructure defensively: a missing/malformed body
+      // must not block the deletion itself.
+      const { reason = '', feedback = '' } = (req.body || {}) as {
+        reason?: string;
+        feedback?: string;
+      };
+
+      // Persist the reason for the maintainer (post-launch, this could feed
+      // a support ticker or a churn report). Best-effort — never block the
+      // user's own deletion on a logging failure.
+      try {
+        const reasonText = [reason, feedback].filter(Boolean).join(' — ').slice(0, 2000);
+        if (reasonText) {
+          await logAuditEvent(supabase, {
+            actorEmail: user.email || 'unknown',
+            action: 'Account deleted (user-initiated)',
+            category: 'user',
+            details: reasonText,
+            severity: 'info',
+          });
+        }
+      } catch (err) {
+        console.warn('[account/delete] failed to log deletion reason:', err.message);
+      }
+
+      // Clean up public-schema data first (decks, cards, etc.) then the auth
+      // record, mirroring the admin delete path.
+      try {
+        const cleanups = ['cards', 'decks', 'study_sessions', 'chat_logs', 'card_reviews'];
+        for (const table of cleanups) {
+          await supabase.from(table).delete().eq('user_id', user.id).catch(() => {});
+        }
+      } catch { /* best-effort cleanup */ }
+
       await supabase.auth.admin.deleteUser(user.id);
       return json(res, 200, { success: true });
     }

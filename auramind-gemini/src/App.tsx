@@ -11,6 +11,7 @@ import {
   persistCardMetadata,
 } from "./services/study/roadmapService";
 import { syncCurrentUser } from "./services/database/syncUser";
+import { resetUserData } from "./services/gamification/gamificationService";
 import { analyticsService } from "./services/analytics/analyticsService";
 import { getPermissions, getDefaultRole } from "./utils/permissions";
 import { addNotification } from "./services/notifications/notificationStore";
@@ -335,6 +336,18 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
     };
   }, [location.pathname, isMobile]);
 
+  // Clear every piece of session/workspace state so a signed-out (or deleted)
+  // user never lingers on a protected screen. Used by both the SIGNED_OUT
+  // auth event and onLogout's error fallback.
+  const clearSessionState = useCallback(() => {
+    setUser(null);
+    setDecks([]);
+    setCards([]);
+    setActiveDeckId(null);
+    setSubscriptionStatus("none");
+    analyticsService.reset().catch(() => {});
+  }, []);
+
   const checkSubscription = async (userId: string, email: string, forceCheck = false) => {
     /** Timeout guard: if /api/subscription is unreachable (local dev w/o API, or a
      * slow deploy), bail to "none" instead of leaving subscriptionStatus stuck on
@@ -475,6 +488,13 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
     let subscription: { unsubscribe: () => void } | null = null;
     if (supabase) {
       const { data: { subscription: sub } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === "SIGNED_OUT") {
+          // Clear all app state so protected routes fall through to /auth.
+          // Without this, the UI stays "logged in" even after the session dies
+          // — the classic "sign out button does nothing" bug.
+          clearSessionState();
+          return;
+        }
         if (event === "SIGNED_IN" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
           syncSession(session);
         }
@@ -486,7 +506,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
       .then(({ data: { session } }) => { syncSession(session); })
       .catch((err) => console.error("Failed to get session:", err));
     return () => subscription?.unsubscribe();
-  }, [mapAuthUserToProfile]);
+  }, [mapAuthUserToProfile, clearSessionState]);
 
   const createDeck = useCallback(async (t: string, d: string) => {
     if (!user) return null;
@@ -555,7 +575,22 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
   }, [user, mapAuthUserToProfile]);
 
   const currentUser = user || null;
-  const onLogout = useCallback(() => { supabase.auth.signOut(); }, []);
+  const onLogout = useCallback(() => {
+    // Reset device-local gamification so the next account starts fresh.
+    // This must happen before any network signOut so a failed signOut
+    // (or null client) never leaves XP/streak lingering in localStorage.
+    try { resetUserData(); } catch { /* non-fatal */ }
+    if (supabase) {
+      void supabase.auth.signOut().catch((err) => {
+        console.error("signOut failed:", err);
+        // Even if the network call fails, clear in-memory state so the UI
+        // never stays "logged in" forever.
+        clearSessionState();
+      });
+    } else {
+      clearSessionState();
+    }
+  }, [clearSessionState]);
 
   const workspaceProps = useMemo(
     () =>
