@@ -57,7 +57,7 @@ const GeneratorPage: React.FC = () => {
   const recorder = useAudioRecorder();
   const generationStartRef = useRef<number>(0);
   const [elapsed, setElapsed] = useState(0);
-  const [genProgress, setGenProgress] = useState(0);
+  const [_genProgress, setGenProgress] = useState(0);
   const [generatedQuiz, setGeneratedQuiz] = useState<Quiz | null>(null);
   const [generatedFlashcards, setGeneratedFlashcards] = useState<FlashcardData[] | null>(null);
   const [generatedPresentation, setGeneratedPresentation] = useState<{ title: string; slides: { title: string; bullets: string[]; script: string }[] } | null>(null);
@@ -182,7 +182,7 @@ const GeneratorPage: React.FC = () => {
   };
 
   const handleAudioRecorded = async () => {
-    const blob = recorder.blob;
+    const blob = await recorder.stop();
     if (!blob) return;
     setIsExtracting(true);
     setFetchError(null);

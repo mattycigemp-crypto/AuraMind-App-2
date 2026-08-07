@@ -9,6 +9,8 @@ export interface TTSOptions {
 export interface UseTTSReturn {
   isSpeaking: boolean;
   isEnabled: boolean;
+  /** True when this browser exposes speechSynthesis at all. */
+  supported: boolean;
   toggle: () => void;
   speak: (text: string) => void;
   stop: () => void;
@@ -35,6 +37,11 @@ function stripMarkdown(text: string): string {
 
 export function useTTS(options: TTSOptions = {}): UseTTSReturn {
   const { rate = 0.95, pitch = 1.0 } = options;
+  const supported =
+    typeof window !== 'undefined' &&
+    'speechSynthesis' in window &&
+    typeof SpeechSynthesisUtterance !== 'undefined';
+
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isEnabled, setIsEnabled] = useState(() => {
     try {
@@ -45,6 +52,9 @@ export function useTTS(options: TTSOptions = {}): UseTTSReturn {
   });
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const queueRef = useRef<string[]>([]);
+  // Set false by the unmount effect so late `onend`/`onerror` callbacks
+  // never call setState after the component is gone.
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     try {
@@ -52,19 +62,29 @@ export function useTTS(options: TTSOptions = {}): UseTTSReturn {
     } catch { /* ignore */ }
   }, [isEnabled]);
 
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      if (supported) window.speechSynthesis.cancel();
+    };
+  }, [supported]);
+
   const stop = useCallback(() => {
-    window.speechSynthesis.cancel();
+    if (supported) window.speechSynthesis.cancel();
     utteranceRef.current = null;
     queueRef.current = [];
     setIsSpeaking(false);
-  }, []);
+  }, [supported]);
 
   const speak = useCallback((text: string) => {
+    if (!supported) return;
     if (!isEnabled || !text.trim()) return;
 
     const cleaned = stripMarkdown(text);
     if (!cleaned) return;
 
+    // The previous utterance (if any) is superseded; draining the queue
+    // here is intentional so `speak` is "speak this now".
     stop();
 
     const utterance = new SpeechSynthesisUtterance(cleaned);
@@ -78,23 +98,25 @@ export function useTTS(options: TTSOptions = {}): UseTTSReturn {
 
     if (preferred) utterance.voice = preferred;
 
-    utterance.onstart = () => setIsSpeaking(true);
+    const safeSetSpeaking = (v: boolean) => {
+      if (mountedRef.current) setIsSpeaking(v);
+    };
+
+    utterance.onstart = () => safeSetSpeaking(true);
     utterance.onend = () => {
-      setIsSpeaking(false);
-      utteranceRef.current = null;
-      if (queueRef.current.length > 0) {
-        const next = queueRef.current.shift()!;
-        speak(next);
-      }
+      safeSetSpeaking(false);
+      if (utteranceRef.current === utterance) utteranceRef.current = null;
+      const next = queueRef.current.shift();
+      if (next !== undefined) speak(next);
     };
     utterance.onerror = () => {
-      setIsSpeaking(false);
-      utteranceRef.current = null;
+      safeSetSpeaking(false);
+      if (utteranceRef.current === utterance) utteranceRef.current = null;
     };
 
     utteranceRef.current = utterance;
     window.speechSynthesis.speak(utterance);
-  }, [isEnabled, rate, pitch, stop]);
+  }, [isEnabled, rate, pitch, stop, supported]);
 
   const toggle = useCallback(() => {
     if (isSpeaking) {
@@ -109,11 +131,5 @@ export function useTTS(options: TTSOptions = {}): UseTTSReturn {
     if (!v) stop();
   }, [stop]);
 
-  useEffect(() => {
-    return () => {
-      window.speechSynthesis.cancel();
-    };
-  }, []);
-
-  return { isSpeaking, isEnabled, toggle, speak, stop, setEnabled };
+  return { isSpeaking, isEnabled, supported, toggle, speak, stop, setEnabled };
 }

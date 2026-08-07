@@ -14,12 +14,41 @@ interface AudioRecorderState {
   blob: Blob | null;
   durationMs: number;
   start: () => Promise<void>;
-  stop: () => Blob | null;
+  /** Stops capture and resolves with the finished Blob (or null). */
+  stop: () => Promise<Blob | null>;
   cancel: () => void;
   clear: () => void;
 }
 
 const MIME_TYPE = 'audio/webm';
+
+/** Maps getUserMedia failures to copy written for a student, not a dev. */
+function describeMicError(err: unknown): string {
+  if (err instanceof DOMException) {
+    switch (err.name) {
+      case 'NotAllowedError':
+      case 'PermissionDeniedError':
+        return 'Microphone access is blocked. Allow the mic for this site in your browser’s address-bar icon, then try again.';
+      case 'NotFoundError':
+      case 'DevicesNotFoundError':
+        return 'No microphone found. Check that one is connected and not in use by another app.';
+      case 'NotReadableError':
+      case 'TrackStartError':
+        return 'Your microphone is busy or unavailable. Close other apps using it, then try again.';
+      case 'SecurityError':
+        return 'Microphone access requires a secure (HTTPS) connection.';
+      case 'NotAllowedError':
+        return 'Microphone access is blocked for this site.';
+      case 'OverconstrainedError':
+        return 'No microphone matches the audio settings requested.';
+    }
+  }
+  const msg = err instanceof Error ? err.message : '';
+  if (/denied|blocked|permission/i.test(msg)) {
+    return 'Microphone access is blocked. Allow the mic for this site in your browser’s address-bar icon, then try again.';
+  }
+  return msg || 'Microphone access denied or unavailable.';
+}
 
 export function useAudioRecorder(maxDurationMs = 15 * 60 * 1000): AudioRecorderState {
   const [recording, setRecording] = useState(false);
@@ -36,10 +65,10 @@ export function useAudioRecorder(maxDurationMs = 15 * 60 * 1000): AudioRecorderS
   const streamRef = useRef<MediaStream | null>(null);
   const startTimeRef = useRef(0);
   const timerRef = useRef<number | null>(null);
-
-  // Keep a ref to the latest blob so `stop` can return it synchronously.
-  const blobRef = useRef<Blob | null>(null);
-  blobRef.current = blob;
+  // Resolved by the pending `stop()` when MediaRecorder fires `onstop`.
+  const stopResolveRef = useRef<((blob: Blob | null) => void) | null>(null);
+  // Guards re-entrant stops (auto-stop timer vs explicit user stop).
+  const stoppingRef = useRef(false);
 
   const cleanupStream = useCallback(() => {
     streamRef.current?.getTracks().forEach(t => t.stop());
@@ -53,9 +82,28 @@ export function useAudioRecorder(maxDurationMs = 15 * 60 * 1000): AudioRecorderS
     };
   }, [cleanupStream]);
 
+  const stop = useCallback((): Promise<Blob | null> => {
+    const recorder = recorderRef.current;
+    if (!recorder || recorder.state === 'inactive' || stoppingRef.current) {
+      return Promise.resolve(blob ?? null);
+    }
+    stoppingRef.current = true;
+    return new Promise<Blob | null>((resolve) => {
+      stopResolveRef.current = resolve;
+      try {
+        recorder.stop();
+      } catch {
+        stoppingRef.current = false;
+        stopResolveRef.current = null;
+        resolve(null);
+      }
+    });
+  }, [blob]);
+
   const start = useCallback(async () => {
     setError(null);
     chunksRef.current = [];
+    stoppingRef.current = false;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -70,17 +118,27 @@ export function useAudioRecorder(maxDurationMs = 15 * 60 * 1000): AudioRecorderS
       };
 
       recorder.onstop = () => {
+        stoppingRef.current = false;
         const full = new Blob(chunksRef.current, { type: recorder.mimeType || MIME_TYPE });
         setBlob(full);
         cleanupStream();
         setRecording(false);
-        if (timerRef.current) window.clearInterval(timerRef.current);
+        if (timerRef.current) {
+          window.clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
+        // Resolve any pending stop() promise with the finished blob.
+        stopResolveRef.current?.(full);
+        stopResolveRef.current = null;
       };
 
       recorder.onerror = () => {
+        stoppingRef.current = false;
         setError('Recording failed — please try again.');
         setRecording(false);
         cleanupStream();
+        stopResolveRef.current?.(null);
+        stopResolveRef.current = null;
       };
 
       recorder.start(250);
@@ -90,27 +148,28 @@ export function useAudioRecorder(maxDurationMs = 15 * 60 * 1000): AudioRecorderS
       timerRef.current = window.setInterval(() => {
         const elapsed = Date.now() - startTimeRef.current;
         setDurationMs(elapsed);
-        if (elapsed >= maxDurationMs) stop();
+        if (elapsed >= maxDurationMs && recorderRef.current?.state === 'recording') {
+          void stop();
+        }
       }, 1000);
-    } catch {
-      setError('Microphone access denied or unavailable.');
-      setSupported(false);
+    } catch (e) {
+      setError(describeMicError(e));
+      // `supported` reflects API availability, not permission — keep it
+      // true so a later retry is possible after the user grants access.
+      setSupported(
+        typeof navigator !== 'undefined' && typeof MediaRecorder !== 'undefined' &&
+        (navigator.mediaDevices?.getUserMedia != null),
+      );
+      setRecording(false);
     }
-  }, [maxDurationMs, cleanupStream]);
-
-  const stop = useCallback((): Blob | null => {
-    const recorder = recorderRef.current;
-    if (!recorder || recorder.state === 'inactive') return blobRef.current;
-    try {
-      recorder.stop();
-    } catch {
-      /* no-op */
-    }
-    return blobRef.current;
-  }, []);
+  }, [maxDurationMs, cleanupStream, stop]);
 
   const cancel = useCallback(() => {
-    if (timerRef.current) window.clearInterval(timerRef.current);
+    stoppingRef.current = true;
+    if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
     try {
       recorderRef.current?.stop();
     } catch {
@@ -121,6 +180,9 @@ export function useAudioRecorder(maxDurationMs = 15 * 60 * 1000): AudioRecorderS
     setBlob(null);
     setDurationMs(0);
     cleanupStream();
+    stopResolveRef.current?.(null);
+    stopResolveRef.current = null;
+    stoppingRef.current = false;
   }, [cleanupStream]);
 
   const clear = useCallback(() => {

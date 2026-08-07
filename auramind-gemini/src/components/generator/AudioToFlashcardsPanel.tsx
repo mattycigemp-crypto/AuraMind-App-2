@@ -42,8 +42,9 @@ export function AudioToFlashcardsPanel({ createDeck, addCardsToDeck }: AudioToFl
     }
   };
 
-  const handleRecorded = () => {
-    if (recorder.blob) processAudio(recorder.blob, recorder.blob.type);
+  const handleRecorded = async () => {
+    const blob = await recorder.stop();
+    if (blob) processAudio(blob, blob.type);
   };
 
   const handleUpload = (f: File) => {

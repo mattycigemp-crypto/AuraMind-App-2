@@ -1,4 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  createRecognition,
+  describeSpeechError,
+  getSpeechCapabilities,
+  UNSUPPORTED_STT_ERROR,
+  type SpeechError,
+  type SpeechRecognitionEventLike,
+  type SpeechRecognitionLike,
+} from '../services/voice/speechEngine';
 
 interface SpeechRecognitionOptions {
   continuous?: boolean;
@@ -11,6 +20,7 @@ interface SpeechRecognitionState {
   transcript: string;
   interimTranscript: string;
   isSupported: boolean;
+  /** Friendly, user-actionable message or the raw browser code. */
   error: string | null;
 }
 
@@ -23,77 +33,101 @@ const useSpeechRecognition = (options: SpeechRecognitionOptions = {}) => {
     isSupported: false,
     error: null,
   });
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const mountedRef = useRef(true);
+  // Accumulator so onresult closures never read stale state.
+  const transcriptRef = useRef('');
 
-  const isSupported = typeof window !== 'undefined' &&
-    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
+  const supported = typeof window !== 'undefined' && getSpeechCapabilities().stt;
 
   useEffect(() => {
-    if (!isSupported) {
-      setState(s => ({ ...s, isSupported: false }));
-      return;
-    }
-    setState(s => ({ ...s, isSupported: true }));
-  }, [isSupported]);
+    setState(s => ({ ...s, isSupported: supported }));
+  }, [supported]);
+
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      const active = recognitionRef.current;
+      recognitionRef.current = null;
+      if (active) {
+        try {
+          active.stop();
+        } catch { /* already stopped */ }
+      }
+    };
+  }, []);
 
   const startListening = useCallback(() => {
-    if (!isSupported) return;
+    if (!supported) {
+      setState(s => ({ ...s, isSupported: false, error: UNSUPPORTED_STT_ERROR.message }));
+      return;
+    }
 
-    const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    const recognition = new SpeechRecognitionAPI();
-    recognition.continuous = continuous;
-    recognition.interimResults = interimResults;
-    recognition.lang = lang;
+    const recognition = createRecognition({ lang, continuous, interimResults });
+    if (!recognition) {
+      setState(s => ({ ...s, isSupported: false, error: UNSUPPORTED_STT_ERROR.message }));
+      return;
+    }
 
-    recognition.onresult = (event: any) => {
-      let finalTranscript = '';
-      let interimTranscript = '';
+    recognitionRef.current = recognition;
+    transcriptRef.current = '';
+    setState(s => ({ ...s, isListening: true, transcript: '', interimTranscript: '', error: null }));
+
+    recognition.onstart = () => {
+      if (mountedRef.current) setState(s => ({ ...s, isListening: true, error: null }));
+    };
+
+    recognition.onresult = (event: SpeechRecognitionEventLike) => {
+      if (!mountedRef.current) return;
+      let finalTranscript = transcriptRef.current;
+      let interim = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
           finalTranscript += result[0].transcript;
         } else {
-          interimTranscript += result[0].transcript;
+          interim += result[0].transcript;
         }
       }
-      setState(prev => ({
-        ...prev,
-        transcript: prev.transcript + finalTranscript,
-        interimTranscript,
-      }));
+      transcriptRef.current = finalTranscript;
+      setState(prev => ({ ...prev, transcript: finalTranscript, interimTranscript: interim, isListening: true }));
     };
 
-    recognition.onerror = (event: any) => {
-      setState(prev => ({ ...prev, error: event.error, isListening: false }));
+    recognition.onerror = (event: { error: string; message?: string }) => {
+      if (!mountedRef.current) return;
+      const err: SpeechError = describeSpeechError(event.error);
+      setState(prev => ({ ...prev, error: err.message, isListening: false }));
     };
 
     recognition.onend = () => {
-      setState(prev => ({ ...prev, isListening: false }));
+      if (!mountedRef.current) return;
+      recognitionRef.current = null;
+      setState(prev => ({ ...prev, isListening: false, interimTranscript: '' }));
     };
 
-    recognitionRef.current = recognition;
-    recognition.start();
-    setState(prev => ({ ...prev, isListening: true, error: null }));
-  }, [isSupported, continuous, interimResults, lang]);
+    try {
+      recognition.start();
+    } catch {
+      if (mountedRef.current) {
+        setState(prev => ({ ...prev, isListening: false }));
+      }
+    }
+  }, [supported, lang, continuous, interimResults]);
 
   const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
+    const active = recognitionRef.current;
+    recognitionRef.current = null;
+    if (active) {
+      try {
+        active.stop();
+      } catch { /* already stopped */ }
     }
     setState(prev => ({ ...prev, isListening: false }));
   }, []);
 
   const resetTranscript = useCallback(() => {
+    transcriptRef.current = '';
     setState(prev => ({ ...prev, transcript: '', interimTranscript: '' }));
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
   }, []);
 
   return {
@@ -105,6 +139,3 @@ const useSpeechRecognition = (options: SpeechRecognitionOptions = {}) => {
 };
 
 export default useSpeechRecognition;
-
-
-

@@ -31,6 +31,32 @@ export interface UseMicVolumeResult {
  *  - getUserMedia requires HTTPS or localhost. In non-secure contexts
  *    the call rejects and we surface the error.
  */
+/**
+ * Maps getUserMedia failures to copy written for a student, not a dev.
+ */
+function describeMicError(err: unknown): string {
+  if (err instanceof DOMException) {
+    switch (err.name) {
+      case 'NotAllowedError':
+      case 'PermissionDeniedError':
+        return 'Microphone access is blocked. Allow the mic for this site in your browser’s address-bar icon, then try again.';
+      case 'NotFoundError':
+      case 'DevicesNotFoundError':
+        return 'No microphone found. Check that one is connected and not in use by another app.';
+      case 'NotReadableError':
+      case 'TrackStartError':
+        return 'Your microphone is busy or unavailable. Close other apps using it, then try again.';
+      case 'SecurityError':
+        return 'Microphone access requires a secure (HTTPS) connection.';
+    }
+  }
+  const msg = err instanceof Error ? err.message : '';
+  if (/denied|blocked|permission/i.test(msg)) {
+    return 'Microphone access is blocked. Allow the mic for this site in your browser’s address-bar icon, then try again.';
+  }
+  return msg || 'Microphone unavailable.';
+}
+
 export function useMicVolume(): UseMicVolumeResult {
   const [level, setLevel] = useState(0);
   const [isActive, setIsActive] = useState(false);
@@ -45,7 +71,7 @@ export function useMicVolume(): UseMicVolumeResult {
   const start = useCallback(async () => {
     if (isStartingRef.current || isActive) return;
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      setError('getUserMedia is not available in this environment.');
+      setError('Microphone access needs a secure (HTTPS) connection to work.');
       return;
     }
     isStartingRef.current = true;
@@ -83,8 +109,7 @@ export function useMicVolume(): UseMicVolumeResult {
       setIsActive(true);
       setError(null);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'mic unavailable';
-      setError(msg);
+      setError(describeMicError(e));
       setIsActive(false);
     } finally {
       isStartingRef.current = false;
