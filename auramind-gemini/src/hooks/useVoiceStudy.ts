@@ -14,6 +14,7 @@
  *     swallowed, so the UI can tell a denied microphone apart from silence.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useMicLevel } from './useMicLevel';
 import {
   createRecognition,
   describeSpeechError,
@@ -37,6 +38,8 @@ export interface VoiceStudyState {
   voicesReady: boolean;
   transcript: string;
   interimTranscript: string;
+  /** Live normalised mic amplitude, 0..1. Zero unless listening. */
+  level: number;
   /** Last recognition failure, or null. Cleared when listening restarts. */
   error: SpeechError | null;
   clearError: () => void;
@@ -104,6 +107,10 @@ export function useVoiceStudy(options?: {
       alive = false;
     };
   }, [caps.tts]);
+
+  // Metered only while the recogniser is open, so the browser's mic
+  // indicator clears the moment listening stops.
+  const level = useMicLevel(listening);
 
   // ── Speak ──────────────────────────────────────────────────────────────
 
@@ -263,6 +270,7 @@ export function useVoiceStudy(options?: {
     voicesReady,
     transcript,
     interimTranscript,
+    level,
     error,
     clearError,
     speak,
