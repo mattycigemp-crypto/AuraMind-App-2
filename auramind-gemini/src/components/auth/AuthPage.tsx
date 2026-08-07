@@ -16,6 +16,8 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Set when signup needs email confirmation before the account activates.
+  const [confirmEmail, setConfirmEmail] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,11 +42,18 @@ export default function AuthPage() {
 
     try {
       if (mode === "signup") {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
         });
         if (signUpError) throw signUpError;
+        if (!data.session) {
+          // Confirmation emails are enabled — the account activates only after
+          // the user clicks the link. Show an interstitial instead of blindly
+          // navigating (which would bounce straight back to /auth).
+          setConfirmEmail(email);
+          return;
+        }
         navigate("/dashboard");
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -73,6 +82,7 @@ export default function AuthPage() {
         provider: "notion",
         options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
+      setLoading(false);
     } catch (err: any) {
       setError(err.message || "Notion sign-in failed");
       setLoading(false);
@@ -91,6 +101,9 @@ export default function AuthPage() {
         provider: "google",
         options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
+      // Success: the browser redirects to the provider. Exiting the loading
+      // state guards the edge case where the redirect is deferred/blocked.
+      setLoading(false);
     } catch (err: any) {
       setError(err.message || "Google sign-in failed");
       setLoading(false);
@@ -196,8 +209,16 @@ export default function AuthPage() {
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="block text-[#9090A8] text-xs mb-1">Email</label>
+                <label htmlFor="auth-email" className="block text-[#9090A8] text-xs mb-1">
+                  Email
+                </label>
                 <input
+                  id="auth-email"
+                  name="email"
+                  // Without autoComplete/name, password managers neither
+                  // offer to fill nor prompt to save — a direct cost on the
+                  // signup path.
+                  autoComplete="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -207,9 +228,16 @@ export default function AuthPage() {
                 />
               </div>
               <div>
-                <label className="block text-[#9090A8] text-xs mb-1">Password</label>
+                <label htmlFor="auth-password" className="block text-[#9090A8] text-xs mb-1">
+                  Password
+                </label>
                 <div className="relative">
                   <input
+                    id="auth-password"
+                    name="password"
+                    // "new-password" tells a manager to offer a generated
+                    // password on signup and not to autofill the saved one.
+                    autoComplete={mode === "signup" ? "new-password" : "current-password"}
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -220,6 +248,10 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    // Icon-only control: without this it is announced as an
+                    // unlabelled button.
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-pressed={showPassword}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5A5A72] hover:text-[#F0EFFE] text-sm transition-colors"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -228,8 +260,13 @@ export default function AuthPage() {
               </div>
               {mode === "signup" && (
                 <div>
-                  <label className="block text-[#9090A8] text-xs mb-1">Confirm password</label>
+                  <label htmlFor="auth-confirm" className="block text-[#9090A8] text-xs mb-1">
+                    Confirm password
+                  </label>
                   <input
+                    id="auth-confirm"
+                    name="confirmPassword"
+                    autoComplete="new-password"
                     type={showPassword ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
@@ -249,6 +286,27 @@ export default function AuthPage() {
                 {mode === "signup" ? "Start learning" : "Sign in"} →
               </button>
             </form>
+
+            {/* Confirmation required (email confirmations enabled) */}
+            {confirmEmail && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 p-4 rounded-xl bg-violet-500/10 border border-violet-500/20 text-center"
+              >
+                <p className="text-sm font-semibold text-[#F0EFFE] mb-1">Check your inbox 📬</p>
+                <p className="text-xs text-[#9090A8] leading-relaxed mb-3">
+                  We sent a confirmation link to <span className="text-[#8B5CF6] break-all">{confirmEmail}</span>.
+                  Tap it to activate your account — your progress will be waiting when you come back.
+                </p>
+                <button
+                  onClick={() => { setConfirmEmail(null); setMode("login"); }}
+                  className="text-[10px] font-bold text-[#8B5CF6] hover:text-[#7C3AED] uppercase tracking-wider transition-colors"
+                >
+                  Back to sign in
+                </button>
+              </motion.div>
+            )}
             </FrostGlass>
           </BorderBeam>
 

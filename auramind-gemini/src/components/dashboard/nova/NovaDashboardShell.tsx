@@ -14,6 +14,7 @@ import { UserRole } from '../../../types';
 import { isAdminOrHigher, isCeoOrHigher, isOwnerOnly } from '../../../utils/permissions';
 import { AnimatedBrandMark, PulsingDot } from './icons';
 import { PageTransition, Shimmer } from './motion';
+import OnboardingTutorial from '../../shared/OnboardingTutorial';
 
 // ─── Navigation config ──────────────────────────────────────────────────────
 
@@ -230,7 +231,7 @@ function Sidebar({
   const navigate = useNavigate();
   const workspace = useDashboardWorkspace();
   const cards = workspace?.cards || [];
-  const totalDue = cards.filter(c => c.nextReview <= Date.now()).length;
+  const totalDue = cards.filter(c => (c.nextReview ?? 0) <= Date.now()).length;
 
   const isActive = (path: string) => {
     if (path === '/dashboard' || path === '/admin/vault') return location.pathname === path;
@@ -375,7 +376,7 @@ function TopBar({
       .toUpperCase()
       .slice(0, 2) || 'AM';
 
-  const due = workspace?.cards.filter(c => c.nextReview <= Date.now()).length ?? 0;
+  const due = workspace?.cards.filter(c => (c.nextReview ?? 0) <= Date.now()).length ?? 0;
 
   return (
     <header
@@ -518,7 +519,6 @@ interface NovaDashboardShellProps {
 function isImmersivePath(pathname: string): boolean {
   // Full-bleed study runtime: /dashboard/study/:deckId (not the picker).
   if (/^\/dashboard\/study\/[^/]+/.test(pathname)) return true;
-  if (pathname === '/dashboard/onboarding') return true;
   return false;
 }
 
@@ -526,6 +526,57 @@ function isBleedPath(pathname: string): boolean {
   // Fill the content column edge-to-edge (keep chrome, drop max-width padding).
   if (pathname === '/dashboard/chat') return true;
   return isImmersivePath(pathname);
+}
+
+// ─── FirstRunGate ───────────────────────────────────────────────────────────
+// Shows the onboarding tour once, to genuinely new users: no completedTutorials
+// flag has ever been written and they don't own any decks yet. Skipping or
+// completing the tour marks the flag, so it can't re-open on every visit.
+
+const FIRST_RUN_FLAG = 'auramind:completedTutorials';
+
+function readFirstRunFlag(): boolean {
+  try {
+    const stored = localStorage.getItem(FIRST_RUN_FLAG);
+    if (!stored) return false;
+    const completed: unknown[] = JSON.parse(stored);
+    return Array.isArray(completed) && completed.includes('onboarding');
+  } catch {
+    return false;
+  }
+}
+
+function FirstRunGate() {
+  const location = useLocation();
+  const [open, setOpen] = useState(false);
+  const [checked, setChecked] = useState(false);
+
+  React.useEffect(() => {
+    if (checked) return;
+    // Only run on the non-admin dashboard hub; study/:deckId is immersive and
+    // shouldn't fight the tour for focus.
+    if (location.pathname.startsWith('/admin')) return;
+    if (readFirstRunFlag()) {
+      setChecked(true);
+      return;
+    }
+    // Give the dashboard a beat to mount before the modal pops over it.
+    const t = window.setTimeout(() => {
+      setOpen(true);
+      setChecked(true);
+    }, 500);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  if (!open) return null;
+  return (
+    <OnboardingTutorial
+      isOpen
+      onClose={() => setOpen(false)}
+      onComplete={() => setOpen(false)}
+    />
+  );
 }
 
 export function NovaDashboardShell({ children }: NovaDashboardShellProps) {
@@ -630,6 +681,7 @@ export function NovaDashboardShell({ children }: NovaDashboardShellProps) {
           </div>
         </main>
       </div>
+      <FirstRunGate />
     </div>
   );
 }
