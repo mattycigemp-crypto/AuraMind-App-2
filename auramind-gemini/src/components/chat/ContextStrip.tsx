@@ -1,4 +1,4 @@
-import { Layers, Clock, History } from 'lucide-react';
+import { Layers, Clock, History } from '@/components/icons';
 
 interface Props {
   deckName: string;

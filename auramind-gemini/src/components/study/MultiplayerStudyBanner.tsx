@@ -6,7 +6,7 @@
  * has no realtime of its own.
  */
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Wifi, WifiOff, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { Users, Wifi, WifiOff } from '@/components/icons';
 import type { MultiplayerState } from '../../hooks/useMultiplayerStudy';
 
 interface Props {

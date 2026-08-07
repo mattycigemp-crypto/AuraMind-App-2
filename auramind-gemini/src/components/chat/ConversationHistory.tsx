@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   History, X, Plus, Pin, PinOff, Trash2, MessageSquare, Edit2, Check,
-  Search, ArrowRight, Sparkles, Download, CheckSquare, Square,
-} from 'lucide-react';
+  Search, Sparkles, Download, CheckSquare, Square,
+} from '@/components/icons';
 import type { Message } from '../../hooks/useAIChat';
 
 export interface ChatSession {
@@ -195,7 +195,7 @@ export default function ConversationHistory({
         setActiveId(id);
         try {
           window.localStorage.setItem(ACTIVE_KEY, id);
-        } catch {}
+        } catch { /* intentionally ignored */ }
       }
       next.sort((a, b) => {
         if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
@@ -232,7 +232,7 @@ export default function ConversationHistory({
         setActiveId(null);
         try {
           window.localStorage.removeItem(ACTIVE_KEY);
-        } catch {}
+        } catch { /* intentionally ignored */ }
         onNewChat?.();
       }
     },
@@ -302,7 +302,7 @@ export default function ConversationHistory({
       setActiveId(null);
       try {
         window.localStorage.removeItem(ACTIVE_KEY);
-      } catch {}
+      } catch { /* intentionally ignored */ }
       onNewChat?.();
     }
     setSelected(new Set());
@@ -503,7 +503,7 @@ export default function ConversationHistory({
                                   ACTIVE_KEY,
                                   s.id,
                                 );
-                              } catch {}
+                              } catch { /* intentionally ignored */ }
                               onResume(s);
                               setOpen(false);
                             }}

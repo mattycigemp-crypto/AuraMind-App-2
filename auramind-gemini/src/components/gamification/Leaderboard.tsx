@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
-import { Trophy, Medal, Crown, ChevronUp, ChevronDown, Minus, Users, Calendar, Flame } from 'lucide-react';
+import { Trophy, Medal, Crown, ChevronUp, ChevronDown, Minus, Users, Calendar, Flame } from '@/components/icons';
 import { StaggerList } from '../../lib/effects';
 
 interface LeaderboardUser {
@@ -131,7 +131,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ currentUserId, timeFilter = '
             distance={20}
             className="space-y-2"
           >
-            {selectedFilter !== 'daily' && users.slice(0, 3).map((user, index) => (
+            {selectedFilter !== 'daily' && users.slice(0, 3).map((user, _index) => (
               <div
                 key={user.id}
                 className={`flex items-center gap-3 p-3 rounded-lg ${

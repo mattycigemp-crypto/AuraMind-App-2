@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { User } from 'lucide-react';
+import { User } from '@/components/icons';
 import type { Message } from '../../hooks/useAIChat';
 import QuizBlock from './QuizBlock';
 import TypingIndicator from './TypingIndicator';
@@ -159,7 +159,7 @@ function renderInline(text: string): React.ReactNode {
     }
 
     // No more matches — push rest
-    parts.push(<span key={key++}>{remaining}</span>);
+    parts.push(<span key={key}>{remaining}</span>);
     break;
   }
 

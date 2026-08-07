@@ -1,8 +1,8 @@
 // ─── Nova custom SVG icons ─────────────────────────────────────────────────
-// Hand-rolled SVG glyphs that animate on their own where the lucide set is
+// Hand-rolled SVG glyphs that animate on their own where the icon set is
 // not expressive enough. Keep this file small — anything beyond ~4 glyphs
-// should come back to lucide-react so the project's icon language stays
-// consistent.
+// should be added to the vendored set in components/icons so the project's
+// icon language stays consistent.
 
 import { motion } from 'framer-motion';
 import { useRM } from './motion';

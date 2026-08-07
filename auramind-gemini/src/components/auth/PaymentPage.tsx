@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Loader2, Check, Sparkles, ShieldCheck, Brain, Bot, BookOpen, Zap } from 'lucide-react';
+import { ArrowLeft, Loader2, Check, Sparkles, ShieldCheck, Brain, Bot, BookOpen, Zap } from '@/components/icons';
 
 interface PaymentPageProps {
   user: { id: string; email: string; name: string };

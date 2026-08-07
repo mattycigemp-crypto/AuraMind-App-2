@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  BookOpen, Plus, Search, ChevronRight, Clock, Trash2, AlertTriangle, Brain, Edit3,
-} from 'lucide-react';
+  BookOpen, Plus, Search, Trash2, AlertTriangle, Brain, Edit3,
+} from '@/components/icons';
 import { useNavigate } from 'react-router-dom';
 import { useDashboardWorkspace } from '../../../contexts/DashboardWorkspaceContext';
 import {
-  FadeUp, StaggerList, StaggerItem, HoverLift, AnimatedBar, RevealOnScroll,
+  FadeUp, StaggerList, StaggerItem, HoverLift, AnimatedBar,
 } from './motion';
 import { MiniSparkle } from './icons';
 
@@ -194,7 +194,7 @@ function NewDeckModal({ onClose, onCreate }: { onClose: () => void; onCreate: (t
 // ─── NovaLibrary ────────────────────────────────────────────────────────────
 
 export function NovaLibrary() {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const workspace = useDashboardWorkspace();
   const { decks, cards, createDeck, deleteDeck } = workspace!;
 

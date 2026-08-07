@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "@/components/icons";
 import { supabase } from "../../services/database/supabase";
 import { FrostGlass } from "../ui/FrostGlass";
 import { BorderBeam } from "../ui/BorderBeam";

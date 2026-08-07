@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Brain, Zap, Clock, Flame, BookOpen, Play, Sparkles, ChevronRight, AlertCircle } from 'lucide-react';
+import { Brain, Zap, Clock, Flame, BookOpen, Play, Sparkles, ChevronRight, AlertCircle } from '@/components/icons';
 import { useDashboardWorkspace } from '../../../contexts/DashboardWorkspaceContext';
 import {
   CountUp, FadeUp, StaggerList, StaggerItem, HoverLift, RevealOnScroll, MagneticButton,
@@ -37,7 +37,7 @@ const DECK_ACCENT_CLASSES: Record<string, string> = {
   cyan: 'from-cyan-500/20 to-cyan-600/10 border-cyan-500/20 hover:border-cyan-500/40',
 };
 
-function StudyDeckCard({ deck, cards, accent, label, onClick, i }: {
+function StudyDeckCard({ deck, cards, accent, label, onClick, i: _i }: {
   deck: any; cards: any[]; accent: string; label: string; onClick: () => void; i: number;
 }) {
   const due = cards.filter(c => c.deckId === deck.id && c.nextReview <= Date.now()).length;
@@ -133,9 +133,9 @@ export function NovaStudy() {
     const n: typeof decks = [];
     for (const deck of decks) {
       const deckCards = cards.filter(c => c.deckId === deck.id);
-      const hasOverdue = deckCards.some(c => c.nextReview > 0 && c.nextReview < now);
-      const hasDueToday = deckCards.some(c => c.nextReview >= now && c.nextReview <= todayEnd.getTime());
-      const hasReviewed = deckCards.some(c => c.lastReviewed > 0);
+      const hasOverdue = deckCards.some(c => (c.nextReview ?? 0) > 0 && (c.nextReview ?? 0) < now);
+      const hasDueToday = deckCards.some(c => (c.nextReview ?? 0) >= now && (c.nextReview ?? 0) <= todayEnd.getTime());
+      const hasReviewed = deckCards.some(c => (c.lastReviewed ?? 0) > 0);
       if (hasOverdue) o.push(deck);
       else if (hasDueToday) d.push(deck);
       else if (hasReviewed) n.push(deck);
@@ -143,10 +143,10 @@ export function NovaStudy() {
     return { overdue: o, dueToday: d, noDue: n };
   }, [decks, cards, now, todayEnd]);
 
-  const totalDue = cards.filter(c => c.nextReview > 0 && c.nextReview <= todayEnd.getTime()).length;
+  const totalDue = cards.filter(c => (c.nextReview ?? 0) > 0 && (c.nextReview ?? 0) <= todayEnd.getTime()).length;
   const studiedToday = cards.filter(c => {
     const d = new Date(); d.setHours(0, 0, 0, 0);
-    return c.lastReviewed >= d.getTime();
+    return (c.lastReviewed ?? 0) >= d.getTime();
   }).length;
 
   return (
@@ -164,7 +164,7 @@ export function NovaStudy() {
           <MagneticButton
             onClick={() => {
               if (decks.length > 0 && totalDue > 0) {
-                const dueDeck = decks.find(d => cards.some(c => c.deckId === d.id && c.nextReview <= todayEnd.getTime()));
+                const dueDeck = decks.find(d => cards.some(c => c.deckId === d.id && (c.nextReview ?? 0) <= todayEnd.getTime()));
                 navigate(`/dashboard/study/${dueDeck?.id || decks[0]?.id}`);
               } else if (decks.length > 0) {
                 navigate(`/dashboard/study/${decks[0].id}`);
@@ -191,7 +191,7 @@ export function NovaStudy() {
       {overdue.length > 0 && (
         <StudySection title="Overdue" icon={AlertCircle} accent="text-rose-400" delay={0.05}>
           {overdue.map((deck, i) => {
-            const due = cards.filter(c => c.deckId === deck.id && c.nextReview < now).length;
+            const due = cards.filter(c => c.deckId === deck.id && (c.nextReview ?? 0) < now).length;
             return (
               <StudyDeckCard
                 key={deck.id} deck={deck} cards={cards} accent="rose"

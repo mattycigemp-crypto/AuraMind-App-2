@@ -1,12 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  Send, X, BookOpen, Lightbulb, HelpCircle, Wand2,
-  Copy, Check, RotateCcw, ArrowUp, ChevronDown,
+import { X, BookOpen, Lightbulb, HelpCircle, Wand2,
+  Copy, Check, ArrowUp,
   Plus, Edit3, Sparkles, Target, MessageCircle, BrainCircuit,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useAuraContext, StudyContext, AuraEntrypoint } from '../../contexts/AuraContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
 import { TextSplit } from '../../lib/effects';
 import { groqChat, groqChatStream } from '../../services/api/groqClient';
@@ -104,7 +103,7 @@ function MessageBubble({
     const elements: React.ReactNode[] = [];
     let inCodeBlock = false;
     let codeContent = '';
-    let codeLang = '';
+    let _codeLang = '';
 
     lines.forEach((line, i) => {
       if (line.startsWith('```')) {
@@ -118,7 +117,7 @@ function MessageBubble({
           inCodeBlock = false;
         } else {
           inCodeBlock = true;
-          codeLang = line.slice(3);
+          _codeLang = line.slice(3);
         }
         return;
       }
@@ -233,7 +232,7 @@ const QUICK_PROMPTS: QuickPrompt[] = [
       if (ctx.quiz) return `Explain why this answer is wrong:\n\n**Question:** ${ctx.quiz.question}\n**My answer:** ${ctx.quiz.userAnswer}\n**Correct answer:** ${ctx.quiz.correctAnswer}`;
       return 'Can you explain the concept I\'m studying?';
     },
-    buildSystem: (ctx) => {
+    buildSystem: (_ctx) => {
       return `You are Aura, a study tutor. The student is reviewing flashcards. Explain the concept clearly, using analogies and examples. If a card is provided, explain WHY the answer is what it is, not just restating it. Keep it concise (3-5 paragraphs max). Use markdown formatting.`;
     },
   },
@@ -340,7 +339,7 @@ const DIAGNOSTIC_QUESTIONS = [
 // ─── Main ChatPage with Prof. Aura personality ────────────────────────────
 
 export default function ChatPage() {
-  const navigate = useNavigate();
+  const _navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { studyContext, setStudyContext, clearContext, hasContext } = useAuraContext();
   const ws = useDashboardWorkspace();
@@ -379,7 +378,7 @@ export default function ChatPage() {
 
   // Handle diagnostic completion
   const handleDiagComplete = () => {
-    const answers = Object.values(diagAnswers).join(', ');
+    const _answers = Object.values(diagAnswers).join(', ');
     const params = new URLSearchParams();
     params.set('q', `I'm a ${diagAnswers.q3 || 'student'} who struggles with ${diagAnswers.q1 || 'retention'}. I review ${diagAnswers.q2 || '10-30'} cards daily. Help me build a personalized study plan.`);
     setShowDiagnostic(false);
@@ -862,7 +861,7 @@ function buildContextPrompt(ctx: StudyContext): string {
   return prompt;
 }
 
-function generateDemoActions(input: string, ctx: StudyContext | null): MessageAction[] {
+function generateDemoActions(input: string, _ctx: StudyContext | null): MessageAction[] {
   const actions: MessageAction[] = [];
 
   if (input.toLowerCase().includes('explain') || input.toLowerCase().includes('what is')) {

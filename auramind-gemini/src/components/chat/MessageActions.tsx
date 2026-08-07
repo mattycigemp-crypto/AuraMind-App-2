@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check, ThumbsUp, ThumbsDown, RotateCcw, PlusCircle, MoreHorizontal } from 'lucide-react';
+import { Copy, Check, ThumbsUp, ThumbsDown, RotateCcw, PlusCircle } from '@/components/icons';
 
 interface Props {
   /** Plain text content to copy on Copy-click. */

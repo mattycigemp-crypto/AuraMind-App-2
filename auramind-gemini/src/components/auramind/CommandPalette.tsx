@@ -20,7 +20,7 @@ import {
   Wrench,
   Key,
   Globe,
-} from "lucide-react";
+} from "@/components/icons";
 import { useAuraMind } from "@/lib/auramind/store";
 import type { ViewKey } from "@/lib/auramind/types";
 import {

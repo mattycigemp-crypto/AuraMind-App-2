@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import { motion, useScroll, useTransform, AnimatePresence, useSpring } from "motion/react";
+import { motion, useScroll, useTransform, AnimatePresence, useSpring } from 'framer-motion';
 import { animate, createScope } from "animejs";
 import { Particles } from "@/components/ui/particles";
 import { Meteors } from "@/components/ui/meteors";
@@ -20,7 +20,6 @@ import {
   Rocket,
   BookOpen,
   BarChart3,
-  Clock,
   Target,
   Trophy,
   Sun,
@@ -28,7 +27,7 @@ import {
   Github,
   Twitter,
   HeartHandshake,
-} from "lucide-react";
+} from "@/components/icons";
 
 // ── ANIME.JS CUSTOM HOOK ──────────────────────────────────────
 function useAnimeScope() {
@@ -182,7 +181,7 @@ function AnimeJSDemo() {
         { value: "50%", duration: 400, delay: 100 },
         { value: "16px", duration: 400 },
       ],
-      delay: (el: Element, i: number) => i * 80 as any,
+      delay: (_el, i) => (i ?? 0) * 80,
       loop: 1,
     });
 

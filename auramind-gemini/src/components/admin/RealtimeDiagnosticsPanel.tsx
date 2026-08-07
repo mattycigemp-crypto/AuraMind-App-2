@@ -16,7 +16,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   Activity,
-  Wifi,
   WifiOff,
   RefreshCw,
   Zap,
@@ -25,13 +24,12 @@ import {
   AlertTriangle,
   Radio,
   Server,
-} from 'lucide-react';
+} from '@/components/icons';
 import {
-  getConnectionStatus,
   onConnectionStatusChange,
   type RealtimeConnectionStatus,
 } from '@/services/notifications/realtimeNotifications';
-import { getServiceStatus, type ServiceDefinition } from '@/lib/serviceLoader';
+import { getServiceStatus } from '@/lib/serviceLoader';
 import { supabase } from '@/services/database/supabase';
 
 // ─── Types ─────────────────────────────────────────────────────
@@ -64,8 +62,8 @@ export function RealtimeDiagnosticsPanel() {
   });
   const [pingResult, setPingResult] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const startTimeRef = useRef(Date.now());
-  const messageCountRef = useRef(0);
-  const windowStartRef = useRef(Date.now());
+  const _messageCountRef = useRef(0);
+  const _windowStartRef = useRef(Date.now());
 
   // ─── Subscribe to global connection status ──────────────────
   useEffect(() => {

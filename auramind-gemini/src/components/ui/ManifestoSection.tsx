@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import { Star } from "lucide-react";
+import { Star } from "@/components/icons";
 import { VideoBackground } from "./VideoBackground";
 
 export function ManifestoSection() {

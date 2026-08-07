@@ -156,10 +156,10 @@ export {
   Network as NetworkIcon,
   ZoomIn as ZoomInIcon,
   ZoomOut as ZoomOutIcon,
-} from 'lucide-react';
+} from '@/components/icons';
 
 export {
   PanelLeft as SidebarIcon,
   PanelLeftClose as SidebarCloseIcon,
   PanelLeftOpen as SidebarOpenIcon,
-} from 'lucide-react';
+} from '@/components/icons';

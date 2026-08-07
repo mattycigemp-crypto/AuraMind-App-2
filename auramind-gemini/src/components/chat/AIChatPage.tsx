@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Send, Sparkles, ArrowLeft, Square, Mic, MicOff, ArrowRight, Clock, MessageCircle, Volume2, VolumeX } from 'lucide-react';
+import { Send, Sparkles, ArrowLeft, Square, Mic, MicOff, ArrowRight, Clock, MessageCircle, Volume2, VolumeX } from '@/components/icons';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
 import { useAIChat, type ChatContext, type ChatMode, type ProfAuraPersonality } from '../../hooks/useAIChat';
 import { useCurrentUserId } from '../../hooks/useCurrentUserId';
@@ -34,7 +34,7 @@ const MODES: ChatMode[] = ['study', 'companion'];
 
 function buildInitialContext(decks: Deck[], cards: Card[]): ChatContext {
   const deck = decks[0];
-  const dueCount = cards.filter(c => c.deckId === deck?.id && c.nextReview <= Date.now()).length;
+  const dueCount = cards.filter(c => c.deckId === deck?.id && (c.nextReview ?? 0) <= Date.now()).length;
   return {
     deckId: deck?.id || '',
     deckName: deck?.title || 'No deck selected',
@@ -118,13 +118,13 @@ export default function AIChatPage() {
   // useAIChat must be declared BEFORE any useEffect that depends on chat.mode,
   // since hooks must appear in a stable order. The next two useEffects
   // adapt `context` based on deck selection AND chat.mode, so chat lives here.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   const chat = useAIChat(context);
 
   const decks = workspace?.decks ?? localDecks;
   const cards = workspace?.cards ?? localCards;
   const selectedDeck = decks.find(d => d.id === selectedDeckId) || decks[0];
-  const dueCount = cards.filter(c => c.deckId === selectedDeck?.id && c.nextReview <= Date.now()).length;
+  const dueCount = cards.filter(c => c.deckId === selectedDeck?.id && (c.nextReview ?? 0) <= Date.now()).length;
 
   useEffect(() => {
     if (workspace) return;
@@ -164,7 +164,7 @@ export default function AIChatPage() {
       return;
     }
     if (selectedDeck) {
-      const due = cards.filter(c => c.deckId === selectedDeck.id && c.nextReview <= Date.now()).length;
+      const due = cards.filter(c => c.deckId === selectedDeck.id && (c.nextReview ?? 0) <= Date.now()).length;
       const weak = cards
         .filter(c => c.deckId === selectedDeck.id && (c.fsrsState?.lapses ?? 0) > 2)
         .sort((a, b) => (b.fsrsState?.lapses ?? 0) - (a.fsrsState?.lapses ?? 0))

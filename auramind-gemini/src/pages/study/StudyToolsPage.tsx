@@ -9,7 +9,7 @@
  * /dashboard/study-tools.
  */
 import React from 'react';
-import { Mic2, FileText } from 'lucide-react';
+import { Mic2, FileText } from '@/components/icons';
 import { DocumentToStudyTool } from '../../components/generator/DocumentToStudyTool';
 import { AudioToFlashcardsPanel } from '../../components/generator/AudioToFlashcardsPanel';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';

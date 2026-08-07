@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { Globe, Radio } from 'lucide-react';
+import { Globe, Radio } from '@/components/icons';
 import { useAuraHubPresence, type OnlineUser } from '../../hooks/useAuraHubPresence';
 
 interface AuraHubWidgetProps {

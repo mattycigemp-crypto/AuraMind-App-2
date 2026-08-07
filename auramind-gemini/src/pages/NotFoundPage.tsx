@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, ArrowLeft, Store } from 'lucide-react';
+import { Home, ArrowLeft, Store } from '@/components/icons';
 import ProfAuraEmptyState from '../components/ui/ProfAuraEmptyState';
 
 // NotFoundPage: Prof. Aura rescues the user from a dead route. Three concrete

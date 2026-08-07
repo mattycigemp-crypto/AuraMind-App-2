@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@/components/icons";
 import { useState } from "react";
 import type { FlashcardData } from "@/lib/auramind/types";
 

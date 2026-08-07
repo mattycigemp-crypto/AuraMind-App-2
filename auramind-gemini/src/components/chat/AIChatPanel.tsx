@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Send } from 'lucide-react';
+import { X, Loader2, Send } from '@/components/icons';
 import { useAIChat, type ChatContext, type ChatMode } from '../../hooks/useAIChat';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
 import ContextStrip from './ContextStrip';

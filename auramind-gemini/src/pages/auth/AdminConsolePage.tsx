@@ -3,9 +3,9 @@ import {
   Users, DollarSign, BarChart3, TrendingUp, RefreshCw, Shield, Database,
   Search, Edit3, Trash2, X, Check, AlertTriangle, Activity,
   Code, Zap,
-} from 'lucide-react';
+} from '@/components/icons';
 import PageShell from '../../components/dashboard/PageShell';
-import { supabase } from '../../services/database/supabase';
+import { supabase, requireSupabase } from '../../services/database/supabase';
 
 // ============================================================
 // TYPES
@@ -148,7 +148,7 @@ export default function AdminConsolePage() {
     try {
       if (!supabase) throw new Error('Supabase not configured');
 
-      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const token = (await requireSupabase().auth.getSession()).data.session?.access_token;
       const apiBase = import.meta.env.VITE_API_BASE_URL || '';
 
       // Fetch users via admin API
@@ -226,7 +226,7 @@ export default function AdminConsolePage() {
     setSavingUser(true);
 
     try {
-      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const token = (await requireSupabase().auth.getSession()).data.session?.access_token;
       const apiBase = import.meta.env.VITE_API_BASE_URL || '';
       if (!token) throw new Error('Not authenticated');
 
@@ -264,7 +264,7 @@ export default function AdminConsolePage() {
   const handleDeleteUser = async (userId: string) => {
     setDeletingUser(userId);
     try {
-      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const token = (await requireSupabase().auth.getSession()).data.session?.access_token;
       const apiBase = import.meta.env.VITE_API_BASE_URL || '';
       if (!token) throw new Error('Not authenticated');
 
@@ -296,7 +296,7 @@ export default function AdminConsolePage() {
   const fetchAuditLogs = useCallback(async () => {
     setAuditLoading(true);
     try {
-      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const token = (await requireSupabase().auth.getSession()).data.session?.access_token;
       const apiBase = import.meta.env.VITE_API_BASE_URL || '';
       if (!token) throw new Error('Not authenticated');
 
@@ -331,7 +331,7 @@ export default function AdminConsolePage() {
     setSqlResult(null);
 
     try {
-      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const token = (await requireSupabase().auth.getSession()).data.session?.access_token;
       const apiBase = import.meta.env.VITE_API_BASE_URL || '';
       if (!token) throw new Error('Not authenticated');
 
@@ -360,7 +360,7 @@ export default function AdminConsolePage() {
   const runSystemTest = async () => {
     setSystemTestRunning(true);
     try {
-      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const token = (await requireSupabase().auth.getSession()).data.session?.access_token;
       const apiBase = import.meta.env.VITE_API_BASE_URL || '';
       if (!token) throw new Error('Not authenticated');
 

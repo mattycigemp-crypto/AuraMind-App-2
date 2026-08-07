@@ -17,7 +17,7 @@ import {
   Eye,
   Shuffle,
   Play,
-} from 'lucide-react';
+} from '@/components/icons';
 import {
   buildMemoryPalace,
   effectiveMaxItems,

@@ -14,7 +14,7 @@ import {
   Hourglass,
   Eye,
   HeartHandshake,
-} from 'lucide-react';
+} from '@/components/icons';
 import { chipCopyForProfile, type ProfileChipCopy } from '../../services/study/fsrsAdaptation';
 
 const TONE_CLASSES: Record<ProfileChipCopy['tone'], string> = {

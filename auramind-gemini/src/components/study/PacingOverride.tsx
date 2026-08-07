@@ -18,7 +18,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gauge } from 'lucide-react';
+import { Gauge } from '@/components/icons';
 
 export type PacingMode = 'auto' | 'easier' | 'harder';
 

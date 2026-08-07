@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, RefreshCw, ZoomIn, ZoomOut, Maximize2, FileDown } from 'lucide-react';
+import { X, RefreshCw, ZoomIn, ZoomOut, Maximize2, FileDown } from '@/components/icons';
 import { generateMindMap, type MindMapNode, type MindMapData } from '../../services/api/mindMapService';
 import { useFeatureFlag } from '../../hooks/useFeatureFlag';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';

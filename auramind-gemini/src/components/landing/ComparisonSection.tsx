@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Minus } from "lucide-react";
+import { Check, Minus } from "@/components/icons";
 import {
   StaggerList,
   useScrollReveal,

@@ -10,7 +10,7 @@
  */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, NotebookPen, Presentation, Layers, Sparkles, Check, Download } from 'lucide-react';
+import { FileText, NotebookPen, Presentation, Layers, Sparkles, Check, Download } from '@/components/icons';
 import { extractStudyAssetText } from '../../services/import/documentImportService';
 import { generateOrganizedNotes, generatePresentation, type StudyNotes, type Slide } from '../../services/study/documentToStudyService';
 import { generateFlashcards, type GeneratedCard } from '../../services/api/groqService';

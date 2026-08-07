@@ -11,9 +11,9 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  Search, RefreshCw, Edit3, Trash2, Check, X, AlertTriangle, Users, ShieldCheck,
-} from 'lucide-react';
-import { supabase } from '../../services/database/supabase';
+  Search, RefreshCw, Edit3, Trash2, Check, X, AlertTriangle, Users,
+} from '@/components/icons';
+import { requireSupabase } from '../../services/database/supabase';
 
 interface AdminUser {
   id: string;
@@ -29,7 +29,7 @@ interface AdminUser {
 const API = () => import.meta.env.VITE_API_BASE_URL || '';
 
 async function apiCall(path: string, init?: RequestInit): Promise<{ ok: boolean; json?: any; error?: string }> {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = (await requireSupabase().auth.getSession()).data.session?.access_token;
   if (!token) return { ok: false, error: 'Not authenticated' };
   const res = await fetch(`${API()}${path}`, {
     ...init,

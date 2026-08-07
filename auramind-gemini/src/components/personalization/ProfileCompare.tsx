@@ -15,7 +15,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeftRight, ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowLeftRight, ArrowRight, Sparkles } from '@/components/icons';
 import type { Card } from '../../types';
 import {
   CATALOG_LABELS,

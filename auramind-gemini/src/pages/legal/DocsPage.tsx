@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Zap, Brain, Repeat, BarChart3, Puzzle, MessageSquare, Shield, Rocket } from 'lucide-react';
+import { ArrowLeft, BookOpen, Zap, Brain, Repeat, Puzzle, MessageSquare, Rocket } from '@/components/icons';
 import { CogniWordmark } from '../../components/brand/CogniWordmark';
 import { LEGAL_COPYRIGHT_LINE } from '../../lib/branding';
 

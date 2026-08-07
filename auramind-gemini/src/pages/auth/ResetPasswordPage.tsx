@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Mail, ArrowLeft, CheckCircle, Loader2, Lock } from 'lucide-react';
+import { Mail, ArrowLeft, CheckCircle, Loader2, Lock } from '@/components/icons';
 import { supabase } from '../../services/database/supabase';
 
 export default function ResetPasswordPage() {

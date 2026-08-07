@@ -7,7 +7,7 @@
  */
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Users, ClipboardCheck, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { Users, ClipboardCheck, ArrowLeft, ShieldCheck } from '@/components/icons';
 
 const linkBase =
   'inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[11px] font-medium transition-colors';

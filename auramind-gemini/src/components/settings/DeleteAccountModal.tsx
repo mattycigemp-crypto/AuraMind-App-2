@@ -11,8 +11,8 @@
  * logs the reason before destroying the record.
  */
 import React, { useMemo, useState } from 'react';
-import { AlertTriangle, X, Loader2, Shield } from 'lucide-react';
-import { supabase } from '../../services/database/supabase';
+import { AlertTriangle, X, Loader2, Shield } from '@/components/icons';
+import { requireSupabase } from '../../services/database/supabase';
 
 const REASONS = [
   'It costs too much',
@@ -57,7 +57,7 @@ export function DeleteAccountModal({ open, onClose, onDeleted }: Props) {
       .map(([k]) => k)
       .join(', ');
     try {
-      const token = (await supabase.auth.getSession()).data.session?.access_token;
+      const token = (await requireSupabase().auth.getSession()).data.session?.access_token;
       if (!token) throw new Error('Not authenticated');
       const api = import.meta.env.VITE_API_BASE_URL || '';
       const res = await fetch(`${api}/api/account/delete`, {

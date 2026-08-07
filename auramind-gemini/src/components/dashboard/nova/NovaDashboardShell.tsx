@@ -7,7 +7,7 @@ import {
   Shield, Users, CreditCard, UserPlus, FileText,
   Database, ScrollText, Activity, Monitor, Radio,
   DollarSign, Wrench, Key, Globe, Play, LogOut,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDashboardWorkspace } from '../../../contexts/DashboardWorkspaceContext';
 import { UserRole } from '../../../types';

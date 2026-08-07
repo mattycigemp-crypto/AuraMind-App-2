@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { ChatMode, Message } from '../../hooks/useAIChat';
-import { Sparkles, ArrowRight, RotateCcw, Lightbulb, Brain, FlaskConical, ListChecks } from 'lucide-react';
+import { Sparkles, ArrowRight, RotateCcw, Lightbulb, Brain, FlaskConical, ListChecks } from '@/components/icons';
 
 interface Props {
   mode: ChatMode;
@@ -80,7 +80,7 @@ function pickForSignal(signal: Signal, deckName: string, weakFirstTerm?: string)
         { label: 'Harder next', prompt: 'Throw a harder follow-up on the same idea.', icon: 'arrow' },
         { label: 'Common traps', prompt: 'What\'s the trap answer here, and how do I learn to avoid it?', icon: 'bulb' },
         { label: 'My weak spot?', prompt: weakFirstTerm
-          ? `I keep missing \"${weakFirstTerm}\" — give me a deeper treatment.`
+          ? `I keep missing "${weakFirstTerm}" — give me a deeper treatment.`
           : 'Pattern-match my recent misses and tell me my biggest gap.', icon: 'brain' },
       ];
     case 'showed_code':

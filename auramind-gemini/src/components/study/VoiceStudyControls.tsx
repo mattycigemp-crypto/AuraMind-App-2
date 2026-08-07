@@ -11,9 +11,10 @@
  * interactions live inside useVoiceStudy, and answer grading lives in
  * voiceEvaluationService. No coupling to the StudyModePage's state.
  */
-import React, { useCallback, useRef, useState } from 'react';
-import { Volume2, Mic, Square, MicOff, Headphones } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Volume2, Mic, MicOff, Headphones } from '@/components/icons';
 import { useVoiceStudy } from '../../hooks/useVoiceStudy';
+import { VoiceOrb, MicBlockedArt, type VoiceOrbState } from '../graphics';
 import { evaluateSpokenAnswer, type VoiceVerdict } from '../../services/study/voiceEvaluationService';
 
 interface VoiceStudyControlsProps {
@@ -34,10 +35,14 @@ export function VoiceStudyControls({
   const [handsFree, setHandsFree] = useState(false);
   const [verdict, setVerdict] = useState<VoiceVerdict | null>(null);
   const [evaluating, setEvaluating] = useState(false);
-  const answerRef = useRef('');
-  answerRef.current = answer;
+  // Written in an effect, not during render — assigning to a ref in the
+  // render body is a side effect and breaks under concurrent rendering.
+  const answerRef = useRef(answer);
   const nextRef = useRef(onRequestNextCard);
-  nextRef.current = onRequestNextCard;
+  useEffect(() => {
+    answerRef.current = answer;
+    nextRef.current = onRequestNextCard;
+  }, [answer, onRequestNextCard]);
 
   const handleTranscript = useCallback(
     async (spoken: string) => {
@@ -65,6 +70,18 @@ export function VoiceStudyControls({
     onTranscript: handleTranscript,
     rate: 1,
   });
+
+  // The orb is a readout of the engine, so state is derived rather than
+  // stored — it can never drift from what the hook is actually doing.
+  const orbState: VoiceOrbState = voice.error?.needsPermission
+    ? 'blocked'
+    : voice.listening
+      ? 'listening'
+      : voice.speaking
+        ? 'speaking'
+        : evaluating
+          ? 'thinking'
+          : 'idle';
 
   const toggleHandsFree = () => {
     const next = !handsFree;
@@ -100,6 +117,19 @@ export function VoiceStudyControls({
 
   return (
     <div className="flex flex-col items-center gap-3 w-full">
+      <VoiceOrb
+        state={orbState}
+        level={voice.level}
+        size={72}
+        className={
+          orbState === 'blocked'
+            ? 'text-red-400/80'
+            : orbState === 'idle'
+              ? 'text-[#5A5A72]'
+              : 'text-[#8B5CF6]'
+        }
+      />
+
       <div className="flex items-center gap-2">
         {/* Hands-Free Mode */}
         <button
@@ -144,14 +174,11 @@ export function VoiceStudyControls({
       {/* Transcript + verdict */}
       {(voice.listening || voice.interimTranscript || voice.transcript || verdict) && (
         <div className="w-full max-w-md rounded-lg border border-[#2A2A3A] bg-[#0D0D14]/80 backdrop-blur-sm px-4 py-3 text-center">
+          {/* No status dot here — the orb above already carries the
+              listening state, and two indicators for one state read as
+              two different things happening. */}
           {voice.listening && (
-            <div className="text-[11px] text-[#8B5CF6] mb-1 flex items-center justify-center gap-1.5">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8B5CF6] opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#8B5CF6]" />
-              </span>
-              Listening — answer aloud
-            </div>
+            <div className="text-[11px] text-[#8B5CF6] mb-1">Listening — answer aloud</div>
           )}
           {(voice.interimTranscript || voice.transcript) && (
             <p className="text-xs text-[#F0EFFE] italic">
@@ -170,9 +197,35 @@ export function VoiceStudyControls({
         </div>
       )}
 
-      {!voice.supported && (
+      {/* One place for every failure. Permission problems get the
+          address-bar illustration because the fix is a click the user has
+          to find; everything else gets a line and a retry. */}
+      {voice.error && (
+        <div
+          role="status"
+          className="w-full max-w-md rounded-lg border border-[#2A2A3A] bg-[#0D0D14]/80 px-4 py-3 text-center"
+        >
+          {voice.error.needsPermission && (
+            <MicBlockedArt size={132} className="mx-auto mb-2 text-red-400/70" />
+          )}
+          <p className="text-xs text-[#F0EFFE]">{voice.error.message}</p>
+          {voice.error.recoverable && (
+            <button
+              onClick={() => {
+                voice.clearError();
+                voice.startListening();
+              }}
+              className="mt-2 h-7 px-3 rounded-md border border-[#2A2A3A] text-[11px] text-[#8B5CF6] hover:border-[#7C3AED]/40 transition-colors"
+            >
+              Try again
+            </button>
+          )}
+        </div>
+      )}
+
+      {!voice.sttSupported && !voice.error && (
         <p className="text-[10px] text-[#5A5A72]">
-          Voice study isn't available in this browser. Use Chrome, Edge or Safari.
+          Spoken answers need Chrome or Edge. You can still play questions aloud here.
         </p>
       )}
     </div>

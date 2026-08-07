@@ -9,7 +9,7 @@
  */
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Mic, History, ArrowRight } from 'lucide-react';
+import { X, Sparkles, Mic, History, ArrowRight } from '@/components/icons';
 import ProfAura from './ProfAura';
 
 const STORAGE_KEY = 'auramind.aurachat.tourComplete.v1';
@@ -74,7 +74,7 @@ export default function ChatTour({ force = false }: Props) {
         setStep(0);
         setOpen(true);
       }
-    } catch {}
+    } catch { /* intentionally ignored */ }
   }, [force]);
 
   /**
@@ -84,7 +84,7 @@ export default function ChatTour({ force = false }: Props) {
    */
   const close = (completed = true) => {
     if (completed) {
-      try { window.localStorage.setItem(STORAGE_KEY, '1'); } catch {}
+      try { window.localStorage.setItem(STORAGE_KEY, '1'); } catch { /* intentionally ignored */ }
     }
     setOpen(false);
   };

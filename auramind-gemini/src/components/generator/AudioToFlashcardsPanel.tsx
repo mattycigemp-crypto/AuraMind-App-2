@@ -9,7 +9,7 @@
  */
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mic, UploadCloud, Check, ChevronDown } from 'lucide-react';
+import { Mic, UploadCloud, Check, ChevronDown } from '@/components/icons';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { audioToFlashcards, type AudioDeckResult } from '../../services/study/audioToFlashcardsService';
 import { toast } from 'sonner';

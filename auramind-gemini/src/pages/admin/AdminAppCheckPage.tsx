@@ -12,11 +12,11 @@
  * Auth: uses the Supabase session JWT as the Bearer token (same as the
  * Users page).
  */
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  ClipboardCheck, RefreshCw, Check, AlertTriangle, ExternalLink, Settings, ShieldCheck,
-} from 'lucide-react';
-import { supabase } from '../../services/database/supabase';
+  ClipboardCheck, RefreshCw, Check, AlertTriangle, ExternalLink, ShieldCheck,
+} from '@/components/icons';
+import { requireSupabase } from '../../services/database/supabase';
 
 type Step = { status: 'pending' | 'passed' | 'failed'; name: string; message?: string };
 
@@ -39,7 +39,7 @@ const WALKTHROUGH_KEY = 'auramind-admin.walkthrough';
 const api = () => import.meta.env.VITE_API_BASE_URL || '';
 
 async function authGet(path: string): Promise<any> {
-  const token = (await supabase.auth.getSession()).data.session?.access_token;
+  const token = (await requireSupabase().auth.getSession()).data.session?.access_token;
   if (!token) return { error: 'Not authenticated' };
   const res = await fetch(`${api()}${path}`, { headers: { Authorization: `Bearer ${token}` } });
   return res.ok ? await res.json().catch(() => ({})) : { error: `HTTP ${res.status}` };

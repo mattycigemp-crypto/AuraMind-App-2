@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Flame, BookOpen, Brain, Plus, ArrowRight, Play,
   Target, Sparkles, Zap, Clock, ChevronRight, Layers,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useDashboardWorkspace } from '../../../contexts/DashboardWorkspaceContext';
 import type { Deck, Card } from '../../../types';
 import {
@@ -34,7 +34,7 @@ function makeSpark(seed: number, n = 8): Array<[number, number]> {
 function deckStats(deck: Deck, cards: Card[]) {
   const now = Date.now();
   const mine = cards.filter(c => c.deckId === deck.id);
-  const due = mine.filter(c => c.nextReview <= now).length;
+  const due = mine.filter(c => (c.nextReview ?? 0) <= now).length;
   const studied = mine.filter(c => (c.repetition ?? 0) > 0).length;
   const mastered = mine.filter(c => (c.repetition ?? 0) >= 3 && (c.lapses ?? 0) === 0).length;
   const total = mine.length;
@@ -698,7 +698,7 @@ export function NovaOverview() {
   const { user, decks, cards, startQuickStudy, startStudyForDeck } = workspace!;
 
   const todayStart = startOfTodayMs();
-  const dueCount = useMemo(() => cards.filter(c => c.nextReview <= Date.now()).length, [cards]);
+  const dueCount = useMemo(() => cards.filter(c => (c.nextReview ?? 0) <= Date.now()).length, [cards]);
   const studiedToday = useMemo(
     () => cards.filter(c => (c.lastReviewed ?? 0) >= todayStart).length,
     [cards, todayStart],

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Zap, Bell, Palette, Shield, AlertTriangle, Volume2, RefreshCw, Languages, Accessibility, Pencil, Check, X, Camera, Trash2, Upload as UploadIcon, LogOut, CreditCard, ArrowUpRight } from 'lucide-react';
+import { BookOpen, Zap, Bell, Palette, Shield, AlertTriangle, Volume2, RefreshCw, Languages, Accessibility, Pencil, Check, X, Camera, Trash2, Upload as UploadIcon, LogOut } from '@/components/icons';
 import { toast } from 'sonner';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
 import { useCurrentUserId } from '../../hooks/useCurrentUserId';
-import { supabase } from '../../services/database/supabase';
+import { supabase, requireSupabase } from '../../services/database/supabase';
 import { userService } from '../../services/user/userService';
 import { uploadAvatar, deleteAvatar } from '../../services/user/avatarService';
 import ProfAuraAvatar from '../../components/auramind/ProfAuraAvatar';
@@ -114,7 +114,7 @@ export default function SettingsPage() {
   const [reviewOrder, setReviewOrder] = useLocalStorage('auramind_reviewOrder', 'FSRS - Optimized');
   const [showHintFirst, setShowHintFirst] = useLocalStorage('auramind_showHintFirst', false);
   const [autoPlayAudio, setAutoPlayAudio] = useLocalStorage('auramind_autoPlayAudio', false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [_showPassword, _setShowPassword] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   useEffect(() => {
@@ -128,7 +128,7 @@ export default function SettingsPage() {
           setProfile(p);
           setNameInput(p?.name || '');
         }
-      } catch {} finally {
+      } catch { /* intentionally ignored */ } finally {
         if (!cancelled) setProfileLoading(false);
       }
     })();
@@ -150,7 +150,7 @@ export default function SettingsPage() {
       } else {
         // Fallback: direct supabase update
         if (supabase) {
-          const { error } = await supabase.auth.updateUser({
+          const { error } = await requireSupabase().auth.updateUser({
             data: { full_name: trimmed },
           });
           if (error) throw error;
@@ -178,7 +178,7 @@ export default function SettingsPage() {
       // If the user already has a Stripe customer, open the billing portal
       // so they can manage/upgrade/cancel their real subscription. Otherwise
       // send them to the plan page to start one.
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await requireSupabase().auth.getSession();
       const customerId = session?.user?.user_metadata?.stripe_customer_id as string | undefined;
       const api = import.meta.env.VITE_API_BASE_URL || '';
       if (customerId) {
@@ -278,7 +278,7 @@ export default function SettingsPage() {
                 await supabase.from('user_profiles').update({ avatar_url: url }).eq('id', profile.id);
               }
               setProfile((p) => (p ? { ...p, avatar: url || undefined } : p));
-            } catch (err) {
+            } catch (_err) {
               toast.error('Could not save the new avatar. Try again.');
             }
           }}

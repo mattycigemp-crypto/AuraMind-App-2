@@ -21,7 +21,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, ArrowRight } from 'lucide-react';
+import { Sparkles, X, ArrowRight } from '@/components/icons';
 import { getAutoAltProfileLabel } from '../../services/study/fsrsAdaptation';
 
 interface LiveCompareBadgeProps {

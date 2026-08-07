@@ -9,7 +9,7 @@
  */
 import React, { useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, ArrowRight } from 'lucide-react';
+import { Sparkles, X, ArrowRight } from '@/components/icons';
 import { useNavigate } from 'react-router-dom';
 import { useFirstTuneReveal } from '../../hooks/useFirstTuneReveal';
 import { useCurrentUserId } from '../../hooks/useCurrentUserId';

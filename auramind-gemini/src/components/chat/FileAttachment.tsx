@@ -16,7 +16,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Paperclip, X, FileText, Image as ImageIcon } from 'lucide-react';
+import { Paperclip, X, FileText } from '@/components/icons';
 
 export interface AttachmentDraft {
   id: string;

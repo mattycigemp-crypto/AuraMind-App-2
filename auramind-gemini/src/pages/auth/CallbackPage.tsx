@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../services/database/supabase';
-import { Loader2, Check, AlertTriangle, KeyRound } from 'lucide-react';
+import { Loader2, Check, AlertTriangle } from '@/components/icons';
 
 const CallbackPage: React.FC = () => {
   const navigate = useNavigate();

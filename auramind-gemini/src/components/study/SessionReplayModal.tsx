@@ -11,7 +11,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, ChevronLeft, ChevronRight, RotateCcw, Sparkles, Clock, Layers,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useCurrentUserId } from '../../hooks/useCurrentUserId';
 import { useSessionReplay, type ReplayEntry } from '../../hooks/useSessionReplay';
 import ProfAuraEmptyState from '../ui/ProfAuraEmptyState';

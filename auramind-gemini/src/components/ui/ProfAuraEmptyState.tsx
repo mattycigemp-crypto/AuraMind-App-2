@@ -18,7 +18,7 @@
  */
 import React from 'react';
 import { motion } from 'framer-motion';
-import type { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from '@/components/icons';
 import ProfAura from '../chat/ProfAura';
 import { cn } from '@/lib/utils';
 
@@ -101,7 +101,7 @@ function ProfAuraEmptyState({
   description,
   mood = 'inviting',
   size = 'md',
-  streak = 0,
+  streak: _streak = 0,
   audioLevel,
   actions = [],
   eyebrow,

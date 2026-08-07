@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { LucideIcon } from 'lucide-react';
+import { LucideIcon } from '@/components/icons';
 
 interface EmptyStateProps {
   icon: LucideIcon;

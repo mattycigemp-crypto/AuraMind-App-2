@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { schoologyService } from '../../services/integrations/schoologyService';
-import { Loader2, Check, AlertTriangle, BookOpen } from 'lucide-react';
+import { Loader2, Check, AlertTriangle } from '@/components/icons';
 
 const SchoologyCallbackPage: React.FC = () => {
   const navigate = useNavigate();

@@ -14,13 +14,13 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Wind, Heart, Sparkles, X, Clock as ClockIcon, Volume2, VolumeX } from 'lucide-react';
+import { Users, Wind, Heart, Sparkles, X, Clock as ClockIcon, Volume2, VolumeX } from '@/components/icons';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
 import { trackStudySession } from '../../services/gamification/gamificationService';
 import { awardWeeklyXp } from '../../services/gamification/leagueService';
-import { supabase } from '../../services/database/supabase';
+import { supabase, requireSupabase } from '../../services/database/supabase';
 import { sessionService } from '../../services/database/modules/sessionService';
 import { cardReviewsService } from '../../services/database/modules/cardReviewsService';
 import { Rating } from '../../types';
@@ -71,7 +71,7 @@ export const FlowMode: React.FC<FlowModeProps> = ({
   useEffect(() => {
     if (phase !== 'study' || !userId || !supabase) return;
 
-    const channel = supabase.channel('flow:presence', {
+    const channel = requireSupabase().channel('flow:presence', {
       config: { presence: { key: userId }, broadcast: { ack: false } },
     });
 
@@ -99,7 +99,7 @@ export const FlowMode: React.FC<FlowModeProps> = ({
 
     return () => {
       try { channel.untrack(); } catch { /* channel may already be closed */ }
-      if (supabase) supabase.removeChannel(channel);
+      if (supabase) requireSupabase().removeChannel(channel);
     };
   }, [phase, userId]);
 
@@ -151,7 +151,7 @@ export const FlowMode: React.FC<FlowModeProps> = ({
       // Award weekly XP for leagues
       if (userId) {
         try {
-          await supabase.auth.getSession();
+          await requireSupabase().auth.getSession();
           const xpDelta = 25 + focusedEarnings; // baseline session XP + flow bonus
           const league = await awardWeeklyXp(userId, lifetimeXp, xpDelta, accuracy);
           setWeeklyXpGained(league.weeklyXp);

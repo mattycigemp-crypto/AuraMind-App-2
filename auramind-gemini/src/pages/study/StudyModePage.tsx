@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Zap, Lightbulb, Mic, X, Star, ChevronDown, Wind, Timer as TimerIcon, RotateCcw } from 'lucide-react';
+import { Sparkles, Zap, Lightbulb, Mic, X, Star, ChevronDown, Wind, Timer as TimerIcon, RotateCcw } from '@/components/icons';
 import { usePersonalizedFsrs } from '../../hooks/usePersonalizedFsrs';
 import { useCurrentUserId } from '../../hooks/useCurrentUserId';
 import { PersonalizationIndicator } from '../../components/study/PersonalizationIndicator';
@@ -114,12 +114,12 @@ export default function StudyModePage() {
   const particleId = useRef(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const [tiltEnabled, setTiltEnabled] = useState(true);
+  const [tiltEnabled, _setTiltEnabled] = useState(true);
   const [isRating, setIsRating] = useState(false);
   const [flowModeOpen, setFlowModeOpen] = useState(false);
   const [voiceMode, setVoiceMode] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
-  const studyTimer = useTimer({ duration: Infinity, autoplay: true });
+  const _studyTimer = useTimer({ duration: Infinity, autoplay: true });
   useEffect(() => {
     // Poll elapsed time every second for display
     const interval = setInterval(() => {
@@ -158,7 +158,7 @@ export default function StudyModePage() {
         setDeck(fetchedDeck);
         // Filter cards for this deck
         const deckCards = allCards.filter((c: Card) => c.deckId === deckId);
-        const due = deckCards.filter((c: Card) => c.nextReview <= Date.now());
+        const due = deckCards.filter((c: Card) => (c.nextReview ?? 0) <= Date.now());
         setStudyCards(due.length > 0 ? due : deckCards);
       } catch (err) {
         console.error('Failed to load study session:', err);
@@ -170,7 +170,7 @@ export default function StudyModePage() {
     if (deckId) init();
   }, [deckId, navigate, userId]);
 
-  const spawnParticles = useCallback((x: number, y: number) => {
+  const spawnParticles = useCallback((_x: number, _y: number) => {
     const colors = ['#7C3AED', '#8B5CF6', '#3B82F6', '#A78BFA'];
     const newParticles = Array.from({ length: 12 }, () => ({
       id: particleId.current++,
@@ -531,7 +531,7 @@ export default function StudyModePage() {
           <LiveCompareBadge
             profileLabel={personalization.profileLabel}
             profileCenter={profileCenter}
-            userId={userId}
+            userId={userId ?? null}
           />
           <PacingOverride
             profileCenter={profileCenter}
