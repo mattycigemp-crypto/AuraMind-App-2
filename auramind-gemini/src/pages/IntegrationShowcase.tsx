@@ -205,7 +205,17 @@ function AnimeJSDemo() {
         disabled={isAnimating}
         className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium text-sm hover:from-purple-500 hover:to-blue-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-500/25"
       >
-        {isAnimating ? "✨ Animating..." : "🚀 Trigger anime.js Magic"}
+        {isAnimating ? (
+          <span className="inline-flex items-center gap-2">
+            <Sparkles size={16} />
+            Animating...
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-2">
+            <Rocket size={16} />
+            Trigger anime.js Magic
+          </span>
+        )}
       </button>
       <div className="flex gap-3 flex-wrap">
         {[0, 1, 2, 3, 4].map((i) => (
@@ -305,7 +315,7 @@ function ReactBitsShowcase() {
       <div className="p-6 rounded-xl bg-gradient-to-br from-blue-500/5 to-emerald-500/5 border border-blue-500/10">
         <p className="text-gray-500 text-xs mb-2 font-mono tracking-wider uppercase">ShinyText</p>
         <ShinyText
-          text="✨ Experience the shimmer — smooth, continuous gradient animations."
+          text="Experience the shimmer — smooth, continuous gradient animations."
           speed={3}
           shineColor="#8B5CF6"
           color="#9090A8"

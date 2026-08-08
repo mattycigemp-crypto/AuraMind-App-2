@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeftIcon, PlusIcon, Trash2Icon, BookOpenIcon, PlayIcon, PencilIcon, CheckIcon, XIcon, AlertTriangleIcon, ExternalLinkIcon, RotateCcwIcon, SparklesIcon, ClockIcon, GlobeIcon } from '../../components/icons/CustomIcons';
+import { ArrowLeftIcon, PlusIcon, Trash2Icon, BookOpenIcon, PlayIcon, PencilIcon, CheckIcon, XIcon, AlertTriangleIcon, RotateCcwIcon, SparklesIcon, ClockIcon, GlobeIcon } from '../../components/icons/CustomIcons';
 import GlassCard from '../../components/shared/GlassCard';
 import { useContextMenu } from '../../components/ui/ContextMenu';
 import { dbService } from '../../services/database/dbService';
@@ -460,7 +460,7 @@ export default function DeckDetailRoute() {
               <div className="space-y-4">
                 {publishSuccess ? (
                   <div className="p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-center">
-                    <p className="text-emerald-400 text-sm font-medium">Published! 🎉</p>
+                    <p className="text-emerald-400 text-sm font-medium">Published!</p>
                     <p className="text-zinc-400 text-xs mt-1">
                       Your deck is now live on the marketplace.
                     </p>
@@ -701,7 +701,7 @@ export default function DeckDetailRoute() {
                       <p className="text-zinc-900 dark:text-white font-medium mb-1 line-clamp-2">{(card as any).front || (card as any).question}</p>
                       <p className="text-zinc-500 text-sm line-clamp-2">{(card as any).back || (card as any).answer}</p>
                       <p className="text-xs text-zinc-600 mt-2">
-                        Due {new Date(card.nextReview).toLocaleDateString()}
+                        Due {new Date(card.nextReview ?? Date.now()).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">

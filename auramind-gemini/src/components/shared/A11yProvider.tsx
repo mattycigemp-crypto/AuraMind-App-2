@@ -62,7 +62,7 @@ export const A11yProvider: React.FC<A11yProviderProps> = ({
         setIssues(critical);
 
         if (critical.length > 0 && isDev) {
-          console.groupCollapsed(`♿ ${critical.length} a11y issues found`);
+          console.groupCollapsed(`[A11y] ${critical.length} a11y issues found`);
           critical.forEach((i: A11yIssue) => {
             console.warn(`[${i.impact}] ${i.id}: ${i.description}`);
           });

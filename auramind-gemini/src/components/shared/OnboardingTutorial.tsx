@@ -2,7 +2,6 @@ import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   SparklesIcon as Sparkles,
-  BrainCircuitIcon as BrainCircuit,
   CheckCircle2Icon as CheckCircle2,
   ArrowRightIcon as ArrowRight,
   BookOpenIcon as BookOpen,
@@ -10,6 +9,22 @@ import {
   AwardIcon as Award,
   UserIcon as User,
 } from '../icons/CustomIcons';
+import {
+  BrainCircuit,
+  Brain,
+  Bot,
+  Smartphone,
+  Dna,
+  Code,
+  BarChart3,
+  Languages,
+  FlaskConical,
+  ScrollText,
+  ShieldCheck,
+  Zap,
+  Palette,
+  Music,
+} from '../../components/icons';
 import { PROF_AURA_PERSONALITY_OPTIONS, setStoredPersonality, type ProfAuraPersonality } from '../../lib/profAuraPersonality';
 
 // ─── Types ───
@@ -25,18 +40,18 @@ interface OnboardingTutorialProps {
 // ─── Study topics for personalization ───
 
 const TOPICS = [
-  { emoji: '🧬', label: 'Biology' },
-  { emoji: '💻', label: 'Computer Science' },
-  { emoji: '📐', label: 'Mathematics' },
-  { emoji: '🗣️', label: 'Languages' },
-  { emoji: '⚗️', label: 'Chemistry' },
-  { emoji: '📜', label: 'History' },
-  { emoji: '⚖️', label: 'Law' },
-  { emoji: '💊', label: 'Medicine' },
-  { emoji: '🎨', label: 'Art & Design' },
-  { emoji: '🎵', label: 'Music Theory' },
-  { emoji: '📊', label: 'Business' },
-  { emoji: '🧠', label: 'Psychology' },
+  { icon: Dna, label: 'Biology' },
+  { icon: Code, label: 'Computer Science' },
+  { icon: BarChart3, label: 'Mathematics' },
+  { icon: Languages, label: 'Languages' },
+  { icon: FlaskConical, label: 'Chemistry' },
+  { icon: ScrollText, label: 'History' },
+  { icon: ShieldCheck, label: 'Law' },
+  { icon: Zap, label: 'Medicine' },
+  { icon: Palette, label: 'Art & Design' },
+  { icon: Music, label: 'Music Theory' },
+  { icon: BarChart3, label: 'Business' },
+  { icon: Brain, label: 'Psychology' },
 ];
 
 // ─── Demo flashcard for learn-by-doing step ───
@@ -241,15 +256,20 @@ const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, onClose
                       </div>
                       <div className="grid grid-cols-3 gap-3 pt-2">
                         {[
-                          { icon: '🧠', label: 'FSRS v5\nSpaced Repetition' },
-                          { icon: '🤖', label: 'AI Deck\nGeneration' },
-                          { icon: '📱', label: 'Web, Desktop\n& Mobile' },
-                        ].map(f => (
-                          <div key={f.label} className="p-3 rounded-xl bg-[#111118] border border-[#2A2A3A] text-center">
-                            <div className="text-xl mb-1">{f.icon}</div>
-                            <p className="text-[9px] text-[#9090A8] leading-tight whitespace-pre-line">{f.label}</p>
-                          </div>
-                        ))}
+                          { icon: BrainCircuit, label: 'FSRS v5\nSpaced Repetition' },
+                          { icon: Bot, label: 'AI Deck\nGeneration' },
+                          { icon: Smartphone, label: 'Web, Desktop\n& Mobile' },
+                        ].map(f => {
+                          const FeatureIcon = f.icon;
+                          return (
+                            <div key={f.label} className="p-3 rounded-xl bg-[#111118] border border-[#2A2A3A] text-center">
+                              <div className="flex justify-center mb-1">
+                                <FeatureIcon size={18} className="text-[#A78BFA]" />
+                              </div>
+                              <p className="text-[9px] text-[#9090A8] leading-tight whitespace-pre-line">{f.label}</p>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -265,20 +285,25 @@ const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, onClose
                         <p className="text-xs text-[#9090A8]">Pick a topic — we'll suggest the perfect starter deck.</p>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
-                        {TOPICS.map(t => (
-                          <button
-                            key={t.label}
-                            onClick={() => setSelectedTopic(t.label)}
-                            className={`p-3 rounded-xl border transition-all text-center ${
-                              selectedTopic === t.label
-                                ? 'border-violet-500/50 bg-violet-600/10 ring-1 ring-violet-500/30'
-                                : 'border-[#2A2A3A] bg-[#111118] hover:border-violet-600/30'
-                            }`}
-                          >
-                            <div className="text-lg mb-0.5">{t.emoji}</div>
-                            <div className="text-[9px] text-[#9090A8] font-medium">{t.label}</div>
-                          </button>
-                        ))}
+                        {TOPICS.map(t => {
+                          const TopicIcon = t.icon;
+                          return (
+                            <button
+                              key={t.label}
+                              onClick={() => setSelectedTopic(t.label)}
+                              className={`p-3 rounded-xl border transition-all text-center ${
+                                selectedTopic === t.label
+                                  ? 'border-violet-500/50 bg-violet-600/10 ring-1 ring-violet-500/30'
+                                  : 'border-[#2A2A3A] bg-[#111118] hover:border-violet-600/30'
+                              }`}
+                            >
+                              <div className="flex justify-center mb-0.5">
+                                <TopicIcon size={18} className="text-[#9090A8]" />
+                              </div>
+                              <div className="text-[9px] text-[#9090A8] font-medium">{t.label}</div>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -294,26 +319,29 @@ const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, onClose
                         <p className="text-xs text-[#9090A8]">How should your AI coach talk to you? You can change this anytime.</p>
                       </div>
                       <div className="space-y-2">
-                        {PROF_AURA_PERSONALITY_OPTIONS.map(opt => (
-                          <button
-                            key={opt.id}
-                            onClick={() => setSelectedPersonality(opt.id)}
-                            className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center gap-3 ${
-                              selectedPersonality === opt.id
-                                ? 'border-violet-500/50 bg-violet-600/10 ring-1 ring-violet-500/30'
-                                : 'border-[#2A2A3A] bg-[#111118] hover:border-violet-600/30'
-                            }`}
-                          >
-                            <span className="text-xl shrink-0">{opt.emoji}</span>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-semibold text-[#F0EFFE]">{opt.label}</p>
-                              <p className="text-[10px] text-[#5A5A72] leading-snug mt-0.5">{opt.description}</p>
-                            </div>
-                            {selectedPersonality === opt.id && (
-                              <CheckCircle2 size={16} className="text-violet-400 shrink-0" />
-                            )}
-                          </button>
-                        ))}
+                        {PROF_AURA_PERSONALITY_OPTIONS.map(opt => {
+                          const OptionIcon = opt.icon;
+                          return (
+                            <button
+                              key={opt.id}
+                              onClick={() => setSelectedPersonality(opt.id)}
+                              className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center gap-3 ${
+                                selectedPersonality === opt.id
+                                  ? 'border-violet-500/50 bg-violet-600/10 ring-1 ring-violet-500/30'
+                                  : 'border-[#2A2A3A] bg-[#111118] hover:border-violet-600/30'
+                              }`}
+                            >
+                              <OptionIcon size={18} className="text-[#A78BFA] shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-[#F0EFFE]">{opt.label}</p>
+                                <p className="text-[10px] text-[#5A5A72] leading-snug mt-0.5">{opt.description}</p>
+                              </div>
+                              {selectedPersonality === opt.id && (
+                                <CheckCircle2 size={16} className="text-violet-400 shrink-0" />
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

@@ -246,7 +246,7 @@ function tryTemplate(req: AIChatRequest): string {
 - **Counter-example:** one place the idea breaks down, to keep it honest.
 - **Next step:** one question to ask yourself the next time you meet this idea.
 
-✨ Want richer cards? Open **Settings → AI Provider** to sign in with Puter (free), run our **offline model** with one click, or paste your own Groq / Gemini key.`;
+Want richer cards? Open **Settings → AI Provider** to sign in with Puter (free), run our **offline model** with one click, or paste your own Groq / Gemini key.`;
 }
 
 // ──────────────────────────────────────────────────────────────────────────

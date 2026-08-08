@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Send, Sparkles, ArrowLeft, Square, Mic, MicOff, ArrowRight, Clock, MessageCircle, Volume2, VolumeX } from '@/components/icons';
+import { Send, Sparkles, ArrowLeft, Square, Mic, MicOff, ArrowRight, Clock, MessageCircle, Volume2, VolumeX, Brain, Lightbulb, Pencil, Flame, BarChart3 } from '@/components/icons';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
 import { useAIChat, type ChatContext, type ChatMode, type ProfAuraPersonality } from '../../hooks/useAIChat';
 import { useCurrentUserId } from '../../hooks/useCurrentUserId';
@@ -76,25 +76,25 @@ function getStarterPrompts(context: ChatContext) {
 
   return [
     {
-      icon: '🧠',
+      icon: Brain,
       label: `Quiz me on ${deckName}`,
       prompt: `Quiz me on my ${deckName} deck. Focus on my weak spots and give me challenging questions.`,
       detail: `${cardsDueToday} cards due`,
     },
     {
-      icon: '💡',
+      icon: Lightbulb,
       label: 'Explain a concept',
       prompt: `I'm studying ${deckName}. Explain the hardest concept in this deck using a real-world analogy.`,
       detail: 'Deep dive',
     },
     {
-      icon: '📝',
+      icon: Pencil,
       label: 'Generate flashcards',
       prompt: `Generate 5 new flashcards for ${deckName}. Include mnemonics where possible.`,
       detail: 'Auto-save',
     },
     {
-      icon: hasWeak ? '🔥' : '📊',
+      icon: hasWeak ? Flame : BarChart3,
       label: hasWeak ? `Fix my ${weakCards[0]?.term || 'weakest'} card` : 'Show my weak spots',
       prompt: hasWeak
         ? `I keep forgetting "${weakCards[0]?.term}". Help me understand it better with examples and mnemonics.`
@@ -367,6 +367,7 @@ export default function AIChatPage() {
 
   const starterPrompts = getStarterPrompts(context);
   const hasMessages = chat.messages.length > 0;
+  const PersonalityIcon = PROF_AURA_PERSONALITY_OPTIONS.find(o => o.id === personality)?.icon ?? Sparkles;
 
   return (
     <PageShell>
@@ -448,7 +449,7 @@ export default function AIChatPage() {
                 className="h-8 px-2.5 rounded-full bg-[#111118] border border-[#2A2A3A] flex items-center gap-1.5 text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-colors"
               >
                 <span className="text-sm leading-none">
-                  {PROF_AURA_PERSONALITY_OPTIONS.find(o => o.id === personality)?.emoji ?? '✨'}
+                  <PersonalityIcon size={16} className="text-[#A78BFA]" />
                 </span>
                 <span className="text-[10px] font-medium text-[#9090A8] hidden sm:inline">
                   {PROF_AURA_PERSONALITY_OPTIONS.find(o => o.id === personality)?.label ?? 'Personality'}
@@ -460,28 +461,31 @@ export default function AIChatPage() {
                   <div className="absolute right-0 top-10 z-50 w-72 p-3 rounded-2xl bg-[#111118] border border-[#2A2A3A] shadow-2xl shadow-black/50">
                     <p className="text-[9px] uppercase tracking-widest text-[#5A5A72] mb-2 px-1">Prof. Aura's Personality</p>
                     <div className="space-y-1">
-                      {PROF_AURA_PERSONALITY_OPTIONS.map(opt => (
-                        <button
-                          key={opt.id}
-                          onClick={() => setPersonality(opt.id)}
-                          className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 ${
-                            personality === opt.id
-                              ? 'bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-[#F0EFFE]'
-                              : 'border border-transparent hover:bg-[#1A1A24] text-[#9090A8] hover:text-[#F0EFFE]'
-                          }`}
-                        >
-                          <span className="text-base mt-0.5 shrink-0">{opt.emoji}</span>
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium">{opt.label}</p>
-                            <p className="text-[10px] text-[#5A5A72] leading-snug mt-0.5">{opt.description}</p>
-                          </div>
-                          {personality === opt.id && (
-                            <div className="ml-auto shrink-0 w-4 h-4 rounded-full bg-[#7C3AED] flex items-center justify-center mt-0.5">
-                              <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                      {PROF_AURA_PERSONALITY_OPTIONS.map(opt => {
+                        const OptionIcon = opt.icon;
+                        return (
+                          <button
+                            key={opt.id}
+                            onClick={() => setPersonality(opt.id)}
+                            className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 ${
+                              personality === opt.id
+                                ? 'bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-[#F0EFFE]'
+                                : 'border border-transparent hover:bg-[#1A1A24] text-[#9090A8] hover:text-[#F0EFFE]'
+                            }`}
+                          >
+                            <OptionIcon size={16} className="mt-0.5 shrink-0 text-[#A78BFA]" />
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium">{opt.label}</p>
+                              <p className="text-[10px] text-[#5A5A72] leading-snug mt-0.5">{opt.description}</p>
                             </div>
-                          )}
-                        </button>
-                      ))}
+                            {personality === opt.id && (
+                              <div className="ml-auto shrink-0 w-4 h-4 rounded-full bg-[#7C3AED] flex items-center justify-center mt-0.5">
+                                <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </>
@@ -688,23 +692,26 @@ export default function AIChatPage() {
                   transition={{ delay: 0.3 }}
                   className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-xl"
                 >
-                  {starterPrompts.map((s, i) => (
-                    <motion.button
-                      key={i}
-                      whileHover={{ y: -2, scale: 1.01 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => chat.sendMessage(s.prompt)}
-                      className="text-left p-4 rounded-2xl bg-[#111118] border border-[#2A2A3A] hover:border-[#7C3AED]/40 hover:bg-[#15151D] transition-all group"
-                    >
-                      <div className="flex items-start gap-3">
-                        <span className="text-xl shrink-0 mt-0.5">{s.icon}</span>
-                        <div className="min-w-0">
-                          <p className="text-[#F0EFFE] text-sm font-medium group-hover:text-[#8B5CF6] transition-colors">{s.label}</p>
-                          <p className="text-[#5A5A72] text-[10px] mt-0.5">{s.detail}</p>
+                  {starterPrompts.map((s, i) => {
+                    const StarterIcon = s.icon;
+                    return (
+                      <motion.button
+                        key={i}
+                        whileHover={{ y: -2, scale: 1.01 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => chat.sendMessage(s.prompt)}
+                        className="text-left p-4 rounded-2xl bg-[#111118] border border-[#2A2A3A] hover:border-[#7C3AED]/40 hover:bg-[#15151D] transition-all group"
+                      >
+                        <div className="flex items-start gap-3">
+                          <StarterIcon size={20} className="shrink-0 mt-0.5 text-[#9090A8] group-hover:text-[#8B5CF6] transition-colors" />
+                          <div className="min-w-0">
+                            <p className="text-[#F0EFFE] text-sm font-medium group-hover:text-[#8B5CF6] transition-colors">{s.label}</p>
+                            <p className="text-[#5A5A72] text-[10px] mt-0.5">{s.detail}</p>
+                          </div>
                         </div>
-                      </div>
-                    </motion.button>
-                  ))}
+                      </motion.button>
+                    );
+                  })}
                 </motion.div>
 
                 {/* Quick actions */}

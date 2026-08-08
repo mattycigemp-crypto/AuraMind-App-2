@@ -658,7 +658,7 @@ export default function ChatPage() {
                 style={{ background: 'radial-gradient(circle, #7C3AED 0%, transparent 70%)', filter: 'blur(40px)' }}
               />
               <div className="relative z-10">
-                <p className="text-[#F0EFFE] text-sm font-medium">Hey, I'm Prof. Aura! 👋</p>
+                <p className="text-[#F0EFFE] text-sm font-medium">Hey, I'm Prof. Aura!</p>
                 <p className="text-[#8A8AA3] text-xs mt-1 leading-relaxed max-w-lg">
                   I see your <strong className="text-[#F0EFFE]">{deckCount}</strong> decks and{' '}
                   <strong className="text-[#F0EFFE]">{cardCount}</strong> cards.

@@ -294,7 +294,7 @@ export default function AuthPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-4 p-4 rounded-xl bg-violet-500/10 border border-violet-500/20 text-center"
               >
-                <p className="text-sm font-semibold text-[#F0EFFE] mb-1">Check your inbox 📬</p>
+                <p className="text-sm font-semibold text-[#F0EFFE] mb-1">Check your inbox</p>
                 <p className="text-xs text-[#9090A8] leading-relaxed mb-3">
                   We sent a confirmation link to <span className="text-[#8B5CF6] break-all">{confirmEmail}</span>.
                   Tap it to activate your account — your progress will be waiting when you come back.

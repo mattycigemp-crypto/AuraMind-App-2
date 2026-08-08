@@ -139,7 +139,7 @@ export const sendWelcomeEmail = async (options: WelcomeEmailOptions): Promise<{ 
     <body>
       <div class="container">
         <div class="header">
-          <h1>Welcome to AuraMind! 🎉</h1>
+          <h1>Welcome to AuraMind!</h1>
         </div>
         <div class="content">
           <p>Hi ${options.name},</p>
@@ -152,9 +152,9 @@ export const sendWelcomeEmail = async (options: WelcomeEmailOptions): Promise<{ 
           </ol>
           <p><strong>What makes AuraMind different:</strong></p>
           <ul>
-            <li>✨ <strong>AI-powered:</strong> Turn any text into flashcards instantly</li>
-            <li>🎯 <strong>Smart review:</strong> We show you cards at the right time</li>
-            <li>📊 <strong>Track progress:</strong> See how much you've learned</li>
+            <li><strong>AI-powered:</strong> Turn any text into flashcards instantly</li>
+            <li><strong>Smart review:</strong> We show you cards at the right time</li>
+            <li><strong>Track progress:</strong> See how much you've learned</li>
           </ul>
           <a href="${window.location.origin}/dashboard" class="button">Go to Dashboard</a>
           <p><strong>Need help?</strong> Just reply to this email and we'll assist you.</p>
@@ -195,7 +195,7 @@ export const sendSignInAlert = async (options: SignInAlertOptions): Promise<{ su
     <body>
       <div class="container">
         <div class="alert">
-          <h2>🔐 New sign-in detected</h2>
+          <h2>New sign-in detected</h2>
         </div>
         <p>Hi ${options.name},</p>
         <p>Someone just signed into your AuraMind account. Here are the details:</p>
@@ -245,7 +245,7 @@ export const sendTrialEndingEmail = async (options: TrialEndingOptions): Promise
     <body>
       <div class="container">
         <div class="alert">
-          <h2>⚠️ Your free trial is ending soon</h2>
+          <h2>Your free trial is ending soon</h2>
         </div>
         <p>Hi ${options.name},</p>
         <p>Your free trial ends in <strong>${options.daysRemaining} days</strong> on ${options.trialEnds}.</p>
@@ -291,7 +291,7 @@ export const sendPaymentSuccessEmail = async (options: PaymentSuccessOptions): P
     <body>
       <div class="container">
         <div class="success">
-          <h2>✅ Payment successful</h2>
+          <h2>Payment successful</h2>
         </div>
         <p>Hi ${options.name},</p>
         <p>Great news! Your payment went through successfully.</p>
@@ -341,7 +341,7 @@ export const sendPaymentFailedEmail = async (options: PaymentFailedOptions): Pro
     <body>
       <div class="container">
         <div class="alert">
-          <h2>❌ Payment failed</h2>
+          <h2>Payment failed</h2>
         </div>
         <p>Hi ${options.name},</p>
         <p>We couldn't process your payment of ${options.amount} on ${options.lastAttempt}.</p>
@@ -392,7 +392,7 @@ export const sendSubscriptionCancelledEmail = async (options: SubscriptionCancel
     <body>
       <div class="container">
         <div class="info">
-          <h2>📋 Subscription cancelled</h2>
+          <h2>Subscription cancelled</h2>
         </div>
         <p>Hi ${options.name},</p>
         <p>Your ${options.plan} subscription has been cancelled.</p>
@@ -439,7 +439,7 @@ export const sendPasswordResetEmail = async (options: PasswordResetOptions): Pro
     <body>
       <div class="container">
         <div class="alert">
-          <h2>🔑 Reset your password</h2>
+          <h2>Reset your password</h2>
         </div>
         <p>Hi ${options.name},</p>
         <p>We received a request to reset your password for your AuraMind account.</p>
@@ -486,7 +486,7 @@ export const sendEmailVerificationEmail = async (options: EmailVerificationOptio
     <body>
       <div class="container">
         <div class="alert">
-          <h2>✉️ Verify your email address</h2>
+          <h2>Verify your email address</h2>
         </div>
         <p>Hi ${options.name},</p>
         <p>Please verify your email to complete your AuraMind account setup.</p>

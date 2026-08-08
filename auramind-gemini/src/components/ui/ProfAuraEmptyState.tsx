@@ -18,7 +18,7 @@
  */
 import React from 'react';
 import { motion } from 'framer-motion';
-import type { LucideIcon } from '@/components/icons';
+import { Moon, Sparkles, Star, type LucideIcon } from '@/components/icons';
 import ProfAura from '../chat/ProfAura';
 import { cn } from '@/lib/utils';
 
@@ -113,6 +113,7 @@ function ProfAuraEmptyState({
   // Forward to ProfAura's typed `mood` sentinel via a small Mood enum mapper.
   // We deliberately do NOT pass a free 0..1 number — ProfAura rejects it.
   const profMood = gap(mood);
+  const MoodIcon = mood === 'celebrating' ? Sparkles : mood === 'curious' ? Moon : Star;
 
   const labelTone =
     mood === 'celebrating'
@@ -155,7 +156,7 @@ function ProfAuraEmptyState({
             <ProfAura variant={variant} size={dim.avatarPx} mood={profMood} audioLevel={audioLevel} />
           </div>
 
-          {/* Mood-specific floating emoji orbiter */}
+          {/* Mood-specific floating icon orbiter */}
           {mood !== 'sleepy' && (
             <motion.span
               aria-hidden
@@ -167,14 +168,14 @@ function ProfAuraEmptyState({
               }}
             >
               <span
-                className="absolute text-xl"
+                className="absolute flex items-center justify-center text-[#C4C4D4]"
                 style={{
                   top: -8,
                   left: '50%',
                   transform: 'translateX(-50%)',
                 }}
               >
-                {mood === 'celebrating' ? '✨' : mood === 'curious' ? '🔮' : '💫'}
+                <MoodIcon className="size-4" />
               </span>
             </motion.span>
           )}

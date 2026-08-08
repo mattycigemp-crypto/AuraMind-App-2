@@ -19,7 +19,7 @@
  * Events handled:
  *   study_session_completed  → "Study session complete! X cards reviewed"
  *   league_xp_changed        → "Ranked #{tier} in {league_group} — {xp} XP"
- *   streak_updated           → "{streak}-day streak! 🔥"
+ *   streak_updated           → "{streak}-day streak!"
  */
 
 import { supabase } from '../database/supabase';
@@ -52,7 +52,7 @@ interface StatusListener {
 
 // ─── State ───────────────────────────────────────────────────────────────
 
-let channel: ReturnType<typeof supabase.channel> | null = null;
+let channel: ReturnType<NonNullable<typeof supabase>['channel']> | null = null;
 let currentUserId: string | null = null;
 let connectionStatus: RealtimeConnectionStatus = 'disconnected';
 let statusListeners: StatusListener[] = [];

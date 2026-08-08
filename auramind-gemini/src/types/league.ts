@@ -5,11 +5,24 @@
  * 10 tiers × 15-person groups × 7-day cycles. Top 7 promote, middle 3 stay,
  * bottom 5 demote. Driven by weekly XP with accuracy as tiebreaker.
  */
+import type { ComponentType } from 'react';
+import {
+  Award,
+  Crown,
+  Flame,
+  Medal,
+  Shield,
+  Sparkles,
+  Star,
+  Sun,
+  Target,
+  Trophy,
+} from '../components/icons';
 
 export interface LeagueTier {
   id: number;
   name: string;
-  gem: string;
+  gemIcon: ComponentType<{ size?: number; className?: string }>;
   color: string;
   bgGradient: string;
   minXp: number;
@@ -18,16 +31,16 @@ export interface LeagueTier {
 
 /** 10 leagues ordered from Novice entry to Aura top tier. */
 export const LEAGUE_TIERS: readonly LeagueTier[] = [
-  { id: 1,  name: 'Novice',     gem: '🥉', color: '#B87333', bgGradient: 'from-amber-700 to-amber-900', minXp: 0,     description: 'Every sage was once a novice.' },
-  { id: 2,  name: 'Iron',       gem: '⚔️', color: '#71717A', bgGradient: 'from-zinc-500 to-zinc-700',    minXp: 500,   description: 'Forged by repetition.' },
-  { id: 3,  name: 'Bronze',     gem: '🔔', color: '#CD7F32', bgGradient: 'from-orange-600 to-orange-800', minXp: 1500,  description: 'Cast your first durable memory.' },
-  { id: 4,  name: 'Silver',     gem: '🥈', color: '#C0C0C0', bgGradient: 'from-slate-300 to-slate-500',  minXp: 3000,  description: 'Refined. Reflective.' },
-  { id: 5,  name: 'Gold',       gem: '🥇', color: '#FFD700', bgGradient: 'from-yellow-400 to-yellow-600', minXp: 5000,  description: 'Bright enough to recall at noon.' },
-  { id: 6,  name: 'Platinum',   gem: '💍', color: '#22D3EE', bgGradient: 'from-cyan-400 to-cyan-600',    minXp: 7500,  description: 'Crystal clarity.' },
-  { id: 7,  name: 'Emerald',    gem: '❇️', color: '#10B981', bgGradient: 'from-emerald-400 to-emerald-600', minXp: 10000, description: 'Growing like leaves in spring.' },
-  { id: 8,  name: 'Ruby',       gem: '♦️', color: '#EF4444', bgGradient: 'from-rose-500 to-rose-700',    minXp: 15000, description: 'Hot with knowledge.' },
-  { id: 9,  name: 'Diamond',    gem: '💎', color: '#A855F7', bgGradient: 'from-violet-500 to-violet-700', minXp: 25000, description: 'Unbreakable. Sharp.' },
-  { id: 10, name: 'Aura',       gem: '🌟', color: '#6366F1', bgGradient: 'from-indigo-400 via-purple-500 to-pink-500', minXp: 40000, description: 'You are the light.' },
+  { id: 1,  name: 'Novice',     gemIcon: Medal,      color: '#B87333', bgGradient: 'from-amber-700 to-amber-900', minXp: 0,     description: 'Every sage was once a novice.' },
+  { id: 2,  name: 'Iron',       gemIcon: Shield,     color: '#71717A', bgGradient: 'from-zinc-500 to-zinc-700',    minXp: 500,   description: 'Forged by repetition.' },
+  { id: 3,  name: 'Bronze',     gemIcon: Star,       color: '#CD7F32', bgGradient: 'from-orange-600 to-orange-800', minXp: 1500,  description: 'Cast your first durable memory.' },
+  { id: 4,  name: 'Silver',     gemIcon: Award,      color: '#C0C0C0', bgGradient: 'from-slate-300 to-slate-500',  minXp: 3000,  description: 'Refined. Reflective.' },
+  { id: 5,  name: 'Gold',       gemIcon: Trophy,     color: '#FFD700', bgGradient: 'from-yellow-400 to-yellow-600', minXp: 5000,  description: 'Bright enough to recall at noon.' },
+  { id: 6,  name: 'Platinum',   gemIcon: Crown,      color: '#22D3EE', bgGradient: 'from-cyan-400 to-cyan-600',    minXp: 7500,  description: 'Crystal clarity.' },
+  { id: 7,  name: 'Emerald',    gemIcon: Sparkles,   color: '#10B981', bgGradient: 'from-emerald-400 to-emerald-600', minXp: 10000, description: 'Growing like leaves in spring.' },
+  { id: 8,  name: 'Ruby',       gemIcon: Flame,      color: '#EF4444', bgGradient: 'from-rose-500 to-rose-700',    minXp: 15000, description: 'Hot with knowledge.' },
+  { id: 9,  name: 'Diamond',    gemIcon: Target,     color: '#A855F7', bgGradient: 'from-violet-500 to-violet-700', minXp: 25000, description: 'Unbreakable. Sharp.' },
+  { id: 10, name: 'Aura',       gemIcon: Sun,        color: '#6366F1', bgGradient: 'from-indigo-400 via-purple-500 to-pink-500', minXp: 40000, description: 'You are the light.' },
 ] as const;
 
 /** Group target size — Duolingo's 15-person tier convention. */

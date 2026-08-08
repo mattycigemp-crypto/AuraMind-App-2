@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { Bot, CreditCard, Database, Lock, Smartphone, Zap } from "../../components/icons";
 import type { ViewKey, AuthMode, ChatMode, Deck, FlashcardData, ChatMessage, HealthCheck, IssueItem, CategoryScore, AdminUser } from "./types";
 
 interface AuraMindState {
@@ -68,12 +69,12 @@ export const SAMPLE_ISSUES: IssueItem[] = [
 ];
 
 export const SAMPLE_CATEGORY_SCORES: CategoryScore[] = [
-  { name: "Database & Auth", emoji: "\ud83d\uddfc\ufe0f", score: 94 },
-  { name: "AI Services", emoji: "\ud83e\udd16", score: 68 },
-  { name: "Payments", emoji: "\ud83d\udcb3", score: 42 },
-  { name: "Security", emoji: "\ud83d\udd12", score: 76 },
-  { name: "Performance", emoji: "\u26a1", score: 88 },
-  { name: "PWA / Offline", emoji: "\ud83d\udcf1", score: 95 },
+  { name: "Database & Auth", icon: Database, score: 94 },
+  { name: "AI Services", icon: Bot, score: 68 },
+  { name: "Payments", icon: CreditCard, score: 42 },
+  { name: "Security", icon: Lock, score: 76 },
+  { name: "Performance", icon: Zap, score: 88 },
+  { name: "PWA / Offline", icon: Smartphone, score: 95 },
 ];
 
 export const SAMPLE_ADMIN_USERS: AdminUser[] = [

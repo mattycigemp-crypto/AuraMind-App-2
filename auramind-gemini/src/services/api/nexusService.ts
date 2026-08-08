@@ -12,7 +12,7 @@ import { groqChat } from './groqClient';
  *
  * Without this guard, dev boxes carrying the starter `.env` placeholder
  * would leak a `Groq API error (401): Invalid API Key` from groqChat's
- * fetch into `runAIAgent`'s step ticker via `addStep(\`❌ Error: ${err.message}\`).
+ * fetch into `runAIAgent`'s step ticker via `addStep(\`Error: ${err.message}\`).
  * `fetchMarketIntel`'s and `generatePredictions`'s `try/catch` blocks already
  * silently swallow the throw, so they don't surface the raw error — but
  * returning the fallback message here is friendlier across the whole Nexus
@@ -226,21 +226,21 @@ export async function runAIAgent(prompt: string, onStep?: (step: string) => void
   const addStep = (s: string) => { steps.push(s); onStep?.(s); };
 
   if (!_hasRealGroqKey()) {
-    addStep('⚠ No Groq API key configured. Set VITE_GROQ_API_KEY in .env.');
+    addStep('Warning: No Groq API key configured. Set VITE_GROQ_API_KEY in .env.');
     return { prompt, result: 'Groq API key required for AI agent tasks. Get a free key at https://console.groq.com/keys', steps, completedAt: Date.now() };
   }
 
   try {
-    addStep('🔍 Analyzing request and planning research strategy...');
+    addStep('Analyzing request and planning research strategy...');
 
     const researchPlan = await callGroqAI(
       `You are an autonomous AI research agent. Given the task: "${prompt}", create a 4-step research plan. Return ONLY the 4 steps, one per line, no numbering.`
     );
     const planSteps = researchPlan.split('\n').filter(Boolean).slice(0, 4);
-    planSteps.forEach(s => addStep(`📋 Planned: ${s.trim()}`));
+    planSteps.forEach(s => addStep(`Planned: ${s.trim()}`));
 
     for (let i = 0; i < Math.min(planSteps.length, 3); i++) {
-      addStep(`⚡ Executing step ${i + 1}: ${planSteps[i].trim().slice(0, 60)}...`);
+      addStep(`Executing step ${i + 1}: ${planSteps[i].trim().slice(0, 60)}...`);
 
       const stepResult = await callGroqAI(
         `You are executing step ${i + 1} of a research plan for: "${prompt}". 
@@ -248,19 +248,19 @@ export async function runAIAgent(prompt: string, onStep?: (step: string) => void
         Provide a detailed analysis for this step. Include specific data, numbers, and actionable insights. Keep it under 150 words.`
       );
 
-      addStep(`✅ Step ${i + 1} complete: ${stepResult.slice(0, 80)}...`);
+      addStep(`Step ${i + 1} complete: ${stepResult.slice(0, 80)}...`);
     }
 
-    addStep('🧠 Compiling final report...');
+    addStep('Compiling final report...');
     const finalReport = await callGroqAI(
       `Synthesize all research findings for the task: "${prompt}". 
       Provide a CEO-ready executive summary with key insights, data points, and actionable recommendations. Be specific and data-driven. Under 200 words.`
     );
 
-    addStep('✅ Report complete.');
+    addStep('Report complete.');
     return { prompt, result: finalReport, steps, completedAt: Date.now() };
   } catch (err: any) {
-    addStep(`❌ Error: ${err.message}`);
+    addStep(`Error: ${err.message}`);
     return { prompt, result: `Agent task failed: ${err.message}`, steps, completedAt: Date.now() };
   }
 }

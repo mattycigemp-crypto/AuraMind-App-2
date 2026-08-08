@@ -18,6 +18,7 @@ import { FrostGlass } from "../ui/FrostGlass";
 import { useSoundDesign } from "@/hooks/useSoundDesign";
 import type { FlashcardData } from "@/lib/auramind/types";
 import { TextSplit, TextScramble, ClickSparkles, DrawPath, ParticleField, useScrollReveal } from "@/lib/effects";
+import { Headphones, Mic, BrainCircuit, FileText } from "../icons";
 
 
 const HERO_CARD: FlashcardData = {
@@ -60,7 +61,7 @@ const ForgettingCurve = () => (
   </svg>
 );
 
-function FeatureCard({ icon, title, desc, index }: { icon: string; title: string; desc: string; index: number }) {
+function FeatureCard({ icon, title, desc, index }: { icon: React.ReactNode; title: string; desc: string; index: number }) {
   const { playHover } = useSoundDesign({ volume: 0.08 });
   return (
     <BorderBeam duration={4 + index * 0.5} colorFrom="#7c3aeld" colorTo="#c4b5fd">
@@ -155,7 +156,7 @@ const Navbar = () => {
           </button>
           <MagneticButton
             onClick={() => navigate("/auth")}
-            className="px-4 py-1.5 bg-[#7C3AED] text-white text-xs font-medium rounded-lg hover:bg-[#6D28D9] transition-colors"
+            className="px-4 py-1.5 min-h-[44px] bg-[#7C3AED] text-white text-xs font-medium rounded-lg hover:bg-[#6D28D9] transition-colors"
           >
             Start for free
           </MagneticButton>
@@ -251,7 +252,18 @@ export default function ModernLandingPage() {
               Powered by FSRS v5. The science of memory.
             </motion.div>
 
-            <h1 className="text-[#F0EFFE] text-4xl md:text-5xl lg:text-6xl font-light leading-[1.1] tracking-tight mb-4 overflow-hidden">
+            {/*
+              The headline is split into per-word inline-block spans for the
+              stagger, which leaves no whitespace text nodes between them —
+              the accessible name and any copy/paste would otherwise come out
+              as "Actuallyrememberit." aria-label restores the real sentence
+              for screen readers and search engines; the visual spacing comes
+              from mr-[0.3em] on each word.
+            */}
+            <h1
+              aria-label="Learn anything. Actually remember it."
+              className="text-[#F0EFFE] text-4xl md:text-5xl lg:text-6xl font-light leading-[1.1] tracking-tight mb-4 overflow-hidden"
+            >
               <ChromaticAberration intensity={2}>
                 <TextAnimate
                   text="Learn anything."
@@ -435,10 +447,10 @@ export default function ModernLandingPage() {
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
-            <FeatureCard index={0} icon="🎧" title="Study hands-free" desc="Aura speaks each question aloud, listens to your answer, and grades it. Perfect for commutes and chores." />
-            <FeatureCard index={1} icon="🎙" title="Audio → flashcards" desc="Record a lecture or upload a recording. Whisper transcribes it and Aura builds your deck in seconds." />
-            <FeatureCard index={2} icon="🧠" title="Scheduling that sticks" desc="FSRS v5 — 30% better retention than Anki — schedules each card right before you would forget it." />
-            <FeatureCard index={3} icon="📄" title="Docs → study material" desc="Upload a PDF or slide deck. Get organized notes, a presentation, or flashcards — instantly." />
+            <FeatureCard index={0} icon={<Headphones className="w-5 h-5" />} title="Study hands-free" desc="Aura speaks each question aloud, listens to your answer, and grades it. Perfect for commutes and chores." />
+            <FeatureCard index={1} icon={<Mic className="w-5 h-5" />} title="Audio → flashcards" desc="Record a lecture or upload a recording. Whisper transcribes it and Aura builds your deck in seconds." />
+            <FeatureCard index={2} icon={<BrainCircuit className="w-5 h-5" />} title="Scheduling that sticks" desc="FSRS v5 — 30% better retention than Anki — schedules each card right before you would forget it." />
+            <FeatureCard index={3} icon={<FileText className="w-5 h-5" />} title="Docs → study material" desc="Upload a PDF or slide deck. Get organized notes, a presentation, or flashcards — instantly." />
           </div>
         </div>
       </section>
@@ -522,7 +534,7 @@ export default function ModernLandingPage() {
                 </ul>
                 <MagneticButton
                   onClick={() => { playClick(); navigate("/auth"); }}
-                  className="w-full py-2.5 rounded-lg border border-[#2A2A3A] text-[#F0EFFE] text-xs font-medium hover:border-[#7C3AED]/40 transition-all"
+                  className="w-full py-2.5 min-h-[44px] rounded-lg border border-[#2A2A3A] text-[#F0EFFE] text-xs font-medium hover:border-[#7C3AED]/40 transition-all"
                 >
                   Get Started
                 </MagneticButton>
@@ -560,7 +572,7 @@ export default function ModernLandingPage() {
                   </ul>
                   <MagneticButton
                     onClick={() => { playSuccess(); navigate("/auth"); }}
-                    className="w-full py-2.5 rounded-lg bg-[#7C3AED] text-white text-xs font-medium hover:bg-[#6D28D9] transition-all shadow-[0_0_20px_rgba(124,58,237,0.2)] relative z-10"
+                    className="w-full py-2.5 min-h-[44px] rounded-lg bg-[#7C3AED] text-white text-xs font-medium hover:bg-[#6D28D9] transition-all shadow-[0_0_20px_rgba(124,58,237,0.2)] relative z-10"
                   >
                     Start Free Trial
                   </MagneticButton>
