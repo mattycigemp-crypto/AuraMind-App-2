@@ -28,8 +28,8 @@
 --   the function owner's privileges.
 --
 -- WHAT
---   Adds public.record_card_review(p_user_id, p_card_id, p_rating,
---   p_srs_result, p_srs_algorithm, p_reviewed_at). Validation:
+--   Adds public.record_card_review(p_card_id, p_rating, p_srs_result,
+--   p_user_id, p_srs_algorithm, p_reviewed_at). Validation:
 --
 --     - p_user_id must equal auth.uid() (otherwise the RPC is being
 --       abused to write a review on someone else's account — loud 42501).
@@ -59,10 +59,10 @@
 --   legacy UPDATE policy. Safe to apply on a live DB without downtime.
 
 CREATE OR REPLACE FUNCTION record_card_review(
-  p_user_id        UUID        DEFAULT NULL,
   p_card_id        UUID,
   p_rating         INTEGER,
   p_srs_result     JSONB,
+  p_user_id        UUID        DEFAULT NULL,
   p_srs_algorithm  TEXT        DEFAULT 'fsrs',
   p_reviewed_at    TIMESTAMPTZ DEFAULT NOW()
 )
@@ -175,7 +175,7 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION record_card_review(
-  UUID, UUID, INTEGER, JSONB, TEXT, TIMESTAMPTZ
+  UUID, INTEGER, JSONB, UUID, TEXT, TIMESTAMPTZ
 ) TO authenticated;
 
 -- ── Drop the legacy 1-hour UPDATE policy ─────────────────────────────────
@@ -205,10 +205,10 @@ ON CONFLICT (version) DO NOTHING;
 -- Migration complete.
 -- Verify by running the RPC as the affected user:
 --   SELECT record_card_review(
---     auth.uid(),
 --     '<a card_id you own>',
 --     3,
 --     '{"interval":1,"repetition":1,"easeFactor":2.5,"fsrsState":{}}'::jsonb,
+--     auth.uid(),
 --     'fsrs', now()
 --   );
 -- Expected: no error. Then a second call within minutes with rating=4

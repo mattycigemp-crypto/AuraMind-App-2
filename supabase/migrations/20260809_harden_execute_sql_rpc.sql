@@ -47,6 +47,9 @@ END;
 $$;
 
 -- Only the server-side admin path (service role) may execute raw SQL.
+-- Revoke from PUBLIC, authenticated, AND anon (anon historically had a
+-- direct grant, which a PUBLIC revocation does not remove).
 REVOKE ALL ON FUNCTION execute_sql(text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION execute_sql(text) FROM authenticated;
+REVOKE ALL ON FUNCTION execute_sql(text) FROM anon;
 GRANT EXECUTE ON FUNCTION execute_sql(text) TO service_role;
