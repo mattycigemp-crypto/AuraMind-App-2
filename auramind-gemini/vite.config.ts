@@ -78,6 +78,11 @@ export default defineConfig(({ mode }) => {
             'vendor-pdfjs': ['pdfjs-dist'],
             'vendor-supabase': ['@supabase/supabase-js'],
             'analytics': ['posthog-js'],
+            // Heavy runtimes that are only ever dynamic-imported. Naming them
+            // here keeps them out of the shared chunk (object-form manualChunks
+            // can otherwise fold dynamic imports into the entry graph).
+            'vendor-webllm': ['@mlc-ai/web-llm'],
+            'vendor-puter': ['@heyputer/puter.js'],
           },
         },
       },
