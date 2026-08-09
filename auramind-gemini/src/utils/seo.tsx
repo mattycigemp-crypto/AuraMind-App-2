@@ -97,7 +97,7 @@ export const LandingPageSEO = () => {
   usePageSEO({
     title: "AuraMind - AI-Powered Learning Platform | Study Smarter",
     description:
-      "Master any subject with AuraMind. AI-generated flashcards, spaced repetition algorithm, and intelligent tracking. Study 30% more efficiently.",
+      "Master any subject with AuraMind. AI-generated flashcards, spaced repetition algorithm, and intelligent tracking.",
     keywords: [
       "flashcards",
       "AI learning",

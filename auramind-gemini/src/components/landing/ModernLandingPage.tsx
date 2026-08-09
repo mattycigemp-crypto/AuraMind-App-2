@@ -18,7 +18,7 @@ import { FrostGlass } from "../ui/FrostGlass";
 import { useSoundDesign } from "@/hooks/useSoundDesign";
 import type { FlashcardData } from "@/lib/auramind/types";
 import { TextSplit, TextScramble, ClickSparkles, DrawPath, ParticleField, useScrollReveal } from "@/lib/effects";
-import { Headphones, Mic, BrainCircuit, FileText } from "../icons";
+import { Headphones, Mic, BrainCircuit, FileText, Check } from "../icons";
 
 
 const HERO_CARD: FlashcardData = {
@@ -34,13 +34,6 @@ const HERO_CARD: FlashcardData = {
 };
 
 const NAV_ITEMS = ["Features", "Pricing", "About"];
-
-const AVATARS = [
-  "https://i.pravatar.cc/40?u=alice",
-  "https://i.pravatar.cc/40?u=bob",
-  "https://i.pravatar.cc/40?u=carol",
-  "https://i.pravatar.cc/40?u=dave",
-];
 
 const ForgettingCurve = () => (
   <svg viewBox="0 0 400 140" className="w-full h-auto">
@@ -328,21 +321,29 @@ export default function ModernLandingPage() {
                 </MagneticButton>
               </div>
 
-              {/* Avatar stack + learner count */}
-              <div className="flex items-center gap-4 pt-4 border-t border-[#2A2A3A]/30">
-                <div className="flex -space-x-2">
-                  {AVATARS.map((src, i) => (
-                    <img
-                      key={i}
-                      src={src}
-                      alt=""
-                      className="w-8 h-8 rounded-full border-2 border-[#0A0A0F]"
-                      style={{ zIndex: 4 - i }}
-                    />
-                  ))}
-                </div>
-                <span className="text-[#5A5A72] text-xs">
-                  Join <span className="text-[#F0EFFE] font-medium">1,248</span> learners building knowledge daily
+              {/*
+                Was an avatar stack of four i.pravatar.cc stock portraits
+                beside "Join 1,248 learners building knowledge daily" — the
+                same invented figure that ran in TrustStrip, next to photos of
+                people who are not users.
+
+                Pre-launch, the honest version of this slot is the offer, not
+                a crowd. "Free, no card" is checkable against the signup form
+                and is a stronger reason to click than borrowed credibility.
+              */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-4 border-t border-[#2A2A3A]/30">
+                <span className="inline-flex items-center gap-2 text-[#5A5A72] text-xs">
+                  <Check size={13} className="shrink-0 text-[#7C3AED]" />
+                  Free to start — no card required
+                </span>
+                {/* Both claims are checkable: the signup form states the free
+                    tier, and offline review queueing is implemented in
+                    StudyModePage + offlineStudyService with tests. Do not add
+                    a third bullet here unless it is equally verifiable —
+                    Anki export, for instance, has a service but no UI yet. */}
+                <span className="inline-flex items-center gap-2 text-[#5A5A72] text-xs">
+                  <Check size={13} className="shrink-0 text-[#7C3AED]" />
+                  Works offline — reviews sync later
                 </span>
               </div>
             </motion.div>
@@ -364,7 +365,10 @@ export default function ModernLandingPage() {
                 <Flashcard card={HERO_CARD} showStack float compact={false} />
               </div>
               <div className="absolute -bottom-3 -right-3 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium whitespace-nowrap">
-                ✓ Reviewed — see you in 3 days
+                <span className="inline-flex items-center gap-1.5">
+                  <Check size={12} className="shrink-0" />
+                  Reviewed — see you in 3 days
+                </span>
               </div>
             </motion.div>
           </motion.div>
@@ -381,7 +385,6 @@ export default function ModernLandingPage() {
             "AI FLASHCARDS",
             "FSRS v5 SCHEDULING",
             "NEURAL LEARNING",
-            "ANKI EXPORT",
             "SPACED REPETITION",
             "MEMORY SCIENCE",
             "TACTILE STUDY",
@@ -449,7 +452,7 @@ export default function ModernLandingPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
             <FeatureCard index={0} icon={<Headphones className="w-5 h-5" />} title="Study hands-free" desc="Aura speaks each question aloud, listens to your answer, and grades it. Perfect for commutes and chores." />
             <FeatureCard index={1} icon={<Mic className="w-5 h-5" />} title="Audio → flashcards" desc="Record a lecture or upload a recording. Whisper transcribes it and Aura builds your deck in seconds." />
-            <FeatureCard index={2} icon={<BrainCircuit className="w-5 h-5" />} title="Scheduling that sticks" desc="FSRS v5 — 30% better retention than Anki — schedules each card right before you would forget it." />
+            <FeatureCard index={2} icon={<BrainCircuit className="w-5 h-5" />} title="Scheduling that sticks" desc="FSRS v5 — designed to need fewer reviews — schedules each card right before you would forget it." />
             <FeatureCard index={3} icon={<FileText className="w-5 h-5" />} title="Docs → study material" desc="Upload a PDF or slide deck. Get organized notes, a presentation, or flashcards — instantly." />
           </div>
         </div>
@@ -528,7 +531,7 @@ export default function ModernLandingPage() {
                 <ul className="space-y-2 mb-6">
                   {["5 decks", "20 cards per deck", "Basic SRS", "Web access"].map((f, i) => (
                     <li key={i} className="text-[#9090A8] text-xs flex items-center gap-2">
-                      <span className="text-[#7C3AED]">✓</span> {f}
+                      <Check size={14} className="shrink-0 text-[#7C3AED]" /> {f}
                     </li>
                   ))}
                 </ul>
@@ -566,7 +569,7 @@ export default function ModernLandingPage() {
                   <ul className="space-y-2 mb-6">
                     {["Unlimited decks & cards", "AI deck generation", "Advanced FSRS v5", "Priority support"].map((f, i) => (
                       <li key={i} className="text-[#9090A8] text-xs flex items-center gap-2">
-                        <span className="text-[#7C3AED]">✓</span> {f}
+                        <Check size={14} className="shrink-0 text-[#7C3AED]" /> {f}
                       </li>
                     ))}
                   </ul>

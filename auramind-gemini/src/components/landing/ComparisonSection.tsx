@@ -35,7 +35,7 @@ const ROWS: ComparisonRow[] = [
   },
   {
     feature: "FSRS v5 scheduling",
-    detail: "Modern memory science, ~30% fewer reviews needed (Anki users can opt in)",
+    detail: "Modern memory science, designed to need fewer reviews (Anki users can opt in)",
     values: { auramind: "yes", anki: "partial", quizlet: "no", remnote: "no" },
   },
   {
