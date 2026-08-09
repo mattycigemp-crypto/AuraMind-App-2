@@ -16,17 +16,17 @@
 </div>
 
 An AI-powered study companion — flashcard management, spaced
-repetition (FSRS v5 with personalized weights), AI generation +
-chat, Stripe billing, and a desktop / Android / iOS build pipeline,
-all in one repo.
+repetition (FSRS v5 with personalized weights), AI generation + chat,
+and Stripe billing — all in one repo.
 
-> **Status:** active development · pre-M6 release · deployments via Vercel (web) and Capacitor (mobile).
+> **Status:** active development · pre-M6 release · deployed via Vercel (web).
+>
+> The Tauri 2 desktop and Capacitor 8 mobile stacks are **archived**
+> (web-only for now); see `auramind-gemini/archive/` to re-enable them.
 
 ## ✅ What's in here
 
-- **Web app** — React 19 + Vite 6 + Tailwind, served by Vercel.
-- **Mobile apps** — Capacitor 8 → Android (Play Store) and iOS (App Store).
-- **Desktop app** — Tauri 2 with auto-updater.
+- **Web app** — React 19 + Vite 6 + Tailwind, served by Vercel (PWA with offline support).
 - **Backend** — Vercel serverless functions under `/api`.
 - **Database** — Supabase (Postgres) with append-only migrations in `./supabase/migrations/`.
 

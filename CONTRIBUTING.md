@@ -23,9 +23,8 @@ cd ..
 You will need:
 
 - **Node 18+** (project targets Vite 6 which requires ≥18).
-- **Rust stable** + `cargo` if you intend to build the Tauri desktop app.
-- **Xcode 15+** and **Android Studio Iguana+** if you intend to compile
-  Capacitor shells.
+- The native Tauri/Capacitor stacks are archived (web-only) — no Rust,
+  Xcode, or Android Studio toolchains are required.
 
 To run only the web app without native toolchains:
 

@@ -12,7 +12,7 @@ AuraMind is a full-stack AI-powered study companion with three deployable units:
 |---|---|---|---|
 | Frontend SPA | `auramind-gemini/` | React 19 + Vite + Tailwind 4 | Main application |
 | Backend API | `api/` | Express + Vercel Serverless | Auth, Stripe, admin, chat |
-| Desktop/Mobile | `src-tauri/`, `android/`, `ios/` | Tauri v2 + Capacitor | Native apps |
+| Desktop/Mobile | `archive/src-tauri/`, `archive/android/`, `archive/ios/` | Tauri v2 + Capacitor | Archived — web-only |
 
 **Key dependencies:** Supabase (auth + DB), Stripe (payments), Resend (email), PostHog (analytics). AI providers: Groq, OpenRouter, local (Ollama/LM Studio).
 
@@ -166,15 +166,10 @@ Enrollment: localStorage-first with best-effort Supabase sync. Lessons open as p
 
 ## Native Apps
 
-### Tauri v2 (Desktop)
-- `src-tauri/` with Rust backend
-- Plugins: clipboard, dialog, fs, http, notification, os, shell, store, updater
-- Platform-specific CSS: `.tauri-app`, `.platform-windows`, etc.
-
-### Capacitor (Mobile)
-- `android/` and `ios/` directories
-- Plugins: splash-screen, status-bar, keyboard, push-notifications, local-notifications, haptics, share, clipboard, device, network, preferences, filesystem, app
-- PWA fallback with service worker
+> **Archived (web-only for now).** The Tauri 2 desktop and Capacitor 8
+> mobile stacks were moved under `archive/` in Aug 2026 and are not part
+> of the current build/release pipeline. Re-enable by restoring the
+> directories from `archive/` and the workflows from `archive/.github/`.
 
 ---
 
@@ -195,7 +190,7 @@ Enrollment: localStorage-first with best-effort Supabase sync. Lessons open as p
 Key differentiators vs competitors (Quizlet, Anki, Knowt, RemNote, StudyFetch, Brainscape):
 - AI-powered content generation from multiple input formats
 - FSRS v5 algorithm (matching Anki's latest)
-- Multi-platform: web + desktop (Tauri) + mobile (Capacitor)
+- Multi-platform: web-first (native desktop/mobile stacks archived)
 - Source-grounded flashcards with citations
 - Multi-provider AI with local fallback (no API costs)
 - Integrated learning paths with structured curricula

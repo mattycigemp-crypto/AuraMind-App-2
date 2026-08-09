@@ -17,6 +17,4 @@
 /.github/workflows/release*.yml @mattycigemp-crypto
 /.github/workflows/mobile-*.yml @mattycigemp-crypto
 
-# ── Tauri desktop config ──
-/auramind-gemini/src-tauri/   @mattycigemp-crypto
-/auramind-gemini/capacitor.config.ts @mattycigemp-crypto
+# ── Native stacks are archived (web-only); re-add owners if restored ──

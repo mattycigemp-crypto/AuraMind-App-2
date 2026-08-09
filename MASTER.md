@@ -156,13 +156,13 @@ AuraMind App 2/                          ← Project root
 │   │   │   └── animations/             ← awe.ts (animation system)
 │   │   ├── types/                      ← index.ts (all TypeScript types)
 │   │   └── utils/                      ← permissions.ts, localeUtils.ts
-│   ├── android/                        ← Capacitor Android
-│   ├── ios/                            ← Capacitor iOS
-│   ├── src-tauri/                      ← Tauri v2 desktop (Rust)
+│   ├── archive/android/                ← Capacitor Android (archived)
+│   ├── archive/ios/                    ← Capacitor iOS (archived)
+│   ├── archive/src-tauri/              ← Tauri v2 desktop (archived)
 │   ├── public/
 │   │   ├── manifest.json               ← PWA manifest
 │   │   └── robots.txt
-│   ├── capacitor.config.ts
+│   ├── archive/capacitor.config.ts     ← (archived)
 │   ├── vite.config.ts
 │   ├── tailwind.config.js
 │   ├── tsconfig.json
@@ -230,8 +230,8 @@ AuraMind App 2/                          ← Project root
 | **Icons** | Lucide React | 0.562.0 |
 | **i18n** | i18next + react-i18next | 26.3.0 |
 | **Testing** | Vitest + Testing Library | 4.0.17 |
-| **Desktop** | Tauri v2 | 2.11.0 (Rust backend) |
-| **Mobile** | Capacitor | 8.4.0 |
+| **Desktop** | Tauri v2 (archived) | 2.x — see `archive/src-tauri/` |
+| **Mobile** | Capacitor (archived) | 8.x — see `archive/` |
 | **PWA** | vite-plugin-pwa | 0.21.2 |
 | **Backend runtime** | Node.js / Express / Vercel Serverless | — |
 | **Python service** | FastAPI | (model-service/) |
@@ -555,17 +555,10 @@ Six courses, 86 lessons in `src/data/learningPathsData.ts`:
 
 ## 13. Native Apps
 
-### Tauri v2 (Desktop)
-- Path: `auramind-gemini/src-tauri/`
-- Rust backend with plugins: clipboard, dialog, fs, http, notification, os, shell, store, updater
-- CSS classes: `.tauri-app`, `.platform-windows`, `.platform-macos`, `.platform-linux`
-- Build: `npm run tauri:build`
-
-### Capacitor (Mobile)
-- Paths: `auramind-gemini/android/`, `auramind-gemini/ios/`
-- Plugins: splash-screen, status-bar, keyboard, push-notifications, local-notifications, haptics, share, clipboard, device, network, preferences, filesystem, app
-- App ID: `com.auramind.app`
-- CSS classes: `.capacitor-app`, `.platform-ios`, `.platform-android`
+> **Archived (web-only for now).** The Tauri 2 desktop and Capacitor 8
+> mobile stacks were moved under `archive/` in Aug 2026 and are not part
+> of the current build/release pipeline. Restore from `archive/` to
+> re-enable; the PWA remains the primary installable surface.
 
 ### PWA
 - Service worker via `vite-plugin-pwa`
