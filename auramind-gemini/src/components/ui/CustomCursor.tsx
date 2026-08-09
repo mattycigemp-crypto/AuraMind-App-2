@@ -1,11 +1,21 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
+/** True only for devices with a real pointer — excludes phones and tablets. */
+const FINE_POINTER = "(hover: hover) and (pointer: fine)";
 
 export function CustomCursor() {
   const dotRef = useRef<HTMLDivElement | null>(null);
   const ringRef = useRef<HTMLDivElement | null>(null);
+  // Evaluated once on mount rather than during render so SSR/first paint
+  // stay consistent. Touch devices skip the nodes entirely.
+  const [finePointer, setFinePointer] = useState(false);
 
   useEffect(() => {
-    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    setFinePointer(window.matchMedia(FINE_POINTER).matches);
+  }, []);
+
+  useEffect(() => {
+    if (!finePointer) return;
     document.body.classList.add("custom-cursor-active");
 
     const dot = dotRef.current;
@@ -38,7 +48,9 @@ export function CustomCursor() {
       cancelAnimationFrame(raf);
       document.body.classList.remove("custom-cursor-active");
     };
-  }, []);
+  }, [finePointer]);
+
+  if (!finePointer) return null;
 
   return (
     <>
