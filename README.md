@@ -84,6 +84,22 @@ and Stripe billing — all in one repo.
    RESEND_API_KEY=your_resend_api_key_here
    ```
 
+   > **⚠️ Which keys ship to the browser.** Everything prefixed `VITE_` is
+   > inlined into the public JS bundle at build time — treat those as
+   > public, never as secrets. `RESEND_API_KEY` and `GOOGLE_SEARCH_API_KEY`
+   > are **not** `VITE_`-prefixed: they are read server-side only (in the
+   > `/api` functions) and must never be prefixed with `VITE_`. The Google
+   > Custom Search and email calls go through the API proxy so no third-
+   > party key leaves the server.
+   >
+   > **Groq BYOK fallback (intentional).** `VITE_GROQ_API_KEY` deliberately
+   > ships in the bundle: it's a developer-funded fallback so users without
+   > their own key still get free AI (falls back to Ollama otherwise). To
+   > ship a production build *without* that key, create
+   > `auramind-gemini/.env.production` with `VITE_GROQ_API_KEY=` (empty) —
+   > Vite gives it priority over `.env`, and AI then requires each user's
+   > own key (or Puter).
+
 4. **Start the development server**
    ```bash
    npm run dev

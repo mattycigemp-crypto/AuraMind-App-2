@@ -100,6 +100,12 @@ const BulkEmailSchema = z.object({
   body: z.string().min(1, 'Body is required').max(50000),
 });
 
+const SearchRequestSchema = z.object({
+  query: z.string().min(1, 'query is required').max(500, 'Query too long'),
+  maxResults: z.number().int().min(1).max(10).optional().default(10),
+  safeSearch: z.boolean().optional(),
+});
+
 const EmailRequestSchema = z.object({
   type: z.enum(['welcome', 'signInAlert', 'trialEnding', 'paymentSuccess', 'paymentFailed', 'subscriptionCancelled', 'passwordReset', 'emailVerification']),
   to: z.string().email('to must be a valid email'),
@@ -179,6 +185,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return await handleAccount(req, res, action);
       case 'email':
         return await handleEmail(req, res, action);
+      case 'search':
+        return await handleSearch(req, res);
       case 'audit':
         return await handleAudit(req, res, action);
       case 'integrations':
@@ -1011,6 +1019,76 @@ async function handleAccount(req: VercelRequest, res: VercelResponse, action?: s
 // Email endpoints — transactional mail is sent server-side so the Resend
 // API key never ships in the client bundle. Callers must be authenticated
 // and can only send to their own address (prevents relay abuse).
+// Web search proxy — the Google Custom Search API key lives server-side
+// only. Clients call POST /api/search with their session token; the key
+// never ships in the browser bundle.
+async function handleSearch(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' });
+
+  const searchKey = process.env.GOOGLE_SEARCH_API_KEY;
+  const engineId = process.env.GOOGLE_SEARCH_ENGINE_ID;
+  if (!searchKey || !engineId) {
+    return json(res, 503, { error: 'Web search is not configured on the server' });
+  }
+
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabase = createClient(
+    process.env.SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  );
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return json(res, 401, { error: 'Missing authorization' });
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user } } = await supabase.auth.getUser(token);
+  if (!user) return json(res, 401, { error: 'Invalid token' });
+
+  const validated = validateBody(res, SearchRequestSchema, req.body);
+  if (!validated.ok) return;
+
+  const { query, maxResults, safeSearch } = validated.data;
+
+  try {
+    const params = new URLSearchParams({
+      key: searchKey,
+      cx: engineId,
+      q: query,
+      num: String(Math.min(maxResults, 10)),
+    });
+    if (safeSearch) params.set('safe', 'active');
+
+    const response = await fetch(`https://www.googleapis.com/customsearch/v1?${params.toString()}`);
+    if (!response.ok) {
+      const detail = await response.text().catch(() => '');
+      return json(res, 502, {
+        error: `Google Custom Search API error (${response.status})`,
+        details: detail.slice(0, 200),
+      });
+    }
+
+    const jsonBody = await response.json();
+    const results = (jsonBody.items ?? []).map((item: any) => {
+      let source = item.displayLink || 'unknown';
+      if (!source || source === 'unknown') {
+        try { source = new URL(item.link || 'https://example.com').hostname; } catch { /* keep unknown */ }
+      }
+      return {
+        title: item.title || 'Untitled',
+        url: item.link || '#',
+        snippet: item.snippet || '',
+        source: source.replace(/^www\./, ''),
+        relevanceScore: item.score ?? 0.5,
+      };
+    });
+
+    return json(res, 200, { results });
+  } catch (err: any) {
+    console.error('Web search error:', err);
+    return json(res, 502, { error: err.message || 'Web search failed' });
+  }
+}
+
 async function handleEmail(req: VercelRequest, res: VercelResponse, action?: string) {
   if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' });
 

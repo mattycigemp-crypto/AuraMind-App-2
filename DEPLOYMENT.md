@@ -105,6 +105,10 @@ Verified against the code in this repo (Aug 2026):
       follows).
 - [x] **Resend API key is server-side only** — transactional email goes through
       `POST /api/email`; the key never ships in the client bundle.
+- [x] **Google CSE key is server-side only** — search goes through
+      `POST /api/search`; the key never ships in the client bundle.
+- [x] **Initial-load JS payload ≤ 500 KB gzipped** — enforced by
+      `npm run size` (`scripts/check-bundle-size.mjs`) in CI.
 
 Still requires manual/out-of-band setup (cannot be verified from the repo):
 
@@ -113,9 +117,9 @@ Still requires manual/out-of-band setup (cannot be verified from the repo):
 - [ ] Stripe webhook endpoint configured in the Stripe dashboard with the
       `STRIPE_WEBHOOK_SECRET`.
 - [ ] Custom domain configured with HTTPS in Vercel.
-- [ ] Apply the migrations in `supabase/migrations/` to the live project
-      (time-stamp order; `npm run migrate` with `supabase/` config, or the
-      Supabase CLI).
+- [x] Apply the migrations in `supabase/migrations/` to the live project
+      — all 31 applied via `node run-migrations.js` (Aug 9, 2026);
+      re-running is idempotent.
 
 ## Monitoring
 

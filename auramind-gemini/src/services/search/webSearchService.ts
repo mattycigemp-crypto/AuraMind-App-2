@@ -1,5 +1,12 @@
-// Web search service for searching educational content
-import { GeneratedCard } from '../api/groqService';
+// Web search service for searching educational content.
+//
+// Searches are proxied through the serverless API (`POST /api/search`);
+// the Google Custom Search API key lives server-side only — never read it
+// from a VITE_* variable, because Vite inlines those into the public bundle.
+import type { GeneratedCard } from '../api/groqService';
+import { requireSupabase } from '../database/supabase';
+
+const API_BASE = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/+$/, '') ?? '';
 
 interface SearchResult {
   title: string;
@@ -25,14 +32,6 @@ interface QuizQuestion {
 
 export class WebSearchService {
   private static instance: WebSearchService;
-  private apiKey: string | null = null;
-  private searchEngineId: string | null = null;
-
-  private constructor() {
-    // Initialize with environment variables
-    this.apiKey = import.meta.env.VITE_GOOGLE_SEARCH_API_KEY || null;
-    this.searchEngineId = import.meta.env.VITE_GOOGLE_SEARCH_ENGINE_ID || null;
-  }
 
   public static getInstance(): WebSearchService {
     if (!WebSearchService.instance) {
@@ -42,48 +41,42 @@ export class WebSearchService {
   }
 
   /**
-   * Search the web for educational content via the Google Custom Search
-   * JSON API. Throws when the API keys are not configured — no simulated
-   * results are ever returned.
+   * Search the web for educational content via the serverless search proxy
+   * (`POST /api/search`), which holds the Google Custom Search key
+   * server-side. Requires a signed-in session. Throws on failure — no
+   * simulated results are ever returned.
    */
   public async searchEducationalContent(options: WebSearchOptions): Promise<SearchResult[]> {
-    if (!this.apiKey || !this.searchEngineId) {
-      throw new Error(
-        'Web search unavailable: set VITE_GOOGLE_SEARCH_API_KEY and VITE_GOOGLE_SEARCH_ENGINE_ID in auramind-gemini/.env (Google Custom Search JSON API) to enable live results.'
-      );
-    }
-
     try {
-      const params = new URLSearchParams({
-        key: this.apiKey,
-        cx: this.searchEngineId,
-        q: options.query,
-        num: String(Math.min(options.maxResults || 10, 10)),
-      });
-      if (options.safeSearch) params.set('safe', 'active');
+      const { data } = await requireSupabase().auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error('Sign in to search the web');
 
-      const res = await fetch(`https://www.googleapis.com/customsearch/v1?${params.toString()}`);
-      if (!res.ok) {
-        const detail = await res.text().catch(() => '');
-        throw new Error(`Google Custom Search API error (${res.status}): ${detail.slice(0, 200)}`);
+      const response = await fetch(`${API_BASE}/api/search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          query: options.query,
+          maxResults: Math.min(options.maxResults || 10, 10),
+          safeSearch: options.safeSearch,
+        }),
+      });
+
+      const body = (await response.json().catch(() => null)) as { results?: SearchResult[]; error?: string } | null;
+      if (!response.ok || !body?.results) {
+        throw new Error(body?.error ?? `Web search failed (${response.status})`);
       }
 
-      const json = await res.json();
-      const results: SearchResult[] = (json.items ?? []).map((item: any) => ({
-        title: item.title || 'Untitled',
-        url: item.link || '#',
-        snippet: item.snippet || '',
-        source: (item.displayLink || new URL(item.link || 'https://example.com').hostname).replace(/^www\./, ''),
-        relevanceScore: item.score ?? 0.5,
-      }));
-
       if (options.educationalFocus) {
-        return results.filter(result =>
+        return body.results.filter(result =>
           this.isEducationalContent(result.title, result.snippet)
         );
       }
 
-      return results;
+      return body.results;
     } catch (error) {
       console.error('Web search error:', error);
       throw error;

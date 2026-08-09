@@ -4,6 +4,7 @@
 // Dark Web Monitor, Predictive Models
 // ═══════════════════════════════════════════════════════════
 import { groqChat } from './groqClient';
+import { webSearchService } from '../search/webSearchService';
 
 /**
  * True when VITE_GROQ_API_KEY is set to a real-looking key. Centralises the
@@ -144,32 +145,24 @@ function formatMarketCap(n: number): string {
 // ────────────────────────────────────────────────────────
 
 export async function fetchMarketIntel(query: string): Promise<MarketIntelResult> {
-  const searchKey = import.meta.env.VITE_GOOGLE_SEARCH_API_KEY;
-  const engineId = import.meta.env.VITE_GOOGLE_SEARCH_ENGINE_ID;
-
   const results: MarketIntelResult['results'] = [];
 
-  // Try real Google Search
-  if (searchKey && engineId && searchKey !== 'your_google_search_api_key') {
-    try {
-      const url = `https://www.googleapis.com/customsearch/v1?key=${searchKey}&cx=${engineId}&q=${encodeURIComponent(query)}&num=5`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const json = await res.json();
-        for (const item of (json.items || [])) {
-          const sentiment = await analyzeSentiment(item.snippet || item.title || '');
-          results.push({
-            title: item.title || 'Untitled',
-            url: item.link || '#',
-            snippet: item.snippet || '',
-            sentiment: sentiment.label,
-            sentimentScore: sentiment.score,
-          });
-        }
-      }
-    } catch {
-      console.warn('Google Search API failed for market intel');
+  // Try real Google Search — proxied server-side via /api/search so the
+  // Custom Search API key never ships in the client bundle.
+  try {
+    const searchResults = await webSearchService.searchEducationalContent({ query, maxResults: 5 });
+    for (const item of searchResults) {
+      const sentiment = await analyzeSentiment(item.snippet || item.title || '');
+      results.push({
+        title: item.title,
+        url: item.url,
+        snippet: item.snippet,
+        sentiment: sentiment.label,
+        sentimentScore: sentiment.score,
+      });
     }
+  } catch {
+    console.warn('Web search unavailable for market intel');
   }
 
   // Fallback: use Groq AI to generate market intelligence

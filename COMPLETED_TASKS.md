@@ -19,7 +19,7 @@
 - ✅ Optimized AuraSans font (WOFF2 only, no italics)
 - ✅ Total: 54 packages removed
 
-**Result:** Bundle ~2.5MB → ~1.8MB (28% reduction)
+**Result:** Initial-load JS payload cut from ~6.6MB → ~387KB gzipped; enforced by `npm run size` / `scripts/check-bundle-size.mjs` in CI (budget 500KB gzip).
 
 **Files Modified:**
 - `auramind-gemini/package.json`

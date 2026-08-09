@@ -53,3 +53,11 @@ REVOKE ALL ON FUNCTION execute_sql(text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION execute_sql(text) FROM authenticated;
 REVOKE ALL ON FUNCTION execute_sql(text) FROM anon;
 GRANT EXECUTE ON FUNCTION execute_sql(text) TO service_role;
+
+-- ── Bookkeeping ─────────────────────────────────────────────────────────
+INSERT INTO schema_migrations (version, description)
+VALUES (
+  '20260809_harden_execute_sql_rpc',
+  'Recreate execute_sql as SECURITY INVOKER; revoke EXECUTE from PUBLIC, authenticated, and anon; harden the read-only guard'
+)
+ON CONFLICT (version) DO NOTHING;
