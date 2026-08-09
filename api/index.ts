@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { applyMiddleware } from './middleware.js';
 import { handleChatStream } from './chatHandler.js';
 import { z } from 'zod';
+import { sendEmail as sendEmailViaResend } from './lib/emails.js';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || '';
 
@@ -99,6 +100,26 @@ const BulkEmailSchema = z.object({
   body: z.string().min(1, 'Body is required').max(50000),
 });
 
+const EmailRequestSchema = z.object({
+  type: z.enum(['welcome', 'signInAlert', 'trialEnding', 'paymentSuccess', 'paymentFailed', 'subscriptionCancelled', 'passwordReset', 'emailVerification']),
+  to: z.string().email('to must be a valid email'),
+  origin: z.string().url('origin must be a valid URL').optional(),
+  name: z.string().max(200).optional(),
+  timestamp: z.string().max(200).optional(),
+  location: z.string().max(200).optional(),
+  device: z.string().max(200).optional(),
+  trialEnds: z.string().max(200).optional(),
+  daysRemaining: z.number().int().min(0).max(3650).optional(),
+  amount: z.string().max(100).optional(),
+  plan: z.string().max(100).optional(),
+  nextBilling: z.string().max(200).optional(),
+  lastAttempt: z.string().max(200).optional(),
+  effectiveDate: z.string().max(200).optional(),
+  resetLink: z.string().url().optional(),
+  verificationLink: z.string().url().optional(),
+  expiresIn: z.string().max(200).optional(),
+});
+
 const ExportCSVSchema = z.object({
   columns: z.array(z.string()).optional(),
   format: z.enum(['csv', 'json']).optional().default('csv'),
@@ -156,6 +177,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return await handleStripe(req, res, action);
       case 'account':
         return await handleAccount(req, res, action);
+      case 'email':
+        return await handleEmail(req, res, action);
       case 'audit':
         return await handleAudit(req, res, action);
       case 'integrations':
@@ -972,7 +995,8 @@ async function handleAccount(req: VercelRequest, res: VercelResponse, action?: s
       try {
         const cleanups = ['cards', 'decks', 'study_sessions', 'chat_logs', 'card_reviews'];
         for (const table of cleanups) {
-          await supabase.from(table).delete().eq('user_id', user.id).catch(() => {});
+          // The delete builder is PromiseLike (no .catch); rely on the outer try/catch.
+          await supabase.from(table).delete().eq('user_id', user.id);
         }
       } catch { /* best-effort cleanup */ }
 
@@ -982,6 +1006,45 @@ async function handleAccount(req: VercelRequest, res: VercelResponse, action?: s
     default:
       return json(res, 400, { error: 'Invalid account action' });
   }
+}
+
+// Email endpoints — transactional mail is sent server-side so the Resend
+// API key never ships in the client bundle. Callers must be authenticated
+// and can only send to their own address (prevents relay abuse).
+async function handleEmail(req: VercelRequest, res: VercelResponse, action?: string) {
+  if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' });
+
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabase = createClient(
+    process.env.SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  );
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return json(res, 401, { error: 'Missing authorization' });
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user } } = await supabase.auth.getUser(token);
+  if (!user) return json(res, 401, { error: 'Invalid token' });
+
+  const validated = validateBody(res, EmailRequestSchema, req.body);
+  if (!validated.ok) return;
+
+  if (validated.data.to.toLowerCase() !== (user.email || '').toLowerCase()) {
+    return json(res, 403, { error: 'Emails can only be sent to your own address' });
+  }
+
+  const result = await sendEmailViaResend(
+    validated.data.type,
+    validated.data.to,
+    validated.data,
+    validated.data.origin
+  );
+
+  if (!result.success) {
+    return json(res, 502, { error: result.error || 'Email send failed' });
+  }
+  return json(res, 200, { success: true });
 }
 
 // --- Audit Log Helper ---
