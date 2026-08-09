@@ -124,7 +124,7 @@ export function validateEnv(): EnvValidationResult {
  */
 export function logEnvValidation(result: EnvValidationResult): void {
   if (result.valid && result.warnings.length === 0) {
-    console.log('[AuraMind] Environment validation passed');
+    console.warn('[AuraMind] Environment validation passed');
     return;
   }
 

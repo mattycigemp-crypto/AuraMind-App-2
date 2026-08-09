@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PlayIcon as Play, PauseIcon as Pause, ChevronRightIcon as ChevronRight, ChevronLeftIcon as ChevronLeft, Volume2Icon as Volume2, Maximize2Icon as Maximize2, Minimize2Icon as Minimize2, RotateCcwIcon as RotateCcw } from '../icons/CustomIcons';
 import type { Slide } from '../../types';
 
@@ -15,7 +15,7 @@ const PresentationViewer: React.FC<PresentationViewerProps> = ({ title, slides }
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Speech Synthesis
-    const speak = (text: string) => {
+    const speak = useCallback((text: string) => {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel(); // Stop current
 
@@ -38,14 +38,14 @@ const PresentationViewer: React.FC<PresentationViewerProps> = ({ title, slides }
 
             window.speechSynthesis.speak(utterance);
         }
-    };
+    }, [isPlaying, currentSlide, slides.length]);
 
-    const stopSpeaking = () => {
+    const stopSpeaking = useCallback(() => {
         if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
             setIsSpeaking(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         if (isPlaying) {
@@ -55,7 +55,7 @@ const PresentationViewer: React.FC<PresentationViewerProps> = ({ title, slides }
         }
 
         return () => stopSpeaking();
-    }, [currentSlide, isPlaying]);
+    }, [currentSlide, isPlaying, speak, stopSpeaking, slides]);
 
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {

@@ -40,9 +40,18 @@ const FadeContent: React.FC<FadeContentProps> = ({
 }) => {
   const ref = useRef<HTMLDivElement>(null);
 
+  // Kept in a ref so the mount-once ScrollTrigger effect never re-runs
+  // when callbacks/numbers change identity on re-render.
+  const latestRef = useRef({ container, blur, duration, ease, delay, threshold, initialOpacity, disappearAfter, disappearDuration, disappearEase, onComplete, onDisappearanceComplete });
+
+  useEffect(() => {
+    latestRef.current = { container, blur, duration, ease, delay, threshold, initialOpacity, disappearAfter, disappearDuration, disappearEase, onComplete, onDisappearanceComplete };
+  });
+
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const { container, blur, duration, ease, delay, threshold, initialOpacity, disappearAfter, disappearDuration, disappearEase, onComplete, onDisappearanceComplete } = latestRef.current;
 
     let scrollerTarget: Element | string | null = container || document.getElementById('snap-main-container') || null;
 

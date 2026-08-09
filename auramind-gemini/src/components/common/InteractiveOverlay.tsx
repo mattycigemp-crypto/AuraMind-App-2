@@ -90,7 +90,7 @@ const InteractiveOverlay: React.FC<InteractiveOverlayProps> = ({
     }
   }, [selectedOption, customAnswer, currentQuestion, isLastQuestion, isLastTab, answers, onConfirm, onClose]);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
       const prevQuestionId = questions[currentQuestionIndex - 1].id;
@@ -105,11 +105,11 @@ const InteractiveOverlay: React.FC<InteractiveOverlayProps> = ({
           setShowCustomInput(true);
         }
       }
-    } else if (activeTab > 0) {
+} else if (activeTab > 0) {
       setActiveTab(prev => prev - 1);
       setCurrentQuestionIndex(questions.length - 1);
     }
-  };
+  }, [currentQuestionIndex, questions, answers, activeTab]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!isOpen) return;

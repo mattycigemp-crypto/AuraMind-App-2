@@ -542,7 +542,7 @@ export default function ChatPage() {
     } finally {
       setIsTyping(false);
     }
-  }, [messages, studyContext]);
+  }, [studyContext]);
 
   const handleQuickPrompt = (prompt: QuickPrompt) => {
     if (!studyContext) {

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { supabase } from '../services/database/supabase';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { supabase, requireSupabase } from '../services/database/supabase';
 
 /**
  * useDeckCollaborators — real-time presence + broadcast for deck collaboration.
@@ -33,7 +34,7 @@ export function useDeckCollaborators(
   userId: string,
   displayName = 'Anonymous',
 ) {
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
   const [state, setState] = useState<DeckCollaboratorState>({
     peers: [],
     myCursor: null,
@@ -44,7 +45,7 @@ export function useDeckCollaborators(
   useEffect(() => {
     if (!deckId || !supabase) return;
 
-    const channel = supabase.channel(`deck-collab:${deckId}`, {
+    const channel = requireSupabase().channel(`deck-collab:${deckId}`, {
       config: { broadcast: { ack: false } },
     });
 
@@ -129,6 +130,8 @@ export function useDeckCollaborators(
 
     channelRef.current = channel;
 
+    const peers = peersRef.current;
+
     return () => {
       clearInterval(heartbeat);
       if (channelRef.current && supabase) {
@@ -138,10 +141,10 @@ export function useDeckCollaborators(
           event: 'presence',
           payload: { userId, displayName, isTyping: false, ts: Date.now() },
         });
-        supabase.removeChannel(channelRef.current);
+        requireSupabase().removeChannel(channelRef.current);
         channelRef.current = null;
       }
-      peersRef.current.clear();
+      peers.clear();
     };
   }, [deckId, userId, displayName]);
 

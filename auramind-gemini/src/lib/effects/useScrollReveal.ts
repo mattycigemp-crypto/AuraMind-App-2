@@ -74,7 +74,7 @@ export interface UseScrollRevealOptions {
 }
 
 export interface UseScrollRevealHandle<T extends HTMLElement> {
-  ref: React.RefObject<T>;
+  ref: React.RefObject<T | null>;
 }
 
 const DEFAULT_ENTER: AnimationParams = {
@@ -122,11 +122,23 @@ export function useScrollReveal<T extends HTMLElement = HTMLElement>(
     repeat = false,
   } = opts;
   const animationParams = enter ?? DEFAULT_ENTER;
+  const animationSignature = Object.entries(animationParams)
+    .map(([k, v]) => `${k}:${Array.isArray(v) ? v.join(',') : String(v)}`)
+    .join('|');
+  const onEnterSignature = typeof userOnEnter === 'function' ? userOnEnter.toString() : '';
   const ref = useRef<T>(null);
+  // Latest values for the observer's callbacks — the effect is keyed on
+  // the signatures above so unstable caller identities don't thrash it.
+  const paramsRef = useRef(animationParams);
+  paramsRef.current = animationParams;
+  const onEnterRef = useRef(userOnEnter);
+  onEnterRef.current = userOnEnter;
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const animationParams = paramsRef.current;
+    const userOnEnter = onEnterRef.current;
 
     // Zero-bounds early-return: if the element has been styled with
     // `display: contents` or hasn't yet been laid out (e.g. inside a
@@ -188,17 +200,14 @@ export function useScrollReveal<T extends HTMLElement = HTMLElement>(
     return () => {
       observer.revert();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     respectReducedMotion,
     repeat,
     // Re-create when the user passes one of these. We rely on the caller
     // to keep object identities stable across renders if they want the
     // observer to persist.
-    typeof userOnEnter === 'function' ? userOnEnter.toString() : '',
-    Object.entries(animationParams)
-      .map(([k, v]) => `${k}:${Array.isArray(v) ? v.join(',') : String(v)}`)
-      .join('|'),
+    onEnterSignature,
+    animationSignature,
   ]);
 
   return { ref };

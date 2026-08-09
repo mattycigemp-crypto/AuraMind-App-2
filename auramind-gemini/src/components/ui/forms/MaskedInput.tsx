@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 
 interface MaskedInputProps {
   id: string;
-  ref: React.RefObject<HTMLInputElement>;
+  ref: React.RefObject<HTMLInputElement | null>;
   value: string;
   onChange: (value: string) => void;
   onFocus: () => void;
@@ -41,37 +41,31 @@ const MaskedInput: React.FC<MaskedInputProps> = ({
   showPasswordToggle = false,
   type = 'text',
   showPassword = false,
-  togglePasswordVisibility
+  togglePasswordVisibility: _togglePasswordVisibility
 }) => {
   const [displayValue, setDisplayValue] = useState('');
   const rawValueRef = useRef(value);
 
-  // Initialize display value based on mask
-  useEffect(() => {
-    setDisplayValue(applyMask(value));
-    rawValueRef.current = value;
-  }, [value, mask]);
+  const applyMask = useCallback(
+    (val: string): string => {
+      if (!mask) return val;
 
-  // Apply mask to value
-  const applyMask = (val: string): string => {
-    if (!mask) return val;
-    
-    let result = '';
-    let valueIndex = 0;
-    
-    for (let i = 0; i < mask.length; i++) {
-      const maskChar = mask[i];
-      
-      if (maskChar === '9') {
-        // Numeric placeholder
-        if (valueIndex < val.length && /\d/.test(val[valueIndex])) {
-          result += val[valueIndex];
-          valueIndex++;
-        } else {
-          result += maskPlaceholderChar;
-        }
-      } else if (maskChar === 'A') {
-        // Alphabetic placeholder
+      let result = '';
+      let valueIndex = 0;
+
+      for (let i = 0; i < mask.length; i++) {
+        const maskChar = mask[i];
+
+        if (maskChar === '9') {
+          // Numeric placeholder
+          if (valueIndex < val.length && /\d/.test(val[valueIndex])) {
+            result += val[valueIndex];
+            valueIndex++;
+          } else {
+            result += maskPlaceholderChar;
+          }
+        } else if (maskChar === 'A') {
+          // Alphabetic placeholder
         if (valueIndex < val.length && /[a-zA-Z]/.test(val[valueIndex])) {
           result += val[valueIndex];
           valueIndex++;
@@ -93,7 +87,13 @@ const MaskedInput: React.FC<MaskedInputProps> = ({
     }
     
     return result;
-  };
+  }, [mask, maskPlaceholderChar]);
+
+  // Initialize display value based on mask
+  useEffect(() => {
+    setDisplayValue(applyMask(value));
+    rawValueRef.current = value;
+  }, [value, mask, applyMask]);
 
   // Extract raw value from masked input
   const extractRawValue = (maskedValue: string): string => {

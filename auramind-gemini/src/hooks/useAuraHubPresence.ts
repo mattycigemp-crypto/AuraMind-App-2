@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { supabase } from '../services/database/supabase';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { supabase, requireSupabase } from '../services/database/supabase';
 
 export interface OnlineUser {
   userId: string;
@@ -18,7 +19,7 @@ function broadcastPayload(userId: string, displayName: string, avatarUrl: string
 }
 
 export function useAuraHubPresence(userId: string, displayName: string, avatarUrl?: string) {
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
   const subscribedRef = useRef(false);
   const pendingRef = useRef<Array<{ event: string; payload: any }>>([]);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
@@ -35,9 +36,11 @@ export function useAuraHubPresence(userId: string, displayName: string, avatarUr
   useEffect(() => {
     if (!supabase || !userId) return;
 
-    const channel = supabase.channel(CHANNEL_NAME, {
+    const channel = requireSupabase().channel(CHANNEL_NAME, {
       config: { broadcast: { ack: false } },
     });
+
+    const peers = peersRef.current;
 
     channel
       .on('broadcast', { event: 'heartbeat' }, (event: any) => {
@@ -72,10 +75,10 @@ export function useAuraHubPresence(userId: string, displayName: string, avatarUr
     return () => {
       subscribedRef.current = false;
       if (channelRef.current && supabase) {
-        supabase.removeChannel(channelRef.current);
+        requireSupabase().removeChannel(channelRef.current);
         channelRef.current = null;
       }
-      peersRef.current.clear();
+      peers.clear();
     };
   }, [userId, displayName, avatarUrl, flushPending]);
 

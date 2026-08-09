@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 /** Custom event dispatched by AdminFeatureFlags when flags are saved — import this to dispatch/listen */
 export const FLAGS_CHANGED_EVENT = 'auramind-flags-changed' as const;
@@ -118,7 +118,7 @@ export function useFeatureFlag(
   isAdmin?: boolean,
 ): boolean {
   // Re-render when flags change in the same tab
-  const [tick, setTick] = useState(0);
+  const [_tick, setTick] = useState(0);
   useEffect(() => {
     const handler = () => setTick(n => n + 1);
     window.addEventListener(FLAGS_CHANGED_EVENT, handler);
@@ -129,10 +129,7 @@ export function useFeatureFlag(
     };
   }, []);
 
-  return useMemo(
-    () => isFeatureEnabled(flagKey, userId, userRole, userPlan, isAdmin),
-    [flagKey, userId, userRole, userPlan, isAdmin, tick],
-  );
+  return isFeatureEnabled(flagKey, userId, userRole, userPlan, isAdmin);
 }
 
 /**

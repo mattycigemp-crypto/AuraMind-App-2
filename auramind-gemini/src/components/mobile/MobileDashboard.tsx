@@ -1,25 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { getUserStats } from '../../services/gamification/gamificationService';
+import { getUserStats, type UserStats } from '../../services/gamification/gamificationService';
 import { challengesService, Challenge } from '../../services/api/challengesService';
 import MobileStudyButton from './MobileStudyButton';
 
 const MobileDashboard: React.FC = () => {
-  const [stats, setStats] = useState(null);
+  const [stats, setStats] = useState<UserStats | null>(null);
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'challenges' | 'study'>('overview');
   const { toast } = useToast();
   const userId = 'current_user'; // Would come from auth in real app
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     setLoading(true);
     try {
       // Get user stats
@@ -39,7 +35,11 @@ const MobileDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
 
   if (loading) {
     return (

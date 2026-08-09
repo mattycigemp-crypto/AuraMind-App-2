@@ -123,7 +123,9 @@ const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, onClose
       if (deckName) {
         localStorage.setItem('auramind:suggestedDeck', deckName);
       }
-    } catch {}
+    } catch {
+      // Best-effort persistence — ignore storage failures
+    }
 
     // Trigger confetti
     const event = new CustomEvent('auramind:celebrate', { detail: { reason: 'onboarding' } });
@@ -141,13 +143,13 @@ const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ isOpen, onClose
         completed.push('onboarding');
         localStorage.setItem('auramind:completedTutorials', JSON.stringify(completed));
       }
-    } catch {}
+    } catch {
+      // Best-effort persistence — ignore storage failures
+    }
     onClose();
   }, [onClose]);
 
   if (!isOpen) return null;
-
-  const CurrentIcon = STEPS[stepIndex].icon;
 
   // Slide animation variants
   const slideVariants = {

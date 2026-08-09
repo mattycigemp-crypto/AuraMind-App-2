@@ -35,7 +35,7 @@ class QuotesService {
     try {
       const randomIndex = Math.floor(Math.random() * QUOTES.length);
       const quote = QUOTES[randomIndex];
-      
+      // eslint-disable-next-line no-console -- legacy debug output
       console.log('Selected quote:', quote);
       
       return {
@@ -52,7 +52,7 @@ class QuotesService {
     }
   }
 
-  async getQuoteByTag(tag: string): Promise<Quote | null> {
+  async getQuoteByTag(_tag: string): Promise<Quote | null> {
     return this.getRandomQuote();
   }
 

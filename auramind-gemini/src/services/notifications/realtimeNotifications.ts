@@ -23,7 +23,7 @@
  */
 
 import { supabase } from '../database/supabase';
-import { addNotification, type NotificationType } from './notificationStore';
+import { addNotification } from './notificationStore';
 
 // ─── Types ───────────────────────────────────────────────────────────────
 
@@ -74,7 +74,7 @@ function setStatus(next: RealtimeConnectionStatus): void {
 function scheduleReconnect(userId: string): void {
   if (reconnectTimer) return; // already scheduled
   const delay = Math.min(BASE_DELAY_MS * 2 ** reconnectAttempt, MAX_RECONNECT_DELAY_MS);
-  console.log(`[Realtime] Reconnecting in ${delay}ms (attempt ${reconnectAttempt + 1})`);
+  console.warn(`[Realtime] Reconnecting in ${delay}ms (attempt ${reconnectAttempt + 1})`);
   reconnectTimer = setTimeout(() => {
     reconnectTimer = null;
     // Guard: if destroyRealtimeNotifications was called while the timer
@@ -245,7 +245,7 @@ export function initRealtimeNotifications(userId: string): void {
     .on('broadcast', { event: 'broadcast' }, onBroadcastEvent)
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') {
-        console.log('[Realtime] Connected to notification channel');
+        console.warn('[Realtime] Connected to notification channel');
         resetBackoff();
         setStatus('connected');
       } else if (status === 'CLOSED') {

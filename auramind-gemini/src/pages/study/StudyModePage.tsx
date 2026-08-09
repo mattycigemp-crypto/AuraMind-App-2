@@ -13,6 +13,7 @@ import { dbService } from '../../services/database/dbService';
 import { sessionService } from '../../services/database/modules/sessionService';
 import { cardReviewsService } from '../../services/database/modules/cardReviewsService';
 import { calculateSRS } from '../../services/study/srs';
+import { isOnline, queueCardReview } from '../../services/offline/offlineStudyService';
 import { applyPersonalizedDifficultyInit } from '../../services/study/fsrs';
 import { Rating } from '../../types';
 import type { StudySession, Card, Deck } from '../../types';
@@ -27,6 +28,7 @@ import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext'
 import { trackStudySession } from '../../services/gamification/gamificationService';
 import { useTimer, MotionPath } from '../../lib/effects';
 import { VoiceStudyControls } from '../../components/study/VoiceStudyControls';
+import { OfflineBanner } from '../../components/shared/OfflineBanner';
 
 const RATING_BTNS = [
   { label: 'Again', rating: Rating.AGAIN, interval: '5m', color: 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20' },
@@ -228,6 +230,22 @@ export default function StudyModePage() {
       if (biased.applied && biased.card.fsrsState) {
         update.fsrsState = biased.card.fsrsState;
       }
+      // Persist the review to the offline queue BEFORE attempting the network
+      // write, whenever the device reports no connection.
+      //
+      // dbService.updateCard() swallows a failed Supabase write and returns the
+      // in-memory optimistic card, so the caller cannot tell a successful save
+      // from a lost one. Offline, that meant a full study session advanced
+      // normally on screen and every review was discarded on reload — the worst
+      // possible failure for a spaced-repetition app. The rating is only known
+      // here, which is why the queueing lives at the call site.
+      if (!isOnline()) {
+        try {
+          await queueCardReview(currentCard.id, rating, res);
+        } catch (queueErr) {
+          console.warn('[StudyMode] Could not queue review for later sync:', queueErr);
+        }
+      }
       await dbService.updateCard(currentCard.id, update);
       // Optimistically mirror the write into the workspace cards-cache so the
       // dashboard widgets (StudyOverview's "Studied today" stat, the deck
@@ -341,7 +359,7 @@ export default function StudyModePage() {
       setFlipped(false);
     }
     setIsRating(false);
-  }, [currentCard, userId, index, studyCards.length, spawnParticles, isRating, personalization.profileLabel, personalization.weights, pacingTarget]);
+  }, [currentCard, userId, index, studyCards.length, spawnParticles, isRating, personalization.profileLabel, personalization.weights, pacingTarget, deck?.id, deck?.title, sessionStats.correct, sessionStats.total, workspace]);
 
   const handleTilt = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current || !tiltEnabled) return;
@@ -467,6 +485,13 @@ export default function StudyModePage() {
       {/* Multiplayer Study banner — opt-in party mode. Mounts at top of study
           surface so users can launch or join a presence room without leaving
           the session. */}
+      {/* Sits above the session so a mid-study disconnect is visible without
+          the user having to notice something is wrong. Renders nothing while
+          online. */}
+      <div className="px-6 pt-3 empty:hidden">
+        <OfflineBanner />
+      </div>
+
       {deck?.id && (
         <div className="px-6 pt-3">
           <MultiplayerStudyBanner

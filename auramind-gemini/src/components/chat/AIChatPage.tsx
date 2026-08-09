@@ -112,6 +112,8 @@ export default function AIChatPage() {
   const [localCards, setLocalCards] = useState<Card[]>([]);
 
   const [selectedDeckId, setSelectedDeckId] = useState('');
+  const [personality, setPersonalityState] = useState<ProfAuraPersonality>(getStoredPersonality);
+  const userMeta = workspace?.user as ({ streakCount?: number; lastStudyAt?: number; accuracy7d?: number } | undefined);
   const [context, setContext] = useState<ChatContext>(() =>
     buildInitialContext(workspace?.decks ?? [], workspace?.cards ?? []),
   );
@@ -183,7 +185,7 @@ export default function AIChatPage() {
         streakCount: userMeta?.streakCount,
       }));
     }
-  }, [selectedDeck, cards, chat.mode]);
+  }, [selectedDeck, cards, chat.mode, personality, userMeta?.accuracy7d, userMeta?.streakCount]);
 
   const [input, setInput] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
@@ -214,10 +216,8 @@ export default function AIChatPage() {
   // never lose the user's last utterance (per design review A).
   const sr = useSpeechRecognition();
   const [attachments, setAttachments] = useState<AttachmentDraft[]>([]);
-  const [personality, setPersonalityState] = useState<ProfAuraPersonality>(getStoredPersonality);
   const [showPersonalityPicker, setShowPersonalityPicker] = useState(false);
   const tts = useTTS();
-  const userMeta = workspace?.user as ({ streakCount?: number; lastStudyAt?: number; accuracy7d?: number } | undefined);
 
   const setPersonality = useCallback((p: ProfAuraPersonality) => {
     setPersonalityState(p);

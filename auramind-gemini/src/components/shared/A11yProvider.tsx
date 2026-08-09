@@ -62,10 +62,12 @@ export const A11yProvider: React.FC<A11yProviderProps> = ({
         setIssues(critical);
 
         if (critical.length > 0 && isDev) {
+          // eslint-disable-next-line no-console -- dev-only a11y audit log
           console.groupCollapsed(`[A11y] ${critical.length} a11y issues found`);
           critical.forEach((i: A11yIssue) => {
             console.warn(`[${i.impact}] ${i.id}: ${i.description}`);
           });
+          // eslint-disable-next-line no-console -- dev-only a11y audit log
           console.groupEnd();
         }
       },

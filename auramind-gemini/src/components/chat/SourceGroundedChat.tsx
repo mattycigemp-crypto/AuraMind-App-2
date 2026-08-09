@@ -71,8 +71,10 @@ const ChatWithSources: React.FC = () => {
         console.error('[SourceGrounded] Deck creation returned null');
         return;
       }
-      const cardCount = await addCardsToDeck(deck.id, cards.map(c => ({ question: c.question, answer: c.answer })));
-      console.log(`[SourceGrounded] Saved ${cardCount} cards to "${deck.title}"`);
+      const cardCount = (await addCardsToDeck(deck.id, cards.map(c => ({ question: c.question, answer: c.answer })))) ?? 0;
+      if (cardCount > 0) {
+        console.warn(`[SourceGrounded] Saved ${cardCount} cards to "${deck.title}"`);
+      }
       clearGeneration();
       navigate(`/deck/${deck.id}`);
     } catch (err) {

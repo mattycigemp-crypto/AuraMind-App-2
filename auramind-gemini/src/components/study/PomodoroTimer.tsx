@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { TimerIcon as Timer, PlayIcon as Play, PauseIcon as Pause, RotateCcwIcon as RotateCcw, CoffeeIcon as Coffee, BrainIcon as Brain, Volume2Icon as Volume2, VolumeXIcon as VolumeX, Settings2Icon as Settings2, XIcon as X } from '../icons/CustomIcons';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { PlayIcon as Play, PauseIcon as Pause, RotateCcwIcon as RotateCcw, CoffeeIcon as Coffee, BrainIcon as Brain, Volume2Icon as Volume2, VolumeXIcon as VolumeX, Settings2Icon as Settings2, XIcon as X } from '../icons/CustomIcons';
 
 interface PomodoroTimerProps {
     onSessionComplete?: (type: 'work' | 'break') => void;
@@ -14,21 +14,9 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onSessionComplete }) => {
     const [isMuted, setIsMuted] = useState(false);
     const [showSettings, setShowSettings] = useState(false);
 
-    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const _audioRef = useRef<HTMLAudioElement | null>(null);
 
-    useEffect(() => {
-        let interval: NodeJS.Timeout;
-        if (isActive && timeLeft > 0) {
-            interval = setInterval(() => {
-                setTimeLeft((prev) => prev - 1);
-            }, 1000);
-        } else if (timeLeft === 0) {
-            handleSessionEnd();
-        }
-        return () => clearInterval(interval);
-    }, [isActive, timeLeft]);
-
-    const handleSessionEnd = () => {
+    const handleSessionEnd = useCallback(() => {
         setIsActive(false);
         if (!isMuted) {
             // Simple beep or notification sound
@@ -45,7 +33,19 @@ const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onSessionComplete }) => {
             setMode('work');
             setTimeLeft(workTime * 60);
         }
-    };
+    }, [isMuted, mode, onSessionComplete, breakTime, workTime]);
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (isActive && timeLeft > 0) {
+            interval = setInterval(() => {
+                setTimeLeft((prev) => prev - 1);
+            }, 1000);
+        } else if (timeLeft === 0) {
+            handleSessionEnd();
+        }
+        return () => clearInterval(interval);
+    }, [isActive, timeLeft, handleSessionEnd]);
 
     const toggleTimer = () => setIsActive(!isActive);
 

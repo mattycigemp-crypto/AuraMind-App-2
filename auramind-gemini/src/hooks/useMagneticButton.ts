@@ -18,7 +18,7 @@ interface MagneticButtonReturn {
   x: MotionValue<number>;
   y: MotionValue<number>;
   rotation: MotionValue<number>;
-  elementRef: React.RefObject<HTMLElement>;
+  elementRef: React.RefObject<HTMLElement | null>;
 }
 
 export const useMagneticButton = (config: MagneticButtonConfig = {}): MagneticButtonReturn => {
@@ -26,7 +26,7 @@ export const useMagneticButton = (config: MagneticButtonConfig = {}): MagneticBu
   const {
     pullRadius = MAGNETIC_BUTTON.pullRadius,
     pullStrength = MAGNETIC_BUTTON.pullStrength,
-    damping = MAGNETIC_BUTTON.damping,
+    damping: _damping = MAGNETIC_BUTTON.damping,
     maxDistance = MAGNETIC_BUTTON.maxDistance,
     enabled = true
   } = config;
@@ -76,9 +76,11 @@ export const useMagneticButton = (config: MagneticButtonConfig = {}): MagneticBu
       const deltaY = (clientY - centerY) / pullRadius;
       const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-      // Calculate magnetic pull
-      let pullX = 0;
-      let pullY = 0;
+      // Calculate magnetic pull. Both branches below assign, so the
+      // initialisers were dead stores; strict mode verifies definite
+      // assignment for us.
+      let pullX: number;
+      let pullY: number;
 
       if (distance < 1) {
         // Inside magnetic field
@@ -131,7 +133,7 @@ export const useMagneticButton = (config: MagneticButtonConfig = {}): MagneticBu
       element.removeEventListener('mouseleave', handleMouseLeave);
       window.removeEventListener('resize', handleResize);
     };
-  }, [pullRadius, pullStrength, maxDistance, enabled]);
+  }, [pullRadius, pullStrength, maxDistance, enabled, mouseX, mouseY]);
 
   return { x, y, rotation, elementRef };
 };
@@ -141,7 +143,7 @@ export const useGSAPMagneticButton = (elementRef: React.RefObject<HTMLElement>, 
   const {
     pullRadius = MAGNETIC_BUTTON.pullRadius,
     pullStrength = MAGNETIC_BUTTON.pullStrength,
-    damping = MAGNETIC_BUTTON.damping,
+    damping: _damping = MAGNETIC_BUTTON.damping,
     maxDistance = MAGNETIC_BUTTON.maxDistance,
     enabled = true
   } = config;
@@ -230,7 +232,7 @@ export const useGSAPMagneticButton = (elementRef: React.RefObject<HTMLElement>, 
       element.removeEventListener('mouseleave', handleMouseLeave);
       window.removeEventListener('resize', handleResize);
     };
-  }, [pullRadius, pullStrength, maxDistance, enabled]);
+  }, [pullRadius, pullStrength, maxDistance, enabled, elementRef]);
 
   return elementRef;
 };
@@ -269,7 +271,7 @@ export const useTouchMagneticButton = (elementRef: React.RefObject<HTMLElement>,
 
       let x = 0;
       let y = 0;
-      let scale = 1;
+      let scale: number;
 
       if (distance < 1) {
         x = deltaX * pullStrength * maxDistance;
@@ -291,7 +293,7 @@ export const useTouchMagneticButton = (elementRef: React.RefObject<HTMLElement>,
       });
     };
 
-    const handleTouchStart = (e: TouchEvent) => {
+    const handleTouchStart = (_e: TouchEvent) => {
       isTouching = true;
       updateRect();
       element.classList.add('magnetic-active');
@@ -329,7 +331,7 @@ export const useTouchMagneticButton = (elementRef: React.RefObject<HTMLElement>,
       element.removeEventListener('touchend', handleTouchEnd);
       window.removeEventListener('resize', handleResize);
     };
-  }, [pullRadius, pullStrength, maxDistance, enabled]);
+  }, [pullRadius, pullStrength, maxDistance, enabled, elementRef]);
 
   return elementRef;
 };

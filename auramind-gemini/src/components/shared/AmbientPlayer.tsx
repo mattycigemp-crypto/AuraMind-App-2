@@ -96,7 +96,7 @@ const AmbientPlayer: React.FC = () => {
         return () => {
             cancelled = true;
         };
-    }, [currentTrackIndex, playlist.length]);
+    }, [currentTrackIndex, playlist]);
 
     useEffect(() => {
         if (audioRef.current) {

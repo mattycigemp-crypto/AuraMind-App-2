@@ -59,6 +59,8 @@ for (const file of walk(SRC)) {
   }
 }
 
+const RESERVED_EXPORT_NAMES = new Set(['Infinity', 'NaN', 'undefined']);
+
 // 2. Read each icon's shape data via the barrel map.
 const sorted = [...names].sort();
 const missing = [];
@@ -99,7 +101,10 @@ import { createIcon, type IconNode } from './createIcon';
 `;
 
 const body = defs
-  .map(({ name, node }) => `export const ${name} = createIcon('${name}', ${node} as IconNode);`)
+  .map(({ name, node }) => {
+    const exportName = RESERVED_EXPORT_NAMES.has(name) ? `${name}Icon` : name;
+    return `export const ${exportName} = createIcon('${name}', ${node} as IconNode);`;
+  })
   .join('\n\n');
 
 fs.mkdirSync(path.dirname(OUT), { recursive: true });

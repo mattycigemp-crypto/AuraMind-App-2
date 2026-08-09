@@ -107,7 +107,7 @@ async function sendEmail(options: EmailOptions): Promise<{ success: boolean; err
       return { success: false, error: `Failed to send email: ${error}` };
     }
 
-    const data = await response.json();
+    void response.json();
     // Email sent successfully
     return { success: true };
   } catch (error) {

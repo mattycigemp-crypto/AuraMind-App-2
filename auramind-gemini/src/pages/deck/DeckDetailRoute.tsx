@@ -98,12 +98,12 @@ export default function DeckDetailRoute() {
     setSaving(false);
   };
 
-  const handleDeleteCard = async (cardId: string) => {
+  const handleDeleteCard = useCallback(async (cardId: string) => {
     if (!userId) return;
     await dbService.deleteCard(cardId);
     setCards((prev) => prev.filter((c) => c.id !== cardId));
     if (editingCardId === cardId) setEditingCardId(null);
-  };
+  }, [userId, editingCardId]);
 
   const handleDeleteDeck = async () => {
     if (!userId || !id) return;
@@ -115,13 +115,13 @@ export default function DeckDetailRoute() {
     }
   };
 
-  const handleEditCard = (card: Card) => {
+  const handleEditCard = useCallback((card: Card) => {
     setEditingCardId(card.id);
     setEditForm({
       question: (card as any).front || (card as any).question || '',
       answer: (card as any).back || (card as any).answer || '',
     });
-  };
+  }, []);
 
   const handleCancelEdit = () => {
     setEditingCardId(null);
@@ -201,7 +201,7 @@ export default function DeckDetailRoute() {
     }
 
     return () => { unsub(); };
-  }, [isQuizDeck, id, embeddedQuizData, cards.length, retryKey]);
+  }, [isQuizDeck, id, embeddedQuizData, cards, retryKey]);
 
   if (loading) {
     return (
@@ -360,7 +360,7 @@ export default function DeckDetailRoute() {
             <DashboardQuiz
               quiz={quizData}
               onComplete={(score, total) => {
-                console.log(`Quiz complete: ${score}/${total}`);
+                console.warn(`Quiz complete: ${score}/${total}`);
               }}
             />
           </div>

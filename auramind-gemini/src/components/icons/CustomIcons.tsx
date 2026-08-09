@@ -110,7 +110,7 @@ export {
   Database as DatabaseIcon,
   Palette as PaletteIcon,
   CreditCard as CreditCardIcon,
-  Infinity as InfinityIcon,
+  InfinityIcon,
   GraduationCap as GraduationCapIcon,
   ShieldCheck as ShieldCheckIcon,
   Hash as HashIcon,

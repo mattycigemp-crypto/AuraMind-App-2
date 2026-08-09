@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { supabase } from '../services/database/supabase';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { supabase, requireSupabase } from '../services/database/supabase';
 import type { LeagueMemberView } from '../types/league';
 
 /**
@@ -32,7 +33,7 @@ export function useLiveLeaderboard(
     error: null,
     lastUpdate: 0,
   });
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
 
   // Stabilize currentUserId via ref so fetchMembers doesn't recreate
   const currentUserIdRef = useRef(currentUserId);
@@ -98,7 +99,7 @@ export function useLiveLeaderboard(
         error: e.message ?? 'Failed to load leaderboard',
       }));
     }
-  }, [seasonId, tier, currentUserId]);
+  }, [seasonId, tier]);
 
   // Initial fetch
   useEffect(() => {
@@ -119,7 +120,7 @@ export function useLiveLeaderboard(
           table: 'league_memberships',
           filter: `season_id=eq.${seasonId}`,
         },
-        (payload) => {
+        (_payload) => {
           // Re-fetch on any change (simplest correct approach;
           // a production build could diff the payload for speed)
           fetchMembers();
@@ -131,7 +132,7 @@ export function useLiveLeaderboard(
 
     return () => {
       if (channelRef.current && supabase) {
-        supabase.removeChannel(channelRef.current);
+        requireSupabase().removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };

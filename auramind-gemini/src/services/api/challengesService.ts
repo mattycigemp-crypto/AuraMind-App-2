@@ -2,7 +2,7 @@
 // Provides challenge data and progress tracking
 
 import { dbService } from '../database/dbService';
-import { Deck, Card, StudySession } from '../../types';
+import { StudySession } from '../../types';
 
 export interface Challenge {
   id: string;
@@ -49,13 +49,13 @@ class ChallengesService {
   // Get user's study statistics from real data
   async getUserStats(userId: string): Promise<UserStats> {
     try {
-      const decks = await dbService.fetchDecks(userId);
+      const _decks = await dbService.fetchDecks(userId);
       const cards = await dbService.fetchCards(userId);
       const studySessions = await dbService.fetchStudySessions(userId);
 
       // Calculate real statistics
       // Cards are already filtered by userId from fetchCards(userId)
-      const userCards = cards;
+      const _userCards = cards;
       const userSessions = studySessions.filter(session => session.userId === userId);
       
       const totalStudyTime = userSessions.reduce((total, session) => {
@@ -88,11 +88,11 @@ class ChallengesService {
 
       const weeklyStudyTime = userSessions
         .filter(session => session.startTime && session.startTime >= weekAgo)
-        .reduce((total, session) => total + (session.endTime - session.startTime), 0);
+        .reduce((total, session) => total + ((session.endTime ?? 0) - (session.startTime ?? 0)), 0);
 
       const monthlyStudyTime = userSessions
         .filter(session => session.startTime && session.startTime >= monthAgo)
-        .reduce((total, session) => total + (session.endTime - session.startTime), 0);
+        .reduce((total, session) => total + ((session.endTime ?? 0) - (session.startTime ?? 0)), 0);
 
       return {
         totalStudyTime,
@@ -271,6 +271,7 @@ class ChallengesService {
     try {
       // This would typically update your backend database
       // For now, we'll simulate the update
+      // eslint-disable-next-line no-console -- expected to back a future API call
       console.log(`Updating challenge ${challengeId} for user ${userId} to progress ${progress}`);
       
       // In a real implementation, you would:
@@ -284,7 +285,7 @@ class ChallengesService {
   }
 
   // Get challenge history for a user
-  async getChallengeHistory(userId: string): Promise<Challenge[]> {
+  async getChallengeHistory(_userId: string): Promise<Challenge[]> {
     try {
       // Return empty array until backend support is added
       return [];

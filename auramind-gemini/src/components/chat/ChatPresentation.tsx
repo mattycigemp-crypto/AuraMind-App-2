@@ -29,7 +29,7 @@ const ChatPresentation: React.FC<ChatPresentationProps> = ({ presentation }) => 
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [_isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const stopSpeaking = useCallback(() => {
@@ -68,7 +68,7 @@ const ChatPresentation: React.FC<ChatPresentationProps> = ({ presentation }) => 
     if (isPlaying && !isSpeaking) {
       speak(presentation.slides[currentSlide].script);
     }
-  }, [isPlaying, currentSlide]);
+  }, [isPlaying, currentSlide, isSpeaking, speak, presentation.slides]);
 
   const togglePlay = () => {
     if (isPlaying) {

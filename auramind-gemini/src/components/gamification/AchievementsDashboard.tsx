@@ -3,7 +3,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
-import { getUserStats, awardXP, XP_REWARDS, calculateLevel, getLevelProgress, getXPToNextLevel, ACHIEVEMENTS, checkAchievements, getEarnedAchievements, getNextAchievements, UserStats, trackStudySession, STREAK_BONUSES } from '../../services/gamification/gamificationService';
+import { getUserStats, calculateLevel, getLevelProgress, getXPToNextLevel, ACHIEVEMENTS, getNextAchievements, UserStats, trackStudySession, STREAK_BONUSES } from '../../services/gamification/gamificationService';
 import {
   Confetti,
   AnimeCelebration,
@@ -34,12 +34,8 @@ const AchievementsDashboard: React.FC = () => {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const workspace = useDashboardWorkspace();
-  const [earnedAchievements, setEarnedAchievements] = useState(ACHIEVEMENTS.filter(() => false));
-  const [availableAchievements, setAvailableAchievements] = useState(ACHIEVEMENTS);
-
-  useEffect(() => {
-    loadUserData();
-  }, []);
+  const [_earnedAchievements, setEarnedAchievements] = useState(ACHIEVEMENTS.filter(() => false));
+  const [_availableAchievements, setAvailableAchievements] = useState(ACHIEVEMENTS);
 
   const loadUserData = useCallback(async () => {
     setLoading(true);
@@ -54,7 +50,7 @@ const AchievementsDashboard: React.FC = () => {
       // Load real challenges from API using actual user ID
       if (workspace?.user?.id) {
         try {
-          const realChallenges = await challengesService.generateChallenges(workspace!.user.id);
+          const realChallenges = await challengesService.generateChallenges(workspace?.user.id);
           setChallenges(realChallenges || []);
         } catch {
           setChallenges([]);
@@ -67,7 +63,11 @@ const AchievementsDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [workspace?.user?.id, workspace]);
+  }, [workspace?.user?.id]);
+
+  useEffect(() => {
+    loadUserData();
+  }, [loadUserData]);
 
   const confettiRef = useRef<ConfettiHandle>(null);
   const animeRef = useRef<AnimeCelebrationHandle>(null);

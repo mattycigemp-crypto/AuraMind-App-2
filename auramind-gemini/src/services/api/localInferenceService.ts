@@ -1,4 +1,9 @@
-import { CreateMLCEngine, MLCEngine } from '@mlc-ai/web-llm';
+// Type-only import: erased at build time, so @mlc-ai/web-llm contributes
+// nothing to the bundle unless a user actually opts into local inference.
+// The runtime `CreateMLCEngine` is pulled in via dynamic import inside
+// `initialize()` below — it is a multi-megabyte WASM/WebGPU runtime and
+// must never land in the main chunk.
+import type { MLCEngine } from '@mlc-ai/web-llm';
 
 export interface ModelInfo {
   id: string;
@@ -41,7 +46,7 @@ export interface InitProgress {
 
 const MAX_BUF_LOW = 536_870_912;   // 512MB
 const MAX_BUF_MED = 1_073_741_824; // 1GB
-const MAX_BUF_HIGH = 2_147_483_648; // 2GB
+const _MAX_BUF_HIGH = 2_147_483_648; // 2GB
 
 export type GPUTier = 1 | 2 | 3 | 4;
 
@@ -86,7 +91,7 @@ class LocalInferenceService {
       const isAppleSilicon = arch.includes('apple') || vendor.includes('apple');
       const isIntegrated = arch.includes('gen') || arch.includes('uhd') || vendor.includes('intel');
 
-      console.log('[AuraMind WebLLM] GPU:', { vendor: info.vendor, arch, maxBuf, isAppleSilicon, isIntegrated });
+      console.warn('[AuraMind WebLLM] GPU:', { vendor: info.vendor, arch, maxBuf, isAppleSilicon, isIntegrated });
 
       if (isAppleSilicon) return 4;
       if (maxBuf >= MAX_BUF_MED && !isIntegrated) return 3;
@@ -157,13 +162,16 @@ class LocalInferenceService {
         this.gpuTier = await LocalInferenceService.detectGPUTier();
       }
 
-      console.log('[AuraMind WebLLM] Selected:', { tier: this.gpuTier, model: this.modelId });
+      console.warn('[AuraMind WebLLM] Selected:', { tier: this.gpuTier, model: this.modelId });
 
       if (!(navigator as any).gpu) {
         throw new Error('WebGPU not supported. Please use Chrome or Edge.');
       }
 
       const displayName = getModelDisplayName(this.modelId);
+      // Loaded on demand — see the type-only import note at the top of
+      // this file. This is the single runtime entry point into web-llm.
+      const { CreateMLCEngine } = await import('@mlc-ai/web-llm');
       this.engine = await CreateMLCEngine(this.modelId, {
         initProgressCallback: (report) => {
           const percent = Math.round(report.progress * 100);

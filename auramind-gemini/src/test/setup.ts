@@ -35,7 +35,7 @@ if (typeof globalThis.DOMPoint === 'undefined') {
       return { x: this.x, y: this.y, z: this.z, w: this.w };
     }
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   (globalThis as any).DOMPoint = DOMPointPolyfill;
 }
 
@@ -85,7 +85,7 @@ if (typeof globalThis.DOMMatrix === 'undefined') {
     multiplySelf() { return this; }
     flipX() { return this; }
     flipY() { return this; }
-    transformPoint(point?: unknown) {
+    transformPoint(_point?: unknown) {
       // Type-erased: return a fresh DOMPoint (whatever's on globalThis).
       const DOMPointCtor = (globalThis as { DOMPoint?: new () => unknown }).DOMPoint;
       if (DOMPointCtor) return new DOMPointCtor();
@@ -96,13 +96,13 @@ if (typeof globalThis.DOMMatrix === 'undefined') {
     toJSON() { return {}; }
     toString() { return 'matrix(1, 0, 0, 1, 0, 0)'; }
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   (globalThis as any).DOMMatrix = DOMMatrixPolyfill;
 }
 
 // IntersectionObserver stub — jsdom does not implement it.
 if (typeof globalThis.IntersectionObserver === 'undefined') {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   (globalThis as any).IntersectionObserver = class {
     observe() { /* noop */ }
     unobserve() { /* noop */ }
@@ -113,7 +113,7 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
 
 // ResizeObserver stub — TextSplitter uses it internally.
 if (typeof globalThis.ResizeObserver === 'undefined') {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   (globalThis as any).ResizeObserver = class {
     observe() { /* noop */ }
     unobserve() { /* noop */ }
@@ -162,7 +162,7 @@ function applySvgPathStub(
     };
   }
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 applySvgPathStub((globalThis as any).SVGPathElement?.prototype);
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 applySvgPathStub((window as any).SVGPathElement?.prototype);

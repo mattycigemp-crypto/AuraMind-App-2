@@ -14,9 +14,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // ─── Mock setup ───────────────────────────────────────────────────────────
 
-const mockSubscribe = vi.fn();
+const _mockSubscribe = vi.fn();
 
-function createFakeChannel() {
+function _createFakeChannel() {
   return {
     on: vi.fn().mockReturnThis(),
     subscribe: vi.fn(),
@@ -24,14 +24,13 @@ function createFakeChannel() {
   };
 }
 
-const createdChannels: ReturnType<typeof createFakeChannel>[] = [];
+const createdChannels: ReturnType<typeof _createFakeChannel>[] = [];
 const mockRemoveChannel = vi.fn();
 
 vi.mock('@/services/database/supabase', () => {
   const _mockRemoveChannel = vi.fn();
-  const _createdChannels: ReturnType<typeof createFakeChannel>[] = [];
-  return {
-    supabase: {
+  const _createdChannels: ReturnType<typeof _createFakeChannel>[] = [];
+  const client = {
       channel: vi.fn(() => {
         const ch = {
           on: vi.fn().mockReturnThis(),
@@ -49,7 +48,14 @@ vi.mock('@/services/database/supabase', () => {
       auth: {
         getUser: vi.fn(),
       },
-    },
+  };
+  // The module exports both the nullable client and the asserting
+  // accessor; mocking only `supabase` leaves requireSupabase undefined
+  // and every call site throws.
+  return {
+    supabase: client,
+    isSupabaseConfigured: true,
+    requireSupabase: () => client,
   };
 });
 
@@ -66,7 +72,7 @@ import {
   onConnectionStatusChange,
   getConnectionStatus,
 } from '@/services/notifications/realtimeNotifications';
-import { supabase } from '@/services/database/supabase';
+import { requireSupabase } from '@/services/database/supabase';
 import { addNotification } from '@/services/notifications/notificationStore';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -113,7 +119,7 @@ describe('realtimeNotifications', () => {
     it('creates a channel and subscribes on init', () => {
       initRealtimeNotifications('user-123');
 
-      expect(supabase.channel).toHaveBeenCalledWith(
+      expect(requireSupabase().channel).toHaveBeenCalledWith(
         'user:user-123:notifications',
         expect.objectContaining({ config: expect.objectContaining({ broadcast: { ack: false } }) }),
       );

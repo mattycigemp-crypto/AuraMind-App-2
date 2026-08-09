@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
-import { ZapIcon as Zap, XIcon as X, TimerIcon as Timer, ClockIcon as Clock, RotateCcwIcon as RotateCcw } from '../icons/CustomIcons';
+import { ZapIcon as Zap, XIcon as X, TimerIcon as Timer, RotateCcwIcon as RotateCcw } from '../icons/CustomIcons';
 import { trackStudySession } from '../../services/gamification/gamificationService';
 
 interface Flashcard {
@@ -30,6 +30,25 @@ const SpeedReview: React.FC<SpeedReviewProps> = ({ cards, timePerCard = 5, onCom
 
   const currentCard = cards[currentIndex];
 
+  const finishSession = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+    const accuracy = Math.round((correctCount / cards.length) * 100);
+    trackStudySession(elapsedTime, accuracy);
+    setShowComplete(true);
+  }, [startTime, correctCount, cards.length]);
+
+  const handleSkip = useCallback(() => {
+    setSkippedCount(prev => prev + 1);
+    if (currentIndex < cards.length - 1) {
+      setCurrentIndex(prev => prev + 1);
+      setIsFlipped(false);
+      setTimeLeft(timePerCard);
+    } else {
+      finishSession();
+    }
+  }, [currentIndex, cards.length, timePerCard, finishSession]);
+
   useEffect(() => {
     if (!isFlipped && !showComplete) {
       timerRef.current = setInterval(() => {
@@ -45,18 +64,7 @@ const SpeedReview: React.FC<SpeedReviewProps> = ({ cards, timePerCard = 5, onCom
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isFlipped, showComplete, currentIndex]);
-
-  const handleSkip = () => {
-    setSkippedCount(prev => prev + 1);
-    if (currentIndex < cards.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-      setIsFlipped(false);
-      setTimeLeft(timePerCard);
-    } else {
-      finishSession();
-    }
-  };
+  }, [isFlipped, showComplete, currentIndex, timePerCard, handleSkip]);
 
   const handleAnswer = (correct: boolean) => {
     if (correct) setCorrectCount(prev => prev + 1);
@@ -68,14 +76,6 @@ const SpeedReview: React.FC<SpeedReviewProps> = ({ cards, timePerCard = 5, onCom
     } else {
       finishSession();
     }
-  };
-
-  const finishSession = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-    const accuracy = Math.round((correctCount / cards.length) * 100);
-    trackStudySession(elapsedTime, accuracy);
-    setShowComplete(true);
   };
 
   const formatTime = (seconds: number) => {

@@ -124,8 +124,11 @@ export function NovaStudy() {
   const { decks, cards } = workspace!;
 
   const now = Date.now();
-  const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999);
+  const todayEndMs = useMemo(() => {
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    return end.getTime();
+  }, []);
 
   const { overdue, dueToday, noDue } = useMemo(() => {
     const o: typeof decks = [];
@@ -134,16 +137,16 @@ export function NovaStudy() {
     for (const deck of decks) {
       const deckCards = cards.filter(c => c.deckId === deck.id);
       const hasOverdue = deckCards.some(c => (c.nextReview ?? 0) > 0 && (c.nextReview ?? 0) < now);
-      const hasDueToday = deckCards.some(c => (c.nextReview ?? 0) >= now && (c.nextReview ?? 0) <= todayEnd.getTime());
+      const hasDueToday = deckCards.some(c => (c.nextReview ?? 0) >= now && (c.nextReview ?? 0) <= todayEndMs);
       const hasReviewed = deckCards.some(c => (c.lastReviewed ?? 0) > 0);
       if (hasOverdue) o.push(deck);
       else if (hasDueToday) d.push(deck);
       else if (hasReviewed) n.push(deck);
     }
     return { overdue: o, dueToday: d, noDue: n };
-  }, [decks, cards, now, todayEnd]);
+  }, [decks, cards, now, todayEndMs]);
 
-  const totalDue = cards.filter(c => (c.nextReview ?? 0) > 0 && (c.nextReview ?? 0) <= todayEnd.getTime()).length;
+  const totalDue = cards.filter(c => (c.nextReview ?? 0) > 0 && (c.nextReview ?? 0) <= todayEndMs).length;
   const studiedToday = cards.filter(c => {
     const d = new Date(); d.setHours(0, 0, 0, 0);
     return (c.lastReviewed ?? 0) >= d.getTime();
@@ -164,7 +167,7 @@ export function NovaStudy() {
           <MagneticButton
             onClick={() => {
               if (decks.length > 0 && totalDue > 0) {
-                const dueDeck = decks.find(d => cards.some(c => c.deckId === d.id && (c.nextReview ?? 0) <= todayEnd.getTime()));
+                const dueDeck = decks.find(d => cards.some(c => c.deckId === d.id && (c.nextReview ?? 0) <= todayEndMs));
                 navigate(`/dashboard/study/${dueDeck?.id || decks[0]?.id}`);
               } else if (decks.length > 0) {
                 navigate(`/dashboard/study/${decks[0].id}`);

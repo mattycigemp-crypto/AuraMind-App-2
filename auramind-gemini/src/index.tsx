@@ -57,10 +57,10 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   import('virtual:pwa-register').then(({ registerSW }) => {
     registerSW({
       onNeedRefresh() {
-        console.log('[PWA] New content available, need refresh');
+        console.warn('[PWA] New content available, need refresh');
       },
       onOfflineReady() {
-        console.log('[PWA] Offline ready');
+        console.warn('[PWA] Offline ready');
       },
     });
   }).catch(err => console.error('[PWA] Registration failed', err));
@@ -78,16 +78,16 @@ let isCurrentlyOnline = isOnline();
 onConnectionChange(
   () => {
     isCurrentlyOnline = true;
-    console.log('[Network] Connection restored');
+    console.warn('[Network] Connection restored');
     syncOfflineData().then(result => {
       if (result.synced > 0) {
-        console.log(`[Sync] Synced ${result.synced} offline items (${result.failed} failed)`);
+        console.warn(`[Sync] Synced ${result.synced} offline items (${result.failed} failed)`);
       }
     });
   },
   () => {
     isCurrentlyOnline = false;
-    console.log('[Network] Connection lost - offline mode active');
+    console.warn('[Network] Connection lost - offline mode active');
   }
 );
 
