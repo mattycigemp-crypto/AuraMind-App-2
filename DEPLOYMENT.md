@@ -93,13 +93,29 @@ The built files will be in `auramind-gemini/dist/`.
 
 ## Security Checklist
 
-- [ ] All required environment variables set
-- [ ] Supabase Row Level Security enabled
-- [ ] Stripe webhook configured
-- [ ] Custom domain configured with HTTPS
-- [ ] Security headers verified (CSP, HSTS, etc.)
-- [ ] Cookie consent banner enabled
-- [ ] Rate limiting active
+Verified against the code in this repo (Aug 2026):
+
+- [x] **Security headers** — CSP, HSTS, X-Frame-Options, Referrer-Policy,
+      Permissions-Policy set in `api/middleware.ts` and `vercel.json`.
+- [x] **Rate limiting** — per-IP limiter in `api/middleware.ts` (100 req/min
+      default, 30 for AI, 10 for auth) applied to every API route.
+- [x] **Cookie consent banner** — `src/components/shared/CookieConsentBanner.tsx`.
+- [x] **RLS policies** — created by the append-only migrations in
+      `supabase/migrations/` (see `SECURITY.md` for the rules every policy
+      follows).
+- [x] **Resend API key is server-side only** — transactional email goes through
+      `POST /api/email`; the key never ships in the client bundle.
+
+Still requires manual/out-of-band setup (cannot be verified from the repo):
+
+- [ ] All required environment variables set in the **Vercel** project settings
+      and `api/.env` (see README env tables).
+- [ ] Stripe webhook endpoint configured in the Stripe dashboard with the
+      `STRIPE_WEBHOOK_SECRET`.
+- [ ] Custom domain configured with HTTPS in Vercel.
+- [ ] Apply the migrations in `supabase/migrations/` to the live project
+      (time-stamp order; `npm run migrate` with `supabase/` config, or the
+      Supabase CLI).
 
 ## Monitoring
 
