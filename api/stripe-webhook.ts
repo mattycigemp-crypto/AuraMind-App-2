@@ -194,7 +194,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Verify webhook signature if secret is configured
   if (webhookSecret) {
     const sig = req.headers['stripe-signature'] as string;
-    const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+    // Stripe signs the EXACT request bytes — accept a raw Buffer (express.raw),
+    // a raw string (Vercel passthrough), or fall back to re-serializing parsed JSON.
+    const rawBody = Buffer.isBuffer(req.body)
+      ? req.body.toString('utf8')
+      : typeof req.body === 'string'
+        ? req.body
+        : JSON.stringify(req.body);
 
     try {
       event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);

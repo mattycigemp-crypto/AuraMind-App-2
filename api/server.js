@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import handler from './index.js';
 import chatRouter from './routes/chat.js';
+import webhookHandler from './stripe-webhook.js';
 
 if (!process.env.NODE_ENV) {
   process.env.NODE_ENV = 'development';
@@ -24,6 +25,12 @@ app.use(cors({
     : ['http://localhost:5173', 'http://localhost:3000', 'https://auramind.app'],
   credentials: true,
 }));
+
+// Stripe webhook — mounted with a RAW body parser BEFORE express.json(), because
+// Stripe's signature is computed over the exact request bytes. Parsing + re-
+// serializing the JSON body would break signature verification.
+app.use('/api/stripe-webhook', express.raw({ type: '*/*' }), webhookHandler);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
