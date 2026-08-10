@@ -62,6 +62,25 @@ flag it:
 - Supabase migration files are append-only and idempotent (`ADD COLUMN
   IF NOT EXISTS`, `DROP POLICY IF EXISTS`, etc.).
 
+## Dependency audit status (Aug 9, 2026)
+
+`npm audit --omit=dev` reports **7 residual advisories** (2 high,
+5 moderate), all requiring breaking upgrades:
+
+- **js-yaml** (high, transitive of `@vercel/build-utils` + `shadcn`):
+  parse-time DoS; fix needs js-yaml 5.x which those tools don't accept.
+  No runtime path parses untrusted YAML.
+- **ws / engine.io-client** (high, via `@heyputer/puter.js`): the only
+  safe fix is downgrading puter.js to 2.5.4 — rejected to avoid
+  regressing the Puter sign-in flow.
+- **react-router 6.x** (moderate): same-origin open redirect for
+  `//`-prefixed paths; fix requires the v7 major upgrade.
+
+The app never passes untrusted input to these libraries, and none of
+them ship in the initial browser payload. Re-audit after upgrading
+`@heyputer/puter.js`, migrating to react-router v7, or when Vercel
+releases build-utils with js-yaml 5.
+
 ## Recognition
 
 We follow a coordinated disclosure model. Public disclosure of an
