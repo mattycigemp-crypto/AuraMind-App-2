@@ -93,22 +93,28 @@
   ```
 - Start with TTS integration (simplest)
 
-**2. Test Stripe Integration** (status: signature verification done 2026-08-10)
+**2. Test Stripe Integration** (status: plumbing verified 2026-08-10; full flow blocked on test keys)
 - ✅ Webhook signature verification verified side-effect-free (5 handler tests + 3 HTTP tests):
   valid signature accepted & ping ignored, invalid/missing signature rejected (400), non-POST rejected (405)
 - ✅ `api/server.js` now mounts `/api/stripe-webhook` with a raw-body parser (self-hosted/express deployments can receive webhooks)
-- ⚠️ Event processing (checkout.session.completed → DB + email) reviewed statically but NOT exercised —
-  the keys in `api/.env` are **LIVE** (`sk_live_`/`pk_live_`), so a real run would write to prod + send real emails
+- ✅ Handler prefers `req.rawBody` → Buffer → string → re-serialized JSON (Vercel/Next-safe)
+- ✅ **Full flow logic now covered by mocked tests** — `api/tests/stripe-flow.test.ts` (in CI): checkout creates
+  session + marks user trialing; webhook provisions subscription + emails buyer; subscription.deleted downgrades to
+  Starter; irrelevant events ignored. Plus `api/tests/` coverage for fetch-url, fetch-youtube-transcript, search
+  (key never leaks), email (recipient must be caller), admin/query (DML-anywhere guard) — 26 tests.
+- ✅ One-command automation ready: `api/scripts/stripe-test-flow.mjs` (swap api/.env → test keys, checkout +
+  signed webhook, auto-restore). Just needs test keys.
+- ⚠️ Event processing against REAL Stripe not exercised — `api/.env` holds **LIVE** keys (`sk_live_`/`pk_live_`),
+  so a real run would hit the live account + write prod DB + send real emails
 - ⚠️ Config mismatch to resolve before launch: `api/.env` = live keys; `auramind-gemini/.env` = test publishable key + test price IDs.
   A live checkout session created with a test price ID fails at Stripe. Verify Vercel env has **live** price IDs (CLI unauthenticated here).
-- To finish test-mode run:
+- To finish the REAL test-mode run:
   ```bash
-  # 1. In api/.env, swap to test keys + test webhook secret (sk_test_, whsec_...)
-  # 2. npm run dev:api   (express server on :3001)
-  # 3. stripe listen --forward-to localhost:3001/api/stripe-webhook
-  # 4. stripe trigger checkout.session.completed
-  # 5. Confirm supabase user_metadata gets subscription_status/plan/stripe ids
-  # 6. Swap api/.env back to live keys + live price IDs
+  # 1. Get sk_test_ + test whsec_ from https://dashboard.stripe.com/test/apikeys
+  # 2. cd api && STRIPE_TEST_SECRET_KEY=sk_test_... STRIPE_TEST_WEBHOOK_SECRET=whsec_... \
+  #      STRIPE_TEST_PRICE_ID=price_... npx tsx scripts/stripe-test-flow.mjs --user-id <your-uuid>
+  # 3. Pay with 4242 4242 4242 4242 at the printed checkout URL → REAL webhook provisions your account
+  # 4. Verify auth.users.user_metadata, then reset it
   ```
 
 **3. Deploy to Production**

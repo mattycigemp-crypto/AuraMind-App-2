@@ -40,6 +40,21 @@ jobs:
           cd auramind-gemini
           npm test -- --run
 
+      - name: Install API dependencies
+        run: |
+          cd api
+          npm ci
+
+      - name: API type check
+        run: |
+          cd api
+          npx tsc --noEmit
+
+      - name: Run API tests
+        run: |
+          cd api
+          npm test
+
       - name: Build project
         run: |
           cd auramind-gemini
