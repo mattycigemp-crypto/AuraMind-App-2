@@ -191,6 +191,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return await handleAudit(req, res, action);
       case 'integrations':
         return await handleIntegrations(req, res, action);
+      case 'fetch-url':
+        return await handleFetchUrl(req, res);
+      case 'fetch-youtube-transcript':
+        return await handleFetchYouTubeTranscript(req, res);
       default:
         return json(res, 404, { error: 'Endpoint not found' });
     }
@@ -1476,5 +1480,109 @@ async function handleAdminBulk(req: VercelRequest, res: VercelResponse, supabase
 
     default:
       return json(res, 400, { error: 'Invalid bulk action. Use: role, email, or export' });
+  }
+}
+// --- URL extraction endpoints (used by GeneratorPage) ---
+
+// Fetch a URL server-side and extract readable text (SSRF-safe: outbound only,
+// no auth token required beyond rate limiting).
+async function handleFetchUrl(req: VercelRequest, res: VercelResponse) {
+  const parsed = validateBody(res, z.object({ url: z.string().url() }), req.body);
+  if (!parsed.ok) return;
+  const { url } = parsed.data;
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AuraMind/1.0)' },
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch (err: any) {
+    return json(res, 502, { error: err?.message || 'Failed to fetch URL' });
+  }
+
+  if (!response.ok) {
+    return json(res, 502, { error: `Failed to fetch URL: ${response.status} ${response.statusText}` });
+  }
+
+  const html = await response.text();
+
+  // Strip HTML tags and scripts
+  const withoutScripts = html.replace(/<script[\s\S]*?<\/script>/gi, '');
+  const withoutStyles = withoutScripts.replace(/<style[\s\S]*?<\/style>/gi, '');
+  const text = withoutStyles
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&[^;]+;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 50000);
+
+  // Try to extract a title
+  const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  const title = titleMatch ? titleMatch[1].trim() : '';
+
+  return json(res, 200, { success: true, data: { title, text, url } });
+}
+
+function extractYouTubeVideoId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+async function handleFetchYouTubeTranscript(req: VercelRequest, res: VercelResponse) {
+  const parsed = validateBody(res, z.object({ url: z.string().min(1) }), req.body);
+  if (!parsed.ok) return;
+  const { url } = parsed.data;
+
+  const videoId = extractYouTubeVideoId(url);
+  if (!videoId) {
+    return json(res, 400, { error: 'Invalid YouTube URL' });
+  }
+
+  // Fetch video page to get the title
+  let pageHtml = '';
+  try {
+    const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AuraMind/1.0)' },
+      signal: AbortSignal.timeout(10000),
+    });
+    pageHtml = await pageRes.text();
+  } catch {
+    pageHtml = '';
+  }
+  const titleMatch = pageHtml.match(/<title[^>]*>([^<]+)<\/title>/i);
+  const title = titleMatch ? titleMatch[1].replace(' - YouTube', '').trim() : '';
+
+  // Try youtube-transcript API (no key needed)
+  try {
+    const transcriptRes = await fetch(
+      `https://youtubetranscript.com/?v=${videoId}&format=json`,
+      { signal: AbortSignal.timeout(10000) }
+    );
+
+    if (!transcriptRes.ok) {
+      return json(res, 200, {
+        success: true,
+        data: { title, text: '', videoId, error: 'Transcript not available for this video' },
+      });
+    }
+
+    const data = await transcriptRes.json() as { text: string; duration: number }[];
+    const fullText = data.map((seg) => seg.text).join(' ').trim();
+    const text = fullText.slice(0, 50000);
+
+    return json(res, 200, { success: true, data: { title, text: text || '', videoId } });
+  } catch {
+    return json(res, 200, {
+      success: true,
+      data: { title, text: '', videoId, error: 'Transcript not available for this video' },
+    });
   }
 }

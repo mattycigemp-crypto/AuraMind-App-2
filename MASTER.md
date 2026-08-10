@@ -420,6 +420,8 @@ All under `/api` — routed from `api/index.ts`. The Express dev server (`api/se
 | `/api/integrations/anki/update` | POST | User JWT | Anki import tracking |
 | `/api/integrations/obsidian/*` | POST | User JWT | Obsidian connect/disconnect |
 | `/api/integrations/schoology/*` | POST | User JWT | Schoology connect/disconnect |
+| `/api/fetch-url` | POST | Rate-limited | Fetch URL server-side, extract readable text (GeneratorPage) |
+| `/api/fetch-youtube-transcript` | POST | Rate-limited | Fetch YouTube transcript server-side (GeneratorPage) |
 
 ### Chat Streaming Flow
 1. Client → `GET /api/chat/stream?message=...&token=...`

@@ -17,12 +17,14 @@ export const logger = {
   debug(msg: string, ctx?: Record<string, unknown>) {
     if (!shouldLog('debug')) return;
     const entry = { level: 'debug', time: formatTimestamp(), msg, ...ctx };
+    // eslint-disable-next-line no-console -- structured logging is the point of this utility
     console.log(JSON.stringify(entry));
   },
 
   info(msg: string, ctx?: Record<string, unknown>) {
     if (!shouldLog('info')) return;
     const entry = { level: 'info', time: formatTimestamp(), msg, ...ctx };
+    // eslint-disable-next-line no-console -- structured logging is the point of this utility
     console.log(JSON.stringify(entry));
   },
 

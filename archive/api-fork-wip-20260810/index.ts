@@ -217,7 +217,7 @@ async function handleAdminTest(res: VercelResponse, supabase: any) {
 async function handleCoupons(req: VercelRequest, res: VercelResponse, ctx: MiddlewareContext, action?: string) {
   const Stripe = (await import('stripe')).default;
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
-  const { supabase, user } = await getAuthedUser(req);
+  const { _supabase, user } = await getAuthedUser(req);
   if (!isAdmin(user)) throw new ForbiddenError('Admin access required');
 
   switch (action) {
