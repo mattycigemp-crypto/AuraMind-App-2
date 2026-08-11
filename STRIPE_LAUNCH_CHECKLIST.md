@@ -103,20 +103,22 @@ verifies every response, and **always restores `api/.env`** — even on failure.
 
 ## 4. Live launch steps (ordered)
 
-1. **Products & prices:** confirm live products/prices exist in
-   `dashboard.stripe.com` (or create them). Record the live price IDs.
-2. **Webhook endpoint:** Dashboard → Developers → Webhooks → Add endpoint →
-   `https://<your-app-domain>/api/stripe-webhook`. Subscribe it to all seven
-   events in the table above. Copy the **live** signing secret (`whsec_live_…`).
-3. **Vercel env** (Project Settings → Environment Variables, then redeploy):
-   - `STRIPE_SECRET_KEY` — live secret key
-   - `STRIPE_WEBHOOK_SECRET` — live webhook secret from step 2
-   - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` — service role (already used
-     by the rest of the API; confirm they're set)
-   - `RESEND_API_KEY`, `RESEND_FROM_EMAIL` — for payment/success emails
-4. **Client env:** set `VITE_STRIPE_PUBLISHABLE_KEY` to `pk_live_…` and both
-   `VITE_STRIPE_PRICE_ID_*` to the live price IDs, then rebuild/redeploy the
-   frontend.
+1. **Products & prices:** ✅ done — live prices `price_1Tqj…`/`price_1SNl…`
+   verified retrievable with the live key (2026-08-11).
+2. **Webhook endpoint:** ✅ done 2026-08-11 — endpoint recreated via API at
+   **`https://auramind.app/api/stripe-webhook`** (apex, NOT www — www
+   307-redirects and Stripe doesn't follow redirects), enabled, subscribed to
+   the seven events, fresh signing secret saved to `api/.env` and Vercel.
+   The old disabled endpoint (and 3 stale Supabase-function endpoints) were
+   left/removed as noted in the audit.
+3. **Vercel env:** `STRIPE_WEBHOOK_SECRET` added to Production + Preview
+   (2026-08-11). Remaining to verify/redo on redeploy: `STRIPE_SECRET_KEY`,
+   `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`,
+   `RESEND_FROM_EMAIL`, and the `VITE_*` set (note `VITE_POSTHOG_KEY` was
+   `phc_placeholder` in the last build — set a real key).
+4. **Client env:** ✅ local `VITE_STRIPE_PUBLISHABLE_KEY` fixed to `pk_live_…`
+   (2026-08-11). The deployed bundle still ships the old `pk_test_…` until a
+   redeploy.
 5. **Send a test webhook from the dashboard** ("Send test webhook" on the
    endpoint): expect HTTP 200 `{"received":true,"ignored":true}` for `ping`.
 6. **Live smoke:** make one small real payment through the checkout flow;
