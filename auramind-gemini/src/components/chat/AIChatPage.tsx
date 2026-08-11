@@ -23,6 +23,8 @@ import ReplayEventBridge from './ReplayEventBridge';
 import ProfAuraEmptyState from '../ui/ProfAuraEmptyState';
 import ProfAura from './ProfAura';
 import { queueSession } from '../../services/chatSessionService';
+import { buildConceptWeaknesses, cardLapses, WEAK_LAPSE_THRESHOLD } from '../../lib/conceptModel';
+import { buildPriorSessionMemory } from '../../lib/chatMemory';
 import PageShell from '../dashboard/PageShell';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -34,13 +36,6 @@ const MODE_LABELS: Record<ChatMode, string> = {
 const MODES: ChatMode[] = ['study', 'companion'];
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
-/** A card is "consistently forgotten" once it has lapsed at least twice. */
-const WEAK_LAPSE_THRESHOLD = 2;
-
-function cardLapses(c: Card): number {
-  return c.lapses ?? c.fsrsState?.lapses ?? 0;
-}
 
 /**
  * Top 5 most-forgotten cards in a deck, ordered by lapse count (difficulty
@@ -151,9 +146,12 @@ export default function AIChatPage() {
   const [selectedDeckId, setSelectedDeckId] = useState('');
   const [personality, setPersonalityState] = useState<ProfAuraPersonality>(getStoredPersonality);
   const userMeta = workspace?.user as ({ streakCount?: number; lastStudyAt?: number; accuracy7d?: number } | undefined);
-  const [context, setContext] = useState<ChatContext>(() =>
-    buildInitialContext(workspace?.decks ?? [], workspace?.cards ?? []),
-  );
+  // Cross-session memory — computed once per page load (reads localStorage).
+  const priorMemory = useMemo(() => buildPriorSessionMemory(), []);
+  const [context, setContext] = useState<ChatContext>(() => ({
+    ...buildInitialContext(workspace?.decks ?? [], workspace?.cards ?? []),
+    priorConversations: priorMemory,
+  }));
   // useAIChat must be declared BEFORE any useEffect that depends on chat.mode,
   // since hooks must appear in a stable order. The next two useEffects
   // adapt `context` based on deck selection AND chat.mode, so chat lives here.
@@ -162,6 +160,11 @@ export default function AIChatPage() {
 
   const decks = workspace?.decks ?? localDecks;
   const cards = workspace?.cards ?? localCards;
+  // Concept-level weakness model — aggregated across the current card set.
+  const conceptWeaknesses = useMemo(
+    () => buildConceptWeaknesses(cards, decks),
+    [cards, decks],
+  );
   const selectedDeck = decks.find(d => d.id === selectedDeckId) || decks[0];
   const dueCount = cards.filter(c => c.deckId === selectedDeck?.id && (c.nextReview ?? 0) <= Date.now()).length;
 
@@ -226,6 +229,8 @@ export default function AIChatPage() {
       cardsDueToday: deckCards.filter(c => (c.nextReview ?? 0) <= now).length,
       dueThisWeek: cards.filter(c => (c.nextReview ?? 0) <= now + WEEK_MS).length,
       weakCards: buildWeakCards(deckCards),
+      conceptWeaknesses,
+      priorConversations: priorMemory,
       personality,
       retention7d: stats.retention7d,
       lastSessionAccuracy: stats.lastSessionAccuracy,
@@ -233,7 +238,7 @@ export default function AIChatPage() {
     };
     setContext(prev => ({ ...prev, ...payload }));
     chat.updateContext(payload);
-  }, [selectedDeck, cards, chat.mode, personality, stats.retention7d, stats.lastSessionAccuracy, stats.streak, chat.updateContext]);
+  }, [selectedDeck, cards, chat.mode, personality, stats.retention7d, stats.lastSessionAccuracy, stats.streak, conceptWeaknesses, priorMemory, chat.updateContext]);
 
   const [input, setInput] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();

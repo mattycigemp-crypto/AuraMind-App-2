@@ -6,7 +6,7 @@
 
 ## System Overview
 
-AuraMind is a full-stack AI-powered study companion with three deployable units:
+AuraMind is a full-stack adaptive AI learning system — it turns any input (PDF, video, lecture, topic) into a personalized course, schedules review with FSRS v5, and tutors with a knowledge model of the user's actual weaknesses. Three deployable units:
 
 | Unit | Path | Tech | Purpose |
 |---|---|---|---|

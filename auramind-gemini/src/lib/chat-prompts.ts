@@ -22,6 +22,7 @@ export type ChatMode = 'study' | 'companion';
 
 export type { ProfAuraPersonality } from './profAuraPersonality';
 import { type ProfAuraPersonality, getPersonalityPromptModifier } from './profAuraPersonality';
+import type { ConceptWeakness } from './conceptModel';
 
 export interface WeakCardSummary {
   term: string;
@@ -57,6 +58,10 @@ export interface PromptContext {
   lastSessionAccuracy?: number; // 0..100
   /** Streak count for performance-aware preamble. */
   streakCount?: number;
+  /** Concept-level weaknesses aggregated across decks. */
+  conceptWeaknesses?: ConceptWeakness[];
+  /** Compact summary of the most recent prior session. */
+  priorConversations?: string;
 }
 
 /**
@@ -84,7 +89,7 @@ const FSRS_AWARE_RULES = `FSRS-AWARE TEACHING RULES:
 - If intervalDays is long (>14) and lapses is high, suggest a quick mid-week rep to beat the next review cliff.
 - Always reference the user's actual FSRS numbers when explaining why they're forgetting something.`;
 
-/* eslint-disable max-len */
+ 
 const MODE_INSTRUCTIONS: Record<ChatMode, string> = {
   study: `STUDY COACH MODE — One unified academic voice. The user does NOT pick a sub-mode; you read the message and respond with the right shape.
 
@@ -113,7 +118,7 @@ Respond in plain markdown. Keep replies tight (under 150 words unless they ask f
 
 If they say they want flashcards, gently nudge them to switch to Study Coach (top-right toggle) or open Generator.`,
 };
-/* eslint-enable max-len */
+ 
 
 export function buildSystemPrompt(context: PromptContext): string {
   const lines: string[] = [
@@ -122,6 +127,7 @@ export function buildSystemPrompt(context: PromptContext): string {
     'VOICE — always:',
     '- Warm, encouraging, sharp. Like a favorite professor who explains the trick, not just the answer.',
     '- Pull from the user\'s actual study data (deck, FSRS, retention, accuracy) before answering from general knowledge.',
+    '- You may reference the PRIOR CONVERSATION MEMORY block when relevant, but never claim to remember anything beyond it.',
     '- Use markdown (bold, lists, headers) for readability. NEVER wrap responses in triple-backticks unless writing code.',
     '- Keep replies under 200 words unless the user explicitly asks for depth.',
     '',
@@ -165,6 +171,31 @@ export function buildSystemPrompt(context: PromptContext): string {
     lines.push(`WEAK SPOTS (top ${Math.min(context.weakCards.length, 3)}): ${summary}`);
   }
 
+  // Concept-level knowledge model — weak spots aggregated across decks.
+  // Rendered in study mode so Aura can anchor on concepts, not just cards.
+  if (context.conceptWeaknesses && context.conceptWeaknesses.length > 0 && context.mode === 'study') {
+    lines.push('');
+    lines.push('CONCEPT WEAKNESSES (aggregated across decks):');
+    for (const c of context.conceptWeaknesses.slice(0, 3)) {
+      const diff =
+        c.avgDifficulty !== undefined
+          ? `, difficulty ${c.avgDifficulty.toFixed(1)}/10`
+          : '';
+      const example = c.topCards[0] ? ` (e.g. "${c.topCards[0].term}")` : '';
+      lines.push(
+        `- ${c.concept}: ${c.totalLapses} lapses across ${c.weakCardCount} card${c.weakCardCount === 1 ? '' : 's'}${diff}${example}`,
+      );
+    }
+    lines.push('When the student asks about something that maps to a concept above, acknowledge what they already know and focus on that concept\'s gap before going deeper.');
+  }
+
+  // Cross-session memory — the ONLY history the model may reference.
+  if (context.priorConversations) {
+    lines.push('');
+    lines.push(`PRIOR CONVERSATION MEMORY (from the student's earlier sessions — the only history you may reference):`);
+    lines.push(context.priorConversations);
+  }
+
   if (context.currentCard && context.mode === 'study') {
     lines.push('');
     lines.push(`CURRENT CARD:`);
@@ -197,7 +228,7 @@ export function buildSystemPrompt(context: PromptContext): string {
   }
 
   if (context.mode === 'companion') {
-    lines.push('REFUSAL GUARDRAILS: NEVER claim to remember past conversations unless the user explicitly told you in the current thread. NEVER invent FSRS numbers — only use what\'s listed above. NEVER fake quiz answers or emit save_card blocks.');
+    lines.push('REFUSAL GUARDRAILS: You may reference ONLY the PRIOR CONVERSATION MEMORY block above — never claim to remember anything beyond it. NEVER invent FSRS numbers — only use what\'s listed above. NEVER fake quiz answers or emit save_card blocks.');
   }
 
   return lines.join('\n');

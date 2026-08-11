@@ -12,9 +12,10 @@ const sections = [
     content: (
       <>
         <p>
-          AuraMind is an AI-powered study platform that helps you learn faster using spaced repetition,
-          intelligent flashcards, and personalized AI tutoring. This guide covers everything you need to
-          get the most out of the app.
+          AuraMind is an adaptive AI learning system. Drop in a PDF, a video, a lecture, or a topic and it
+          builds your course — flashcards, quizzes, and lessons — then schedules your reviews with FSRS v5
+          spaced repetition and tutors you with a model of what you actually know. This guide covers
+          everything you need to get the most out of the app.
         </p>
         <h4 className="text-sm font-semibold text-[#F0EFFE] mt-4 mb-2">Quick Start</h4>
         <ul className="list-disc pl-5 space-y-1.5 text-[#9090A8]">

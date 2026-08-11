@@ -9,7 +9,7 @@
 | Field | Value |
 |---|---|
 | **Name** | AuraMind |
-| **Tagline** | AI-Powered Study Companion |
+| **Tagline** | Your AI Learning System — turn anything into a personalized course |
 | **Version** | 2.0.0 |
 | **Domain** | `auramind.app` (DNS at Namecheap → needs A record `76.76.21.21`) |
 | **Vercel project** | `auramind-gemini` (org: `team_cuIB2UjO85PypaCiv6wiLYxO`, projectId: `prj_yhfSoOftNS3jaRNah2vn5x2SG1ow`) |
@@ -21,7 +21,7 @@
 
 ## 2. What AuraMind Does
 
-AuraMind is an AI-powered flashcard and study platform. Users create decks of flashcards, study with spaced repetition, generate new cards with AI, take quizzes, and follow structured learning paths.
+AuraMind is an adaptive AI learning system. It turns anything the user is studying — a PDF, a YouTube video, a lecture recording, or a bare topic — into a personalized course of flashcards, lessons, and quizzes. FSRS v5 schedules reviews; the AI tutor (Prof. Aura) is fed the user's real learning state — streak, 7-day retention, last-session accuracy, weak cards, concept-level weaknesses, and prior conversations — so it teaches to actual gaps rather than generic content. Users create decks, study with spaced repetition, generate material with AI, take quizzes, and follow structured learning paths.
 
 **Core workflow:**
 1. Create a deck (manually, from AI generation, or import from PDF/Anki)

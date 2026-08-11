@@ -15,9 +15,7 @@
 
 </div>
 
-An AI-powered study companion — flashcard management, spaced
-repetition (FSRS v5 with personalized weights), AI generation + chat,
-and Stripe billing — all in one repo.
+An **adaptive AI learning system** — turn anything you're studying (a PDF, a video, a lecture, a topic) into a personalized course of cards, lessons, and quizzes. FSRS v5 spaced repetition schedules your reviews; Prof. Aura, the AI tutor, remembers what you actually struggle with — weak cards, concepts, retention, and past conversations — and teaches to those gaps. Freemium via Stripe, all in one repo.
 
 > **Status:** active development · pre-M6 release · deployed via Vercel (web).
 >

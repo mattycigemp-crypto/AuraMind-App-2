@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { auraAiClient } from '../services/api/auraAiService';
 import { buildSystemPrompt, type ChatMode } from '../lib/chat-prompts';
+import type { ConceptWeakness } from '../lib/conceptModel';
 import { getStoredPersonality, type ProfAuraPersonality } from '../lib/profAuraPersonality';
 
 export type { ChatMode };
@@ -39,6 +40,10 @@ export interface ChatContext {
   dueThisWeek?: number;
   /** Current study streak. */
   streakCount?: number;
+  /** Concept-level weaknesses aggregated across decks (the knowledge model). */
+  conceptWeaknesses?: ConceptWeakness[];
+  /** Compact summary of the most recent prior session (cross-session memory). */
+  priorConversations?: string;
 }
 
 const SAVE_CARD_REGEX = /\{"save_card"\s*:\s*true\s*,\s*"term"\s*:\s*"([^"]+)"\s*,\s*"definition"\s*:\s*"([^"]+)"\s*\}/;
@@ -62,7 +67,7 @@ function parseQuizBlock(content: string): Message['quizBlock'] | undefined {
 
   for (let i = questionLine + 1; i < lines.length; i++) {
     const line = lines[i].trim();
-    const match = line.match(/^([A-D])[\.\)]\s*(.+)/);
+    const match = line.match(/^([A-D])[.)]\s*(.+)/);
     if (match) {
       const idx = match[1].charCodeAt(0) - 65;
       options.push(match[2].trim());
@@ -174,7 +179,7 @@ export function useAIChat(initialContext: ChatContext) {
     if (!msg?.saveCardData) return;
 
     // Dynamically import to avoid circular deps
-    const { useDashboardWorkspace } = await import('../contexts/DashboardWorkspaceContext');
+    const { useDashboardWorkspace: _useDashboardWorkspace } = await import('../contexts/DashboardWorkspaceContext');
     // Note: This must be called from a component that has the provider.
     // The actual save is handled by the component via addCardsToDeck.
     // This hook just exposes the data.

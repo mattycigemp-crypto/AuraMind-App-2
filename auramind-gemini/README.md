@@ -1,20 +1,48 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# AuraMind — Frontend SPA
 
-# Run and deploy your AI Studio app
+The web client for **AuraMind, Your AI Learning System** — an adaptive AI learning system that turns anything you're studying (a PDF, a video, a lecture, a topic) into a personalized course, then schedules your reviews with FSRS v5 spaced repetition and tutors you with a knowledge model that remembers what you struggle with.
 
-This contains everything you need to run your app locally.
+**Stack:** React 19 · TypeScript (strict) · Vite · Tailwind 4 · Radix UI · Framer Motion · Zustand · react-router v7 · i18next · Supabase (auth + data) · Stripe (payments)
 
-View your app in AI Studio: https://ai.studio/apps/drive/1xUZMOVKFKNmPVxRXGCI-JSVonoxgLtS2
+## Run locally
 
-## Run Locally
+```bash
+npm ci
+# copy .env.example to .env and fill in your keys (Supabase is required;
+# see the repo-root README and DEPLOYMENT.md for the full variable list)
+npm run dev        # vite dev server on port 3000
+```
 
-**Prerequisites:**  Node.js
+The API lives in the sibling `../api` directory (Express dev server on port 3001); the optional streaming-chat backend is `../model-service` (FastAPI on port 8000).
 
+## Scripts
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+| Script | What it does |
+|---|---|
+| `npm run dev` | Vite dev server (port 3000) |
+| `npm run type-check` | `tsc --noEmit` |
+| `npm test` | Vitest suite (320+ tests) |
+| `npm run build` | Production build (with bundle-size guard, ~393 KB gzipped budget 500 KB) |
+| `npm run size` | Bundle-size check |
+
+## Layout
+
+```
+src/
+├── App.tsx              # Command center: auth lifecycle, routes, session sync
+├── components/          # ~40 dirs — landing, chat, study, dashboard, ui primitives
+├── pages/               # Route pages (dashboard, chat, generator, study, …)
+├── hooks/               # 39 hooks (useAIChat, useStudyStats, useCurrentUserId, …)
+├── services/            # API clients, DB modules, AI providers, chat persistence
+├── lib/                 # Pure logic: chat-prompts, conceptModel, chatMemory, fsrs
+├── contexts/            # AuraContext, DashboardWorkspaceContext, …
+└── __tests__/           # Vitest suite
+```
+
+## Notable pieces
+
+- **Prof. Aura (the tutor)** — `components/chat/AIChatPage.tsx` + `hooks/useAIChat.ts` + `lib/chat-prompts.ts`. The system prompt is assembled from *real* study data: streak, 7-day retention, last-session accuracy, weak cards, and concept-level weaknesses (`lib/conceptModel.ts`) plus cross-session memory (`lib/chatMemory.ts`).
+- **FSRS v5 scheduling** — `services/study/fsrs.ts` (free-spaced-repetition-scheduler port).
+- **Offline study** — PWA service worker + IndexedDB offline review queueing.
+
+© CogniVect, Inc. All rights reserved.
