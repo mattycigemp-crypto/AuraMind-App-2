@@ -1,0 +1,141 @@
+# Stripe Launch Checklist
+
+Everything needed to take AuraMind's Stripe integration from "plumbing verified"
+to "money moving in production" — with the current status of each item.
+
+**Status snapshot (2026-08-10):** signature handling, HTTP wiring, and full flow
+logic are verified and tested (see "What's already verified"). The remaining
+gates need **your Stripe dashboard** (test keys) and **your Vercel env** (live
+key reconciliation). None of the steps below should be skipped — item 2 is the
+known configuration mismatch.
+
+---
+
+## 1. What's already verified ✅
+
+| Layer | Status |
+|---|---|
+| Webhook signature verification | Verified side-effect-free: 5 handler-level + 3 HTTP-path tests (valid sig accepted & `ping` ignored; invalid/missing sig → 400; GET → 405) |
+| Webhook mounted in express server | `api/server.js` → `POST /api/stripe-webhook` with raw-body parser (self-hosted deployments) |
+| Vercel-safe body handling | Handler prefers `req.rawBody` → Buffer → string → re-serialized JSON |
+| Checkout endpoint | `POST /api/stripe/checkout` creates a hosted Stripe Checkout session (server-side; no publishable key in the bundle) |
+| Full flow logic (mocked) | `api/tests/stripe-flow.test.ts` (in CI): checkout marks user trialing; `checkout.session.completed` provisions Pro + emails buyer; `subscription.deleted` downgrades to Starter; irrelevant events ignored |
+| Signature plumbing in CI | `.github/workflows/scheduled-checks.yml` runs both smoke scripts weekly with placeholder keys (no real secrets, no side effects) |
+
+**Handled webhook events:** `checkout.session.completed`,
+`customer.subscription.created` / `.updated` / `.deleted` /
+`.trial_will_end`, `invoice.payment_succeeded` / `.payment_failed`.
+
+---
+
+## 2. Resolve the key/price-ID mismatch ⚠️ (do this first)
+
+Today the two halves of the integration disagree:
+
+| Where | Currently holds | Must be at launch |
+|---|---|---|
+| `api/.env` → `STRIPE_SECRET_KEY` | `sk_live_…` | **Live** secret key (`sk_live_…`) — matches the webhook secret's mode |
+| `api/.env` → `STRIPE_WEBHOOK_SECRET` | `whsec_…` | **Live** webhook secret from the dashboard endpoint |
+| `auramind-gemini/.env` → `VITE_STRIPE_PUBLISHABLE_KEY` | `pk_test_…` | **Live** publishable key (`pk_live_…`) — same mode as the secret key |
+| `auramind-gemini/.env` → `VITE_STRIPE_PRICE_ID_MONTHLY` / `_ANNUAL` | test price IDs | **Live** price IDs |
+
+**Why it matters:** Stripe rejects live-mode API calls that reference test-mode
+price IDs. A live checkout session built from a test price ID fails at Stripe,
+and live webhook events signed with a test secret fail verification (400).
+The secret key, publishable key, webhook secret, and price IDs must **all be
+live** (or all be test) at the same time.
+
+**Where the real env lives:** production runs on Vercel — the values in
+`api/.env` / `auramind-gemini/.env` only matter for local dev. Set the live
+values in **Vercel's project env** (Project Settings → Environment Variables)
+and redeploy. Verify with `npx vercel env ls` (CLI must be authenticated).
+
+---
+
+## 3. Test-mode full flow (pre-launch gate) 🔑
+
+Runs the real checkout + signed webhook against Stripe's test mode. The repo
+has **no test secret keys** — get them from
+`dashboard.stripe.com/test/apikeys` (secret key + a test webhook signing secret
+from a test-mode webhook endpoint, or `stripe listen`).
+
+```bash
+cd api
+STRIPE_TEST_SECRET_KEY=sk_test_xxx \
+STRIPE_TEST_WEBHOOK_SECRET=whsec_xxx \
+STRIPE_TEST_PRICE_ID=price_xxx \
+npx tsx scripts/stripe-test-flow.mjs --user-id <your-supabase-user-uuid>
+```
+
+The script backs up `api/.env`, swaps in the test keys, starts the server on
+:3901, creates a checkout session, delivers a **locally-signed**
+`checkout.session.completed` event (real HMAC math — no Stripe CLI needed),
+verifies every response, and **always restores `api/.env`** — even on failure.
+
+**Pass criteria:**
+1. Script prints the checkout URL → open it and pay with card
+   `4242 4242 4242 4242` (any future expiry, any CVC).
+2. Redirect back succeeds; the account row shows `Pro` + `trial_end`
+   (user_metadata), and the buyer email arrives (check the Resend dashboard).
+3. `subscription.deleted` path: cancel the subscription in the dashboard →
+   the handler downgrades the user to Starter and sends the cancellation email.
+
+> ⚠️ The webhook writes subscription metadata for `--user-id` in the **real**
+> Supabase project. Use your own account — payments are fake, the DB write is
+> real. Verify (and if you like, reset) your `user_metadata` afterwards.
+
+---
+
+## 4. Live launch steps (ordered)
+
+1. **Products & prices:** confirm live products/prices exist in
+   `dashboard.stripe.com` (or create them). Record the live price IDs.
+2. **Webhook endpoint:** Dashboard → Developers → Webhooks → Add endpoint →
+   `https://<your-app-domain>/api/stripe-webhook`. Subscribe it to all seven
+   events in the table above. Copy the **live** signing secret (`whsec_live_…`).
+3. **Vercel env** (Project Settings → Environment Variables, then redeploy):
+   - `STRIPE_SECRET_KEY` — live secret key
+   - `STRIPE_WEBHOOK_SECRET` — live webhook secret from step 2
+   - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` — service role (already used
+     by the rest of the API; confirm they're set)
+   - `RESEND_API_KEY`, `RESEND_FROM_EMAIL` — for payment/success emails
+4. **Client env:** set `VITE_STRIPE_PUBLISHABLE_KEY` to `pk_live_…` and both
+   `VITE_STRIPE_PRICE_ID_*` to the live price IDs, then rebuild/redeploy the
+   frontend.
+5. **Send a test webhook from the dashboard** ("Send test webhook" on the
+   endpoint): expect HTTP 200 `{"received":true,"ignored":true}` for `ping`.
+6. **Live smoke:** make one small real payment through the checkout flow;
+   verify the subscription row, `user_metadata` upgrade, and buyer email.
+
+---
+
+## 5. Post-launch monitoring
+
+- **Weekly automated checks** — `.github/workflows/scheduled-checks.yml`
+  (Mondays 09:00 UTC, also manually runnable):
+  - Stripe webhook signature smoke tests (side-effect-free, placeholder keys)
+  - Dependency audit gated at **critical** severity (known moderate/high
+    residuals in `SECURITY.md` are expected to stay green)
+- **Stripe dashboard:** monitor payments, payouts, disputes, and failed
+  invoices. `invoice.payment_failed` is handled — check the webhook logs for
+  those deliveries.
+- **Vercel function logs:** watch `/api/stripe-webhook` and `/api/stripe/checkout`
+  for 400/500 spikes.
+
+---
+
+## 6. Rollback / incident notes
+
+- **Local env corruption:** the test-flow script restores `api/.env` from its
+  backup automatically. If you ever hand-edit keys, keep a `.env.backup`.
+- **Bad webhook secret deployed:** webhooks fail with 400 (signature
+  verification) — no DB writes occur, so it's a safe failure mode. Fix the
+  secret and resend from the dashboard.
+- **Downgrade path:** deleting a customer's subscription (or letting it lapse)
+  triggers `customer.subscription.deleted` → account returns to the free
+  Starter plan automatically.
+
+---
+
+*See also: `COMPLETED_TASKS.md` (runbook + status table), `SECURITY.md`
+(audit residuals), `DEPLOYMENT.md` (deployment notes).*

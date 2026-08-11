@@ -116,6 +116,9 @@ Still requires manual/out-of-band setup (cannot be verified from the repo):
       and `api/.env` (see README env tables).
 - [ ] Stripe webhook endpoint configured in the Stripe dashboard with the
       `STRIPE_WEBHOOK_SECRET`.
+
+> ▶ **Full Stripe launch checklist** (key-mode reconciliation, test-mode
+> run, live launch steps, monitoring, rollback): see `STRIPE_LAUNCH_CHECKLIST.md`.
 - [ ] Custom domain configured with HTTPS in Vercel.
 - [x] Apply the migrations in `supabase/migrations/` to the live project
       — all 31 applied via `node run-migrations.js` (Aug 9, 2026);
