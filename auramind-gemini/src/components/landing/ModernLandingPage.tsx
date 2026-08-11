@@ -16,6 +16,7 @@ import { BorderBeam } from "../ui/BorderBeam";
 import { ShineBorder } from "../ui/ShineBorder";
 import { FrostGlass } from "../ui/FrostGlass";
 import { useSoundDesign } from "@/hooks/useSoundDesign";
+import { analyticsService } from "@/services/analytics/analyticsService";
 import type { FlashcardData } from "@/lib/auramind/types";
 import { TextSplit, TextScramble, ClickSparkles, DrawPath, ParticleField, useScrollReveal } from "@/lib/effects";
 import { Headphones, Mic, BrainCircuit, FileText, Check } from "../icons";
@@ -148,7 +149,10 @@ const Navbar = () => {
             Sign in
           </button>
           <MagneticButton
-            onClick={() => navigate("/auth")}
+            onClick={() => {
+              analyticsService.trackFunnel("landing_cta_click", { location: "navbar" });
+              navigate("/auth");
+            }}
             className="px-4 py-1.5 min-h-[44px] bg-[#7C3AED] text-white text-xs font-medium rounded-lg hover:bg-[#6D28D9] transition-colors"
           >
             Start for free
@@ -164,6 +168,12 @@ export default function ModernLandingPage() {
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll();
   const { playClick, playSuccess } = useSoundDesign({ volume: 0.1 });
+
+  // Signup funnel — fire-and-forget; analytics must never block navigation.
+  const goToAuth = (location: string) => {
+    analyticsService.trackFunnel("landing_cta_click", { location });
+    navigate("/auth");
+  };
 
   // anime.js v4 ScrollObserver hooks for sections that should reveal as the
   // user scrolls into them. The `once: true` param (set in the lib defaults)
@@ -303,7 +313,7 @@ export default function ModernLandingPage() {
               <div className="flex items-center gap-3 mb-6">
                 <ClickSparkles count={8} color={['#7C3AED', '#8B5CF6', '#3B82F6', '#A78BFA']}>
                   <MagneticButton
-                    onClick={() => { playClick(); navigate("/auth"); }}
+                    onClick={() => { playClick(); goToAuth("hero"); }}
                     className="group relative px-6 py-2.5 bg-[#7C3AED] text-white text-sm font-medium rounded-lg hover:bg-[#6D28D9] transition-all duration-300 shadow-[0_0_30px_rgba(124,58,237,0.3)] overflow-hidden"
                   >
                     <span className="relative z-10">Start for free →</span>
@@ -486,7 +496,7 @@ export default function ModernLandingPage() {
             className="shrink-0"
           >
             <MagneticButton
-              onClick={() => navigate("/auth")}
+              onClick={() => goToAuth("study-session")}
               className="px-5 py-2.5 bg-[#7C3AED] text-white text-xs font-medium rounded-lg hover:bg-[#6D28D9] transition-all shadow-[0_0_20px_rgba(124,58,237,0.2)]"
             >
               Try a study session →
@@ -536,7 +546,7 @@ export default function ModernLandingPage() {
                   ))}
                 </ul>
                 <MagneticButton
-                  onClick={() => { playClick(); navigate("/auth"); }}
+                  onClick={() => { playClick(); goToAuth("pricing-free"); }}
                   className="w-full py-2.5 min-h-[44px] rounded-lg border border-[#2A2A3A] text-[#F0EFFE] text-xs font-medium hover:border-[#7C3AED]/40 transition-all"
                 >
                   Get Started
@@ -574,7 +584,7 @@ export default function ModernLandingPage() {
                     ))}
                   </ul>
                   <MagneticButton
-                    onClick={() => { playSuccess(); navigate("/auth"); }}
+                    onClick={() => { playSuccess(); goToAuth("pricing-pro"); }}
                     className="w-full py-2.5 min-h-[44px] rounded-lg bg-[#7C3AED] text-white text-xs font-medium hover:bg-[#6D28D9] transition-all shadow-[0_0_20px_rgba(124,58,237,0.2)] relative z-10"
                   >
                     Start Free Trial

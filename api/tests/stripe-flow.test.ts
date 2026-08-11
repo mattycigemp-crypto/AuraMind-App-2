@@ -16,6 +16,7 @@ const stripeMock = vi.hoisted(() => ({
   sessions: { create: vi.fn() },
   portalSessions: { create: vi.fn() },
   subscriptions: { retrieve: vi.fn() },
+  prices: { retrieve: vi.fn() },
   webhooks: {
     constructEvent: vi.fn(),
   },
@@ -34,6 +35,7 @@ vi.mock('stripe', () => ({
     checkout = { sessions: stripeMock.sessions };
     billingPortal = { sessions: stripeMock.portalSessions };
     subscriptions = stripeMock.subscriptions;
+    prices = { retrieve: stripeMock.prices.retrieve };
     webhooks = stripeMock.webhooks;
   },
 }));
@@ -52,6 +54,7 @@ afterEach(() => {
   stripeMock.sessions.create.mockReset();
   stripeMock.portalSessions.create.mockReset();
   stripeMock.subscriptions.retrieve.mockReset();
+  stripeMock.prices.retrieve.mockReset();
   stripeMock.webhooks.constructEvent.mockReset();
   resendMock.emails.send.mockReset();
 });
@@ -70,6 +73,8 @@ function webhookRes() {
 
 describe('Stripe flow (mocked Stripe + Supabase + Resend)', () => {
   it('checkout: creates a session and immediately marks the user as trialing', async () => {
+    // sk_test_ key in vitest config → prices must be livemode: false.
+    stripeMock.prices.retrieve.mockResolvedValue({ id: 'price_monthly_test', livemode: false });
     stripeMock.sessions.create.mockResolvedValue({
       id: 'cs_test_123',
       url: 'https://checkout.stripe.com/c/pay/cs_test_123',
@@ -109,7 +114,45 @@ describe('Stripe flow (mocked Stripe + Supabase + Resend)', () => {
     );
   });
 
+  it('checkout: rejects a price whose livemode mismatches the key mode (400, actionable)', async () => {
+    // sk_test_ key (vitest config) + a LIVE price → must be rejected before
+    // the session is created.
+    stripeMock.prices.retrieve.mockResolvedValue({ id: 'price_live', livemode: true });
+
+    const { status, body } = await call('stripe/checkout', {
+      body: {
+        priceId: 'price_live',
+        userId: '00000000-0000-4000-8000-000000000001',
+        email: 'buyer@example.com',
+      },
+    });
+
+    expect(status).toBe(400);
+    expect(body.error).toContain('mode mismatch');
+    expect(stripeMock.sessions.create).not.toHaveBeenCalled();
+  });
+
+  it('checkout: rejects a price the key cannot retrieve (400, actionable)', async () => {
+    // e.g. a test price queried with a live key → Stripe raises "no such price".
+    stripeMock.prices.retrieve.mockRejectedValue(new Error('No such price'));
+
+    const { status, body } = await call('stripe/checkout', {
+      body: {
+        priceId: 'price_does_not_exist_here',
+        userId: '00000000-0000-4000-8000-000000000001',
+        email: 'buyer@example.com',
+      },
+    });
+
+    expect(status).toBe(400);
+    expect(body.error).toContain('Checkout price check failed');
+    expect(stripeMock.sessions.create).not.toHaveBeenCalled();
+  });
+
   it('checkout: surfaces Stripe errors as 500', async () => {
+    // Guard passes (matching test mode) — the session-create error is what
+    // must surface as 500.
+    stripeMock.prices.retrieve.mockResolvedValue({ id: 'price_bogus', livemode: false });
     stripeMock.sessions.create.mockRejectedValue(new Error('No such price: price_bogus'));
 
     const { status, body } = await call('stripe/checkout', {

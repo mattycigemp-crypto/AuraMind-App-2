@@ -28,27 +28,36 @@ known configuration mismatch.
 
 ---
 
-## 2. Resolve the key/price-ID mismatch ⚠️ (do this first)
+## 2. Stripe mode alignment ✅ verified, one mismatch remains
 
-Today the two halves of the integration disagree:
+Checked against Stripe's live API on 2026-08-11 (`api/scripts/verify-launch.mjs`):
 
-| Where | Currently holds | Must be at launch |
+| Where | Verified state | OK? |
 |---|---|---|
-| `api/.env` → `STRIPE_SECRET_KEY` | `sk_live_…` | **Live** secret key (`sk_live_…`) — matches the webhook secret's mode |
-| `api/.env` → `STRIPE_WEBHOOK_SECRET` | `whsec_…` | **Live** webhook secret from the dashboard endpoint |
-| `auramind-gemini/.env` → `VITE_STRIPE_PUBLISHABLE_KEY` | `pk_test_…` | **Live** publishable key (`pk_live_…`) — same mode as the secret key |
-| `auramind-gemini/.env` → `VITE_STRIPE_PRICE_ID_MONTHLY` / `_ANNUAL` | test price IDs | **Live** price IDs |
+| `api/.env` → `STRIPE_SECRET_KEY` | `sk_live_…` | ✅ Live |
+| `api/.env` → `STRIPE_PUBLISHABLE_KEY` | `pk_live_…` | ✅ Live |
+| `auramind-gemini/.env` → `VITE_STRIPE_PRICE_ID_MONTHLY` / `_ANNUAL` | both **live** prices, retrievable with the live key, `livemode` matches | ✅ Verified via `prices.retrieve` |
+| `auramind-gemini/.env` → `VITE_STRIPE_PUBLISHABLE_KEY` | `pk_test_…` | ❌ **Test** key in the client bundle — fix to `pk_live_…` |
+| `api/.env` → `STRIPE_WEBHOOK_SECRET` | `whsec_…` | ⚠️ Format matches live; confirm the **endpoint is registered in live mode** on the dashboard with the event list in §5 |
 
-**Why it matters:** Stripe rejects live-mode API calls that reference test-mode
-price IDs. A live checkout session built from a test price ID fails at Stripe,
-and live webhook events signed with a test secret fail verification (400).
-The secret key, publishable key, webhook secret, and price IDs must **all be
-live** (or all be test) at the same time.
+**Remaining fix (one line):** set `VITE_STRIPE_PUBLISHABLE_KEY=pk_live_…` in
+`auramind-gemini/.env` (the live publishable key already exists in `api/.env`
+as `STRIPE_PUBLISHABLE_KEY`). The current checkout path uses hosted Stripe
+Checkout (server-side, no Elements), so the test key is inert today — but it
+ships in the production bundle and breaks the moment Elements is wired.
+
+**Why alignment matters:** Stripe rejects live-mode API calls that reference
+test-mode prices, and live webhook events signed with a test secret fail
+verification (400). Secret key, publishable key, webhook secret, and price
+IDs must **all be live** (or all be test) at the same time. The checkout
+handler now enforces this: it retrieves the price and refuses a mode mismatch
+with an actionable 400 instead of a confusing 500.
 
 **Where the real env lives:** production runs on Vercel — the values in
-`api/.env` / `auramind-gemini/.env` only matter for local dev. Set the live
-values in **Vercel's project env** (Project Settings → Environment Variables)
-and redeploy. Verify with `npx vercel env ls` (CLI must be authenticated).
+`api/.env` / `auramind-gemini/.env` only matter for local dev. Set the
+corrected values in **Vercel's project env** (Project Settings → Environment
+Variables) and redeploy. Verify with `npx vercel env ls` (CLI must be
+authenticated) and `node api/scripts/verify-launch.mjs`.
 
 ---
 

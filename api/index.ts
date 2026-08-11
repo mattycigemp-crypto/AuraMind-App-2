@@ -744,6 +744,31 @@ async function handleStripe(req: VercelRequest, res: VercelResponse, action?: st
       if (!parsed.ok) return;
       const { priceId, userId, email } = parsed.data;
 
+      // Mode guard — never mix a live key with test prices (or vice versa). A
+      // live key cannot even retrieve a test price, so a mismatch would
+      // otherwise surface as a confusing 500 mid-checkout. Fail loudly with
+      // the exact fix instead of breaking real payers silently.
+      const isLiveKey = secretKey.startsWith('sk_live_');
+      let price;
+      try {
+        price = await stripe.prices.retrieve(priceId);
+      } catch {
+        return json(res, 400, {
+          error:
+            `Checkout price check failed: cannot retrieve price "${priceId}" with this STRIPE_SECRET_KEY. ` +
+            `This almost always means the client price ID and the API key are in different Stripe modes ` +
+            `(e.g. a test price with a live key). See STRIPE_LAUNCH_CHECKLIST.md.`,
+        });
+      }
+      if (price.livemode !== isLiveKey) {
+        return json(res, 400, {
+          error:
+            `Stripe mode mismatch: price "${priceId}" is ${price.livemode ? 'live' : 'test'} but ` +
+            `STRIPE_SECRET_KEY is ${isLiveKey ? 'live' : 'test'}. Align them before launching checkout. ` +
+            `See STRIPE_LAUNCH_CHECKLIST.md.`,
+        });
+      }
+
       try {
         const session = await stripe.checkout.sessions.create({
           mode: 'subscription',

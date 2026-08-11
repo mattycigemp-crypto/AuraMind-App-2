@@ -1,5 +1,5 @@
 import { supabase } from '../database/supabase';
-import { getFSRSAnalytics, getFSRSState, calculateRetrievability } from '../study/fsrs';
+import { getFSRSAnalytics } from '../study/fsrs';
 
 const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY;
 const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com';
@@ -81,6 +81,19 @@ export const analyticsService = {
   trackCoreAction: async (actionType: 'generate_deck' | 'study_session' | 'chat_message', details?: any) => {
     const ph = await getPostHog();
     if (ph) ph.capture(`Core Action: ${actionType}`, details);
+  },
+
+  /**
+   * Signup funnel — the three events that make the landing page measurable.
+   * PostHog autocapture handles raw pageviews; these give the funnel steps:
+   *   landing_cta_click → signup_started → signup_completed.
+   */
+  trackFunnel: async (
+    step: 'landing_cta_click' | 'signup_started' | 'signup_completed',
+    properties?: Record<string, any>,
+  ) => {
+    const ph = await getPostHog();
+    if (ph) ph.capture(`Funnel: ${step}`, properties);
   },
 
   trackSubscription: async (status: string, plan: string) => {

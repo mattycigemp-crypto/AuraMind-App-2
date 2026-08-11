@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2 } from "@/components/icons";
 import { supabase } from "../../services/database/supabase";
+import { analyticsService } from "../../services/analytics/analyticsService";
 import { FrostGlass } from "../ui/FrostGlass";
 import { BorderBeam } from "../ui/BorderBeam";
 
@@ -40,6 +41,11 @@ export default function AuthPage() {
 
     setLoading(true);
 
+    if (mode === "signup") {
+      // fire-and-forget — analytics must never block auth
+      analyticsService.trackFunnel("signup_started", { method: "email" });
+    }
+
     try {
       if (mode === "signup") {
         const { data, error: signUpError } = await supabase.auth.signUp({
@@ -51,9 +57,11 @@ export default function AuthPage() {
           // Confirmation emails are enabled — the account activates only after
           // the user clicks the link. Show an interstitial instead of blindly
           // navigating (which would bounce straight back to /auth).
+          analyticsService.trackFunnel("signup_completed", { method: "email", confirmed: false });
           setConfirmEmail(email);
           return;
         }
+        analyticsService.trackFunnel("signup_completed", { method: "email", confirmed: true });
         navigate("/dashboard");
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
