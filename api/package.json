@@ -11,6 +11,9 @@
     "resend": "^4.0.0",
     "stripe": "^20.2.0"
   },
+  "overrides": {
+    "tar": "7.5.22"
+  },
   "scripts": {
     "test": "vitest run"
   },

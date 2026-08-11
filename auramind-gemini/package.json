@@ -21,8 +21,7 @@
     "migrate": "node ../run-migrations.js",
     "migrate:dry": "node ../run-migrations.js --dry-run",
     "migrate:status": "node scripts/migrate-status.cjs",
-    "env:check": "node -e \"const e=require('./src/lib/env.ts');console.log('env:check stub — see src/lib/env.ts validateEnv()')\"",
-    "postinstall": "node scripts/postinstall-audit.cjs"
+    "env:check": "node -e \"const e=require('./src/lib/env.ts');console.log('env:check stub — see src/lib/env.ts validateEnv()')\""
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",

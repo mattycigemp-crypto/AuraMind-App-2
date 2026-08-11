@@ -1,0 +1,80 @@
+name: Scheduled checks
+
+# Weekly safety net for things that only break with time:
+#   - Stripe webhook signature plumbing (no real keys used — placeholders below;
+#     only `ping` events flow, which the handler ignores, so nothing touches
+#     Stripe, Supabase, or email. If you change the webhook handler, these also
+#     run on the PR via the paths filter.)
+#   - Dependency audit gated at CRITICAL severity. Known residuals (js-yaml in
+#     Vercel's build tooling, ws in engine.io-client, undici in the toolchain)
+#     are moderate/high and documented in SECURITY.md — this job stays green on
+#     those and only turns red when something escalates to critical.
+#
+# Scheduled workflows only run from the default branch.
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'   # every Monday 09:00 UTC
+  workflow_dispatch: {}   # manual run from the Actions tab
+  pull_request:
+    branches: [main]
+    paths:
+      - 'api/stripe-webhook.ts'
+      - 'api/server.js'
+      - 'api/scripts/stripe-*.mjs'
+
+jobs:
+  stripe-webhook-smoke:
+    name: Stripe webhook smoke (side-effect-free)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: api/package-lock.json
+
+      - name: Install API dependencies
+        run: cd api && npm ci
+
+      - name: Webhook signature tests (handler level)
+        run: cd api && npx tsx scripts/stripe-webhook-smoke.mjs
+        env:
+          # Placeholders: signatures are generated AND verified with the same
+          # fake secret, so the HMAC math is real. No API calls are made.
+          STRIPE_SECRET_KEY: sk_test_ci_placeholder
+          STRIPE_WEBHOOK_SECRET: whsec_ci_smoke_placeholder
+          SUPABASE_URL: https://placeholder.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: placeholder_service_role_key
+          RESEND_API_KEY: re_ci_placeholder
+
+      - name: Webhook HTTP-path tests (express server)
+        run: cd api && npx tsx scripts/webhook-http-smoke.mjs
+        env:
+          STRIPE_SECRET_KEY: sk_test_ci_placeholder
+          STRIPE_WEBHOOK_SECRET: whsec_ci_smoke_placeholder
+          SUPABASE_URL: https://placeholder.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: placeholder_service_role_key
+          RESEND_API_KEY: re_ci_placeholder
+
+  dependency-audit:
+    name: Dependency audit (prod deps, critical gate)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Audit frontend prod deps
+        run: cd auramind-gemini && npm audit --omit=dev --audit-level=critical
+
+      - name: Audit API prod deps
+        run: cd api && npm audit --omit=dev --audit-level=critical
