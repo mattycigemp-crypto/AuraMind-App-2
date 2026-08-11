@@ -242,7 +242,7 @@ export default function ModernLandingPage() {
               <span className="relative w-1.5 h-1.5 rounded-full bg-[#8B5CF6]">
                 <span className="absolute inset-0 rounded-full bg-[#8B5CF6] animate-ping opacity-75" />
               </span>
-              Powered by FSRS v5. The science of memory.
+              The AI learning system that remembers what you know
             </motion.div>
 
             {/*
@@ -291,7 +291,7 @@ export default function ModernLandingPage() {
               className="text-[#5A5A72] text-sm leading-relaxed mb-8 max-w-md"
             >
               <TextScramble duration={1800} autoplay>
-                Aura speaks the questions, listens to your answers, and FSRS schedules your reviews. Study hands-free.
+                Drop in a PDF, a video, or a topic. Aura builds your course — then quizzes you, schedules your reviews, and remembers exactly what you struggle with.
               </TextScramble>
             </motion.p>
 
@@ -382,12 +382,12 @@ export default function ModernLandingPage() {
       <section className="border-y border-[#2A2A3A] bg-[#0A0A0F] py-6">
         <Marquee
           items={[
-            "AI FLASHCARDS",
+            "TURN ANYTHING INTO A COURSE",
+            "A TUTOR THAT REMEMBERS YOU",
             "FSRS v5 SCHEDULING",
-            "NEURAL LEARNING",
+            "PERSONAL LEARNING PATHS",
             "SPACED REPETITION",
             "MEMORY SCIENCE",
-            "TACTILE STUDY",
           ]}
           duration={32}
           className="text-2xl font-medium tracking-tight text-[#9090A8] md:text-3xl"
@@ -450,10 +450,10 @@ export default function ModernLandingPage() {
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
-            <FeatureCard index={0} icon={<Headphones className="w-5 h-5" />} title="Study hands-free" desc="Aura speaks each question aloud, listens to your answer, and grades it. Perfect for commutes and chores." />
-            <FeatureCard index={1} icon={<Mic className="w-5 h-5" />} title="Audio → flashcards" desc="Record a lecture or upload a recording. Whisper transcribes it and Aura builds your deck in seconds." />
-            <FeatureCard index={2} icon={<BrainCircuit className="w-5 h-5" />} title="Scheduling that sticks" desc="FSRS v5 — designed to need fewer reviews — schedules each card right before you would forget it." />
-            <FeatureCard index={3} icon={<FileText className="w-5 h-5" />} title="Docs → study material" desc="Upload a PDF or slide deck. Get organized notes, a presentation, or flashcards — instantly." />
+            <FeatureCard index={0} icon={<FileText className="w-5 h-5" />} title="Anything → a course" desc="Drop in a PDF, a YouTube video, or a topic. Aura builds the cards, lessons, and quizzes around it." />
+            <FeatureCard index={1} icon={<BrainCircuit className="w-5 h-5" />} title="A tutor that remembers you" desc="Aura tracks every review and anchors explanations on what you actually forget — not generic textbook advice." />
+            <FeatureCard index={2} icon={<Headphones className="w-5 h-5" />} title="Study hands-free" desc="Aura speaks each question aloud, listens to your answer, and grades it. Perfect for commutes and chores." />
+            <FeatureCard index={3} icon={<Mic className="w-5 h-5" />} title="Lectures → flashcards" desc="Record a lecture or upload audio. Aura transcribes it and builds your deck in seconds." />
           </div>
         </div>
       </section>

@@ -5,6 +5,7 @@ import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext'
 import { useAIChat, type ChatContext, type ChatMode, type ProfAuraPersonality } from '../../hooks/useAIChat';
 import { useCurrentUserId } from '../../hooks/useCurrentUserId';
 import { useMoodForProfAura } from '../../hooks/useMoodForProfAura';
+import { useStudyStats } from '../../hooks/useStudyStats';
 import { useMicVolume } from '../../hooks/useMicVolume';
 import { useTTS } from '../../hooks/useTTS';
 import useSpeechRecognition from '../../hooks/useSpeechRecognition';
@@ -32,15 +33,48 @@ const MODE_LABELS: Record<ChatMode, string> = {
 
 const MODES: ChatMode[] = ['study', 'companion'];
 
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** A card is "consistently forgotten" once it has lapsed at least twice. */
+const WEAK_LAPSE_THRESHOLD = 2;
+
+function cardLapses(c: Card): number {
+  return c.lapses ?? c.fsrsState?.lapses ?? 0;
+}
+
+/**
+ * Top 5 most-forgotten cards in a deck, ordered by lapse count (difficulty
+ * as tiebreak), enriched with FSRS difficulty + last review for the prompt.
+ */
+function buildWeakCards(cards: Card[]): ChatContext['weakCards'] {
+  return cards
+    .filter(c => cardLapses(c) >= WEAK_LAPSE_THRESHOLD)
+    .sort(
+      (a, b) =>
+        cardLapses(b) - cardLapses(a) ||
+        (b.fsrsState?.difficulty ?? 0) - (a.fsrsState?.difficulty ?? 0),
+    )
+    .slice(0, 5)
+    .map(c => ({
+      term: c.front,
+      againCount: cardLapses(c),
+      difficulty: c.fsrsState?.difficulty,
+      lastReviewed: c.lastReviewed != null ? new Date(c.lastReviewed).toISOString() : undefined,
+    }));
+}
+
 function buildInitialContext(decks: Deck[], cards: Card[]): ChatContext {
   const deck = decks[0];
-  const dueCount = cards.filter(c => c.deckId === deck?.id && (c.nextReview ?? 0) <= Date.now()).length;
+  const now = Date.now();
+  const deckCards = cards.filter(c => c.deckId === deck?.id);
+  const dueCount = deckCards.filter(c => (c.nextReview ?? 0) <= now).length;
   return {
     deckId: deck?.id || '',
     deckName: deck?.title || 'No deck selected',
-    deckCardCount: deck?.cardCount || 0,
+    deckCardCount: deck?.cardCount || deckCards.length,
     cardsDueToday: dueCount,
-    weakCards: [],
+    dueThisWeek: cards.filter(c => (c.nextReview ?? 0) <= now + WEEK_MS).length,
+    weakCards: buildWeakCards(deckCards),
   };
 }
 
@@ -108,6 +142,9 @@ export default function AIChatPage() {
   const navigate = useNavigate();
   const workspace = useDashboardWorkspace();
   const userId = useCurrentUserId();
+  // Real study data (streak, 7-day retention, last-session accuracy) fed into
+  // the tutor prompt so Aura references what the student actually knows.
+  const stats = useStudyStats(userId);
   const [localDecks, setLocalDecks] = useState<Deck[]>([]);
   const [localCards, setLocalCards] = useState<Card[]>([]);
 
@@ -156,36 +193,47 @@ export default function AIChatPage() {
     }
   }, [workspace, selectedDeckId]);
 
+  // Single source of truth for the tutor prompt context: deck selection,
+  // weak cards, and performance stats. Both the local UI state (starter
+  // prompts / chips) AND the hook's internal context (which the prompt
+  // factory actually reads) are updated together — without updateContext,
+  // weakCards and stats would never reach the system prompt.
   useEffect(() => {
+    const now = Date.now();
+
     if (chat.mode === 'companion') {
       // Companion mode deliberately clears deck context so the prompt
       // branch in lib/chat-prompts.ts (companion mode preamble) takes over.
-      // COMPANION_CONTEXT is a full ChatContext with all fields populated to
-      // safe values so the prompt never interpolates "undefined".
-      setContext(COMPANION_CONTEXT);
+      // Performance stats are preserved — companion-mode users who ask
+      // "how am I doing?" rely on them being in the system prompt.
+      const payload: Partial<ChatContext> = {
+        ...COMPANION_CONTEXT,
+        personality,
+        retention7d: stats.retention7d,
+        lastSessionAccuracy: stats.lastSessionAccuracy,
+        streakCount: stats.streak,
+      };
+      setContext(prev => ({ ...prev, ...payload }));
+      chat.updateContext(payload);
       return;
     }
-    if (selectedDeck) {
-      const due = cards.filter(c => c.deckId === selectedDeck.id && (c.nextReview ?? 0) <= Date.now()).length;
-      const weak = cards
-        .filter(c => c.deckId === selectedDeck.id && (c.fsrsState?.lapses ?? 0) > 2)
-        .sort((a, b) => (b.fsrsState?.lapses ?? 0) - (a.fsrsState?.lapses ?? 0))
-        .slice(0, 5)
-        .map(c => ({ term: c.front, againCount: c.fsrsState?.lapses ?? 0 }));
-      setContext(prev => ({
-        ...prev,
-        deckId: selectedDeck.id,
-        deckName: selectedDeck.title,
-        deckCardCount: selectedDeck.cardCount ?? cards.filter(c => c.deckId === selectedDeck.id).length,
-        cardsDueToday: due,
-        weakCards: weak,
-        personality,
-        retention7d: userMeta?.accuracy7d,
-        lastSessionAccuracy: userMeta?.accuracy7d ? Math.round(userMeta.accuracy7d * 100) : undefined,
-        streakCount: userMeta?.streakCount,
-      }));
-    }
-  }, [selectedDeck, cards, chat.mode, personality, userMeta?.accuracy7d, userMeta?.streakCount]);
+
+    const deckCards = selectedDeck ? cards.filter(c => c.deckId === selectedDeck.id) : [];
+    const payload: Partial<ChatContext> = {
+      deckId: selectedDeck?.id ?? '',
+      deckName: selectedDeck?.title ?? 'No deck selected',
+      deckCardCount: selectedDeck?.cardCount ?? deckCards.length,
+      cardsDueToday: deckCards.filter(c => (c.nextReview ?? 0) <= now).length,
+      dueThisWeek: cards.filter(c => (c.nextReview ?? 0) <= now + WEEK_MS).length,
+      weakCards: buildWeakCards(deckCards),
+      personality,
+      retention7d: stats.retention7d,
+      lastSessionAccuracy: stats.lastSessionAccuracy,
+      streakCount: stats.streak,
+    };
+    setContext(prev => ({ ...prev, ...payload }));
+    chat.updateContext(payload);
+  }, [selectedDeck, cards, chat.mode, personality, stats.retention7d, stats.lastSessionAccuracy, stats.streak, chat.updateContext]);
 
   const [input, setInput] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();

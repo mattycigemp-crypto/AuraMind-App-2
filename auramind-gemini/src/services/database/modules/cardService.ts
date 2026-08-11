@@ -157,6 +157,9 @@ export const cardService = {
             interval: c.interval || 0,
             easeFactor: c.ease_factor || 2.5,
             repetition: c.repetition || 0,
+            // 20260718 migration added cards.lapses (times forgotten); the
+            // tutor's "weak spots" context and weak-card badges depend on it.
+            lapses: c.lapses ?? undefined,
             understandingLevel: c.understanding_level,
             lastReviewed: parseIsoToMsOrUndef(c.last_reviewed),
             sourceType: c.source_type,
@@ -250,6 +253,7 @@ export const cardService = {
             interval: c.interval || 0,
             easeFactor: c.ease_factor || 2.5,
             repetition: c.repetition || 0,
+            lapses: c.lapses ?? undefined,
             understandingLevel: c.understanding_level,
             lastReviewed: parseIsoToMsOrUndef(c.last_reviewed),
             sourceType: c.source_type,

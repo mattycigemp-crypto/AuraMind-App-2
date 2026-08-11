@@ -11,10 +11,43 @@ export interface UseStudyStatsReturn {
   streak: number;
   /** Sum of `cardsStudied` across ALL fetched sessions. */
   totalReviews: number;
+  /** 0..1 accuracy across sessions started in the last 7 days, when any exist. */
+  retention7d?: number;
+  /** 0..100 accuracy of the most recent session (newest-first ordering). */
+  lastSessionAccuracy?: number;
   loading: boolean;
   error: string | null;
   /** Re-run the fetch against Supabase. */
   refresh: () => Promise<void>;
+}
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Average accuracy (0..1) across sessions started in the last 7 days.
+ * Handles both canonical columns (total_answers/correct_answers) and the
+ * older 0..100 `accuracy` column, preferring exact counts when present.
+ */
+export function deriveRetention7d(sessions: StudySession[]): number | undefined {
+  const cutoff = Date.now() - WEEK_MS;
+  let answered = 0;
+  let correct = 0;
+  for (const s of sessions) {
+    if ((s.startTime ?? 0) < cutoff) continue;
+    const total = s.totalAnswers ?? s.cardsStudied ?? 0;
+    if (total <= 0) continue;
+    const ok =
+      s.correctAnswers ??
+      (s.accuracy != null ? Math.round((s.accuracy / 100) * total) : 0);
+    answered += total;
+    correct += ok;
+  }
+  return answered > 0 ? correct / answered : undefined;
+}
+
+/** Accuracy (0..100) of the most recent session. Sessions arrive newest-first. */
+export function deriveLastSessionAccuracy(sessions: StudySession[]): number | undefined {
+  return sessions[0]?.accuracy ?? undefined;
 }
 
 /**
@@ -113,6 +146,8 @@ export function useStudyStats(userId: string | null | undefined): UseStudyStatsR
     cardsReviewedToday,
     streak,
     totalReviews,
+    retention7d: deriveRetention7d(sessions),
+    lastSessionAccuracy: deriveLastSessionAccuracy(sessions),
     loading,
     error,
     refresh,
