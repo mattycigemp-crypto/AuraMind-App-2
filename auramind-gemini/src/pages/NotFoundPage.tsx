@@ -15,9 +15,9 @@ export default function NotFoundPage(): React.ReactElement {
         <ProfAuraEmptyState
           mood="inviting"
           size="lg"
-          eyebrow="404 \u00B7 BETWEEN SESSIONS"
-          title="You\u2019re off the map"
-          description="Prof. Aura doesn\u2019t see a route at this address. Pick a place to dock and we\u2019ll take it from there."
+          eyebrow="404 · BETWEEN SESSIONS"
+          title="You’re off the map"
+          description="Prof. Aura doesn’t see a route at this address. Pick a place to dock and we’ll take it from there."
           actions={[
             { label: 'Back to Dashboard', icon: Home, onClick: () => navigate('/dashboard'), primary: true, href: '/dashboard' },
             { label: 'Open Marketplace', icon: Store, onClick: () => navigate('/dashboard/marketplace'), href: '/dashboard/marketplace' },

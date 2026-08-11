@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import { Routes, Route, Navigate, useLocation, Outlet, useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Deck, Card, Rating, UserProfile, UserRole } from "./types";
-import { calculateSRS, getInitialCardState } from "./services/study/srs";
-import type { GeneratedCard } from "./services/api/groqService";
+import { Deck, Card, UserProfile, UserRole } from "./types";
+import { getInitialCardState } from "./services/study/srs";
 import { dbService } from "./services/database/dbService";
 import {
   createMetadataTemplates,
@@ -21,7 +20,6 @@ import {
   getPageTransitionVariant,
   isMarketingRoute,
   type PageTransitionVariant,
-  supportsViewTransitions,
 } from "./lib/motion";
 import "./styles/design-tokens.css";
 import { LayoutProvider } from "./contexts/LayoutContext";
@@ -30,7 +28,6 @@ import ReducedMotionGuard from "./components/shared/ReducedMotionGuard";
 import StreakBurst from "./components/gamification/StreakBurst";
 import Announcer from "./components/shared/Announcer";
 import {
-  AnalyticsSkeleton,
   GenericPageSkeleton,
 } from "./components/shared/RouteSkeleton";
 import { SkeletonProvider } from "./components/shared/SkeletonProvider";
@@ -41,8 +38,8 @@ import { ErrorBoundary } from "./components/shared/ErrorBoundary";
 import { KeyboardAware } from "./components/shared/KeyboardAware";
 import QuizGenerationNotifier from "./components/notifications/QuizGenerationNotifier";
 import { Toaster } from "./components/ui/sonner";
-import { ThemeProvider, useTheme } from "./hooks/useTheme";
-import { supabase } from "./services/database/supabase";
+import { ThemeProvider } from "./hooks/useTheme";
+import { supabase, requireSupabase } from "./services/database/supabase";
 import { CommandPalette } from "./components/auramind/CommandPalette";
 import { CinematicLoader } from "./components/ui/CinematicLoader";
 import { CustomCursor } from "./components/ui/CustomCursor";
@@ -52,7 +49,7 @@ function LegacyStudyRedirect() {
   return <Navigate to={`/dashboard/study/${deckId || ''}`} replace />;
 }
 
-function milestoneCopy(days: number): string {
+function _milestoneCopy(days: number): string {
   switch (days) {
     case 3:   return 'Three days of momentum — your habit is forming.';
     case 7:   return 'One full week — the habit is locked.';
@@ -97,7 +94,6 @@ const AdminUsersRoute    = React.lazy(() => import("./pages/admin/AdminUsersPage
 const AdminAppCheckRoute = React.lazy(() => import("./pages/admin/AdminAppCheckPage"));
 
 const AuraLandingPage      = React.lazy(() => import("./components/landing/ModernLandingPage"));
-const IntegrationShowcase  = React.lazy(() => import("./pages/IntegrationShowcase"));
 const AuthPage             = React.lazy(() => import("./components/auth/AuthPage"));
 const DeckDetailRoute      = React.lazy(() => import("./pages/deck/DeckDetailRoute"));
 const DocsPage             = React.lazy(() => import("./pages/legal/DocsPage"));
@@ -178,7 +174,7 @@ const ScrollTopButton = () => {
 const ProtectedRoute = ({
   user,
   status,
-  onLogout,
+  onLogout: _onLogout,
   useLayout = true,
   children,
 }: {
@@ -270,10 +266,15 @@ const AnnouncerMount = () => {
 const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) => void }) => {
   const location = useLocation();
   const transitionVariant = getPageTransitionVariant(location.pathname);
-  const [activeDeckId, setActiveDeckId] = useState<string | null>(null);
+  const [_activeDeckId, setActiveDeckId] = useState<string | null>(null);
   const [decks, setDecks] = useState<Deck[]>([]);
   const [cards, setCards] = useState<Card[]>([]);
   const [user, setUser] = useState<UserProfile | null>(null);
+  // True once the initial session check has resolved (signed in OR signed out).
+  // The loader must NOT be keyed on `user` alone — a signed-out visitor on a
+  // public route (/about, /reset-password, 404s…) would otherwise hang on an
+  // infinite LoadingOverlay instead of seeing the page.
+  const [authChecked, setAuthChecked] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<
     "active" | "trialing" | "canceled" | "past_due" | "none" | "loading"
   >("loading");
@@ -439,11 +440,12 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
           setActiveDeckId(null);
           setSubscriptionStatus("none");
           analyticsService.reset().catch(() => {});
+          setAuthChecked(true);
           return;
         }
         let profile = mapAuthUserToProfile(session.user);
         try {
-          const { data: dbProfile } = await supabase
+          const { data: dbProfile } = await requireSupabase()
             .from("user_profiles")
             .select("role")
             .eq("user_id", session.user.id)
@@ -460,6 +462,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
           // user_profiles not yet created — safe to ignore
         }
         setUser(profile);
+        setAuthChecked(true);
         analyticsService.identify(profile.id, { email: profile.email, plan: profile.plan }).catch(() => {});
 
         const permissions = getPermissions(profile.role || UserRole.USER);
@@ -482,12 +485,15 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
         setCards(fetchedCards);
       } catch (err) {
         console.error("Failed to sync session:", err);
+        setAuthChecked(true);
       }
     };
 
     let subscription: { unsubscribe: () => void } | null = null;
-    if (supabase) {
-      const { data: { subscription: sub } } = supabase.auth.onAuthStateChange((event, session) => {
+    if (!supabase) {
+      setAuthChecked(true);
+    } else {
+      const { data: { subscription: sub } } = requireSupabase().auth.onAuthStateChange((event, session) => {
         if (event === "SIGNED_OUT") {
           // Clear all app state so protected routes fall through to /auth.
           // Without this, the UI stays "logged in" even after the session dies
@@ -554,7 +560,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
   const updateUserProfile = useCallback(async (updates: Partial<UserProfile>) => {
     if (!user) return;
     const nextProfile = { ...user, ...updates };
-    const { data, error } = await supabase.auth.updateUser({
+    const { data, error } = await requireSupabase().auth.updateUser({
       data: {
         full_name: nextProfile.name,
         avatar_url: nextProfile.avatar,
@@ -569,7 +575,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
     });
     if (error) throw error;
     if (updates.name) {
-      await supabase.from("user_profiles").update({ name: updates.name }).eq("id", user.id);
+      await requireSupabase().from("user_profiles").update({ name: updates.name }).eq("id", user.id);
     }
     setUser(mapAuthUserToProfile(data.user ?? { ...user, user_metadata: {} }));
   }, [user, mapAuthUserToProfile]);
@@ -581,7 +587,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
     // (or null client) never leaves XP/streak lingering in localStorage.
     try { resetUserData(); } catch { /* non-fatal */ }
     if (supabase) {
-      void supabase.auth.signOut().catch((err) => {
+      void requireSupabase().auth.signOut().catch((err) => {
         console.error("signOut failed:", err);
         // Even if the network call fails, clear in-memory state so the UI
         // never stays "logged in" forever.
@@ -609,10 +615,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
     [currentUser, decks, cards, createDeck, deleteDeck, addCardsToDeck, updateUserProfile, onLogout],
   );
 
-  if (!currentUser && location.pathname !== "/" && location.pathname !== "/auth"
-      && !location.pathname.startsWith("/subscribe") && !location.pathname.startsWith("/docs")
-      && !location.pathname.startsWith("/privacy") && !location.pathname.startsWith("/terms")
-      && !location.pathname.startsWith("/download")) {
+  if (!authChecked) {
     return <LoadingOverlay />;
   }
 
@@ -641,7 +644,11 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               {/* ───── Public routes ───────────────────────────────────────── */}
               <Route path="/" element={<PageTransition variant={transitionVariant}><AuraLandingPage /></PageTransition>} />
               <Route path="/auth" element={<PageTransition><AuthPage /></PageTransition>} />
-              <Route path="/showcase" element={<PageTransition><IntegrationShowcase /></PageTransition>} />
+              {/* /showcase was a component playground (Particles, Meteors,
+                  BorderBeam…) with no inbound links from anywhere in the app —
+                  a 62 kB dev artifact reachable only by typing the URL. The
+                  page itself is kept in src/pages/IntegrationShowcase.tsx;
+                  re-add the lazy import and this Route to bring it back. */}
 
               <Route
                 path="/subscribe"

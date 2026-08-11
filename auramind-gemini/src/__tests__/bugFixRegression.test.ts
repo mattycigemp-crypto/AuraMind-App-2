@@ -864,7 +864,7 @@ describe('bugFixRegression — M6 Store Submission brand (BUG #7)', () => {
   const TSC_ROOT = path.resolve(__dirname, '..', '..');
   const REPO_ROOT = path.resolve(TSC_ROOT, '..');
   const read = (rel: string) => fs.readFileSync(path.resolve(TSC_ROOT, rel), 'utf8');
-  const readRepo = (rel: string) => fs.readFileSync(path.resolve(REPO_ROOT, rel), 'utf8');
+  const _readRepo = (rel: string) => fs.readFileSync(path.resolve(REPO_ROOT, rel), 'utf8');
   const exist = (rel: string) => fs.existsSync(path.resolve(TSC_ROOT, rel));
 
   it('Tauri bundle.publisher is the parent legal name', () => {
@@ -954,6 +954,20 @@ describe('bugFixRegression — M6 Store Submission brand (BUG #7)', () => {
   it('App.tsx wires /about route to the AboutPage component', () => {
     const app = read('src/App.tsx');
     expect(app).toMatch(/path=["']\/about["'][\s\S]{0,200}<AboutPage\s*\/>/);
+  });
+
+  it('App.tsx gates the loader on authChecked, so signed-out visitors reach public routes', () => {
+    const app = read('src/App.tsx');
+    // The old gate keyed on `!currentUser` + a hardcoded path whitelist, which
+    // stranded signed-out users on an infinite LoadingOverlay for /about,
+    // /reset-password, /restore-account, /auth/callback, and every 404 route.
+    // The loader must only show until the initial session check resolves.
+    expect(app).toMatch(/const \[authChecked, setAuthChecked\] = useState\(false\);/);
+    expect(app).not.toMatch(/if \(!currentUser && location\.pathname/);
+    // Every resolution path must clear the loader: signed-out, signed-in, error,
+    // and no-Supabase. (4 setAuthChecked(true) call sites.)
+    expect(app).toMatch(/setAuthChecked\(true\);/g);
+    expect((app.match(/setAuthChecked\(true\);/g) || []).length).toBe(4);
   });
 
   it('storeMetadata.ts single source of truth asserts both descriptions contain CogniVect', async () => {
