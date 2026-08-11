@@ -259,6 +259,46 @@ describe('Stripe flow (mocked Stripe + Supabase + Resend)', () => {
     );
   });
 
+  it('webhook: trial_will_end emails the user but changes no plan state', async () => {
+    const event = {
+      id: 'evt_4',
+      object: 'event',
+      type: 'customer.subscription.trial_will_end',
+      data: {
+        object: {
+          id: 'sub_123',
+          object: 'subscription',
+          metadata: { supabase_user_id: '00000000-0000-4000-8000-000000000001' },
+          trial_end: 2_000_000_000,
+        },
+      },
+    };
+
+    stripeMock.webhooks.constructEvent.mockReturnValue(event);
+    supabase.auth.admin.getUserById.mockResolvedValue({
+      data: { user: { email: 'buyer@example.com', user_metadata: { full_name: 'Buyer' } } },
+      error: null,
+    });
+    resendMock.emails.send.mockResolvedValue({ data: { id: 'email_4' }, error: null });
+
+    const res = webhookRes();
+    await webhookHandler(
+      { method: 'POST', headers: { 'stripe-signature': 't=1,v1=valid' }, body: JSON.stringify(event) } as any,
+      res as any,
+    );
+
+    expect(res.state.status).toBe(200);
+    // Informational event — must not touch subscription/plan state.
+    expect(supabase.auth.admin.updateUserById).not.toHaveBeenCalled();
+    // But it should send the trial-ending reminder.
+    expect(resendMock.emails.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'buyer@example.com',
+        subject: expect.stringContaining('trial ends'),
+      }),
+    );
+  });
+
   it('webhook: ignores event types it does not handle', async () => {
     stripeMock.webhooks.constructEvent.mockReturnValue({
       id: 'evt_3',

@@ -22,6 +22,8 @@ on:
       - 'api/stripe-webhook.ts'
       - 'api/server.js'
       - 'api/scripts/stripe-*.mjs'
+      - 'api/scripts/verify-launch.mjs'
+      - 'STRIPE_LAUNCH_CHECKLIST.md'
 
 jobs:
   stripe-webhook-smoke:
@@ -60,6 +62,24 @@ jobs:
           SUPABASE_URL: https://placeholder.supabase.co
           SUPABASE_SERVICE_ROLE_KEY: placeholder_service_role_key
           RESEND_API_KEY: re_ci_placeholder
+
+      - name: Launch checklist offline gate
+        # Structural checks only (no Stripe API). Placeholders are consistent
+        # (test-mode secret + test-mode publishable) so the mode-alignment
+        # check must pass — if the env names or mode-consistency logic drift,
+        # this turns red.
+        run: cd api && node scripts/verify-launch.mjs --offline
+        env:
+          STRIPE_SECRET_KEY: sk_test_ci_placeholder
+          STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
+          SUPABASE_URL: https://placeholder.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: placeholder_service_role_key
+          RESEND_API_KEY: re_ci_placeholder
+          VITE_STRIPE_PUBLISHABLE_KEY: pk_test_ci_placeholder
+          VITE_STRIPE_PRICE_ID_MONTHLY: price_cimonthlyplaceholder
+          VITE_STRIPE_PRICE_ID_ANNUAL: price_ciannualplaceholder
+          VITE_SUPABASE_URL: https://placeholder.supabase.co
+          VITE_SUPABASE_ANON_KEY: placeholder_anon_key
 
   dependency-audit:
     name: Dependency audit (prod deps, critical gate)

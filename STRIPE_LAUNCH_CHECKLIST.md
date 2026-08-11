@@ -24,7 +24,8 @@ known configuration mismatch.
 
 **Handled webhook events:** `checkout.session.completed`,
 `customer.subscription.created` / `.updated` / `.deleted` /
-`.trial_will_end`, `invoice.payment_succeeded` / `.payment_failed`.
+`.trial_will_end` (sends a trial-ending reminder email, no plan changes),
+`invoice.payment_succeeded` / `.payment_failed`.
 
 ---
 
@@ -37,14 +38,17 @@ Checked against Stripe's live API on 2026-08-11 (`api/scripts/verify-launch.mjs`
 | `api/.env` → `STRIPE_SECRET_KEY` | `sk_live_…` | ✅ Live |
 | `api/.env` → `STRIPE_PUBLISHABLE_KEY` | `pk_live_…` | ✅ Live |
 | `auramind-gemini/.env` → `VITE_STRIPE_PRICE_ID_MONTHLY` / `_ANNUAL` | both **live** prices, retrievable with the live key, `livemode` matches | ✅ Verified via `prices.retrieve` |
-| `auramind-gemini/.env` → `VITE_STRIPE_PUBLISHABLE_KEY` | `pk_test_…` | ❌ **Test** key in the client bundle — fix to `pk_live_…` |
-| `api/.env` → `STRIPE_WEBHOOK_SECRET` | `whsec_…` | ⚠️ Format matches live; confirm the **endpoint is registered in live mode** on the dashboard with the event list in §5 |
+| `auramind-gemini/.env` → `VITE_STRIPE_PUBLISHABLE_KEY` | `pk_live_…` | ✅ Fixed 2026-08-11 — was `pk_test_…` |
+| `api/.env` → `STRIPE_WEBHOOK_SECRET` | `whsec_…` | ⚠️ Format matches; confirm the **endpoint is registered in live mode** on the dashboard with the event list in §5 |
 
-**Remaining fix (one line):** set `VITE_STRIPE_PUBLISHABLE_KEY=pk_live_…` in
-`auramind-gemini/.env` (the live publishable key already exists in `api/.env`
-as `STRIPE_PUBLISHABLE_KEY`). The current checkout path uses hosted Stripe
-Checkout (server-side, no Elements), so the test key is inert today — but it
-ships in the production bundle and breaks the moment Elements is wired.
+**Fixed 2026-08-11:** `VITE_STRIPE_PUBLISHABLE_KEY` was `pk_test_…` while
+everything else was live — the one real misconfiguration this checklist
+originally misdiagnosed. It's now `pk_live_…`, and `verify-launch.mjs`
+checks the secret/publishable mode alignment structurally (`--offline`, no
+network) so the mismatch can't silently return. The current checkout path
+uses hosted Stripe Checkout (server-side, no Elements), so the old test key
+was inert — but it shipped in the production bundle and would have broken
+the moment Elements was wired.
 
 **Why alignment matters:** Stripe rejects live-mode API calls that reference
 test-mode prices, and live webhook events signed with a test secret fail
@@ -57,7 +61,9 @@ with an actionable 400 instead of a confusing 500.
 `api/.env` / `auramind-gemini/.env` only matter for local dev. Set the
 corrected values in **Vercel's project env** (Project Settings → Environment
 Variables) and redeploy. Verify with `npx vercel env ls` (CLI must be
-authenticated) and `node api/scripts/verify-launch.mjs`.
+authenticated) and `node api/scripts/verify-launch.mjs` (or `--offline` for
+the structural checks without Stripe access — also run weekly in CI via
+`.github/workflows/scheduled-checks.yml`).
 
 ---
 

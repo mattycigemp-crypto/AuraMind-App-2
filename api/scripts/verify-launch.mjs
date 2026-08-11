@@ -11,7 +11,12 @@
  *      the configured STRIPE_SECRET_KEY AND match its mode (live/test).
  *
  * Usage (from api/):
- *   node scripts/verify-launch.mjs
+ *   node scripts/verify-launch.mjs            # full check (calls Stripe API)
+ *   node scripts/verify-launch.mjs --offline  # structural checks only, no network
+ *
+ * The --offline mode is CI-safe: it verifies env presence and cross-file mode
+ * consistency (publishable key must match the secret key mode, price IDs must
+ * be well-formed) without touching Stripe. Use it anywhere keys are missing.
  *
  * Exit code 0 = all green, 1 = at least one gate failed (details printed).
  * Read-only: the only network call is Stripe prices.retrieve (GET), which
@@ -45,9 +50,17 @@ function readEnvFile(filePath) {
 }
 
 const api = process.env; // api/.env loaded by dotenv/config
-const client = readEnvFile(CLIENT_ENV_PATH);
+// Client env comes from auramind-gemini/.env, with any VITE_* env vars set in
+// the shell (e.g. CI) taking precedence — the .env file doesn't exist in CI.
+const client = {
+  ...readEnvFile(CLIENT_ENV_PATH),
+  ...Object.fromEntries(
+    Object.entries(process.env).filter(([k]) => k.startsWith('VITE_')),
+  ),
+};
 
-console.log('AuraMind pre-launch verification\n');
+const OFFLINE = process.argv.includes('--offline');
+console.log(`AuraMind pre-launch verification${OFFLINE ? ' (offline — no Stripe API calls)' : ''}\n`);
 
 // ── 1. API env ─────────────────────────────────────────────────────────────
 const secretKey = api.STRIPE_SECRET_KEY || '';
@@ -77,8 +90,41 @@ check(Boolean(client.VITE_SUPABASE_ANON_KEY), '[client] VITE_SUPABASE_ANON_KEY p
 check(Boolean(priceIds.monthly), '[client] VITE_STRIPE_PRICE_ID_MONTHLY present', clientFilePath);
 check(Boolean(priceIds.annual), '[client] VITE_STRIPE_PRICE_ID_ANNUAL present', clientFilePath);
 
-// ── 3. Stripe mode alignment (network, read-only) ──────────────────────────
-if (secretKey.startsWith('sk_') && (priceIds.monthly || priceIds.annual)) {
+// ── 3. Cross-file mode consistency (offline-safe) ──────────────────────────
+const publishableKey = client.VITE_STRIPE_PUBLISHABLE_KEY || '';
+const pkMode = publishableKey.startsWith('pk_live_') ? 'LIVE'
+  : publishableKey.startsWith('pk_test_') ? 'TEST' : 'UNKNOWN';
+
+check(Boolean(publishableKey), '[client] VITE_STRIPE_PUBLISHABLE_KEY present');
+check(
+  pkMode !== 'UNKNOWN' || !publishableKey,
+  '[client] publishable key mode recognizable',
+  `current mode: ${pkMode}`,
+);
+// The failure mode that actually shipped once: pk_test_ in the bundle while
+// everything else was live. Pure string check, works with no network.
+if (keyMode !== 'UNKNOWN' && pkMode !== 'UNKNOWN' && publishableKey) {
+  check(
+    pkMode === keyMode,
+    '[stripe] publishable key mode matches secret key mode',
+    `${pkMode} vs ${keyMode}`,
+  );
+}
+check(
+  !priceIds.monthly || /^price_[A-Za-z0-9]+$/.test(priceIds.monthly),
+  '[client] monthly price ID well-formed',
+  priceIds.monthly || 'missing',
+);
+check(
+  !priceIds.annual || /^price_[A-Za-z0-9]+$/.test(priceIds.annual),
+  '[client] annual price ID well-formed',
+  priceIds.annual || 'missing',
+);
+
+// ── 4. Stripe mode alignment (network, read-only) ──────────────────────────
+if (OFFLINE) {
+  console.log('(offline) SKIP  [stripe] price retrievability with live API — run without --offline to verify');
+} else if (secretKey.startsWith('sk_') && (priceIds.monthly || priceIds.annual)) {
   const stripe = new Stripe(secretKey);
   for (const [label, priceId] of Object.entries(priceIds)) {
     if (!priceId) continue;
@@ -115,6 +161,6 @@ if (failures.length > 0) {
   console.log('\nFix the failures above, then re-run. Full runbook: STRIPE_LAUNCH_CHECKLIST.md');
   process.exit(1);
 } else {
-  console.log('\nAll gates green. Ready to launch checkout.');
+  console.log(`\nAll gates green. Ready to launch checkout${OFFLINE ? ' (structural checks only — rerun without --offline before launch)' : ''}.`);
   process.exit(0);
 }

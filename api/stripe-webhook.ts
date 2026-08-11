@@ -170,6 +170,50 @@ const getInvoiceSubscriptionId = (invoice: Stripe.Invoice): string | null => {
   return typeof subscription === 'string' ? subscription : subscription.id;
 };
 
+const sendTrialEndingEmail = async (email: string, name: string, trialEndDate: string) => {
+  try {
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'noreply@mail.auramind.app',
+      to: email,
+      subject: 'Your AuraMind trial ends soon — keep your progress',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Trial Ending Soon - AuraMind</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .info { background: #e2e3e5; border-left: 4px solid #6c757d; padding: 15px; margin: 20px 0; }
+            .button { display: inline-block; padding: 12px 24px; background: #000; color: #fff; text-decoration: none; border-radius: 4px; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="info">
+              <h2>⏳ Your trial ends ${trialEndDate}</h2>
+            </div>
+            <p>Hi ${name},</p>
+            <p>Your 7-day AuraMind trial ends on <strong>${trialEndDate}</strong>. Your decks, quizzes, and learning progress are all saved and waiting.</p>
+            <p>Upgrade to keep unlimited studying, Aura tutoring, and personalized review scheduling — and your progress carries over automatically.</p>
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://auramind.app'}/subscribe" class="button">Upgrade to Pro →</a>
+            <p>Questions? Reply to this email and we'll help.</p>
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} AuraMind. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+  } catch (error) {
+    console.error('Failed to send trial ending email:', error);
+  }
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return json(res, 405, { error: 'Method not allowed' });
@@ -318,6 +362,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               (subscription as any).current_period_end
                 ? new Date((subscription as any).current_period_end * 1000).toLocaleDateString()
                 : 'N/A'
+            );
+          }
+        }
+        break;
+      }
+
+      case 'customer.subscription.trial_will_end': {
+        const subscription = event.data.object as Stripe.Subscription & Record<string, any>;
+        const userId = subscription.metadata?.supabase_user_id;
+
+        if (userId) {
+          // Informational — no plan/status changes; the trial still ends on its own.
+          const { data: user } = await supabase.auth.admin.getUserById(userId);
+          if (user?.user?.email) {
+            await sendTrialEndingEmail(
+              user.user.email,
+              user.user.user_metadata?.full_name || 'User',
+              subscription.trial_end
+                ? new Date(subscription.trial_end * 1000).toLocaleDateString()
+                : 'soon',
             );
           }
         }
