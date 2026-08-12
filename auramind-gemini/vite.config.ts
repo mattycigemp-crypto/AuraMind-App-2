@@ -61,28 +61,36 @@ export default defineConfig(({ mode }) => {
           brotliSize: true,
         })] : [])],
         output: {
-          manualChunks: {
-            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-            'vendor-motion': ['framer-motion'],
-            'vendor-charts': ['recharts'],
-            'vendor-radix': ['@radix-ui/react-accordion', '@radix-ui/react-alert-dialog', '@radix-ui/react-avatar', '@radix-ui/react-checkbox', '@radix-ui/react-collapsible', '@radix-ui/react-context-menu', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-hover-card', '@radix-ui/react-label', '@radix-ui/react-menubar', '@radix-ui/react-navigation-menu', '@radix-ui/react-popover', '@radix-ui/react-progress', '@radix-ui/react-radio-group', '@radix-ui/react-scroll-area', '@radix-ui/react-select', '@radix-ui/react-separator', '@radix-ui/react-slider', '@radix-ui/react-switch', '@radix-ui/react-tabs', '@radix-ui/react-tooltip'],
-            'vendor-picker': ['react-day-picker'],
-            'vendor-animejs': ['animejs'],
+          // Function form: the object form matches only a handful of entry
+          // ids, so React 19's deep CJS build (react-dom/cjs/react-dom-client
+          // .production.js, ~200 kB minified) silently fell into the entry
+          // chunk, defeating the cache-partitioning below. Bucketing by path
+          // segment keeps every module of a package in its vendor chunk.
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined;
+            if (/[\\/](react|react-dom)([\\/]|$)/.test(id)) return 'vendor-react';
+            if (id.includes('react-router-dom')) return 'vendor-react';
+            if (id.includes('framer-motion')) return 'vendor-motion';
+            if (id.includes('recharts')) return 'vendor-charts';
+            if (id.includes('@radix-ui')) return 'vendor-radix';
+            if (id.includes('react-day-picker')) return 'vendor-picker';
+            if (id.includes('animejs')) return 'vendor-animejs';
             // Sentry ships its whole browser SDK into whatever chunk first
             // touches it; isolating it keeps the entry chunk cacheable
             // across releases instead of invalidating on every app change.
-            'vendor-sentry': ['@sentry/react'],
-            'vendor-i18n': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
-            'vendor-markdown': ['react-markdown', 'remark-gfm'],
-            'vendor-katex': ['katex', 'react-katex'],
-            'vendor-pdfjs': ['pdfjs-dist'],
-            'vendor-supabase': ['@supabase/supabase-js'],
-            'analytics': ['posthog-js'],
+            if (id.includes('@sentry')) return 'vendor-sentry';
+            if (id.includes('i18next')) return 'vendor-i18n';
+            if (id.includes('react-markdown') || id.includes('remark-gfm')) return 'vendor-markdown';
+            if (id.includes('katex')) return 'vendor-katex';
+            if (id.includes('pdfjs-dist')) return 'vendor-pdfjs';
+            if (id.includes('@supabase')) return 'vendor-supabase';
+            if (id.includes('posthog-js')) return 'analytics';
             // Heavy runtimes that are only ever dynamic-imported. Naming them
-            // here keeps them out of the shared chunk (object-form manualChunks
-            // can otherwise fold dynamic imports into the entry graph).
-            'vendor-webllm': ['@mlc-ai/web-llm'],
-            'vendor-puter': ['@heyputer/puter.js'],
+            // keeps them out of the shared chunk (the entry graph can
+            // otherwise fold dynamic imports into the shared chunk).
+            if (id.includes('@mlc-ai/web-llm')) return 'vendor-webllm';
+            if (id.includes('@heyputer/puter.js')) return 'vendor-puter';
+            return undefined;
           },
         },
       },
