@@ -111,16 +111,18 @@ verifies every response, and **always restores `api/.env`** — even on failure.
    the seven events, fresh signing secret saved to `api/.env` and Vercel.
    The old disabled endpoint (and 3 stale Supabase-function endpoints) were
    left/removed as noted in the audit.
-3. **Vercel env:** `STRIPE_WEBHOOK_SECRET` added to Production + Preview
-   (2026-08-11). Remaining to verify/redo on redeploy: `STRIPE_SECRET_KEY`,
-   `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`,
-   `RESEND_FROM_EMAIL`, and the `VITE_*` set (note `VITE_POSTHOG_KEY` was
-   `phc_placeholder` in the last build — set a real key).
-4. **Client env:** ✅ local `VITE_STRIPE_PUBLISHABLE_KEY` fixed to `pk_live_…`
-   (2026-08-11). The deployed bundle still ships the old `pk_test_…` until a
-   redeploy.
-5. **Send a test webhook from the dashboard** ("Send test webhook" on the
-   endpoint): expect HTTP 200 `{"received":true,"ignored":true}` for `ping`.
+3. **Vercel env:** ✅ deployed 2026-08-11 — `STRIPE_WEBHOOK_SECRET` (Production
+   + Preview) and `VITE_STRIPE_PUBLISHABLE_KEY` re-set to `pk_live_…` via CLI.
+   `STRIPE_SECRET_KEY`, `SUPABASE_*`, `RESEND_*` were already present. ⚠️
+   `VITE_POSTHOG_KEY` is still `phc_placeholder` on Vercel — set a real key
+   and redeploy before relying on the funnel.
+4. **Client env:** ✅ done 2026-08-11 — deployed bundle verified to contain
+   `pk_live_…` (3 refs), zero `pk_test_` refs, live prices `price_1Tqj…`/
+   `price_1SNl…`.
+5. **Webhook verification:** ✅ done 2026-08-11 against the live endpoint —
+   unsigned POST → **400** (signature verification active), signed `ping` →
+   **200** `{"received":true,"ignored":true}`. Equivalent to the dashboard
+   "Send test webhook".
 6. **Live smoke:** make one small real payment through the checkout flow;
    verify the subscription row, `user_metadata` upgrade, and buyer email.
 

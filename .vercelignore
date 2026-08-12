@@ -4,6 +4,9 @@ api/digest.ts
 api/reminder.ts
 api/welcome.ts
 
+# API tests (never deployed as functions; run in CI)
+api/tests/
+
 # AI model files (local inference only, not for Vercel)
 content/
 model-service/
