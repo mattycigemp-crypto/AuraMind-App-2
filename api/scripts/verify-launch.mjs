@@ -73,9 +73,12 @@ check(
 );
 check(Boolean(api.SUPABASE_SERVICE_ROLE_KEY), '[api] SUPABASE_SERVICE_ROLE_KEY present');
 
-const isLiveKey = secretKey.startsWith('sk_live_');
-const keyMode = isLiveKey ? 'LIVE' : secretKey.startsWith('sk_test_') ? 'TEST' : 'UNKNOWN';
-check(secretKey.startsWith('sk_live_') || secretKey.startsWith('sk_test_'),
+// Restricted keys (rk_live_/rk_test_) carry the same mode encoding as
+// secret keys — accept both so a restricted key doesn't read as UNKNOWN.
+const isLiveKey = secretKey.startsWith('sk_live_') || secretKey.startsWith('rk_live_');
+const isTestKey = secretKey.startsWith('sk_test_') || secretKey.startsWith('rk_test_');
+const keyMode = isLiveKey ? 'LIVE' : isTestKey ? 'TEST' : 'UNKNOWN';
+check(isLiveKey || isTestKey,
   '[api] STRIPE_SECRET_KEY mode recognizable',
   `current mode: ${keyMode}${isLiveKey ? ' — ⚠️ live key active, be careful' : ''}`);
 

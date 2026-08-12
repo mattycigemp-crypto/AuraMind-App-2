@@ -749,7 +749,7 @@ async function handleStripe(req: VercelRequest, res: VercelResponse, action?: st
       // live key cannot even retrieve a test price, so a mismatch would
       // otherwise surface as a confusing 500 mid-checkout. Fail loudly with
       // the exact fix instead of breaking real payers silently.
-      const isLiveKey = secretKey.startsWith('sk_live_');
+      const isLiveKey = secretKey.startsWith('sk_live_') || secretKey.startsWith('rk_live_');
       let price;
       try {
         price = await stripe.prices.retrieve(priceId);
