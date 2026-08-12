@@ -100,11 +100,24 @@ if (typeof globalThis.DOMMatrix === 'undefined') {
   (globalThis as any).DOMMatrix = DOMMatrixPolyfill;
 }
 
-// IntersectionObserver stub — jsdom does not implement it.
+// IntersectionObserver stub — jsdom does not implement it. A real browser
+// fires the callback with isIntersecting: true for in-view elements, so the
+// stub mimics that (synchronously, inside the observer's effect) instead of
+// never firing — otherwise components gating on visibility never mount their
+// content in tests.
 if (typeof globalThis.IntersectionObserver === 'undefined') {
    
   (globalThis as any).IntersectionObserver = class {
-    observe() { /* noop */ }
+    constructor(
+      private callback: IntersectionObserverCallback,
+      private options?: IntersectionObserverInit
+    ) {}
+    observe(target: Element) {
+      this.callback(
+        [{ isIntersecting: true, intersectionRatio: 1, target, isVisible: true } as unknown as IntersectionObserverEntry],
+        this as unknown as IntersectionObserver
+      );
+    }
     unobserve() { /* noop */ }
     disconnect() { /* noop */ }
     takeRecords() { return []; }
