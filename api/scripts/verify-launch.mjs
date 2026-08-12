@@ -127,7 +127,7 @@ check(
 // ── 4. Stripe mode alignment (network, read-only) ──────────────────────────
 if (OFFLINE) {
   console.log('(offline) SKIP  [stripe] price retrievability with live API — run without --offline to verify');
-} else if (secretKey.startsWith('sk_') && (priceIds.monthly || priceIds.annual)) {
+} else if ((secretKey.startsWith('sk_') || secretKey.startsWith('rk_')) && (priceIds.monthly || priceIds.annual)) {
   const stripe = new Stripe(secretKey);
   for (const [label, priceId] of Object.entries(priceIds)) {
     if (!priceId) continue;

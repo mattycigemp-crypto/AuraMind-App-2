@@ -44,7 +44,7 @@ if (!secretKey || !webhookSecret || !priceId) {
   console.error('Get them from https://dashboard.stripe.com/test/apikeys and https://dashboard.stripe.com/test/webhooks');
   process.exit(1);
 }
-if (!secretKey.startsWith('sk_test_')) {
+if (!(secretKey.startsWith('sk_test_') || secretKey.startsWith('rk_test_'))) {
   console.error(`STRIPE_TEST_SECRET_KEY does not look like a test key: ${secretKey.slice(0, 8)}... (expected sk_test_...)`);
   process.exit(1);
 }
