@@ -563,7 +563,8 @@ async function handleAdminHealth(req: VercelRequest, res: VercelResponse, supaba
         const paymentIntent = await stripe.paymentIntents.create({
           amount: 100, // $1.00 — test amount
           currency: 'usd',
-          payment_method_types: ['card'],
+          // NOTE: do not pass payment_method_types — dynamic payment methods
+          // must stay enabled (stripe-best-practices: omit unless Terminal).
           description: 'AuraMind health check — test payment (not charged)',
           metadata: { source: 'health_check', timestamp: new Date().toISOString() },
         });
