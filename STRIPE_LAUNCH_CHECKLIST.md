@@ -113,9 +113,11 @@ verifies every response, and **always restores `api/.env`** — even on failure.
    left/removed as noted in the audit.
 3. **Vercel env:** ✅ deployed 2026-08-11 — `STRIPE_WEBHOOK_SECRET` (Production
    + Preview) and `VITE_STRIPE_PUBLISHABLE_KEY` re-set to `pk_live_…` via CLI.
-   `STRIPE_SECRET_KEY`, `SUPABASE_*`, `RESEND_*` were already present. ⚠️
-   `VITE_POSTHOG_KEY` is still `phc_placeholder` on Vercel — set a real key
-   and redeploy before relying on the funnel.
+   `STRIPE_SECRET_KEY`, `SUPABASE_*`, `RESEND_*` were already present. ✅
+   `VITE_POSTHOG_KEY` set to a real `phc_…` key (2026-08-12, Production) and
+   redeployed — deployed bundle verified: `phc_placeholder` 0 refs, real key
+   present. (Preview env still lacks the `VITE_*` set — preview builds have
+   been failing for that reason; production is unaffected.)
 4. **Client env:** ✅ done 2026-08-11 — deployed bundle verified to contain
    `pk_live_…` (3 refs), zero `pk_test_` refs, live prices `price_1Tqj…`/
    `price_1SNl…`.
