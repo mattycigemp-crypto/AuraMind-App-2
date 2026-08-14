@@ -26,10 +26,10 @@ imports `<LottiePlayer />`.
 > it, add:
 >
 > ```tsx
-> import LottiePlayer from '../shared/LottiePlayer';
+> import { LottiePlayer } from '../lottie/LottiePlayer';
 > // in JSX:
 > <LottiePlayer
->   src="/lottie/feature-source-to-deck.json"
+>   animationUrl="/lottie/feature-source-to-deck.json"
 >   className="w-12 h-12"
 > />
 > ```
