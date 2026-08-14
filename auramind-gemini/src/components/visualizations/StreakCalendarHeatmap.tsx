@@ -10,7 +10,7 @@ interface StreakCalendarHeatmapProps {
 const StreakCalendarHeatmap: React.FC<StreakCalendarHeatmapProps> = ({
   data,
   size = 12,
-  gap = 2,
+  gap: _gap = 2,
   className = ''
 }) => {
   // Group data by month and year

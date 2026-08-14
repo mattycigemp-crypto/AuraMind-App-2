@@ -8,7 +8,7 @@ interface ButtonDistributionProps {
 
 const RADIAN = Math.PI / 180;
 
-const CustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+const CustomLabel = ({ cx, cy, midAngle, _innerRadius, outerRadius, percent }: any) => {
   const radius = outerRadius + 25;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
   const y = cy + radius * Math.sin(-midAngle * RADIAN);

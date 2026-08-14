@@ -10,12 +10,7 @@ import {
   CrownIcon as Crown,
   MedalIcon as Medal,
   SparklesIcon as Sparkles,
-  XIcon as X,
-  ZapIcon as LightningZap,
-  MoonIcon as Moon,
-  SunIcon as Sun,
-  FlameIcon as FireFlame,
-  AwardIcon as TrophyAward
+  XIcon as X
 } from '../icons/CustomIcons';
 import {
   AnimeCelebration,
@@ -122,7 +117,7 @@ interface AchievementUnlockProps {
   autoCloseDelay = 5000,
 }) => {
   const [showSparkles, setShowSparkles] = useState(false);
-  const [userXP, setUserXP] = useState(0);
+  const [_userXP, setUserXP] = useState(0);
   // Crunchy halo reserved for top-tier rarities so common unlocks don't
   // compete with page-level celebrations.
   const celebrationRef = useRef<AnimeCelebrationHandle>(null);

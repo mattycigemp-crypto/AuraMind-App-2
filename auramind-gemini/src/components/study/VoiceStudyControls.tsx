@@ -14,7 +14,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Volume2, Mic, MicOff, Headphones } from '@/components/icons';
 import { useVoiceStudy } from '../../hooks/useVoiceStudy';
-import { VoiceOrb, MicBlockedArt, type VoiceOrbState } from '../graphics';
+import { VoiceOrb, MicBlockedArt, VerdictMark, type VoiceOrbState } from '../graphics';
 import { evaluateSpokenAnswer, type VoiceVerdict } from '../../services/study/voiceEvaluationService';
 
 interface VoiceStudyControlsProps {
@@ -109,10 +109,13 @@ export function VoiceStudyControls({
     }
   };
 
+  // The mark is rendered as an icon rather than a ✓/✗ glyph: those code
+  // points fall back to a different face on every OS, and inside a
+  // coloured status line the mismatch is obvious.
   const answeredText = verdict
     ? verdict.correct
-      ? '✓ Correct — ' + verdict.feedback
-      : '✗ ' + verdict.feedback
+      ? `Correct — ${verdict.feedback}`
+      : verdict.feedback
     : '';
 
   return (
@@ -187,10 +190,11 @@ export function VoiceStudyControls({
           )}
           {!voice.listening && verdict && (
             <p
-              className={`text-xs font-medium ${
+              className={`text-xs font-medium inline-flex items-center gap-1.5 ${
                 verdict.correct ? 'text-emerald-400' : 'text-amber-400'
               }`}
             >
+              <VerdictMark correct={verdict.correct} size={16} className="shrink-0" />
               {answeredText}
             </p>
           )}

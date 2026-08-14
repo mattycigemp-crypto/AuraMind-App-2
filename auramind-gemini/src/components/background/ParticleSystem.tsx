@@ -46,7 +46,8 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ theme, count = 50 }) =>
     const animate = () => {
       setParticles(prevParticles =>
         prevParticles.map(particle => {
-          let { x, y, vx, vy, size, opacity, speed } = particle;
+          let { x, y, vx, vy } = particle;
+const { speed } = particle;
           
           // Mouse repulsion effect
           const dx = mousePosition.x - x;
@@ -70,8 +71,10 @@ const ParticleSystem: React.FC<ParticleSystemProps> = ({ theme, count = 50 }) =>
           if (y < 0) y = window.innerHeight;
           if (y > window.innerHeight) y = 0;
           
-          // Dynamic opacity based on distance to mouse
-          opacity = Math.max(0.1, Math.min(0.8, distance / 200));
+          // Dynamic opacity based on distance to mouse. This fully
+          // replaces the particle's stored opacity, so it is derived
+          // here rather than destructured above.
+          const opacity = Math.max(0.1, Math.min(0.8, distance / 200));
           
           return { ...particle, x, y, vx, vy, opacity };
         })

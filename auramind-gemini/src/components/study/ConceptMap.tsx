@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ConceptMapData, ConceptNode, ConceptEdge } from '../../services/ai/conceptMapService';
+import { ConceptMapData, ConceptNode } from '../../services/ai/conceptMapService';
 import { NetworkIcon as Network, XIcon as X, ZoomInIcon as ZoomIn, ZoomOutIcon as ZoomOut, RotateCcwIcon as RotateCcw } from '../icons/CustomIcons';
 
 interface ConceptMapProps {
@@ -21,7 +21,7 @@ const COLORS = [
   '#3b82f6', '#ef4444', '#14b8a6', '#f97316', '#84cc16',
 ];
 
-const getGroupColor = (group: string, index: number) => {
+const getGroupColor = (group: string, _index: number) => {
   let hash = 0;
   for (let i = 0; i < group.length; i++) hash = group.charCodeAt(i) + ((hash << 5) - hash);
   return COLORS[Math.abs(hash) % COLORS.length];
@@ -78,9 +78,9 @@ export const ConceptMap: React.FC<ConceptMapProps> = ({ data, onClose, className
           for (let j = i + 1; j < newNodes.length; j++) {
             const a = newNodes[i];
             const b = newNodes[j];
-            let dx = a.x - b.x;
-            let dy = a.y - b.y;
-            let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
             const force = 2000 / (dist * dist + 100);
             const fx = (dx / dist) * force;
             const fy = (dy / dist) * force;
@@ -96,8 +96,8 @@ export const ConceptMap: React.FC<ConceptMapProps> = ({ data, onClose, className
           const source = newNodes.find(n => n.id === edge.source);
           const target = newNodes.find(n => n.id === edge.target);
           if (source && target) {
-            let dx = target.x - source.x;
-            let dy = target.y - source.y;
+            const dx = target.x - source.x;
+            const dy = target.y - source.y;
             const dist = Math.sqrt(dx * dx + dy * dy) || 1;
             const targetDist = 120 + (edge.strength || 0.5) * 80;
             const force = ((dist - targetDist) / dist) * 0.03;

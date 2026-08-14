@@ -37,7 +37,8 @@ const MouseOrbs: React.FC<MouseOrbsProps> = ({ theme }) => {
     const animate = () => {
       setOrbs(prevOrbs => 
         prevOrbs.map(orb => {
-          let { x, y, vx, vy, size, color, opacity } = orb;
+          let { x, y, vx, vy } = orb;
+          const { size } = orb;
           
           // Spring physics towards mouse with dampening
           const dx = mousePosition.x - x;

@@ -7,7 +7,6 @@
  * Used by /dashboard/personalization; nowhere else right now.
  */
 import React from 'react';
-import type { UserFsrsRow } from '../../services/study/fsrsAdaptation';
 
 // FSRS v5 weight meanings (paraphrased from open-spaced-repetition/fsrs4anki).
 // Index -> [purpose short, purpose long]

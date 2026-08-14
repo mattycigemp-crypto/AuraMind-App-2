@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ConfettiIcon as Confetti,
   SparklesIcon as Sparkles,
   StarIcon as Star,
   TrophyIcon as Trophy,

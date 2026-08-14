@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Quiz, QuizQuestion } from '../../types';
+import { Quiz } from '../../types';
 import MathRichText from '../shared/MathRichText';
 import {
   CheckCircleIcon as CheckCircle,
@@ -292,7 +292,12 @@ const DashboardQuiz: React.FC<DashboardQuizProps> = ({ quiz, onComplete }) => {
                         : 'bg-red-400'
                       : 'bg-zinc-700 hover:bg-zinc-600'
                 }`}
-                title={`Question ${i + 1}${isAnsweredDot ? (isCorrectDot ? ' ✓' : ' ✗') : ''}`}
+                // A title attribute can only hold text, so this states the
+              // result in words rather than a ✓/✗ glyph — which also reads
+              // correctly to a screen reader.
+              title={`Question ${i + 1}${
+                isAnsweredDot ? (isCorrectDot ? ' — correct' : ' — incorrect') : ''
+              }`}
               />
             );
           })}
@@ -323,7 +328,7 @@ const DashboardQuiz: React.FC<DashboardQuizProps> = ({ quiz, onComplete }) => {
           {currentQ.options.map((option, oi) => {
             const isSelected = selectedAnswers[currentQuestion] === oi;
             const isCorrectAnswer = oi === currentQ.correctAnswer;
-            const result = answerResults[currentQuestion];
+            const _result = answerResults[currentQuestion];
 
             let optionStyle = 'border-zinc-800/60 bg-zinc-800/30 hover:border-zinc-700/60 hover:bg-zinc-800/50';
 

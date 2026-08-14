@@ -7,7 +7,6 @@ import {
   DownloadIcon as Download,
   ChevronDownIcon as ChevronDown,
   ChevronUpIcon as ChevronUp,
-  Volume2Icon as Volume2,
   Loader2Icon as Loader2,
   SparklesIcon as Sparkles,
   Mic2Icon as Mic2,
@@ -15,7 +14,7 @@ import {
   RotateCcwIcon as RotateCcw,
 } from '../icons/CustomIcons';
 import { generateAudioOverview, cancelOverview, speakOverview } from '../../services/api/audioOverviewService';
-import type { AudioOverviewScript, AudioOverviewSegment } from '../../services/api/audioOverviewService';
+import type { AudioOverviewScript } from '../../services/api/audioOverviewService';
 
 interface AudioOverviewProps {
   content: string;
@@ -202,7 +201,7 @@ const AudioOverview: React.FC<AudioOverviewProps> = ({ content, title, onClose, 
 
           playerRef.current = player;
 
-          const voiceMap: Record<string, string> = {
+          const _voiceMap: Record<string, string> = {
             host1: script.hosts[0].voice,
             host2: script.hosts[1].voice,
             narration: 'Google US English',
@@ -210,7 +209,7 @@ const AudioOverview: React.FC<AudioOverviewProps> = ({ content, title, onClose, 
 
           const skipSegments = script.segments.slice(0, Math.min(segIdx, script.segments.length));
           if (skipSegments.length > 0) {
-            const lastPartial = skipSegments[skipSegments.length - 1];
+            const _lastPartial = skipSegments[skipSegments.length - 1];
             const partialScript = {
               ...script,
               segments: script.segments.slice(Math.min(segIdx, script.segments.length)),
@@ -252,7 +251,7 @@ const AudioOverview: React.FC<AudioOverviewProps> = ({ content, title, onClose, 
 
   const handleDownload = useCallback(() => {
     if (!script) return;
-    const lines = [script.title, '', ...script.segments.map((seg, i) => {
+    const lines = [script.title, '', ...script.segments.map((seg, _i) => {
       const speakerName = seg.speaker === 'host1' ? script.hosts[0].name
         : seg.speaker === 'host2' ? script.hosts[1].name
         : 'Narrator';

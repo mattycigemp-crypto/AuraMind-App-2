@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Progress } from '../ui/progress';
-import { ChevronRightIcon as ChevronRight, ClockIcon as Clock, ZapIcon as Zap, CheckCircleIcon as CheckCircle, XIcon as X, LightbulbIcon as Lightbulb, BookOpenIcon as BookOpen, ArrowRightIcon as ArrowRight, RotateCcwIcon as RotateCcw } from '../icons/CustomIcons';
+import { ChevronRightIcon as ChevronRight, ClockIcon as Clock, ZapIcon as Zap, CheckCircleIcon as CheckCircle, LightbulbIcon as Lightbulb, BookOpenIcon as BookOpen, ArrowRightIcon as ArrowRight, RotateCcwIcon as RotateCcw } from '../icons/CustomIcons';
 
 export interface MicroLesson {
   id: string;
@@ -20,7 +20,7 @@ interface MicroLearningProps {
   category?: string;
 }
 
-const MicroLearningCard: React.FC<MicroLearningProps> = ({ lessons, onComplete, category }) => {
+const MicroLearningCard: React.FC<MicroLearningProps> = ({ lessons, onComplete, category: _category }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [completed, setCompleted] = useState<string[]>([]);
