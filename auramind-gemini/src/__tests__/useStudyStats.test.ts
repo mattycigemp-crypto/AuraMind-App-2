@@ -19,8 +19,8 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 const hasAdminCreds = Boolean(url && serviceKey);
 // Built lazily inside the suite: createClient('', '') throws at call time,
 // so constructing it at module scope would fail the file before skipIf runs.
-type Admin = ReturnType<typeof createClient>;
-let admin: Admin;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let admin: any;
 
 let userId: string;
 let deckId: string;
@@ -152,7 +152,7 @@ describe.skipIf(!hasAdminCreds)('study_sessions direct DB access', () => {
     const { data } = await admin.from('study_sessions')
       .select('cards_reviewed, id')
       .eq('user_id', userId);
-    const sum = data!.reduce((a, r) => a + r.cards_reviewed, 0);
+    const sum = data!.reduce((a: number, r: any) => a + r.cards_reviewed, 0);
     expect(sum).toBe(12);
   });
 });

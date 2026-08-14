@@ -18,8 +18,8 @@ const hasAdminCreds = Boolean(url && serviceKey);
 
 // Built lazily inside the suite: createClient('', '') throws at call time,
 // so constructing it at module scope would fail the file before skipIf runs.
-type Admin = ReturnType<typeof createClient>;
-let admin: Admin;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let admin: any;
 
 let userId: string;
 let deckAId: string;
