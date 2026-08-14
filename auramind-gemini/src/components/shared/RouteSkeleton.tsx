@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   SkeletonCard,
-  SkeletonDeckCard,
   SkeletonStatCard,
   SkeletonChart,
   SkeletonPage,

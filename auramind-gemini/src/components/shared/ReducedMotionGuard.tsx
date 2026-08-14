@@ -12,7 +12,7 @@
  * canvas-confetti, anime.js, or imperative tweens outside of Motion.
  */
 import React from 'react';
-import { MotionConfig, LazyMotion, domAnimation } from 'motion/react';
+import { MotionConfig, LazyMotion, domAnimation } from 'framer-motion';
 
 interface ReducedMotionGuardProps {
   children: React.ReactNode;

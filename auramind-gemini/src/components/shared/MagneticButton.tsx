@@ -70,6 +70,17 @@ const MagneticButton = React.forwardRef<HTMLButtonElement, MagneticButtonProps>(
       [forwardedRef]
     );
 
+    // These four hooks MUST run before the prefers-reduced-motion early
+    // return below. `prefersReducedMotion` is reactive — it flips when the
+    // user toggles the OS setting mid-session — so calling them after the
+    // branch changes the hook count between renders and React throws
+    // "Rendered fewer hooks than expected". The spring values are simply
+    // left unused on the reduced-motion path.
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+    const springX = useSpring(x, { stiffness, damping });
+    const springY = useSpring(y, { stiffness, damping });
+
     // WCAG 2.3.3 — honor prefers-reduced-motion by rendering a plain
     // <button> with no spring pull. Strip every framer-motion-only prop
     // from `rest` so React DOM won't warn about unknown attributes.
@@ -127,11 +138,6 @@ const MagneticButton = React.forwardRef<HTMLButtonElement, MagneticButtonProps>(
         children,
       );
     }
-
-    const x = useMotionValue(0);
-    const y = useMotionValue(0);
-    const springX = useSpring(x, { stiffness, damping });
-    const springY = useSpring(y, { stiffness, damping });
 
     const handleMove = (e: React.MouseEvent<HTMLButtonElement>) => {
       const el = innerRef.current;

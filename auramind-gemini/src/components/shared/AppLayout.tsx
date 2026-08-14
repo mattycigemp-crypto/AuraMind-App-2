@@ -1,5 +1,4 @@
 import React from 'react';
-import GlassCard from './GlassCard';
 
 interface AppLayoutProps {
   children: React.ReactNode;

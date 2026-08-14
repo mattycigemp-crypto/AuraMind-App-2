@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangleIcon as AlertTriangle, RefreshCwIcon as RefreshCw, HomeIcon as Home, BugIcon as Bug } from '../icons/CustomIcons';
+import { GenericErrorArt } from '../graphics';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -104,14 +105,12 @@ Time: ${new Date().toISOString()}
       return (
         <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
           <div className="max-w-lg w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-red-500/10 rounded-lg">
-                <AlertTriangle className="h-6 w-6 text-red-400" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-white">Something went wrong</h2>
-                <p className="text-sm text-zinc-400">An unexpected error occurred</p>
-              </div>
+            <GenericErrorArt size={148} className="mx-auto mb-3 text-zinc-500" />
+            <div className="text-center mb-4">
+              <h2 className="text-lg font-semibold text-white">This view didn’t finish loading</h2>
+              <p className="text-sm text-zinc-400">
+                Your decks and progress are safe — nothing was lost.
+              </p>
             </div>
 
             {import.meta.env.DEV && this.state.error && (

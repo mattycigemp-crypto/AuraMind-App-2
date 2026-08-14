@@ -133,9 +133,9 @@ const MiiCreator: React.FC<MiiCreatorProps> = ({ initialOptions, initialName = '
     />
   );
 
-  const isSkin = (v: string) => SKIN_COLORS.includes(v);
-  const isHairColor = (v: string) => HAIR_COLORS.includes(v);
-  const isClothesColor = (v: string) => CLOTHING_COLORS.includes(v);
+  const _isSkin = (v: string) => SKIN_COLORS.includes(v);
+  const _isHairColor = (v: string) => HAIR_COLORS.includes(v);
+  const _isClothesColor = (v: string) => CLOTHING_COLORS.includes(v);
 
   return (
     <motion.div

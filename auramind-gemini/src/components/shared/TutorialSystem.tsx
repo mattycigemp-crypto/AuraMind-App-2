@@ -5,14 +5,6 @@ import {
   ArrowRightIcon as ArrowRight,
   ArrowLeftIcon as ArrowLeft,
   CheckIcon as Check,
-  PlayIcon as Play,
-  BookOpenIcon as BookOpen,
-  BrainCircuitIcon as BrainCircuit,
-  TargetIcon as Target,
-  SparklesIcon as Sparkles,
-  LightbulbIcon as Lightbulb,
-  AwardIcon as Award,
-  ChevronRightIcon as ChevronRight,
 } from '../icons/CustomIcons';
 
 export interface TutorialStep {
@@ -344,17 +336,17 @@ export const useTutorial = () => {
         const parsed = JSON.parse(stored);
         return new Set<string>(parsed);
       }
-    } catch {}
+    } catch { /* intentionally ignored */ }
     return new Set<string>();
   });
 
   const persistTutorials = (updated: Set<string>) => {
     try {
       localStorage.setItem('auramind:completedTutorials', JSON.stringify([...updated]));
-    } catch {}
+    } catch { /* intentionally ignored */ }
   };
 
-  const startTutorial = (tutorialId: string) => {
+  const startTutorial = (_tutorialId: string) => {
     setIsTutorialOpen(true);
   };
 

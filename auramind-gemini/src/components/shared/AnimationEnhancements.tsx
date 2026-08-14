@@ -2,7 +2,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 
-interface SVGLineDrawProps {
+interface _SVGLineDrawProps {
   className?: string;
 }
 

@@ -16,10 +16,10 @@ const HmrRefreshNotice = () => {
         setCount(prev => prev + 1);
         setVisible(true);
       };
-      import.meta.hot.on('vite:error', onError);
-      import.meta.hot.on('vite:beforeUpdate', () => {});
+      import.meta.hot?.on('vite:error', onError);
+      import.meta.hot?.on('vite:beforeUpdate', () => {});
       return () => {
-        import.meta.hot.off('vite:error', onError);
+        import.meta.hot?.off('vite:error', onError);
       };
     }
   }, []);

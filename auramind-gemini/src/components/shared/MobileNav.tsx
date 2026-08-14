@@ -4,7 +4,6 @@ import {
   LayoutGridIcon as LayoutGrid, 
   LayersIcon as Layers, 
   ZapIcon as Zap, 
-  SettingsIcon as Settings, 
   PlusIcon as Plus,
   GraduationCapIcon as GraduationCap
 } from '../icons/CustomIcons';

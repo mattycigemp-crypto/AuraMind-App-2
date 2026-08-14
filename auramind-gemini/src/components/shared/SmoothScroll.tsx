@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type FC, type ReactNode } from "react";
+import { useEffect, useRef, type FC, type ReactNode } from "react";
 import Lenis from "lenis";
-import { motion, useScroll, useSpring, useTransform } from "framer-motion";
+import { motion, useScroll, useSpring } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { prefersReducedMotion, isMobileWeb } from "../../lib/motion";
@@ -8,7 +8,7 @@ import { prefersReducedMotion, isMobileWeb } from "../../lib/motion";
 // Register GSAP plugins
 try {
   gsap.registerPlugin(ScrollTrigger);
-} catch {}
+} catch { /* intentionally ignored */ }
 
 const SmoothScroll: FC<{ children: ReactNode }> = ({ children }) => {
   const lenisRef = useRef<Lenis | null>(null);
@@ -49,8 +49,8 @@ const SmoothScroll: FC<{ children: ReactNode }> = ({ children }) => {
         const handleMouseLeave = () => {
           gsap.to(button, { x: 0, y: 0, duration: 0.5, ease: "elastic.out(1, 0.3)" });
         };
-        button.addEventListener("mousemove", handleMouseMove);
-        button.addEventListener("mouseleave", handleMouseLeave);
+        (button as HTMLElement).addEventListener("mousemove", handleMouseMove);
+        (button as HTMLElement).addEventListener("mouseleave", handleMouseLeave);
       });
     };
 

@@ -11,7 +11,7 @@ export function KeyboardAware({ children }: { children: React.ReactNode }) {
 
     if (isNative) {
       const setupListeners = async () => {
-        const showListener = await Keyboard.addListener('keyboardWillShow', (info) => {
+        const showListener = await Keyboard.addListener('keyboardWillShow', (info: { keyboardHeight: number }) => {
           keyboardHeightRef.current = info.keyboardHeight;
           document.documentElement.style.setProperty('--keyboard-height', `${info.keyboardHeight}px`);
           scrollActiveInput();
