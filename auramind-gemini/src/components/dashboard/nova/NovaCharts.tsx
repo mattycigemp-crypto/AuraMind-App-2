@@ -50,7 +50,7 @@ export function AnimatedLine({
 }) {
   const reduced = useRM2();
 
-  const { pathD, baselineD, xMax, yMin, yMax } = useMemo(() => {
+  const { pathD, baselineD, xMax: _xMax, yMin: _yMin, yMax: _yMax } = useMemo(() => {
     if (points.length === 0) {
       return { pathD: '', baselineD: '', xMax: 1, yMin: 0, yMax: 1 };
     }
@@ -78,7 +78,7 @@ export function AnimatedLine({
   }, [points, width, height, padding]);
 
   const pathRef = useRef<SVGPathElement | null>(null);
-  const [length, setLength] = useState(0);
+  const [_length, setLength] = useState(0);
   useEffect(() => {
     if (!pathRef.current) return;
     const len = pathRef.current.getTotalLength();
@@ -195,7 +195,7 @@ export function AnimatedSparkline({
   gradientTo = '#3B82F6',
   width = 60,
   height = 24,
-  delay = 0,
+  delay: _delay = 0,
 }: {
   points: Array<[number, number]>;
   width?: number;
@@ -244,7 +244,7 @@ export function AnimatedRadial({
   trackOpacity?: number;
   children?: ReactNode;
 }) {
-  const reduced = useRM2();
+  const _reduced = useRM2();
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = Math.max(0, Math.min(1, value));
@@ -284,7 +284,7 @@ export function AnimatedHeatmap({
   days,
   cellSize = 6,
   gap = 2,
-  weeksPerRow = 7,
+  weeksPerRow: _weeksPerRow = 7,
   intensityColor = (i: number) => `rgba(139, 92, 246, ${0.15 + i * 0.7})`,
   emptyColor = 'rgba(255,255,255,0.04)',
   baseDelay = 0.35,

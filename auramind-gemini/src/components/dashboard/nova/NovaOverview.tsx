@@ -1,10 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   Flame, BookOpen, Brain, Plus, ArrowRight, Play,
-  Target, Sparkles, Zap, Clock, ChevronRight, Layers,
+  Target, Sparkles, Zap, Clock, ChevronRight, Layers, Check,
 } from '@/components/icons';
+import { toast } from 'sonner';
+import { NoDecksArt } from '../../graphics';
+import { createStarterDeck } from '../../../services/decks/starterDeckService';
 import { useDashboardWorkspace } from '../../../contexts/DashboardWorkspaceContext';
 import type { Deck, Card } from '../../../types';
 import {
@@ -555,7 +558,7 @@ function TodaysPlan({
                       : 'bg-white/10 text-zinc-300'
                   }`}
                 >
-                  {step.done ? '✓' : i + 1}
+                  {step.done ? <Check size={13} aria-hidden /> : i + 1}
                 </span>
                 <span className="min-w-0">
                   <span className="block text-sm font-semibold text-white">{step.title}</span>
@@ -665,24 +668,54 @@ function ContinueLearning({ decks, cards }: { decks: Deck[]; cards: Card[] }) {
 
 // ─── Empty state ────────────────────────────────────────────────────────────
 
-function EmptyState({ onCreate, onGenerate }: { onCreate: () => void; onGenerate: () => void }) {
+/**
+ * First-run empty state.
+ *
+ * Both original paths cost the user work before anything happened — author
+ * cards by hand, or type a topic and wait on the generator — and neither
+ * reached the voice mode they signed up for. The primary action is now a
+ * ready-made deck that is one tap from a real session, so time-to-first-value
+ * is a click rather than a chore.
+ *
+ * The headline states the next action rather than the current absence;
+ * "Your library is empty" describes a problem the user already knows about.
+ */
+function EmptyState({
+  onCreate,
+  onGenerate,
+  onTrySample,
+  seeding,
+}: {
+  onCreate: () => void;
+  onGenerate: () => void;
+  onTrySample: () => void;
+  seeding: boolean;
+}) {
   return (
     <FadeUp delay={0.2}>
       <div className="nova-card-elevated px-6 py-14 text-center sm:px-12">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl nova-chip-violet shadow-xl shadow-violet-500/35">
-          <Sparkles className="h-7 w-7 text-white" aria-hidden />
-        </div>
+        {/* Shows audio and documents becoming cards — the value proposition,
+            rather than a generic sparkle. */}
+        <NoDecksArt size={176} className="mx-auto mb-5 text-violet-300/70" />
         <p className="nova-label text-violet-200/80">AuraMind</p>
-        <h2 className="nova-display mt-2 text-3xl text-white sm:text-4xl">Your library is empty</h2>
+        <h2 className="nova-display mt-2 text-3xl text-white sm:text-4xl">
+          Start with eight cards
+        </h2>
         <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-zinc-300/85">
-          Create a deck or let the generator build one from any topic. Spaced repetition starts the moment the first card lands.
+          Try a short deck on how memory works — about two minutes, and you can
+          answer it out loud. Or build your own from a topic, a recording, or a
+          document.
         </p>
         <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-          <button type="button" onClick={onCreate} className="nova-cta">
-            <Plus className="h-3.5 w-3.5" aria-hidden /> Create first deck
+          <button type="button" onClick={onTrySample} disabled={seeding} className="nova-cta">
+            <Play className="h-3.5 w-3.5" aria-hidden />
+            {seeding ? 'Setting up…' : 'Try a sample deck'}
           </button>
           <button type="button" onClick={onGenerate} className="nova-cta-ghost">
             <Sparkles className="h-3.5 w-3.5" aria-hidden /> Generate with AI
+          </button>
+          <button type="button" onClick={onCreate} className="nova-cta-ghost">
+            <Plus className="h-3.5 w-3.5" aria-hidden /> Create my own
           </button>
         </div>
       </div>
@@ -696,6 +729,28 @@ export function NovaOverview() {
   const navigate = useNavigate();
   const workspace = useDashboardWorkspace();
   const { user, decks, cards, startQuickStudy, startStudyForDeck } = workspace!;
+
+  const [seedingSample, setSeedingSample] = useState(false);
+
+  /**
+   * Seeds the starter deck and drops the user straight into it.
+   *
+   * Goes to the session rather than the deck list on purpose: the point of
+   * this path is that the first study session happens immediately, without
+   * an intermediate screen asking the user to choose something again.
+   */
+  const handleTrySample = useCallback(async () => {
+    if (!user?.id || seedingSample) return;
+    setSeedingSample(true);
+    try {
+      const { deck } = await createStarterDeck(user.id);
+      startStudyForDeck(deck.id);
+    } catch (err) {
+      console.error('[NovaOverview] Could not create the starter deck:', err);
+      toast.error('Could not set up the sample deck. Please try again.');
+      setSeedingSample(false);
+    }
+  }, [user?.id, seedingSample, startStudyForDeck]);
 
   const todayStart = startOfTodayMs();
   const dueCount = useMemo(() => cards.filter(c => (c.nextReview ?? 0) <= Date.now()).length, [cards]);
@@ -757,6 +812,8 @@ export function NovaOverview() {
         <EmptyState
           onCreate={() => navigate('/dashboard/decks')}
           onGenerate={() => navigate('/dashboard/generator')}
+          onTrySample={handleTrySample}
+          seeding={seedingSample}
         />
       ) : (
         <>

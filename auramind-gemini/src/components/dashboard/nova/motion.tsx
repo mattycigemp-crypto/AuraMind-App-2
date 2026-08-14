@@ -203,7 +203,7 @@ export function Shimmer({ className = '' }: { className?: string }) {
 // ─── <ShimmerRow /> ─────────────────────────────────────────────────────────
 // Convenience for "skeleton of a stat card" — a fixed-size shimmer block.
 
-export function ShimmerRow({ minHeight = 56, className = '' }: { minHeight?: number; className?: string }) {
+export function ShimmerRow({ minHeight: _minHeight = 56, className = '' }: { minHeight?: number; className?: string }) {
   return <Shimmer className={`rounded-xl ${className}`} />;
   // minHeight kept for API back-compat; not actually used here.
 }
@@ -308,7 +308,7 @@ export function AnimatedRing({
   gradientTo?: string;
   children?: React.ReactNode;
 }) {
-  const reduced = useRM();
+  const _reduced = useRM();
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = Math.max(0, Math.min(1, value));
