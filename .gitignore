@@ -61,6 +61,10 @@ openswarm/
 # Rust build artifacts
 auramind-gemini/src-tauri/target/
 
+# Python bytecode
+__pycache__/
+*.pyc
+
 # Stakpak session files
 .stakpak/session*
 
