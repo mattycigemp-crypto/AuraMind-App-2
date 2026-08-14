@@ -18,3 +18,7 @@ src-tauri
 .env.*
 .eslintrc*
 opencode.json
+# Fastlane / iOS — not needed for web deploy; Vercel CLI tries `bundle
+# install` when it sees a Gemfile, which fails without Ruby on the runner.
+Gemfile
+Gemfile.lock
