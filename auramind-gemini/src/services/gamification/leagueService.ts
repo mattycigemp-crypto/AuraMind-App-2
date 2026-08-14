@@ -131,7 +131,7 @@ export async function awardWeeklyXp(
       groupId,
       rank: higherCount + 1,
     };
-  } catch (e) {
+  } catch (_e) {
     // Fallback local-only path so we never break the UI on DB hiccups.
     const local = readLocalLeague();
     const weeklyXp = (local?.weeklyXp ?? 0) + xpDelta;
@@ -338,7 +338,7 @@ export function nextWeekTierPreview(
   rankWithinGroup: number,
   totalInGroup: number,
 ): { willPromote: boolean; willDemote: boolean; nextTier: number } {
-  const tier = getTierById(currentTier);
+  const _tier = getTierById(currentTier);
   if (rankWithinGroup <= PROMOTION_COUNT && currentTier < LEAGUE_TIERS.length) {
     return { willPromote: true, willDemote: false, nextTier: currentTier + 1 };
   }

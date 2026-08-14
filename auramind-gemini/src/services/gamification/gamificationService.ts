@@ -1,5 +1,3 @@
-import { UserRole } from '../../types';
-import { userService } from '../user/userService';
 
 // Achievement types
 export interface Achievement {
@@ -198,7 +196,7 @@ export const getXPToNextLevel = (xp: number) => {
     15: 50000
   };
   
-  const currentLevelXP = levelXPMap[level] || 0;
+  const _currentLevelXP = levelXPMap[level] || 0;
   const nextLevelXP = levelXPMap[level + 1] || 50000;
   
   return Math.max(0, nextLevelXP - xp);

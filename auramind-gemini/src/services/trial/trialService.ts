@@ -1,5 +1,5 @@
 import { emailService } from '../email/emailService';
-import { supabase } from '../database/supabase';
+import {  requireSupabase } from '../database/supabase';
 
 /**
  * Trial Tracking Service
@@ -19,7 +19,7 @@ export const trialService = {
    * Get all users with active trials
    */
   getActiveTrialUsers: async (): Promise<TrialUser[]> => {
-    const { data, error } = await supabase
+    const { data, error } = await requireSupabase()
       .from('profiles')
       .select('id, email, full_name, trial_start, trial_end')
       .gte('trial_end', new Date().toISOString())
@@ -61,7 +61,7 @@ export const trialService = {
     const trialStart = new Date();
     const trialEnd = new Date(trialStart.getTime() + 14 * 24 * 60 * 60 * 1000); // 14 days
 
-    const { error } = await supabase
+    const { error } = await requireSupabase()
       .from('profiles')
       .update({
         trial_start: trialStart.toISOString(),
@@ -81,7 +81,7 @@ export const trialService = {
    * but the function must NOT crash the caller with a 4xx.
    */
   isTrialEnded: async (userId: string): Promise<boolean> => {
-    const { data, error } = await supabase
+    const { data, error } = await requireSupabase()
       .from('profiles')
       .select('trial_end')
       .eq('id', userId)

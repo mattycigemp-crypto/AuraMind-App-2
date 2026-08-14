@@ -154,8 +154,11 @@ export class SRSOptimizer {
       ? userMetrics.correctReviews / userMetrics.totalReviews
       : 0.5;
     
-    // Base prediction on standard SRS
-    let predictedInterval = card.interval;
+    // Base prediction on standard SRS. `interval` is optional on Card
+    // (unset for never-reviewed cards); without the fallback every
+    // multiplication below produced NaN and the returned due-date was
+    // Invalid Date.
+    let predictedInterval = card.interval ?? 1;
     
     // Adjust based on performance
     if (performanceScore > 0.8) {
@@ -192,7 +195,7 @@ export class SRSOptimizer {
     
     const performanceScore = userMetrics.correctReviews / userMetrics.totalReviews;
     const timeSinceLastReview = Date.now() - (card.lastReviewed || Date.now());
-    const expectedInterval = card.interval * 24 * 60 * 60 * 1000;
+    const expectedInterval = (card.interval ?? 1) * 24 * 60 * 60 * 1000;
     
     // Calculate how far we are into the expected interval
     const intervalProgress = Math.min(1, timeSinceLastReview / expectedInterval);

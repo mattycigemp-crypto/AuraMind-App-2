@@ -177,7 +177,10 @@ export interface CompareProfilesInput {
   currentLabel: string | null;
   altLabel: string;
   currentCenter: number | null;
-  altCenter: number;
+  // Nullable to match `currentCenter`: getCatalogCenter() returns null for
+  // labels absent from PROFILE_DIFFICULTY_CENTER, and this value is only
+  // forwarded to `altProfile.center`, which already accepts null.
+  altCenter: number | null;
   sampleCards: Card[];
   reviews?: ReviewSample[];
   /** Number of days to plot on the retention curve (default 30). */
@@ -188,7 +191,7 @@ export type Recommendation = 'switch' | 'stay' | 'tie';
 
 export interface ComparisonResult {
   currentProfile: { label: string | null; weights: number[]; center: number | null };
-  altProfile: { label: string; weights: number[]; center: number };
+  altProfile: { label: string; weights: number[]; center: number | null };
   currentAvgIntervals: Record<Grade, number>;
   altAvgIntervals: Record<Grade, number>;
   currentPostStability: number;

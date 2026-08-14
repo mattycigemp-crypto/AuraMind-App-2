@@ -73,7 +73,7 @@ export class WebFlashcardService {
       };
     } catch (error) {
       console.error('Failed to generate flashcards from web:', error);
-      throw new Error(`Could not generate flashcards: ${error.message}`);
+      throw new Error(`Could not generate flashcards: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
     }
   }
 
@@ -119,7 +119,7 @@ export class WebFlashcardService {
       };
     } catch (error) {
       console.error('Failed to generate flashcards from PDF:', error);
-      throw new Error(`Could not generate flashcards from PDF: ${error.message}`);
+      throw new Error(`Could not generate flashcards from PDF: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
     }
   }
 
@@ -157,7 +157,7 @@ export class WebFlashcardService {
             [question, answer] = this.generateApplicationCard(topic, i, content);
             break;
           case 'mixed':
-          default:
+          default: {
             // Rotate through different card types
             const typeIndex = i % 3;
             switch (typeIndex) {
@@ -167,13 +167,17 @@ export class WebFlashcardService {
               case 1:
                 [question, answer] = this.generateConceptualCard(topic, i, content);
                 break;
-              case 2:
+              // `default` rather than `case 2` so the switch is provably
+              // exhaustive — typeIndex is `i % 3`, so this is the only
+              // remaining branch and question/answer are always assigned.
+              default:
                 [question, answer] = this.generateApplicationCard(topic, i, content);
                 break;
             }
             break;
+          }
         }
-        
+
         cards.push({
           question,
           answer,
@@ -237,7 +241,7 @@ export class WebFlashcardService {
   private generateConceptualCard(
     topic: string,
     index: number,
-    content: string
+    _content: string
   ): [string, string] {
     const concepts = [
       `the main purpose of ${topic}`,
@@ -264,7 +268,7 @@ export class WebFlashcardService {
   private generateApplicationCard(
     topic: string,
     index: number,
-    content: string
+    _content: string
   ): [string, string] {
     const applications = [
       `real-world applications of ${topic}`,

@@ -100,7 +100,7 @@ export const sortByPriority = (cards: SM2Card[]): SM2Card[] => {
 export const calculateRetentionRate = (cards: SM2Card[]): number => {
   if (cards.length === 0) return 0;
 
-  const totalRepetitions = cards.reduce((sum, card) => sum + card.repetition, 0);
+  const _totalRepetitions = cards.reduce((sum, card) => sum + card.repetition, 0);
   const successfulReviews = cards.filter(card => card.repetition > 0).length;
 
   return successfulReviews / cards.length * 100;

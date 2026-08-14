@@ -31,7 +31,7 @@ export const calculateSRS = (
 };
 
 export const getInitialCardState = (deckId: string, front: string, back: string): Card => {
-  const fsrsState = createInitialFSRSState();
+  const _fsrsState = createInitialFSRSState();
 
   // FSRS initial interval is 0 (card is due immediately)
   // We set a small interval for the first review

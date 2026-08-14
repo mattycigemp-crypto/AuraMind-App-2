@@ -80,7 +80,7 @@ export function forgettingCurve(elapsedDays: number, stability: number, factor: 
 /**
  * Initialize a new FSRS card state
  */
-function initFSRSState(): FSRSCardState {
+function _initFSRSState(): FSRSCardState {
   return {
     stability: DEFAULT_WEIGHTS[0],
     difficulty: DEFAULT_WEIGHTS[1],
@@ -163,7 +163,7 @@ function nextStability(
   grade: number,
   config: FSRSConfig
 ): number {
-  const { stability, difficulty, elapsedDays, repetitions } = state;
+  const { stability, difficulty, elapsedDays: _elapsedDays, repetitions: _repetitions } = state;
   const w = config.weights;
   
   if (grade === 0) {
@@ -337,8 +337,12 @@ export function applyPersonalizedDifficultyInit(
   const resolvedOverride = difficultyTargetOverride !== undefined
     ? Math.max(1, Math.min(10, difficultyTargetOverride))
     : null;
-  const targetDifficulty = resolvedOverride
-    ?? ((profileLabel && PROFILE_DIFFICULTY_CENTER[profileLabel]) ?? DEFAULT_WEIGHTS[4]);
+  // Note: `profileLabel && ...` used to leak an empty string through the
+  // `??` chain (`""` is not nullish), which set `difficulty` to `""` and
+  // silently corrupted the FSRS state for cards with a blank profile
+  // label. Resolve to `undefined` explicitly so `??` can do its job.
+  const profileCenter = profileLabel ? PROFILE_DIFFICULTY_CENTER[profileLabel] : undefined;
+  const targetDifficulty = resolvedOverride ?? profileCenter ?? DEFAULT_WEIGHTS[4];
   // If existing fsrs_state already has exactly the personalized center, skip
   // a no-op write.
   if (card.fsrsState && Math.abs(card.fsrsState.difficulty - targetDifficulty) < 0.0001) {
@@ -400,7 +404,7 @@ export function predictRetention(stability: number, intervalDays: number): numbe
  */
 export function optimalInterval(stability: number, targetRetention: number = 0.9): number {
   const factor = DEFAULT_WEIGHTS[14];
-  let interval = stability * (Math.pow(targetRetention, -1 / factor) - 1) / factor;
+  const interval = stability * (Math.pow(targetRetention, -1 / factor) - 1) / factor;
   return Math.max(1, Math.round(interval));
 }
 
