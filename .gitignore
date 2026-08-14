@@ -87,3 +87,8 @@ tsc.out
 .cursor/
 .opencode/
 opencode.json
+.freebuff/
+.kimchi/
+
+# Local verify-build output
+auramind-gemini/dist-verify/
