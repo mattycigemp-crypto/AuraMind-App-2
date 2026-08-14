@@ -118,7 +118,7 @@ export const TextSplit = forwardRef<TextSplitHandle, TextSplitProps>(
         animate(targets, {
           opacity: [0, 1],
           translateY: [16, 0],
-          delay: (_el, i) => i * stagger,
+          delay: (_el, i) => (i ?? 0) * stagger,
           duration,
           ease: 'outQuad',
         });
@@ -144,7 +144,7 @@ export const TextSplit = forwardRef<TextSplitHandle, TextSplitProps>(
           animate(targets, {
             opacity: [0, 1],
             translateY: [16, 0],
-            delay: (_el, i) => i * stagger,
+            delay: (_el, i) => (i ?? 0) * stagger,
             duration,
             ease: 'outQuad',
           });

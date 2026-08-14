@@ -124,7 +124,7 @@ export function AreaChart(props: AreaChartProps) {
             fontSize: 12,
             color: '#F0EFFE',
           }}
-          formatter={(v: number) => valueFormatter(v)}
+          formatter={(v) => valueFormatter(Number(v))}
         />
         {categories.map((cat, i) => {
           const color = colors[i % colors.length];
@@ -200,7 +200,7 @@ export function LineChart(props: LineChartProps) {
             fontSize: 12,
             color: '#F0EFFE',
           }}
-          formatter={(v: number) => valueFormatter(v)}
+          formatter={(v) => valueFormatter(Number(v))}
         />
         {categories.map((cat, i) => {
           const color = colors[i % colors.length];

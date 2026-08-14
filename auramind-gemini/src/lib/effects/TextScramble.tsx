@@ -21,7 +21,7 @@
  * immediately without any scramble animation.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { animate, scrambleText } from 'animejs';
 import { useReducedMotion } from './useReducedMotion';
 
@@ -51,34 +51,57 @@ export function TextScramble({
 }: TextScrambleProps) {
   const reduced = useReducedMotion();
   const targetRef = useRef<HTMLSpanElement>(null);
-  // Track the resolved length so subsequent re-renders don't double-tween.
-  const [resolvedLength, setResolvedLength] = useState(0);
 
   useEffect(() => {
     const el = targetRef.current;
     if (!el) return;
 
-    if (reduced) {
+    // Reduced motion, or scrambling disabled: show the copy, full stop.
+    if (reduced || !autoplay) {
       el.textContent = children;
-      setResolvedLength(children.length);
       return;
     }
 
-    if (!autoplay) return;
-
-    // scrambleText returns a tween function that, when applied to a
-    // textContent-like target, scrambles chars then resolves to the
-    // final string. anime.js v4 lets us animate the .textContent of a
-    // text node.
-    animate(el, {
+    // scrambleText returns a tween function that resolves random glyphs
+    // into the target string over `duration`.
+    const animation = animate(el, {
       // @ts-expect-error anime.js v4 accepts a custom tween function here
       textContent: scrambleText(children, { scrambleChars }),
       duration,
       ease: 'linear',
-      onUpdate: () => {
-        if (el.textContent) setResolvedLength(el.textContent.length);
+      // The tween's last frame is not guaranteed to be the target string,
+      // and a dropped/interrupted animation would otherwise leave the
+      // element showing permanent gibberish. This is marketing copy on
+      // the landing page — it must always end up readable.
+      onComplete: () => {
+        el.textContent = children;
       },
     });
+
+    /**
+     * Force the final copy, stopping the tween first.
+     *
+     * Order matters: writing textContent while the animation is still
+     * running is pointless because the next frame overwrites it. The
+     * scramble must be cancelled before the text is set.
+     */
+    const settle = () => {
+      try {
+        animation.pause();
+      } catch {
+        /* already finished */
+      }
+      if (el.textContent !== children) el.textContent = children;
+    };
+
+    // Safety net for a tween that never completes — backgrounded tab,
+    // dropped frames, or a library-side error.
+    const timer = window.setTimeout(settle, duration + 400);
+
+    return () => {
+      window.clearTimeout(timer);
+      settle();
+    };
   }, [reduced, children, duration, scrambleChars, autoplay, trigger]);
 
   return (

@@ -86,7 +86,7 @@ export function useDraggable<T extends HTMLElement>(opts: UseDraggableOptions = 
         // detached. That's fine — no listeners left to clean up.
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [
     reduced,
     resolvedOpts.axis,

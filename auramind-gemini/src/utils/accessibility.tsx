@@ -25,7 +25,7 @@ export const useKeyboardNavigation = () => {
           }
           break;
 
-        case 'Escape':
+        case 'Escape': {
           // Close modals/dropdowns
           const modals = document.querySelectorAll('[role="dialog"]');
           modals.forEach((modal) => {
@@ -33,6 +33,7 @@ export const useKeyboardNavigation = () => {
             if (closeButton) closeButton.click();
           });
           break;
+        }
 
         case '?':
           // Show keyboard shortcuts

@@ -53,7 +53,7 @@ export const getPermissions = (role: UserRole = UserRole.USER): Permission => {
 };
 
 export const canManageRole = (managerRole: UserRole, targetRole: UserRole): boolean => {
-  const managerLevel = ROLE_HIERARCHY[managerRole];
+  const _managerLevel = ROLE_HIERARCHY[managerRole];
   const targetLevel = ROLE_HIERARCHY[targetRole];
   
   // Can only manage roles with lower or equal level
@@ -78,11 +78,16 @@ export const getDefaultRole = (email?: string): UserRole => {
   return UserRole.USER;
 };
 
-export const isAdminOrHigher = (role: UserRole): boolean => {
+// `role` is optional because callers read it off a possibly-unloaded
+// profile (`workspace?.user?.role`). An absent role must fail closed —
+// never treat "we don't know yet" as elevated access.
+export const isAdminOrHigher = (role?: UserRole): boolean => {
+  if (!role) return false;
   return ROLE_HIERARCHY[role] >= ROLE_HIERARCHY[UserRole.ADMIN];
 };
 
-export const isEmployeeOrHigher = (role: UserRole): boolean => {
+export const isEmployeeOrHigher = (role?: UserRole): boolean => {
+  if (!role) return false;
   return ROLE_HIERARCHY[role] >= ROLE_HIERARCHY[UserRole.EMPLOYEE];
 };
 

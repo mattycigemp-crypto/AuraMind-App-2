@@ -127,7 +127,7 @@ export function DrawPath({
         duration: 0,
       });
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [reduced, selector, duration, delay, autoplay, trigger, draw, ease]);
 
   return (

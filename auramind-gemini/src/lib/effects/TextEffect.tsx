@@ -39,14 +39,14 @@ export function TextEffect({ text, className, stagger = 0.03 }: TextEffectProps)
       // Jump-to-end animation choreography on a reduced:true mid-flight
       // transition. Same justification as below — this is the
       // choreography signal, not a cascading re-render.
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- animation-jump signal; interval teardown made it safe to also flip state here
+       
       setRevealed(text.length);
       return;
     }
     // Animation choreography entry point — reset to 0 then tick up via the
     // interval. This IS a synchronous setState-in-effect, but it's the
     // "I am starting an animation" signal, not a cascading re-render.
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- animation reset; the only re-renders come from the interval tick below, not from this call
+     
     setRevealed(0);
     let i = 0;
     intervalRef.current = window.setInterval(() => {

@@ -67,7 +67,7 @@ export const SUPPORTED_LANGUAGES = {
 };
 
 // Machine translation API (using LibreTranslate or similar)
-const translateText = async (text: string, targetLang: string): Promise<string> => {
+const translateText = async (text: string, _targetLang: string): Promise<string> => {
   try {
     // For now, return original text - you can integrate a translation service
     // Options: LibreTranslate, Google Translate API, DeepL API, etc.

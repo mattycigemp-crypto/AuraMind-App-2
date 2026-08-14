@@ -15,7 +15,7 @@ export interface SEOConfig {
   noindex?: boolean;
 }
 
-const DEFAULT_TITLE = 'AuraMind - AI-Powered Study Companion';
+const DEFAULT_TITLE = 'AuraMind - Your AI Learning System';
 const DEFAULT_DESCRIPTION = 'AI flashcards powered by FSRS spaced repetition — learn anything in half the time. Turn notes and PDFs into smart decks that adapt to your memory.';
 const DEFAULT_IMAGE = '/auramind/og-cover.png';
 const SITE_URL = 'https://auramind.app';
@@ -101,7 +101,7 @@ function setMetaTag(attrName: string, attrValue: string, content: string): void 
 }
 
 function updateFavicon(): void {
-  let link = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
+  const link = document.querySelector('link[rel="icon"]') as HTMLLinkElement;
   if (!link) return;
   // Keep the existing favicon from index.html (favicon.svg)
 }

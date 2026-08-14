@@ -65,7 +65,7 @@ export function useInView<T extends HTMLElement>(options?: IntersectionObserverI
     );
     obs.observe(ref.current);
     return () => obs.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [options]);
   return { ref, inView };
 }

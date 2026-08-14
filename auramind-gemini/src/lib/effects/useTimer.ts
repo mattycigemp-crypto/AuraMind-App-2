@@ -81,7 +81,7 @@ export function useTimer(opts: UseTimerOptions = {}): UseTimerHandle {
     };
     // Intentionally only re-create the timer on duration/autoplay changes.
     // Callback identity changes shouldn't restart the clock.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [duration, autoplay]);
 
   return {
