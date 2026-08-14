@@ -85,3 +85,9 @@ coverage/
 junit-*.xml
 tsc.out
 build.log
+
+# ── Local workspace artifacts ──────────────────────────────────
+.freebuff/
+.kimchi/
+test-results/
+preview-*.html
