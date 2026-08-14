@@ -1,4 +1,4 @@
-import { supabase } from './supabase';
+import { requireSupabase } from './supabase';
 
 let hasSyncedForSession = false;
 
@@ -36,7 +36,7 @@ export async function syncCurrentUser(): Promise<boolean> {
   if (hasSyncedForSession) return true;
 
   try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const { data: { user }, error: authError } = await requireSupabase().auth.getUser();
 
     if (authError || !user) {
       console.error('No authenticated user found:', authError);
@@ -47,7 +47,7 @@ export async function syncCurrentUser(): Promise<boolean> {
     // Postgres from firing 23505 unique_violation when the row already
     // exists, so this is 100% safe to call from any number of concurrent
     // tabs / mounts / refresh intervals without throwing.
-    const { error: upsertError } = await supabase
+    const { error: upsertError } = await requireSupabase()
       .from('user_profiles')
       .upsert(
         { id: user.id, user_id: user.id },
@@ -88,7 +88,7 @@ export async function syncCurrentUser(): Promise<boolean> {
  */
 export async function ensureUserSynced(): Promise<void> {
   if (hasSyncedForSession) {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await requireSupabase().auth.getSession();
     if (!session) {
       hasSyncedForSession = false;
       throw new Error('Session expired. Please sign in again.');

@@ -64,7 +64,7 @@ async function compressRaster(file: File): Promise<CompressionResult> {
   // canvas.toBlob preserves the original mime if it accepts reencoding
   // (PNG/WebP/JPEG). AVIF is not universally canvas-encodable; we let
   // it pass through as-is if toBlob rejects.
-  const blob: Blob = await new Promise<Blob | null>((resolve, reject) => {
+  const blob: Blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
       (b) => (b ? resolve(b) : reject(new Error('toBlob returned null'))),
       'image/webp',

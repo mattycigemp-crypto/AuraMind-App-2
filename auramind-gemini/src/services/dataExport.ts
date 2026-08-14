@@ -56,8 +56,8 @@ export async function exportUserData(userId: string): Promise<ExportData> {
   // Get user profile from auth
   let profile: Partial<UserProfile> = {};
   try {
-    const { supabase } = await import('./database/supabase');
-    const { data: { user } } = await supabase.auth.getUser();
+    const { requireSupabase } = await import('./database/supabase');
+    const { data: { user } } = await requireSupabase().auth.getUser();
     if (user) {
       profile = {
         id: user.id,
@@ -147,19 +147,19 @@ function cardsToCSV(cards: Card[]): string {
  * Delete all user data (GDPR Article 17 - Right to erasure)
  */
 export async function deleteUserData(userId: string): Promise<void> {
-  const { supabase } = await import('./database/supabase');
+  const { requireSupabase } = await import('./database/supabase');
 
   // Delete all cards
-  await supabase.from('cards').delete().eq('user_id', userId);
+  await requireSupabase().from('cards').delete().eq('user_id', userId);
 
   // Delete all decks
-  await supabase.from('decks').delete().eq('user_id', userId);
+  await requireSupabase().from('decks').delete().eq('user_id', userId);
 
   // Delete all study sessions
-  await supabase.from('study_sessions').delete().eq('user_id', userId);
+  await requireSupabase().from('study_sessions').delete().eq('user_id', userId);
 
   // Delete user profile
-  await supabase.from('user_profiles').delete().eq('user_id', userId);
+  await requireSupabase().from('user_profiles').delete().eq('user_id', userId);
 
   // Delete auth user (requires service role key - done server-side)
   // This should be handled by the API endpoint, not client-side

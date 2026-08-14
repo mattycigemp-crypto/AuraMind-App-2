@@ -1,5 +1,5 @@
 import { emailService } from '../email/emailService';
-import { supabase } from '../database/supabase';
+import { requireSupabase } from '../database/supabase';
 
 /**
  * Email Verification Service
@@ -11,7 +11,7 @@ export const emailVerificationService = {
    * Send verification email to user
    */
   sendVerificationEmail: async (email: string, name?: string) => {
-    const { data, error } = await supabase.auth.resend({
+    const { data, error } = await requireSupabase().auth.resend({
       email,
       type: 'signup',
     });
@@ -32,7 +32,7 @@ export const emailVerificationService = {
    * Check if email is verified
    */
   isEmailVerified: async (): Promise<boolean> => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await requireSupabase().auth.getUser();
     return user?.email_confirmed_at != null;
   },
 };
