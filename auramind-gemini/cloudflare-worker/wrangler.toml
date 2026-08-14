@@ -1,0 +1,33 @@
+# wrangler.toml — Cloudflare Worker that serves the Tauri updater manifest.
+#
+# Deploy:
+#   cd cloudflare-worker && npm install && npm run deploy
+#
+# The Tauri client hits /update/<target>/<current_version>. We respond
+# with the latest tagged release's platform JSON, fetched from GitHub's
+# REST API (no auth required for public releases).
+#
+# IMPORTANT: the worker has NO secrets — GitHub's public release API
+# doesn't require auth for unauthenticated requests (60/hr/IP). If we
+# later want to bump past that limit, wire a `github_token` Workers
+# Secret via `wrangler secret put GITHUB_TOKEN`.
+
+name = "auramind-updates"
+main = "update.js"
+compatibility_date = "2024-09-23"
+
+# Site binding — point the worker at the apex domain `releases.cogniavect.app`.
+# If you instead use the workers.dev subdomain, drop this section and
+# the worker URL becomes https://auramind-updates.<account>.workers.dev.
+# routes = [
+#   "releases.cogniavect.app/update/*"
+# ]
+
+[observability]
+enabled = true
+
+# Custom domain — single env because the JSON is read-only and identical
+# for every target on a given release. Add staging only when the worker
+# starts state-mutating (it currently does not).
+[env.production]
+name = "auramind-updates"
