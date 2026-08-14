@@ -2,7 +2,6 @@
 // 2026 elite typography system with dynamic font variation and text animations
 
 import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 // Variable Font Configuration
 export const VARIABLE_FONTS = {
@@ -133,7 +132,7 @@ export class KineticTypography {
   // Variable font weight animation
   animateWeight(
     element: HTMLElement,
-    fromWeight: number = 400,
+    _fromWeight: number = 400,
     toWeight: number = 700,
     duration: number = 0.6,
     options: gsap.TweenVars = {}
@@ -152,7 +151,7 @@ export class KineticTypography {
   // Variable font slant animation
   animateSlant(
     element: HTMLElement,
-    fromSlant: number = 0,
+    _fromSlant: number = 0,
     toSlant: number = 10,
     duration: number = 0.4,
     options: gsap.TweenVars = {}
@@ -170,7 +169,7 @@ export class KineticTypography {
   // Variable font optical size animation
   animateOpticalSize(
     element: HTMLElement,
-    fromSize: number = 16,
+    _fromSize: number = 16,
     toSize: number = 32,
     duration: number = 0.5,
     options: gsap.TweenVars = {}
@@ -285,13 +284,13 @@ export class KineticTypography {
   // Glitch text effect
   glitchText(
     element: HTMLElement,
-    intensity: number = 0.5,
+    _intensity: number = 0.5,
     duration: number = 0.3
   ): gsap.core.Timeline {
     const tl = gsap.timeline({ repeat: 3 });
     
-    const originalText = element.textContent || '';
-    const glitchChars = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+    const _originalText = element.textContent || '';
+    const _glitchChars = '!@#$%^&*()_+-=[]{}|;:,.<>?';
     
     tl.to(element, {
       duration: duration * 0.1,
@@ -381,9 +380,9 @@ export class KineticTypography {
     } = {}
   ): gsap.core.Tween {
     const {
-      weightStart = 400,
+      weightStart: _weightStart = 400,
       weightEnd = 700,
-      slantStart = 0,
+      slantStart: _slantStart = 0,
       slantEnd = 0,
       scrub = true,
       pin = false
