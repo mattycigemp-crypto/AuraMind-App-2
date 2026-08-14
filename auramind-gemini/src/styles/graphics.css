@@ -1,0 +1,82 @@
+/**
+ * graphics.css — motion primitives for AuraMind's SVG system.
+ *
+ * Rules this file exists to enforce:
+ *   1. Keyframes are declared ONCE globally, never inside a component's
+ *      <style> tag, so rendering an icon 50 times costs 50 nodes and not
+ *      50 duplicate stylesheets.
+ *   2. Every animation is wrapped by the reduced-motion guard at the
+ *      bottom. Motion here encodes state (speaking, listening, syncing);
+ *      when motion is off the state must still be legible from form and
+ *      colour alone, so animations resolve to their most readable frame
+ *      rather than simply freezing wherever they happened to be.
+ *   3. Durations are slow enough to read. Anything under 400ms reads as a
+ *      glitch rather than a signal.
+ */
+
+/* Speaking: concentric arcs travel outward from the mouth of the orb.
+   Scale and fade are paired so the arc never lingers at full opacity at
+   large radii, which would read as a halo rather than emission. */
+@keyframes am-emit {
+  0%   { transform: scale(0.55); opacity: 0; }
+  18%  { opacity: 0.9; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+/* Thinking: a single arc sweeps the ring. Deliberately not a spinner —
+   it is one continuous stroke so it reads as "working through" rather
+   than "loading". */
+@keyframes am-sweep {
+  0%   { stroke-dashoffset: 226; }
+  100% { stroke-dashoffset: -226; }
+}
+
+/* Draw-on for verdict marks. Paired with pathLength="1" so the same
+   timing works for a tick and a cross regardless of real path length. */
+@keyframes am-draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* Breathing idle state. Very low amplitude — this is a resting pulse,
+   not an attention-grab. */
+@keyframes am-rest {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 0.85; }
+}
+
+/* Offline / sync-pending: a dash creeps along the connection path. */
+@keyframes am-dash-crawl {
+  to { stroke-dashoffset: -24; }
+}
+
+.am-emit      { animation: am-emit 2.4s ease-out infinite; transform-origin: center; }
+.am-emit-2    { animation-delay: 0.8s; }
+.am-emit-3    { animation-delay: 1.6s; }
+.am-sweep     { animation: am-sweep 1.8s cubic-bezier(0.65, 0, 0.35, 1) infinite; }
+.am-draw      { animation: am-draw 420ms cubic-bezier(0.65, 0, 0.35, 1) forwards; }
+.am-rest      { animation: am-rest 3.2s ease-in-out infinite; }
+.am-crawl     { animation: am-dash-crawl 1.2s linear infinite; }
+
+/* Listening bars are driven by real mic amplitude via --am-level, not by
+   a keyframe. The transition smooths the sample rate into something the
+   eye can follow without inventing movement that isn't in the signal. */
+.am-bar {
+  transition: transform 90ms linear;
+  transform-origin: center;
+  transform: scaleY(var(--am-level, 0.18));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .am-emit,
+  .am-sweep,
+  .am-rest,
+  .am-crawl {
+    animation: none;
+  }
+  /* Resolve to the readable frame rather than an arbitrary one. */
+  .am-emit   { opacity: 0.5; transform: scale(1); }
+  .am-rest   { opacity: 0.8; }
+  .am-draw   { animation: none; stroke-dashoffset: 0; }
+  .am-bar    { transition: none; }
+}
