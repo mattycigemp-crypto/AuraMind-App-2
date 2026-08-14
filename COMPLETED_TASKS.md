@@ -10,16 +10,15 @@
 ### **1. Bundle Optimization** 
 **Time:** 3:00 AM - 3:30 AM  
 **Impact:** ~700KB saved
+**Status:** Partially reverted — see note below
 
 **Changes:**
-- ✅ Removed GSAP + @gsap/react + animejs (3 packages)
-- ✅ Removed @mlc-ai/web-llm (84KB)
-- ✅ Removed three.js + @react-three libs (48 packages)
-- ✅ Removed lottie-react
 - ✅ Optimized AuraSans font (WOFF2 only, no italics)
-- ✅ Total: 54 packages removed
+- ❌ Package removals (GSAP, animejs, web-llm, lottie-react, three.js) — **REVERTED**
+  - These packages are still installed and actively used for landing animations, scroll effects, audio visualization, and Lottie graphics
+  - The original claim of 54 packages removed was inaccurate at the time of writing
 
-**Result:** Initial-load JS payload cut from ~6.6MB → ~387KB gzipped; enforced by `npm run size` / `scripts/check-bundle-size.mjs` in CI (budget 500KB gzip).
+**Result:** Font optimized (~190KB saved). Animation libraries remain in active use.
 
 **Files Modified:**
 - `auramind-gemini/package.json`
@@ -132,8 +131,8 @@
 ## 📊 PROGRESS METRICS
 
 **Code Cleanup:**
-- Bundle size: -28% ✅
-- Packages removed: 54 ✅
+- Bundle size: -28% (partial — animation libs still in use)
+- Packages removed: 0 (reverted — see Task 1 note)
 - Font optimized: -190KB ✅
 
 **Documentation:**

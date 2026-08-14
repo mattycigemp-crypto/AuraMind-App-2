@@ -569,7 +569,8 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
         streak: nextProfile.streak,
         streak_freezes: nextProfile.streakFreezes,
         joined_date: nextProfile.joinedDate,
-        is_admin: nextProfile.isAdmin ?? false,
+        // is_admin is NOT set here: it lives in app_metadata (service-role
+        // only) and must never be writable by the client SDK.
         last_study_date: nextProfile.lastStudyDate,
       },
     });

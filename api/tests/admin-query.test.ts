@@ -21,7 +21,8 @@ afterEach(() => {
 const adminUser = {
   id: 'admin-1',
   email: 'owner@auramind.app',
-  user_metadata: { is_admin: true },
+  user_metadata: { is_admin: true }, // display only — authz reads app_metadata
+  app_metadata: { role: 'admin' },
 };
 
 const authedAdmin = { headers: { authorization: 'Bearer admin-token' } };

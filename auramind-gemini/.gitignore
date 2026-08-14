@@ -83,3 +83,5 @@ keystore.properties
 coverage/
 .nyc_output/
 junit-*.xml
+tsc.out
+build.log

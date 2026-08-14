@@ -29,12 +29,6 @@ If you cannot use GitHub Security Advisories (e.g. you are reporting
 from an account GitHub does not recognize), email **security@auramind.app**
 with the same payload. The on-call maintainer reads this inbox daily.
 
-> **For the maintainer**: please confirm `security@auramind.app` is set
-> up and forwarding to the on-call rotation before publishing this file.
-> Until then, ALL reports flow through GitHub Security Advisories —
-> the email address above is intended as a fallback, not a primary path,
-> so it must be active to keep maintainers reachable after-hours.
-
 ## Our response SLA
 
 | Stage                       | Target          |
