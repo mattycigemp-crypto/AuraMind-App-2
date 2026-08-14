@@ -119,7 +119,7 @@ function normalizeConceptMap(data: any): ConceptMapData {
       description: n.description || '',
       size: Math.max(1, Math.min(3, Number(n.size) || 1)),
     })),
-    edges: (data.edges || []).map((e: any, i: number) => ({
+    edges: (data.edges || []).map((e: any, _i: number) => ({
       source: e.source || '',
       target: e.target || '',
       label: e.label || e.relationship || '',

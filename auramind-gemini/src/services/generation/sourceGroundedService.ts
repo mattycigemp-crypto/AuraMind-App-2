@@ -1,5 +1,5 @@
 import { SourceDocument, SourceGroundedCard, SourceGroundedQuestion, Quiz } from '../../types';
-import { generateFlashcards, generateDeckFromTopic, generateQuizFromContent, GeneratedCard } from '../api/groqService';
+import { generateFlashcards, generateDeckFromTopic, generateQuizFromContent } from '../api/groqService';
 
 export interface GenerationOptions {
   difficulty: 'easy' | 'medium' | 'hard' | 'mixed';
@@ -157,7 +157,7 @@ export async function generateDeckFromSources(
   }
 
   const context = buildSourceContext(sources, activeIds);
-  const enhancedContent = `${buildSystemPrompt(sources, activeIds)}
+  const _enhancedContent = `${buildSystemPrompt(sources, activeIds)}
 
 ## Source Content:
 ${context}

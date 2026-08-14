@@ -225,7 +225,7 @@ export async function groqChat(opts: GroqChatOptions): Promise<GroqChatResult> {
   // active, only `opts.messages` is readable.
   const finalMessages: GroqChatMessage[] =
     'prompt' in opts
-      ? [{ role: 'user', content: opts.prompt }]
+      ? [{ role: 'user', content: opts.prompt ?? '' }]
       : opts.messages;
 
   const res = await fetch(
@@ -390,7 +390,7 @@ export async function* groqChatStream(
 
   const finalMessages: GroqChatMessage[] =
     'prompt' in opts
-      ? [{ role: 'user', content: opts.prompt }]
+      ? [{ role: 'user', content: opts.prompt ?? '' }]
       : opts.messages;
 
   const res = await fetch(

@@ -136,7 +136,7 @@ Create 5-10 high-quality flashcards from the content.`;
       ];
     } catch (error) {
       console.error('Error parsing flashcards:', error);
-      throw new Error('Failed to generate flashcards');
+      throw new Error('Failed to generate flashcards', { cause: error });
     }
   }
 
@@ -178,7 +178,7 @@ Create 8-12 comprehensive flashcards covering the most important aspects of the 
       };
     } catch (error) {
       console.error('Error generating deck:', error);
-      throw new Error('Failed to generate deck');
+      throw new Error('Failed to generate deck', { cause: error });
     }
   }
 
@@ -191,7 +191,7 @@ Create 8-12 comprehensive flashcards covering the most important aspects of the 
       return await this.ask(userPrompt, systemPrompt);
     } catch (error) {
       console.error('Error generating summary:', error);
-      throw new Error('Failed to generate summary');
+      throw new Error('Failed to generate summary', { cause: error });
     }
   }
 }
@@ -233,7 +233,7 @@ export class OllamaClient {
       return data.response || 'No response from model';
     } catch (error) {
       console.error('Error with Ollama:', error);
-      throw new Error('Failed to get response from Ollama');
+      throw new Error('Failed to get response from Ollama', { cause: error });
     }
   }
 
@@ -272,7 +272,7 @@ export class OllamaClient {
       ];
     } catch (error) {
       console.error('Error with Ollama:', error);
-      throw new Error('Failed to generate flashcards with Ollama');
+      throw new Error('Failed to generate flashcards with Ollama', { cause: error });
     }
   }
 
@@ -315,7 +315,7 @@ export class OllamaClient {
       };
     } catch (error) {
       console.error('Error with Ollama:', error);
-      throw new Error('Failed to generate deck with Ollama');
+      throw new Error('Failed to generate deck with Ollama', { cause: error });
     }
   }
 
@@ -328,7 +328,7 @@ export class OllamaClient {
       return await this.ask(userPrompt, systemPrompt);
     } catch (error) {
       console.error('Error generating summary:', error);
-      throw new Error('Failed to generate summary');
+      throw new Error('Failed to generate summary', { cause: error });
     }
   }
 }

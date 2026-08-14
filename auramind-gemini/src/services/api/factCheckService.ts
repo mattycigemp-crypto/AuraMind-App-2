@@ -8,7 +8,7 @@
  * Inspired by competitor features like Forgetless's AI fact-checking.
  */
 
-import { Card, CardCitation } from '../../types';
+import { Card } from '../../types';
 import { auraAiClient } from './auraAiService';
 
 export interface FactCheckResult {
@@ -140,7 +140,7 @@ export async function verifyDeckCards(
   
   // Calculate trust scores based on verification results
   for (const result of results) {
-    const trustScore = calculateTrustScore(result);
+    const _trustScore = calculateTrustScore(result);
     
     if (onUpdate) {
       onUpdate(result.cardId, result);

@@ -81,7 +81,7 @@ export class HomeworkSolverService {
       return solution;
     } catch (error) {
       console.error('Homework solving error:', error);
-      throw new Error(`Could not solve homework problem: ${error.message}`, { cause: error });
+      throw new Error(`Could not solve homework problem: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
     }
   }
 

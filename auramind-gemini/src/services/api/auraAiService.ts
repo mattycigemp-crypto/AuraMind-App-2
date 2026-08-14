@@ -159,7 +159,7 @@ const getEnv = (key: string): string => {
 
 const groqKey = getEnv('VITE_GROQ_API_KEY');
 const useLocalAI = getEnv('VITE_USE_LOCAL_AI') === 'true';
-const customModel = getEnv('VITE_AI_MODEL');
+const _customModel = getEnv('VITE_AI_MODEL');
 const localBaseUrl = '/local-ai/v1';
 
 export class AuraAiClient {
@@ -266,7 +266,7 @@ export class AuraAiClient {
             const jsonError = JSON.parse(errorText);
             errorMessage = jsonError.error?.message || jsonError.message || errorMessage;
             logger.error('Parsed API error:', jsonError);
-          } catch (e) {
+          } catch (_e) {
             errorMessage = `API Error (${response.status}): ${errorText || response.statusText}`;
             logger.error('Raw error message:', errorMessage);
           }
@@ -286,7 +286,7 @@ export class AuraAiClient {
               return localResult;
             } catch (localErr) {
               logger.error('Local inference also failed:', localErr);
-              throw new Error('Rate limited and local inference unavailable. Please wait or enable a local model.');
+              throw new Error('Rate limited and local inference unavailable. Please wait or enable a local model.', { cause: localErr });
             }
           }
 
@@ -493,7 +493,7 @@ export class AuraAiClient {
         try {
           const jsonError = JSON.parse(errorText);
           errorMessage = jsonError.error?.message || jsonError.message || errorMessage;
-        } catch (e) {
+        } catch (_e) {
           errorMessage = `API Error (${response.status}): ${errorText || response.statusText}`;
         }
 
@@ -527,7 +527,7 @@ export class AuraAiClient {
               const parsed = JSON.parse(data);
               const content = parsed.choices[0]?.delta?.content;
               if (content) yield content;
-            } catch (e) {
+            } catch (_e) {
               // Ignore parsing errors for malformed chunks
             }
           }

@@ -88,7 +88,7 @@ function parseMnemonicJson(content: string): MnemonicResult {
   };
 }
 
-function normalizeMnemonic(data: any, rawContent: string): MnemonicResult {
+function normalizeMnemonic(data: any, _rawContent: string): MnemonicResult {
   return {
     topic: data.topic || data.subject || 'Topic',
     acronyms: Array.isArray(data.acronyms) ? data.acronyms.filter(Boolean) : [],

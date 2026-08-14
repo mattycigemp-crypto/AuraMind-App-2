@@ -121,7 +121,7 @@ export async function puterChat(opts: {
   // the user's input event has long since completed. The caller in
   // `CardsDecks.tsx` catches `isAuthRequired === true` and surfaces a
   // button the user clicks to trigger the popup.
-  let signedIn = false;
+  let signedIn: boolean;
   try {
     signedIn = puter.auth && typeof puter.auth.isSignedIn === 'function'
       ? Boolean(await puter.auth.isSignedIn())
