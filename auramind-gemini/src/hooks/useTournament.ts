@@ -19,8 +19,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchLeagueBoard, type LeagueBoardData } from '../services/gamification/leagueService';
 import { trackStudySession } from '../services/gamification/gamificationService';
-import { LEAGUE_TIERS } from '../types/league';
-import { supabase } from '../services/database/supabase';
 
 export type BracketSize = 4 | 8;
 
@@ -272,7 +270,7 @@ export function useTournament(): TournamentState {
     if (decidedCount > lastDecidedCount.current) {
       try {
         trackStudySession(0.1, 25);
-      } catch {}
+      } catch { /* intentionally ignored */ }
       lastDecidedCount.current = decidedCount;
     }
   }, [matches]);
@@ -285,7 +283,7 @@ export function useTournament(): TournamentState {
     if (!matches.every((m) => m.winner !== null)) return;
     try {
       trackStudySession(0.5, 100);
-    } catch {}
+    } catch { /* intentionally ignored */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [champion]);
 

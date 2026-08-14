@@ -100,7 +100,10 @@ export function useNetworkStatus(): NetworkStatus {
       const status = await Network.getStatus();
       setStatus({ connected: status.connected, connectionType: status.connectionType });
 
-      const listener = await Network.addListener('networkStatusChange', (s) => {
+      // The shim types addListener's args as `unknown[]`, so callback
+      // params get no contextual type. These annotations mirror the real
+      // @capacitor/network ConnectionStatus payload.
+      const listener = await Network.addListener('networkStatusChange', (s: { connected: boolean; connectionType: string }) => {
         setStatus({ connected: s.connected, connectionType: s.connectionType });
       });
       return () => listener.remove();
@@ -156,11 +159,11 @@ export function usePushNotifications() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
-    PushNotifications.addListener('registration', (t) => {
+    PushNotifications.addListener('registration', (t: { value: string }) => {
       setToken(t.value);
     });
 
-    PushNotifications.addListener('registrationError', (err) => {
+    PushNotifications.addListener('registrationError', (err: unknown) => {
       console.error('Push registration error:', err);
     });
 

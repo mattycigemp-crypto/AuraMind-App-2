@@ -10,7 +10,7 @@
  * gate a framer-motion variant or a canvas-confetti burst.
  */
 import { useEffect, useState } from 'react';
-import { useReducedMotion as motionUseReducedMotion } from 'motion/react';
+import { useReducedMotion as motionUseReducedMotion } from 'framer-motion';
 
 /**
  * Standalone hook — use this when motion/react isn't imported yet.
@@ -44,11 +44,16 @@ export function usePrefersReducedMotion(): boolean {
  * and falls back to our standalone impl when Motion is unavailable.
  */
 export function useReducedMotionSafe(): boolean {
-  try {
-    return motionUseReducedMotion() ?? false;
-  } catch {
-    return usePrefersReducedMotion();
-  }
+  // Both hooks are called unconditionally and in a fixed order. The
+  // previous try/catch form called one hook in `try` and a different one
+  // in `catch`, so any throw from Motion's hook permanently changed the
+  // hook order for that component and crashed the tree on the next render.
+  // `motion/react` is a static import, so its hook is always callable;
+  // the standalone implementation is kept as the value-level fallback.
+  const motionValue = motionUseReducedMotion();
+  const fallbackValue = usePrefersReducedMotion();
+
+  return motionValue ?? fallbackValue;
 }
 
 // Default export is the safe one — prefer that everywhere.

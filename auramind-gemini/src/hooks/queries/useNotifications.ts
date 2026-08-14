@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { supabase } from '../../services/database/supabase';
+import { supabase, requireSupabase } from '../../services/database/supabase';
 import { queryKeys } from '../../lib/queryKeys';
 
 export interface NotificationRow {
@@ -46,7 +46,7 @@ export function useNotifications(userId: string | null | undefined) {
 
   useEffect(() => {
     if (!supabase || !userId) return;
-    // `userId` is the authenticated UUID from supabase.auth.getUser(), a
+    // `userId` is the authenticated UUID from requireSupabase().auth.getUser(), a
     // server-rendered value — not user-input — so direct interpolation
     // into the realtime `filter` string is safe (no injection surface).
     const channel = supabase
@@ -63,7 +63,7 @@ export function useNotifications(userId: string | null | undefined) {
       )
       .subscribe();
     return () => {
-      supabase.removeChannel(channel);
+      requireSupabase().removeChannel(channel);
     };
   }, [userId, qc]);
 

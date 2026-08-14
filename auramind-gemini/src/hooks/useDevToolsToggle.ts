@@ -13,7 +13,7 @@ export function useDevToolsToggle() {
         e.preventDefault();
         setEnabled(prev => {
           const next = !prev;
-          try { localStorage.setItem(DEVTOOLS_KEY, String(next)); } catch {}
+          try { localStorage.setItem(DEVTOOLS_KEY, String(next)); } catch { /* intentionally ignored */ }
           return next;
         });
       }

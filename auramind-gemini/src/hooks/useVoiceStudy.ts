@@ -255,11 +255,15 @@ export function useVoiceStudy(options?: {
       } catch {
         /* no-op */
       }
-      if (caps.tts && typeof window !== 'undefined') {
+      // Check the live object rather than the `caps.tts` snapshot taken at
+      // mount. Teardown can run after the API has gone away, and a cleanup
+      // function that throws leaves React unable to finish unmounting the
+      // rest of the tree.
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
     };
-  }, [caps.tts]);
+  }, []);
 
   return {
     speaking,

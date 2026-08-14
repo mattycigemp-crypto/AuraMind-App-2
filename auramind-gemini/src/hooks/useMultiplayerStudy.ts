@@ -17,7 +17,8 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { supabase } from '../services/database/supabase';
+import type { RealtimeChannel } from '@supabase/supabase-js';
+import { supabase, requireSupabase } from '../services/database/supabase';
 
 export interface PeerState {
   userId: string;
@@ -57,7 +58,7 @@ export function useMultiplayerStudy(opts: Options): MultiplayerState {
   const { deckId, currentUserId, name, avatar, enabled = true } = opts;
   const [peers, setPeers] = useState<Map<string, PeerState>>(new Map());
   const [isConnected, setIsConnected] = useState(false);
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
   const subscribedRef = useRef(false);
   const presenceRef = useRef({
     userId: currentUserId,
@@ -83,7 +84,7 @@ export function useMultiplayerStudy(opts: Options): MultiplayerState {
       return;
     }
 
-    const channel = supabase.channel(channelName, {
+    const channel = requireSupabase().channel(channelName, {
       config: { presence: { key: currentUserId }, broadcast: { ack: false } },
     });
     channelRef.current = channel;
@@ -161,7 +162,7 @@ export function useMultiplayerStudy(opts: Options): MultiplayerState {
       subscribedRef.current = false;
       setIsConnected(false);
       try { channel.untrack(); } catch { /* channel may already be closed */ }
-      if (supabase) supabase.removeChannel(channel);
+      if (supabase) requireSupabase().removeChannel(channel);
       if (channelRef.current === channel) channelRef.current = null;
     };
   }, [enabled, currentUserId, channelName]);
@@ -182,7 +183,7 @@ export function useMultiplayerStudy(opts: Options): MultiplayerState {
   }, []);
 
   // Broadcast through the SUBSCRIBED channel instance — calling
-  // supabase.channel(name).send() on a fresh (unsubscribed) channel was
+  // requireSupabase().channel(name).send() on a fresh (unsubscribed) channel was
   // silently dropping every message.
   const broadcast = useMemo(() => {
     return (event: 'rating' | 'progress', payload: Record<string, unknown>) => {

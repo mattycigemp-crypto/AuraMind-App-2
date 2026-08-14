@@ -37,8 +37,8 @@ function describeMicError(err: unknown): string {
         return 'Your microphone is busy or unavailable. Close other apps using it, then try again.';
       case 'SecurityError':
         return 'Microphone access requires a secure (HTTPS) connection.';
-      case 'NotAllowedError':
-        return 'Microphone access is blocked for this site.';
+      // 'NotAllowedError' is handled at the top of this switch; a second
+      // case for it here was unreachable.
       case 'OverconstrainedError':
         return 'No microphone matches the audio settings requested.';
     }

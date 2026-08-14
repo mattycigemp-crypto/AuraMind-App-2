@@ -176,7 +176,7 @@ export function useSessionReplay(userId: string | undefined): SessionReplayState
           if (entries.length > 0) {
             try {
               window.localStorage.setItem(LS_KEY, JSON.stringify(entries));
-            } catch {}
+            } catch { /* intentionally ignored */ }
           }
         }
       } catch (err) {

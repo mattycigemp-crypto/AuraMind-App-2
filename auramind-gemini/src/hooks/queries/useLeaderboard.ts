@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { supabase } from '../../services/database/supabase';
+import { supabase, requireSupabase } from '../../services/database/supabase';
 import { queryKeys } from '../../lib/queryKeys';
 
 export interface LeaderboardRow {
@@ -103,7 +103,7 @@ export function useLiveLeaderboard(seasonId: string | null | undefined) {
       )
       .subscribe();
     return () => {
-      supabase.removeChannel(channel);
+      requireSupabase().removeChannel(channel);
     };
   }, [seasonId, qc]);
 

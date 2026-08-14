@@ -4,10 +4,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { SCROLL_CONFIG, checkReducedMotion } from '../styles/animations/awe';
+import { checkReducedMotion } from '../styles/animations/awe';
 
 // Register ScrollTrigger
-try { gsap.registerPlugin(ScrollTrigger) } catch {}
+try { gsap.registerPlugin(ScrollTrigger) } catch { /* intentionally ignored */ }
 
 export interface ScrollAnimationConfig {
   trigger?: string;
@@ -340,7 +340,10 @@ export const useSectionScroll = (sections: string[]) => {
   const [activeSection, setActiveSection] = useState(sections[0]);
 
   useEffect(() => {
-    const sectionElements = sections.map(id => document.getElementById(id)).filter(Boolean);
+    const sectionElements = sections
+      .map((id) => document.getElementById(id))
+      // Type predicate: .filter(Boolean) does not narrow away null in TS.
+      .filter((el): el is HTMLElement => el !== null);
 
     sectionElements.forEach((section) => {
       ScrollTrigger.create({

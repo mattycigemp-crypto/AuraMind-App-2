@@ -65,7 +65,7 @@ export const useParallax = (baseSpeed: number = 0.5) => {
 
   // Apply parallax transformations
   useEffect(() => {
-    layersRef.current.forEach((layer, id) => {
+    layersRef.current.forEach((layer, _id) => {
       if (!layer.element) return;
 
       let transformX = 0;
