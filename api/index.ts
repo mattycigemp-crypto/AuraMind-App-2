@@ -6,6 +6,19 @@ import { sendEmail as sendEmailViaResend } from './lib/emails.js';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || '';
 
+// Roles that grant admin access. Authorization reads app_metadata ONLY:
+// user_metadata is writable by any signed-in client via auth.updateUser(),
+// so trusting it would let any user self-promote to admin. app_metadata can
+// only be written with the service-role key (i.e. by this API).
+const ADMIN_ROLES = new Set(['owner', 'ceo', 'admin']);
+
+function isAdminUser(user: { email?: string | null; app_metadata?: Record<string, unknown> } | null | undefined): boolean {
+  if (!user) return false;
+  if (ADMIN_EMAIL && user.email === ADMIN_EMAIL) return true;
+  const role = user.app_metadata?.role;
+  return typeof role === 'string' && ADMIN_ROLES.has(role);
+}
+
 const json = (res: VercelResponse, status: number, body: Record<string, unknown>) => {
   res.status(status).setHeader('Content-Type', 'application/json').send(JSON.stringify(body));
 };
@@ -222,8 +235,7 @@ async function handleAdmin(req: VercelRequest, res: VercelResponse, action?: str
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) return json(res, 401, { error: 'Invalid token' });
 
-  const isRequestingUserAdmin = user.user_metadata?.is_admin || (ADMIN_EMAIL && user.email === ADMIN_EMAIL);
-  if (!isRequestingUserAdmin) return json(res, 403, { error: 'Forbidden' });
+  if (!isAdminUser(user)) return json(res, 403, { error: 'Forbidden' });
 
   switch (action) {
     case 'list':
@@ -232,8 +244,8 @@ async function handleAdmin(req: VercelRequest, res: VercelResponse, action?: str
         id: u.id,
         email: u.email,
         name: u.user_metadata?.full_name || u.email?.split('@')[0],
-        isAdmin: u.user_metadata?.is_admin || (ADMIN_EMAIL && u.email === ADMIN_EMAIL),
-        role: u.user_metadata?.role || (ADMIN_EMAIL && u.email === ADMIN_EMAIL ? 'owner' : 'user'),
+        isAdmin: isAdminUser(u),
+        role: u.app_metadata?.role || (ADMIN_EMAIL && u.email === ADMIN_EMAIL ? 'owner' : 'user'),
         avatar: u.user_metadata?.avatar_url,
         lastSignIn: u.last_sign_in_at,
         created: u.created_at,
@@ -249,11 +261,16 @@ async function handleAdmin(req: VercelRequest, res: VercelResponse, action?: str
       const { data: targetUser } = await supabase.auth.admin.getUserById(targetUserId);
       if (!targetUser?.user) return json(res, 404, { error: 'User not found' });
 
-      const oldRole = targetUser.user.user_metadata?.role || 'user';
+      const oldRole = targetUser.user.app_metadata?.role || 'user';
       await supabase.auth.admin.updateUserById(targetUserId, {
+        // app_metadata is the authorization source of truth (service-role only).
+        app_metadata: {
+          ...targetUser.user.app_metadata,
+          role: makeAdmin ? 'admin' : 'user'
+        },
+        // user_metadata mirrors role for UI display only — never read for authz.
         user_metadata: {
           ...targetUser.user.user_metadata,
-          is_admin: makeAdmin,
           role: makeAdmin ? 'admin' : 'user'
         }
       });
@@ -309,12 +326,17 @@ async function handleAdminUtility(req: VercelRequest, res: VercelResponse, supab
       if (!userData?.user) return json(res, 404, { error: 'User not found' });
       if (userData.user.email === ADMIN_EMAIL) return json(res, 403, { error: 'Cannot change owner' });
 
-      const oldRole = userData.user.user_metadata?.role || 'user';
+      const oldRole = userData.user.app_metadata?.role || 'user';
       await supabase.auth.admin.updateUserById(targetUserId, {
+        // app_metadata is the authorization source of truth (service-role only).
+        app_metadata: {
+          ...userData.user.app_metadata,
+          role: role || 'user'
+        },
+        // user_metadata mirrors role for UI display only — never read for authz.
         user_metadata: {
           ...userData.user.user_metadata,
-          role: role || 'user',
-          is_admin: role === 'owner' || role === 'ceo' || role === 'admin'
+          role: role || 'user'
         }
       });
 
@@ -367,10 +389,13 @@ async function handleAdminUtility(req: VercelRequest, res: VercelResponse, supab
         email,
         password,
         email_confirm: true,
+        // app_metadata is the authorization source of truth (service-role only).
+        app_metadata: {
+          role: role || 'user',
+        },
         user_metadata: {
           full_name: email.split('@')[0],
-          is_admin: makeAdmin || role === 'owner' || role === 'ceo' || role === 'admin',
-          role: role,
+          role: role || 'user',
           plan: 'Starter',
           subscription_status: 'none',
           joined_date: Date.now().toString()
@@ -657,8 +682,7 @@ async function handleCoupons(req: VercelRequest, res: VercelResponse, action?: s
   const { data: { user } } = await supabase.auth.getUser(token);
   if (!user) return json(res, 401, { error: 'Invalid token' });
 
-  const isAdmin = user.user_metadata?.is_admin || (ADMIN_EMAIL && user.email === ADMIN_EMAIL);
-  if (!isAdmin) return json(res, 403, { error: 'Forbidden' });
+  if (!isAdminUser(user)) return json(res, 403, { error: 'Forbidden' });
 
   switch (action) {
     case 'list': {
@@ -1256,8 +1280,7 @@ async function handleAudit(req: VercelRequest, res: VercelResponse, action?: str
   const { data: { user } } = await supabase.auth.getUser(token);
   if (!user) return json(res, 401, { error: 'Invalid token' });
 
-  const isAdmin = user.user_metadata?.is_admin || (ADMIN_EMAIL && user.email === ADMIN_EMAIL);
-  if (!isAdmin) return json(res, 403, { error: 'Forbidden' });
+  if (!isAdminUser(user)) return json(res, 403, { error: 'Forbidden' });
 
   switch (action) {
     case 'list': {
@@ -1390,10 +1413,15 @@ async function handleAdminBulk(req: VercelRequest, res: VercelResponse, supabase
             continue;
           }
           await supabase.auth.admin.updateUserById(uid, {
+            // app_metadata is the authorization source of truth (service-role only).
+            app_metadata: {
+              ...userData.user.app_metadata,
+              role,
+            },
+            // user_metadata mirrors role for UI display only — never read for authz.
             user_metadata: {
               ...userData.user.user_metadata,
               role,
-              is_admin: role === 'admin',
             },
           });
           results.success.push(uid);

@@ -137,11 +137,10 @@ npm run type-check       # TypeScript check
 ## 📦 Recent Changes (August 5, 2026)
 
 ### **Bundle Optimization**
-- Removed 54 packages (~700KB saved)
-- GSAP, @gsap/react, animejs → Framer Motion only
-- @mlc-ai/web-llm, three.js, lottie-react removed
 - AuraSans font optimized (WOFF2 only, no italics)
-- **Result:** Bundle 2.5MB → 1.8MB (28% reduction)
+- GSAP, animejs, @mlc-ai/web-llm, lottie-react still installed and in active use (used for landing animations, scroll effects, audio visualization, and Lottie graphics)
+- Framer Motion used for UI transitions; GSAP/animejs used for complex sequenced animations
+- **Note:** Prior claims of 54-package removal and 28% bundle reduction were inaccurate — these libraries remain in active use
 
 ### **Positioning Defined**
 - Target audience: Audio learners, commuters, multitaskers
@@ -159,8 +158,8 @@ npm run type-check       # TypeScript check
 
 ### **Must Have (Launch)**
 1. ✅ FSRS v5 flashcard study mode
-2. 🔨 Voice Q&A mode (TTS + STT)
-3. 🔨 Audio upload → flashcard generation
+2. ✅ Voice Q&A mode (TTS + STT) — fully wired, unit-tested (36/36), needs browser smoke test
+3. ✅ Audio upload → flashcard generation — wired, unit-tested, needs browser smoke test
 4. ✅ Basic deck management
 5. ✅ Stripe billing (Free + Pro tiers)
 
