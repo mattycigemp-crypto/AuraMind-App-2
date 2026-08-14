@@ -1,0 +1,23 @@
+# Gemfile — iOS / Capacitor release pipeline for AuraMind (a CogniVect, Inc product).
+#
+# Pinned versions match the GitHub Actions runner (macos-14 image, Ruby 3.2).
+# Bump with `bundle update fastlane` on the same Ruby version, then commit the
+# matching Gemfile.lock so the bundler-cache action can warm-cache installs.
+#
+# fastlane is the iOS build/signing/upload orchestrator. cocoapods pulls
+# dependency pods when `npx cap sync ios` regenerates the workspace.
+
+source "https://rubygems.org"
+
+ruby ">= 3.2.0"
+
+# Fastlane family — match + supply + screengrab are sub-actions but live in
+# the same gem; pinning the umbrella pins them all.
+gem "fastlane", "~> 2.226"
+
+# CocoaPods 1.16+ supports the Xcode 16 SDK that CI installs (`setup-xcode`
+# action with xcode-version: '16.0').
+gem "cocoapods", "~> 1.16"
+
+# Ed25519 is fastlane's signing-crypto backend for the `match` subcommand.
+gem "ed25519", "~> 1.3"
