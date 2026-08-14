@@ -138,13 +138,13 @@ export const DashboardWorkspaceProvider: React.FC<DashboardWorkspaceProviderProp
     if (decks.length === 0) return;
     const now = Date.now();
     const deckWithDue = decks.find((d) =>
-      cards.some((c) => c.deckId === d.id && c.nextReview <= now)
+      cards.some((c) => c.deckId === d.id && (c.nextReview ?? 0) <= now)
     );
     const pick = deckWithDue ?? decks[0];
     analyticsService.trackCoreAction('study_session', { source: 'quick_study', deckId: pick.id });
     analyticsService.trackHeart('task_success', 'start_quick_study', {
       deckId: pick.id,
-      dueCount: cards.filter((c) => c.deckId === pick.id && c.nextReview <= now).length,
+      dueCount: cards.filter((c) => c.deckId === pick.id && (c.nextReview ?? 0) <= now).length,
     });
     navigate(`/dashboard/study/${pick.id}`);
   }, [decks, cards, navigate]);
