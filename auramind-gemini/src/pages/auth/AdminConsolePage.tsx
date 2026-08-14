@@ -893,23 +893,40 @@ export default function AdminConsolePage() {
             <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
               <h3 className="text-[#F0EFFE] text-sm font-medium mb-4">Environment</h3>
               <div className="grid grid-cols-2 gap-4 text-xs">
-                {[
-                  ['Supabase URL', import.meta.env.VITE_SUPABASE_URL ? '✓ Configured' : '✗ Missing'],
-                  ['Groq API Key', import.meta.env.VITE_GROQ_API_KEY ? '✓ Configured' : '✗ Missing'],
-                  ['Stripe Publishable Key', import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ? '✓ Configured' : '✗ Missing'],
-                  ['Resend API Key', import.meta.env.RESEND_API_KEY ? '✓ Configured' : '✗ Missing'],
-                  ['PostHog Key', import.meta.env.VITE_POSTHOG_KEY ? '✓ Configured' : '✗ Missing'],
-                  ['App Version', import.meta.env.VITE_APP_VERSION || '0.0.0-dev'],
-                  ['Build Time', import.meta.env.VITE_BUILD_TIME || 'unknown'],
-                  ['Git Commit', import.meta.env.VITE_GIT_COMMIT || 'unknown'],
-                ].map(([label, value]) => (
-                  <div key={label} className="flex items-center justify-between p-2 rounded-lg bg-[#1A1A24]">
-                    <span className="text-[#5A5A72]">{label}</span>
-                    <span className={`font-mono text-[10px] ${String(value).includes('✓') ? 'text-emerald-400' : String(value).includes('✗') ? 'text-red-400' : 'text-[#F0EFFE]'}`}>
-                      {value}
-                    </span>
-                  </div>
-                ))}
+                {/*
+                  `configured` is a tri-state rather than a string the render
+                  greps for a ✓ in. The previous version encoded status inside
+                  the display text, so styling depended on substring matching
+                  a glyph — brittle, and untranslatable.
+                */}
+                {([
+                  { label: 'Supabase URL', configured: !!import.meta.env.VITE_SUPABASE_URL },
+                  { label: 'Groq API Key', configured: !!import.meta.env.VITE_GROQ_API_KEY },
+                  { label: 'Stripe Publishable Key', configured: !!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY },
+                  { label: 'Resend API Key', configured: !!import.meta.env.RESEND_API_KEY },
+                  { label: 'PostHog Key', configured: !!import.meta.env.VITE_POSTHOG_KEY },
+                  { label: 'App Version', value: import.meta.env.VITE_APP_VERSION || '0.0.0-dev' },
+                  { label: 'Build Time', value: import.meta.env.VITE_BUILD_TIME || 'unknown' },
+                  { label: 'Git Commit', value: import.meta.env.VITE_GIT_COMMIT || 'unknown' },
+                ] as { label: string; configured?: boolean; value?: string }[]).map(
+                  ({ label, configured, value }) => (
+                    <div key={label} className="flex items-center justify-between p-2 rounded-lg bg-[#1A1A24]">
+                      <span className="text-[#5A5A72]">{label}</span>
+                      {configured === undefined ? (
+                        <span className="font-mono text-[10px] text-[#F0EFFE]">{value}</span>
+                      ) : (
+                        <span
+                          className={`font-mono text-[10px] inline-flex items-center gap-1 ${
+                            configured ? 'text-emerald-400' : 'text-red-400'
+                          }`}
+                        >
+                          {configured ? <Check size={11} aria-hidden /> : <X size={11} aria-hidden />}
+                          {configured ? 'Configured' : 'Missing'}
+                        </span>
+                      )}
+                    </div>
+                  ),
+                )}
               </div>
             </div>
           </div>
