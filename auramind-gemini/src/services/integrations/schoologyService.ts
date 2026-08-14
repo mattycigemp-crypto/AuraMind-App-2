@@ -320,15 +320,15 @@ class SchoologyService {
   // Store credentials securely
   private async saveCredentials(): Promise<void> {
     try {
-      const { supabase } = await import('../database/supabase');
-      const { data: { user } } = await supabase.auth.getUser();
+      const { requireSupabase } = await import('../database/supabase');
+      const { data: { user } } = await requireSupabase().auth.getUser();
       
       if (!user) return;
 
       const metadata = user.user_metadata || {};
       const integrations = metadata.integrations || {};
 
-      await supabase.auth.updateUser({
+      await requireSupabase().auth.updateUser({
         data: {
           user_metadata: {
             ...metadata,
@@ -353,8 +353,8 @@ class SchoologyService {
   // Load stored credentials
   private async loadStoredCredentials(): Promise<SchoologyCredentials | null> {
     try {
-      const { supabase } = await import('../database/supabase');
-      const { data: { user } } = await supabase.auth.getUser();
+      const { requireSupabase } = await import('../database/supabase');
+      const { data: { user } } = await requireSupabase().auth.getUser();
       
       if (!user) return null;
 
@@ -378,15 +378,15 @@ class SchoologyService {
   // Disconnect from Schoology
   async disconnect(): Promise<void> {
     try {
-      const { supabase } = await import('../database/supabase');
-      const { data: { user } } = await supabase.auth.getUser();
+      const { requireSupabase } = await import('../database/supabase');
+      const { data: { user } } = await requireSupabase().auth.getUser();
       
       if (!user) return;
 
       const metadata = user.user_metadata || {};
       const integrations = metadata.integrations || {};
 
-      await supabase.auth.updateUser({
+      await requireSupabase().auth.updateUser({
         data: {
           user_metadata: {
             ...metadata,

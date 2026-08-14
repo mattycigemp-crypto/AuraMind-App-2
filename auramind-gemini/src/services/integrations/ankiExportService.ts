@@ -17,8 +17,8 @@
 import { Card, Deck } from '../../types';
 
 // Anki card model IDs
-const ANKI_MODEL_BASIC = 1;
-const ANKI_MODEL_CLOZE = 2;
+const _ANKI_MODEL_BASIC = 1;
+const _ANKI_MODEL_CLOZE = 2;
 
 // Anki field separator (Unit Separator character)
 const FIELD_SEPARATOR = '\x1f';
@@ -186,7 +186,7 @@ async function generateAnkiDatabase(
       : [];
     
     // Add FSRS/SM-2 data as tags if enabled
-    if (options.includeSRSData && card.interval > 0) {
+    if (options.includeSRSData && (card.interval ?? 0) > 0) {
       tags.push(`interval:${card.interval}`);
       tags.push(`ease:${Math.round((card.easeFactor || 2.5) * 100)}`);
       tags.push(`reps:${card.repetition || 0}`);
@@ -228,7 +228,7 @@ async function generateAnkiDatabase(
       let interval = 0;
       let easeFactor = 2500; // Anki uses ease * 1000
       let reps = 0;
-      let lapses = 0;
+      const lapses = 0;
       
       if (options.includeSRSData) {
         interval = card.interval || 0;
@@ -284,7 +284,7 @@ async function generateAnkiDatabase(
   const buffer = db.export();
   db.close();
   
-  return buffer.buffer;
+  return buffer.buffer as ArrayBuffer;
 }
 
 /**
@@ -693,7 +693,7 @@ export async function exportDecksToAnki(
   db.close();
   
   const zip = new JSZip();
-  zip.file('collection.anki21', buffer.buffer);
+  zip.file('collection.anki21', buffer.buffer as ArrayBuffer);
   zip.file('media', '{}');
   
   return zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });

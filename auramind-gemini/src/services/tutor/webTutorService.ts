@@ -1,5 +1,4 @@
 // Enhanced AI tutor service that can explain concepts from web sources
-import { StudyBuddyResponse } from '../../services/api/groqService';
 import { webSearchService } from '../search/webSearchService';
 import { webQuizService } from '../quiz/webQuizService';
 
@@ -74,7 +73,7 @@ export class WebTutorService {
       );
 
       // Generate related quiz questions
-      const quiz = await webQuizService.generateQuizFromWeb({
+      const _quiz = await webQuizService.generateQuizFromWeb({
         topic: options.concept,
         difficulty: options.detailLevel === 'advanced' ? 'hard' : 
                   options.detailLevel === 'intermediate' ? 'medium' : 'easy',
@@ -92,7 +91,7 @@ export class WebTutorService {
       };
     } catch (error) {
       console.error('Failed to explain concept from web:', error);
-      throw new Error(`Could not explain concept: ${error.message}`);
+      throw new Error(`Could not explain concept: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
     }
   }
 
@@ -106,7 +105,7 @@ export class WebTutorService {
   ): Promise<Omit<WebTutorResponse, 'sources' | 'suggestedResources'>> {
     try {
       // Use the deepseek service to generate a comprehensive explanation
-      const prompt = `You are an expert tutor explaining the concept: "${concept}".
+      const _prompt = `You are an expert tutor explaining the concept: "${concept}".
 
 Use the following web search results as your primary sources:
 ${webContent}
@@ -240,7 +239,7 @@ Respond with ONLY a valid JSON object. No conversational text, no markdown code 
   /**
    * Generate analogies for a concept
    */
-  private generateAnalogies(concept: string, content: string): string[] {
+  private generateAnalogies(concept: string, _content: string): string[] {
     // Simple analogy generation - in production would use more sophisticated methods
     const analogies = [
       `${concept} is like a tool in a toolbox - you use it when you need to solve specific problems`,
@@ -256,7 +255,7 @@ Respond with ONLY a valid JSON object. No conversational text, no markdown code 
    */
   private extractRelatedConcepts(content: string): string[] {
     const related: string[] = [];
-    const words = content.toLowerCase().split(/\s+/);
+    const _words = content.toLowerCase().split(/\s+/);
     
     // Look for capitalized phrases that might be concepts
     const potentialConcepts = content.match(/[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*/g) || [];
@@ -274,7 +273,7 @@ Respond with ONLY a valid JSON object. No conversational text, no markdown code 
   /**
    * Generate follow-up questions
    */
-  private generateFollowUpQuestions(concept: string, content: string): string[] {
+  private generateFollowUpQuestions(concept: string, _content: string): string[] {
     return [
       `How does ${concept} apply in real-world situations?`,
       `What are the limitations or criticisms of ${concept}?`,

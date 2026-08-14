@@ -22,7 +22,7 @@ interface SyncQueueItem {
   retryCount: number;
 }
 
-interface OfflineDB {
+interface _OfflineDB {
   decks: IDBObjectStore;
   cards: IDBObjectStore;
   syncQueue: IDBObjectStore;
@@ -137,7 +137,7 @@ export async function getCachedCards(deckId: string): Promise<Card[]> {
 export async function getDueCardsOffline(deckId: string): Promise<Card[]> {
   const cards = await getCachedCards(deckId);
   const now = Date.now();
-  return cards.filter(card => card.nextReview <= now);
+  return cards.filter(card => (card.nextReview ?? 0) <= now);
 }
 
 /**

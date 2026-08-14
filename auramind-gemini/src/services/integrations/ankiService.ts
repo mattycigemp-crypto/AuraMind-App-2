@@ -4,15 +4,15 @@
 class AnkiService {
   async updateAnkiImportStats(cardCount: number): Promise<void> {
     try {
-      const { supabase } = await import('../database/supabase');
-      const { data: { user } } = await supabase.auth.getUser();
+      const { requireSupabase } = await import('../database/supabase');
+      const { data: { user } } = await requireSupabase().auth.getUser();
       
       if (!user) return;
 
       const metadata = user.user_metadata || {};
       const integrations = metadata.integrations || {};
 
-      await supabase.auth.updateUser({
+      await requireSupabase().auth.updateUser({
         data: {
           user_metadata: {
             ...metadata,
@@ -34,8 +34,8 @@ class AnkiService {
 
   async getImportStats() {
     try {
-      const { supabase } = await import('../database/supabase');
-      const { data: { user } } = await supabase.auth.getUser();
+      const { requireSupabase } = await import('../database/supabase');
+      const { data: { user } } = await requireSupabase().auth.getUser();
       
       if (!user) {
         return {

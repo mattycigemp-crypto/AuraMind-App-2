@@ -22,6 +22,27 @@ interface NotionBlock {
   children?: NotionBlock[];
 }
 
+/**
+ * Shape of a single value in a Notion page's `properties` bag.
+ *
+ * The Notion API returns a discriminated union keyed by property type
+ * ("rich_text", "select", …). We only read a handful of those types, so
+ * this models them structurally rather than enumerating all ~20. Every
+ * field is optional because which one is present depends on the
+ * property's configured type in the source database.
+ */
+interface NotionPropertyValue {
+  title?: Array<{ plain_text?: string }>;
+  rich_text?: Array<{ plain_text?: string }>;
+  number?: number | null;
+  select?: { name?: string } | null;
+  multi_select?: Array<{ name?: string }>;
+  date?: { start?: string } | null;
+  checkbox?: boolean;
+}
+
+type NotionProperties = Record<string, NotionPropertyValue | undefined>;
+
 class NotionService {
   private baseUrl = 'https://api.notion.com/v1';
   private accessToken: string | null = null;
@@ -135,23 +156,43 @@ class NotionService {
     }
 
     // Extract other text properties
-    for (const [key, value] of Object.entries(page.properties)) {
+    for (const [key, value] of Object.entries(page.properties as NotionProperties)) {
       if (key === 'title' || key === 'Name') continue;
-      
-      if (value && typeof value === 'object') {
-        const type = Object.keys(value)[0];
-        if (type === 'rich_text' && value[type]?.[0]?.plain_text) {
-          content += `${value[type][0].plain_text}\n\n`;
-        } else if (type === 'number' && value[type] !== null) {
-          content += `${value[type]}\n\n`;
-        } else if (type === 'select' && value[type]?.name) {
-          content += `${value[type].name}\n\n`;
-        } else if (type === 'multi_select' && value[type]?.length > 0) {
-          content += value[type].map((item: any) => item.name).join(', ') + '\n\n';
-        } else if (type === 'date' && value[type]?.start) {
-          content += `${value[type].start}\n\n`;
-        } else if (type === 'checkbox') {
-          content += `${value[type] ? '✓' : '✗'}\n\n`;
+      if (!value || typeof value !== 'object') continue;
+
+      // The first key identifies which member of the union this is.
+      // Switching on it lets TypeScript narrow to the matching field
+      // instead of indexing the object with a dynamic string.
+      switch (Object.keys(value)[0]) {
+        case 'rich_text': {
+          const text = value.rich_text?.[0]?.plain_text;
+          if (text) content += `${text}\n\n`;
+          break;
+        }
+        case 'number': {
+          if (value.number !== null && value.number !== undefined) {
+            content += `${value.number}\n\n`;
+          }
+          break;
+        }
+        case 'select': {
+          if (value.select?.name) content += `${value.select.name}\n\n`;
+          break;
+        }
+        case 'multi_select': {
+          const items = value.multi_select;
+          if (items && items.length > 0) {
+            content += items.map((item) => item.name).join(', ') + '\n\n';
+          }
+          break;
+        }
+        case 'date': {
+          if (value.date?.start) content += `${value.date.start}\n\n`;
+          break;
+        }
+        case 'checkbox': {
+          content += `${value.checkbox ? '✓' : '✗'}\n\n`;
+          break;
         }
       }
     }

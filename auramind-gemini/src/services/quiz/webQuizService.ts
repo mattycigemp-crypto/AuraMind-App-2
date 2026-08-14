@@ -55,7 +55,7 @@ export class WebQuizService {
       return quiz;
     } catch (error) {
       console.error('Failed to generate quiz from web:', error);
-      throw new Error(`Could not generate quiz: ${error.message}`);
+      throw new Error(`Could not generate quiz: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
     }
   }
 
@@ -90,7 +90,7 @@ export class WebQuizService {
       return [quiz];
     } catch (error) {
       console.error('Failed to generate adaptive quiz set:', error);
-      throw new Error('Could not generate adaptive quiz set');
+      throw new Error('Could not generate adaptive quiz set', { cause: error });
     }
   }
 

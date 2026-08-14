@@ -97,7 +97,7 @@ export async function browseMarketplace(filters: MarketplaceFilters = {}): Promi
     // user_profiles has `full_name` (and no `name`/`avatar_url` columns on the
     // base Row type), so request exactly those.
     const userIds = data.map(d => d.user_id).filter(Boolean);
-    let profileMap: Record<string, { full_name: string }> = {};
+    const profileMap: Record<string, { full_name: string }> = {};
     if (userIds.length > 0) {
       const { data: profiles } = await supabase
         .from('user_profiles')

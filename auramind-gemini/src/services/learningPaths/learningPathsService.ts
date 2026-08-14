@@ -1,4 +1,5 @@
 import { supabase } from '../database/supabase';
+import { requireSupabase } from '../database/supabase';
 import { learningPathsData, CourseModule } from '../../data/learningPathsData';
 
 export interface LearningPath {
@@ -38,7 +39,7 @@ function loadEnrollments(): Map<string, number> {
     if (stored) {
       (JSON.parse(stored) as [string, number][]).forEach(([k, v]) => m.set(k, v));
     }
-  } catch {}
+  } catch { /* intentionally ignored */ }
   return m;
 }
 
@@ -72,7 +73,7 @@ class LearningPathsService {
 
     if (userId) {
       try {
-        const { data } = await supabase
+        const { data } = await requireSupabase()
           .from('learning_path_enrollments')
           .select('learning_path_id, progress')
           .eq('user_id', userId);
@@ -83,7 +84,7 @@ class LearningPathsService {
             if (local) enrollments.set(local.id, e.progress);
           });
         }
-      } catch {}
+      } catch { /* intentionally ignored */ }
     }
 
     localStorage.setItem('learning_path_enrollments', JSON.stringify(Array.from(enrollments.entries())));
@@ -98,13 +99,13 @@ class LearningPathsService {
 
     if (userId && supabase) {
       try {
-        await supabase.from('learning_path_enrollments').insert({
+        await requireSupabase().from('learning_path_enrollments').insert({
           user_id: userId,
           learning_path_id: stringToUuid(pathId),
           progress: 0,
           enrolled_at: new Date().toISOString(),
         });
-      } catch {}
+      } catch { /* intentionally ignored */ }
     }
 
     return true;
@@ -117,8 +118,8 @@ class LearningPathsService {
 
     if (userId && supabase) {
       try {
-        await supabase.from('learning_path_enrollments').update({ progress }).eq('user_id', userId).eq('learning_path_id', stringToUuid(pathId));
-      } catch {}
+        await requireSupabase().from('learning_path_enrollments').update({ progress }).eq('user_id', userId).eq('learning_path_id', stringToUuid(pathId));
+      } catch { /* intentionally ignored */ }
     }
 
     return true;

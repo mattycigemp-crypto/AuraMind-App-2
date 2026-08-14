@@ -24,7 +24,7 @@ export const extractTextFromPdf = async (file: File): Promise<string> => {
         return fullText;
     } catch (error) {
         console.error('Error extracting PDF text:', error);
-        throw new Error('Failed to extract text from PDF');
+        throw new Error('Failed to extract text from PDF', { cause: error });
     }
 };
 
