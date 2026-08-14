@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 
 interface FloatingSelectProps {
   label: string;
@@ -45,7 +45,7 @@ const FloatingSelect: React.FC<FloatingSelectProps> = ({
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
-  const toggleOpen = () => setIsOpen(!isOpen);
+  const _toggleOpen = () => setIsOpen(!isOpen);
 
   // Filter options based on search term
   const filteredOptions = searchable 

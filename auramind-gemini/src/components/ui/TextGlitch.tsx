@@ -12,7 +12,7 @@ interface TextGlitchProps {
 }
 
 const GLITCH_CHARS = "!@#$%^&*()_+-=[]{}|;:,.<>?/~`";
-const NUM_LAYERS = 3;
+const _NUM_LAYERS = 3;
 
 export function TextGlitch({
   text,
@@ -37,7 +37,7 @@ export function TextGlitch({
       setGlitchText(
         text
           .split("")
-          .map((char, i) => {
+          .map((char, _i) => {
             if (char === " ") return " ";
             if (Math.random() < 0.3 * (1 - iteration / maxIterations)) {
               return GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];

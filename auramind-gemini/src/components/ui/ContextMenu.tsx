@@ -1,19 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  CopyIcon as Copy, 
-  EditIcon as Edit, 
-  Trash2Icon as Trash2, 
-  ShareIcon as Share, 
-  DownloadIcon as Download, 
-  StarIcon as Star, 
-  ArchiveIcon as Archive,
-  MoreHorizontalIcon as MoreHorizontal,
-  EyeIcon as Eye,
-  EyeOffIcon as EyeOff,
-  LockIcon as Lock,
-  UnlockIcon as Unlock
-} from '../icons/CustomIcons';
+
+
 
 export interface ContextMenuItem {
   id: string;

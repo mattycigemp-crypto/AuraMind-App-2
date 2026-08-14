@@ -5,7 +5,7 @@ import {
   Variants,
   type DOMMotionComponents,
   type MotionProps,
-} from "motion/react"
+} from 'framer-motion'
 
 import { cn } from "@/lib/utils"
 
@@ -343,7 +343,7 @@ const TextAnimateBase = ({
 }: TextAnimateProps) => {
   const MotionComponent = motionElements[Component]
 
-  let segments: string[] = []
+  let segments: string[]
   switch (by) {
     case "word":
       segments = children.split(/(\s+)/)

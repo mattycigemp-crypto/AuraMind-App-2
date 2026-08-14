@@ -12,7 +12,7 @@ export function ShineBorder({
   children,
   className,
   shineColor = "rgba(124, 58, 237, 0.5)",
-  borderWidth = 1,
+  borderWidth: _borderWidth = 1,
   duration = 3,
 }: ShineBorderProps) {
   return (

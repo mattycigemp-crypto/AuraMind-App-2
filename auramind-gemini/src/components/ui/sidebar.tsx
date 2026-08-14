@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
-import { PanelLeftIcon as PanelLeft, SearchIcon as Search, MoreHorizontalIcon as MoreHorizontal, SettingsIcon as Settings, UserIcon as User, LogOutIcon as LogOut, HomeIcon as Home, BookOpenIcon as BookOpen, BarChart3Icon as BarChart3, TrophyIcon as Trophy, TargetIcon as Target, CalendarIcon as Calendar, FileTextIcon as FileText, UsersIcon as Users, MessageSquareIcon as MessageSquare, BellIcon as Bell, ChevronLeftIcon as ChevronLeft, ChevronRightIcon as ChevronRight } from "../icons/CustomIcons";
+import { PanelLeftIcon as PanelLeft } from "../icons/CustomIcons";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";

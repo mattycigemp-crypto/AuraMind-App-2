@@ -43,7 +43,7 @@ const FloatingTextArea: React.FC<FloatingTextAreaProps> = ({
   };
 
   const hasValue = value.length > 0;
-  const isValid = !error && (success || !required || hasValue);
+  const _isValid = !error && (success || !required || hasValue);
   const currentLength = value.length;
 
   return (

@@ -49,7 +49,7 @@ const Pagination: React.FC<PaginationProps> = ({
         </svg>
       </button>
 
-      {pages.map((page, index) => {
+      {pages.map((page, _index) => {
         // First page (always visible)
         if (page === 1) {
           return (

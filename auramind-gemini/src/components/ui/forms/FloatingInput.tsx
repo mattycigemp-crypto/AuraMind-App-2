@@ -54,7 +54,7 @@ const FloatingInput: React.FC<FloatingInputProps> = ({
   const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   const hasValue = value.length > 0;
-  const isValid = !error && (success || !required || hasValue);
+  const _isValid = !error && (success || !required || hasValue);
   const inputType = type === 'password' && showPasswordToggle ? (showPassword ? 'text' : 'password') : type;
 
   return (

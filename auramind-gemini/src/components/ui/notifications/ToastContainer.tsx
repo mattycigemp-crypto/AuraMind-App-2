@@ -139,7 +139,7 @@ const ToastContainer: React.FC<ToastContainerProps> = ({
     action?: { label: string; onClick: () => void };
   }>>([]);
 
-  const addToast = (toast: Omit<ToastProps, 'id' | 'onClose'>) => {
+  const _addToast = (toast: Omit<ToastProps, 'id' | 'onClose'>) => {
     const id = Math.random().toString(36).substr(2, 9);
     const newToast = {
       id,
@@ -180,7 +180,7 @@ const ToastContainer: React.FC<ToastContainerProps> = ({
           description={toast.description}
           variant={toast.variant}
           duration={toast.duration}
-          onClose={toast.onClose}
+          onClose={toast.onClose ?? (() => {})}
           action={toast.action}
         />
       ))}
