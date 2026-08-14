@@ -1,9 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSourceDocuments } from '../../contexts/SourceDocumentsContext';
-import { SourceDocument } from '../../types';
 import {
-  FileTextIcon as FileText, XIcon as X, PlusIcon as Plus,
+  FileTextIcon as FileText, PlusIcon as Plus,
   CheckCircle2Icon as CheckCircle, AlertCircleIcon as AlertCircle,
   Loader2Icon as Loader2, BookOpenIcon as BookOpen,
   SparklesIcon as Sparkles,

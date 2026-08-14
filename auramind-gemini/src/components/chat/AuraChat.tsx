@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { auraAiClient, STUDY_AGENT_SYSTEM_PROMPT } from '../../services/api/auraAiService';
-import { ChevronLeftIcon as ChevronLeft, BotIcon as Bot, MusicIcon as Music, XIcon as X, SendIcon as Send, SparklesIcon as Sparkles, BrainCircuitIcon as BrainCircuit, HistoryIcon as History, TargetIcon as Target, CpuIcon as Cpu, ActivityIcon as Activity, GlobeIcon as Globe } from '../icons/CustomIcons';
+import { ChevronLeftIcon as ChevronLeft, BotIcon as Bot, MusicIcon as Music, SendIcon as Send, SparklesIcon as Sparkles, BrainCircuitIcon as BrainCircuit, HistoryIcon as History, TargetIcon as Target, CpuIcon as Cpu, ActivityIcon as Activity, GlobeIcon as Globe } from '../icons/CustomIcons';
 import { StudyToolAction, ChatMessage, Quiz, FlashcardData, Deck, Card, Presentation } from '../../types';
 import ChatQuiz from './ChatQuiz';
 import ChatFlashcardPreview from './ChatFlashcardPreview';
 import ChatPresentation from './ChatPresentation';
-import { getInitialCardState } from '../../services/study/srs';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface Message {
+interface _Message {
   role: 'user' | 'assistant';
   content: string;
 }
@@ -19,11 +18,11 @@ interface AuraChatProps {
   onCreateCard?: (card: Omit<Card, 'id'>) => void;
 }
 
-const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard }) => {
+const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck: _onCreateDeck, onCreateCard: _onCreateCard }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [expandedThinking, setExpandedThinking] = useState<Record<string, boolean>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -48,7 +47,7 @@ const AuraChat: React.FC<AuraChatProps> = ({ onBack, onCreateDeck, onCreateCard 
           } as StudyToolAction;
         }
       }
-    } catch (e) {}
+    } catch (_e) { /* intentionally ignored */ }
     return null;
   };
 
@@ -331,10 +330,10 @@ onClick={onBack}
                         {isToolMessage && message.toolAction && (
                           <div className="mt-8 space-y-8 animate-fade-in-up">
                             {message.toolAction.tool === 'generate_quiz' && (
-                              <ChatQuiz quiz={message.toolAction.data as Quiz} onComplete={(s, t) => {}} />
+                              <ChatQuiz quiz={message.toolAction.data as Quiz} onComplete={(_s, _t) => {}} />
                             )}
                             {message.toolAction.tool === 'generate_flashcards' && (
-                              <ChatFlashcardPreview cards={message.toolAction.data.cards as FlashcardData[]} onSaveCards={(c, d) => {}} />
+                              <ChatFlashcardPreview cards={message.toolAction.data.cards as FlashcardData[]} onSaveCards={(_c, _d) => {}} />
                             )}
                             {message.toolAction.tool === 'generate_presentation' && (
                               <ChatPresentation presentation={message.toolAction.data as Presentation} />

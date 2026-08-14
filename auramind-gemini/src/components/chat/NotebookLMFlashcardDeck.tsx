@@ -2,12 +2,11 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { SourceGroundedCard } from '../../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  EyeIcon as Eye, EyeOffIcon as EyeOff,
-  PlusIcon as Plus, FolderOpenIcon as FolderOpen,
+  EyeIcon as Eye, EyeOffIcon as EyeOff, FolderOpenIcon as FolderOpen,
   ShuffleIcon as Shuffle, Trash2Icon as Trash2,
   CheckCircle2Icon as CheckCircle, XCircleIcon as XCircle,
   ChevronLeftIcon as ChevronLeft, ChevronRightIcon as ChevronRight,
-  RotateCcwIcon as RotateCcw, SparklesIcon as Sparkles,
+  RotateCcwIcon as RotateCcw,
   BookOpenIcon as BookOpen, FileTextIcon as FileText
 } from '../icons/CustomIcons';
 

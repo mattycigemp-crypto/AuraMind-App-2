@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Quiz, QuizQuestion } from '../../types';
+import { Quiz } from '../../types';
 import { CheckCircleIcon as CheckCircle, XCircleIcon as XCircle, RotateCcwIcon as RotateCcw } from '../icons/CustomIcons';
 import MathRichText from '../shared/MathRichText';
 

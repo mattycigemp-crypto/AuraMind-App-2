@@ -1,11 +1,10 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { SourceGroundedQuestion } from '../../types';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   CheckCircle2Icon as CheckCircle, XCircleIcon as XCircle,
   RotateCcwIcon as RotateCcw, ShuffleIcon as Shuffle,
-  BookOpenIcon as BookOpen, TargetIcon as Target,
-  ChevronLeftIcon as ChevronLeft, ChevronRightIcon as ChevronRight,
+  BookOpenIcon as BookOpen, TargetIcon as Target, ChevronRightIcon as ChevronRight,
   FileTextIcon as FileText, SparklesIcon as Sparkles
 } from '../icons/CustomIcons';
 
@@ -18,7 +17,7 @@ interface NotebookLMQuizProps {
 type MasteryLevel = 'unanswered' | 'correct' | 'incorrect';
 
 const NotebookLMQuiz: React.FC<NotebookLMQuizProps> = ({ title, questions: initialQuestions, onComplete }) => {
-  const [questions, setQuestions] = useState(initialQuestions);
+  const [questions, _setQuestions] = useState(initialQuestions);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
   const [submittedQuestions, setSubmittedQuestions] = useState<Record<number, boolean>>({});
   const [mastery, setMastery] = useState<Record<number, MasteryLevel>>({});

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
-import { supabase } from '../../services/database/supabase';
+import { requireSupabase } from '../../services/database/supabase';
 
 const SSE_BASE = import.meta.env.VITE_SSE_BASE || 'http://localhost:3001';
 
@@ -65,7 +65,7 @@ function ChatInterface({ className }: ChatInterfaceProps) {
     setError(null);
     setIsStreaming(true);
 
-    const session = await supabase.auth.getSession();
+    const session = await requireSupabase().auth.getSession();
     const token = session?.data?.session?.access_token;
     const url = `${SSE_BASE}/api/chat/stream?message=${encodeURIComponent(message)}${token ? `&token=${encodeURIComponent(token)}` : ''}`;
     const es = new EventSource(url);
