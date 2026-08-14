@@ -6,10 +6,15 @@ import { createClient } from '@supabase/supabase-js';
 dotenv.config({ path: path.resolve(process.cwd(), '..', '.env') });
 
 import { dbService } from '../services/database/dbService';
-import { supabase } from '../services/database/supabase';
+import { requireSupabase } from '../services/database/supabase';
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const url = import.meta.env.VITE_SUPABASE_URL ?? '';
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+
+// These are integration tests against a real project. Without admin
+// credentials they cannot run, so skip rather than fail: CI has no
+// service-role key and createClient('', '') throws at import.
+const hasAdminCreds = Boolean(url && serviceKey);
 
 const admin = createClient(url, serviceKey, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
@@ -28,7 +33,7 @@ beforeAll(async () => {
   if (signupErr) throw signupErr;
   userId = user!.id;
 
-  const { error: signinErr } = await supabase.auth.signInWithPassword({ email, password: 'TestPass123!' });
+  const { error: signinErr } = await requireSupabase().auth.signInWithPassword({ email, password: 'TestPass123!' });
   if (signinErr) throw signinErr;
 
   const { data: d1 } = await admin.from('decks').insert({ user_id: userId, name: 'Alpha', description: 'First deck' }).select().single();
@@ -45,11 +50,11 @@ beforeAll(async () => {
 afterAll(async () => {
   await admin.from('cards').delete().eq('id', cardId);
   await admin.from('decks').delete().in('id', [deckAId, deckBId]);
-  await supabase.auth.signOut();
+  await requireSupabase().auth.signOut();
   await admin.auth.admin.deleteUser(userId);
 });
 
-describe('dbService', () => {
+describe.skipIf(!hasAdminCreds)('dbService', () => {
   it('clearCache should not throw', () => {
     expect(() => dbService.clearCache()).not.toThrow();
   });

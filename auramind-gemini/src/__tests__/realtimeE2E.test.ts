@@ -20,7 +20,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // ─── Helpers ───────────────────────────────────────────────────
 
-function waitFor(
+function _waitFor(
   condition: () => boolean,
   timeoutMs = 5_000,
   intervalMs = 50,
@@ -177,7 +177,7 @@ function waitFor(
       });
     });
 
-    await new Promise<void>((resolve, reject) => {
+    await new Promise<void>((resolve, _reject) => {
       let subs = 0;
       const onSub = async (status: string) => {
         if (status === 'SUBSCRIBED') {

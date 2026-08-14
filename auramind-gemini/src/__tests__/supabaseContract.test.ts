@@ -79,7 +79,7 @@ function collectTableNames(files: Iterable<string>): Set<string> {
   return out;
 }
 
-function collectColumnNames(files: Iterable<string>): Set<string> {
+function _collectColumnNames(files: Iterable<string>): Set<string> {
   const out = new Set<string>();
   for (const f of files) {
     const src = fs.readFileSync(f, 'utf8');
@@ -121,7 +121,7 @@ function collectTableDeclarations(sqlFiles: Iterable<string>): Set<string> {
   return out;
 }
 
-function collectColumnDeclarations(sqlFiles: Iterable<string>): Set<string> {
+function _collectColumnDeclarations(sqlFiles: Iterable<string>): Set<string> {
   const out = new Set<string>();
   for (const f of sqlFiles) {
     const src = fs.readFileSync(f, 'utf8');
@@ -187,7 +187,7 @@ describe('Supabase schema contract — defensive regression', () => {
 
   describe('Table contract — every .from() in src/ is defined in migrations', () => {
     // Supabase system tables that are always present without our migrations.
-    const SYSTEM_TABLES = new Set<string>([
+    const _SYSTEM_TABLES = new Set<string>([
       'auth.users',           // unreachable from src — the dot form is filtered
     ]);
 

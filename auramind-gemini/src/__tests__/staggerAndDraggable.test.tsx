@@ -1,7 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/react';
-import { createRef } from 'react';
-import { StaggerList, useDraggable, type StaggerListProps } from '../lib/effects';
+import { StaggerList, useDraggable } from '../lib/effects';
 
 /**
  * Sentinels for the anime.js v4 stagger + draggable integrations.

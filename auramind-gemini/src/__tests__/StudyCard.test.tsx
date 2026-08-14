@@ -34,7 +34,7 @@ describe('StudyCard', () => {
   it('uses body typography for paragraph-length content', () => {
     const longText =
       'Photosynthesis is a process used by plants and other organisms to convert light energy into chemical energy that, through cellular respiration, can later be released to fuel the organism\'s activities.';
-    const { container } = render(<StudyCard active>{longText}</StudyCard>);
+    const { container: _container } = render(<StudyCard active>{longText}</StudyCard>);
     const text = screen.getByText(longText);
     expect(text).toHaveClass('leading-relaxed');
   });

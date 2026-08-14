@@ -8,10 +8,15 @@ import path from 'path';
 dotenv.config({ path: path.resolve(process.cwd(), '..', '.env') });
 
 import { useStudyStats } from '../hooks/useStudyStats';
-import { supabase } from '../services/database/supabase';
+import { requireSupabase } from '../services/database/supabase';
 
-const url = import.meta.env.VITE_SUPABASE_URL;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const url = import.meta.env.VITE_SUPABASE_URL ?? '';
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
+
+// These are integration tests against a real project. Without admin
+// credentials they cannot run, so skip rather than fail: CI has no
+// service-role key and createClient('', '') throws at import.
+const hasAdminCreds = Boolean(url && serviceKey);
 const admin = createClient(url, serviceKey, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 });
@@ -48,7 +53,7 @@ beforeAll(async () => {
   const { data: d } = await admin.from('decks').insert({ user_id: userId, name: 'StatsTest' }).select().single();
   deckId = d!.id;
 
-  const { error: signinErr } = await supabase.auth.signInWithPassword({ email, password: 'TestPass123!' });
+  const { error: signinErr } = await requireSupabase().auth.signInWithPassword({ email, password: 'TestPass123!' });
   if (signinErr) throw signinErr;
 });
 
@@ -57,7 +62,7 @@ afterAll(async () => {
     await admin.from('study_sessions').delete().in('id', createdSessionIds);
   }
   await admin.from('decks').delete().eq('id', deckId);
-  await supabase.auth.signOut();
+  await requireSupabase().auth.signOut();
   await admin.auth.admin.deleteUser(userId);
 });
 
@@ -68,7 +73,7 @@ afterEach(async () => {
   }
 });
 
-describe('useStudyStats', () => {
+describe.skipIf(!hasAdminCreds)('useStudyStats', () => {
   it('handles a missing userId gracefully', async () => {
     const { result } = renderHook(() => useStudyStats(null));
     await waitFor(() => expect(result.current.loading).toBe(false));

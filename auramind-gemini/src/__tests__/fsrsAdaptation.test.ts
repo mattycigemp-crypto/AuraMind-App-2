@@ -13,7 +13,7 @@ function freshCard(): Card {
     front: 'Q',
     back: 'A',
     repetition: 0,
-      fsrsState: null,
+      fsrsState: undefined,
   } as Card;
 }
 
