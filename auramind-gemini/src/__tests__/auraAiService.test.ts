@@ -7,6 +7,11 @@ import { describe, expect, it, vi, beforeEach, afterEach, beforeAll } from 'vite
 // depend on a real key and on network reachability.
 vi.stubEnv('VITE_GROQ_API_KEY', 'test-key-not-real');
 vi.stubEnv('VITE_USE_LOCAL_AI', 'false');
+// getEnv() checks process.env first because Vite statically inlines
+// import.meta.env.VITE_* at transform time — vi.stubEnv alone cannot
+// override those inlined values at runtime.
+process.env.VITE_GROQ_API_KEY = 'test-key-not-real';
+process.env.VITE_USE_LOCAL_AI = 'false';
 
 type AuraAiModule = typeof import('../services/api/auraAiService');
 let mod: AuraAiModule;
@@ -49,6 +54,8 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  delete process.env.VITE_GROQ_API_KEY;
+  delete process.env.VITE_USE_LOCAL_AI;
 });
 
 describe('auraAiService', () => {

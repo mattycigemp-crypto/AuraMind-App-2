@@ -38,9 +38,16 @@ function _waitFor(
   });
 }
 
+// Without Supabase credentials the E2E suite cannot run — skip rather
+// than fail. The notification-service and service-loader suites below
+// don't need credentials and always run.
+const hasCreds = Boolean(
+  import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY,
+);
+
 // ─── Tests ─────────────────────────────────────────────────────
 
-  describe('Supabase Realtime E2E', () => {
+  describe.skipIf(!hasCreds)('Supabase Realtime E2E', () => {
     vi.setConfig({ testTimeout: 15_000 });
     let supabaseClient: any;
     const extraClients: any[] = [];

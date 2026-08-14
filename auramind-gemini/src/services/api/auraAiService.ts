@@ -151,15 +151,21 @@ interface ChatCompletionResponse {
 // Create and export a singleton instance
 const getEnv = (key: string): string => {
   try {
+    // Check process.env first: it's mutable at runtime and tests
+    // (and Node.js serverless functions) can control it. Fall back to
+    // import.meta.env which Vite inlines at transform time — accurate
+    // in the browser but not overridable at runtime.
+    const procVal = typeof process !== 'undefined' ? process.env?.[key] : '';
+    if (procVal) return procVal;
     return (import.meta as any).env?.[key] || '';
   } catch {
     return '';
   }
 };
 
-const groqKey = getEnv('VITE_GROQ_API_KEY');
-const useLocalAI = getEnv('VITE_USE_LOCAL_AI') === 'true';
-const _customModel = getEnv('VITE_AI_MODEL');
+// Read env lazily at construction time, not at module scope, so that
+// vi.stubEnv / test-time overrides take effect before the singleton
+// reads them.
 const localBaseUrl = '/local-ai/v1';
 
 export class AuraAiClient {
@@ -167,9 +173,13 @@ export class AuraAiClient {
   private readonly baseUrl: string;
   private readonly defaultModel: string;
   private readonly apiKeySource: string;
+  private readonly useLocalAI: boolean;
 
   constructor(apiKey?: string, baseUrl?: string, model?: string) {
-    if (useLocalAI) {
+    const groqKey = apiKey || getEnv('VITE_GROQ_API_KEY');
+    this.useLocalAI = getEnv('VITE_USE_LOCAL_AI') === 'true';
+
+    if (this.useLocalAI) {
       this.apiKey = 'not-needed';
       this.baseUrl = localBaseUrl;
       this.defaultModel = model || 'local-model';
@@ -204,7 +214,7 @@ export class AuraAiClient {
     } = options;
 
     // If USE_LOCAL_AI is set, use WebLLM in-browser inference
-    if (useLocalAI) {
+    if (this.useLocalAI) {
       return localInference.chatCompletion({ messages, temperature, max_tokens, ...extraOptions });
     }
 
