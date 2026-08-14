@@ -17,9 +17,10 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 // credentials they cannot run, so skip rather than fail: CI has no
 // service-role key and createClient('', '') throws at import.
 const hasAdminCreds = Boolean(url && serviceKey);
-const admin = createClient(url, serviceKey, {
-  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-});
+// Built lazily inside the suite: createClient('', '') throws at call time,
+// so constructing it at module scope would fail the file before skipIf runs.
+type Admin = ReturnType<typeof createClient>;
+let admin: Admin;
 
 let userId: string;
 let deckId: string;
@@ -42,7 +43,14 @@ async function createSession(overrides: Record<string, any> = {}) {
   return data!;
 }
 
+// These hooks stay at file scope so the fixture user outlives BOTH suites
+// below; scoping them to the first suite would delete the user before the
+// second one runs. They no-op without credentials, when both suites skip.
 beforeAll(async () => {
+  if (!hasAdminCreds) return;
+  admin = createClient(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
   const email = `stats-${Date.now()}@auramind-test.local`;
   const { data: { user }, error: signupErr } = await admin.auth.admin.createUser({
     email, password: 'TestPass123!', email_confirm: true,
@@ -58,6 +66,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  if (!hasAdminCreds) return;
   if (createdSessionIds.length) {
     await admin.from('study_sessions').delete().in('id', createdSessionIds);
   }
@@ -67,6 +76,7 @@ afterAll(async () => {
 });
 
 afterEach(async () => {
+  if (!hasAdminCreds) return;
   if (createdSessionIds.length) {
     await admin.from('study_sessions').delete().in('id', createdSessionIds);
     createdSessionIds.length = 0;
@@ -108,7 +118,9 @@ describe.skipIf(!hasAdminCreds)('useStudyStats', () => {
   });
 });
 
-  describe('study_sessions direct DB access', () => {
+// Sibling of the suite above, not nested in it (the indentation is
+// misleading), so it needs its own credential guard.
+describe.skipIf(!hasAdminCreds)('study_sessions direct DB access', () => {
     // Each test asserts on its OWN sessions — wipe prior rows so the
     // per-test expectations (exact sums/counts) are order-independent.
     beforeEach(async () => {

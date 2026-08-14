@@ -16,16 +16,21 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 // service-role key and createClient('', '') throws at import.
 const hasAdminCreds = Boolean(url && serviceKey);
 
-const admin = createClient(url, serviceKey, {
-  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-});
+// Built lazily inside the suite: createClient('', '') throws at call time,
+// so constructing it at module scope would fail the file before skipIf runs.
+type Admin = ReturnType<typeof createClient>;
+let admin: Admin;
 
 let userId: string;
 let deckAId: string;
 let deckBId: string;
 let cardId: string;
 
+describe.skipIf(!hasAdminCreds)('dbService', () => {
 beforeAll(async () => {
+  admin = createClient(url, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
   const email = `test-${Date.now()}@auramind-test.local`;
   const { data: { user }, error: signupErr } = await admin.auth.admin.createUser({
     email, password: 'TestPass123!', email_confirm: true,
@@ -54,7 +59,6 @@ afterAll(async () => {
   await admin.auth.admin.deleteUser(userId);
 });
 
-describe.skipIf(!hasAdminCreds)('dbService', () => {
   it('clearCache should not throw', () => {
     expect(() => dbService.clearCache()).not.toThrow();
   });
