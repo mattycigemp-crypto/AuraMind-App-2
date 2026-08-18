@@ -15,12 +15,6 @@
       "purpose": "any"
     },
     {
-      "src": "/favicons,logos/icon-192.svg",
-      "type": "image/svg+xml",
-      "sizes": "192x192",
-      "purpose": "any"
-    },
-    {
       "src": "/favicons,logos/icon-384.png",
       "type": "image/png",
       "sizes": "384x384",
@@ -30,13 +24,7 @@
       "src": "/favicons,logos/icon-512.png",
       "type": "image/png",
       "sizes": "512x512",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/favicons,logos/icon-512.svg",
-      "type": "image/svg+xml",
-      "sizes": "512x512",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ],
   "categories": ["education", "productivity"],

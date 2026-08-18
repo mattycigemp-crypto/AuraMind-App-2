@@ -27,7 +27,7 @@ const features: Feature[] = [
   {
     icon: <Smartphone size={24} className="text-primary" />,
     title: 'Mobile Optimized',
-    description: 'Capacitor-powered iOS & Android apps with native haptics, biometrics & push notifications.',
+    description: 'Capacitor Android app with native haptics, back navigation, local reminders, and system sharing.',
   },
   {
     icon: <CheckCircle2 size={24} className="text-primary" />,
@@ -238,7 +238,7 @@ const DownloadPage: React.FC = () => {
                 Mobile Apps
               </h2>
               <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
-                Native iOS & Android apps with Capacitor — haptics, biometrics, push notifications, and more.
+                The Android app adds native controls and study workflows while sharing AuraMind&apos;s learning engine.
               </p>
             </div>
 
@@ -269,19 +269,19 @@ const DownloadPage: React.FC = () => {
                     <ul className="space-y-3 mb-8">
                       <li className="flex items-center gap-3 text-zinc-300">
                         <CheckCircle2 size={18} className="text-primary shrink-0" />
-                        Native haptics & biometrics (FaceID/TouchID)
+                        Android haptics, status bar & system back navigation
                       </li>
                       <li className="flex items-center gap-3 text-zinc-300">
                         <CheckCircle2 size={18} className="text-primary shrink-0" />
-                        Push notifications for study reminders
+                        Local Android study reminders
                       </li>
                       <li className="flex items-center gap-3 text-zinc-300">
                         <CheckCircle2 size={18} className="text-primary shrink-0" />
-                        Safe-area insets for Dynamic Island/home indicator
+                        Android bottom navigation and safe-area handling
                       </li>
                       <li className="flex items-center gap-3 text-zinc-300">
                         <CheckCircle2 size={18} className="text-primary shrink-0" />
-                        Filesystem access & share sheet integration
+                        System share sheet and device-aware services
                       </li>
                     </ul>
 
@@ -320,7 +320,7 @@ const DownloadPage: React.FC = () => {
               <div className="inline-flex items-center gap-3 px-6 py-4 rounded-2xl bg-zinc-800/50 border border-zinc-700/50">
                 <Mail size={20} className="text-primary shrink-0" />
                 <p className="text-zinc-300">
-                  Native mobile apps are in final review.{' '}
+                  The Android build is available for internal testing.{' '}
                   <a
                     href="mailto:auramind-app@googlegroups.com?subject=Notify me when AuraMind mobile launches&body=I want to be notified when the AuraMind native mobile app is available on iOS/Android."
                     className="text-primary hover:underline font-medium"

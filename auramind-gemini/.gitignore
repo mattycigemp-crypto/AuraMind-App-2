@@ -28,6 +28,7 @@ dist-ssr
 # Environment files (secrets — never commit)
 .env
 .env.*.local
+.env.mobile
 
 # Tauri signing key
 privatekey.pem

@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
+import './styles/platform-styles.css';
 
 // Environment validation
 import { validateEnv, logEnvValidation } from './lib/env';
@@ -18,6 +19,7 @@ import { initSentry } from './services/monitoring/sentryService';
 
 // Offline support
 import { isOnline, onConnectionChange, syncOfflineData } from './services/offline/offlineStudyService';
+import { getAppPreference } from './lib/appPreferences';
 
 // Data layer
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -79,9 +81,11 @@ onConnectionChange(
   () => {
     isCurrentlyOnline = true;
     console.warn('[Network] Connection restored');
+    const autoSync = getAppPreference('auramind_autoSync', true);
+    if (!autoSync) return;
     syncOfflineData().then(result => {
       if (result.synced > 0) {
-        console.warn(`[Sync] Synced ${result.synced} offline items (${result.failed} failed)`);
+        console.warn(`[Sync] Synced offline items (${result.synced} succeeded, ${result.failed} failed)`);
       }
     });
   },

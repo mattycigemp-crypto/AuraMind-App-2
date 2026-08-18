@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeftIcon, PlusIcon, Trash2Icon, BookOpenIcon, PlayIcon, PencilIcon, CheckIcon, XIcon, AlertTriangleIcon, RotateCcwIcon, SparklesIcon, ClockIcon, GlobeIcon } from '../../components/icons/CustomIcons';
+import { ArrowLeftIcon, PlusIcon, Trash2Icon, BookOpenIcon, PlayIcon, PencilIcon, CheckIcon, XIcon, AlertTriangleIcon, RotateCcwIcon, SparklesIcon, ClockIcon, GlobeIcon, ShareIcon } from '../../components/icons/CustomIcons';
 import GlassCard from '../../components/shared/GlassCard';
 import { useContextMenu } from '../../components/ui/ContextMenu';
 import { dbService } from '../../services/database/dbService';
 import { getInitialCardState } from '../../services/study/srs';
 import { useCurrentUserId } from '../../hooks/useCurrentUserId';
 import { usePersonalizedFsrs } from '../../hooks/usePersonalizedFsrs';
+import { useShare } from '../../hooks/useNative';
 import DashboardQuiz from '../../components/quiz/DashboardQuiz';
 import type { Deck, Card, Quiz } from '../../types';
 import {
@@ -34,6 +35,7 @@ export default function DeckDetailRoute() {
   const [form, setForm] = useState<CardForm>({ question: '', answer: '' });
   const userId = useCurrentUserId();
   const personalization = usePersonalizedFsrs(userId);
+  const { share } = useShare();
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<CardForm>({ question: '', answer: '' });
   const [editSaving, setEditSaving] = useState(false);
@@ -167,6 +169,18 @@ export default function DeckDetailRoute() {
     },
     [showContextMenu, handleEditCard, handleDeleteCard]
   );
+
+  const handleShareDeck = useCallback(async () => {
+    if (!deck) return;
+    try {
+      await share({
+        title: `${deck.title} · AuraMind`,
+        text: `${deck.title}\n${deck.description || 'Study this deck in AuraMind.'}\n\nCards: ${cards.length}`,
+      });
+    } catch {
+      // Android share sheets can be dismissed; that is not an app error.
+    }
+  }, [deck, cards.length, share]);
 
   const isQuizDeck = useMemo(() => {
     if (!deck) return false;
@@ -390,6 +404,13 @@ export default function DeckDetailRoute() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => void handleShareDeck()}
+              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-cyan-400/30 text-cyan-300 text-sm font-medium hover:bg-cyan-400/10 transition-colors"
+            >
+              <ShareIcon className="w-4 h-4" />
+              Share
+            </button>
             {isPublished ? (
               <button
                 onClick={async () => {

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" shape-rendering="geometricPrecision">
+  <defs>
+    <linearGradient id="adaptive-prism" x1="24" y1="84" x2="84" y2="24" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#72F4FF" />
+      <stop offset="0.38" stop-color="#8E89FF" />
+      <stop offset="0.68" stop-color="#D38BFF" />
+      <stop offset="1" stop-color="#FF9ACD" />
+    </linearGradient>
+    <radialGradient id="adaptive-core" cx="32%" cy="24%" r="80%">
+      <stop stop-color="#FFFFFF" />
+      <stop offset="0.52" stop-color="#F1FEFF" />
+      <stop offset="1" stop-color="#8CEBFF" />
+    </radialGradient>
+  </defs>
+
+  <!-- Transparent 108dp canvas; artwork stays close to the 66dp safe zone. -->
+  <path d="M54 21L84 54L54 87L24 54Z" fill="none" stroke="url(#adaptive-prism)" stroke-width="10" stroke-linejoin="round" stroke-linecap="round" />
+  <path d="M54 34L72 54L54 74L36 54Z" fill="none" stroke="url(#adaptive-prism)" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round" />
+  <circle cx="54" cy="54" r="6.2" fill="url(#adaptive-core)" />
+  <circle cx="52.2" cy="52.2" r="1.7" fill="#FFFFFF" opacity="0.9" />
+</svg>

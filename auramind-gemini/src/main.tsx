@@ -61,12 +61,11 @@ async function initApp() {
       } else if (capPlatform === 'android') {
         document.documentElement.classList.add('android-app');
       }
-      return; // Capacitor detection is authoritative—don't override with UA
+    } else {
+      // Fallback: UA detection (web, Tauri without OS plugin, etc.).
+      const uaPlatform = getPlatformFromUA();
+      document.documentElement.classList.add(`platform-${uaPlatform}`);
     }
-    
-    // Fallback: UA detection (web, Tauri without OS plugin, etc.)
-    const uaPlatform = getPlatformFromUA();
-    document.documentElement.classList.add(`platform-${uaPlatform}`);
   }
 
   root.render(

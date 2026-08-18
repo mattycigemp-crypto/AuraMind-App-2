@@ -9,17 +9,15 @@ import { userService } from '../../services/user/userService';
 import { uploadAvatar, deleteAvatar } from '../../services/user/avatarService';
 import ProfAuraAvatar from '../../components/auramind/ProfAuraAvatar';
 import { DeleteAccountModal } from '../../components/settings/DeleteAccountModal';
+import { useLocalNotifications } from '../../hooks/useNative';
+import { Capacitor } from '../../lib/nativeShim';
+import { useAppPreference } from '../../lib/appPreferences';
+import { analyticsService } from '../../services/analytics/analyticsService';
+import { buildReminderNotifications, REMINDER_IDS } from '../../lib/reminderSchedule';
 import type { UserProfile } from '../../types';
 
 function useLocalStorage<T>(key: string, defaultValue: T): [T, (v: T | ((prev: T) => T)) => void] {
-  const [value, setValue] = useState<T>(() => {
-    try {
-      const stored = localStorage.getItem(key);
-      return stored !== null ? JSON.parse(stored) : defaultValue;
-    } catch { return defaultValue; }
-  });
-  useEffect(() => { localStorage.setItem(key, JSON.stringify(value)); }, [key, value]);
-  return [value, setValue];
+  return useAppPreference(key, defaultValue);
 }
 
 const Toggle = ({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) => (
@@ -98,7 +96,7 @@ export default function SettingsPage() {
   const [dueReminder, setDueReminder] = useLocalStorage('auramind_dueReminder', true);
   const [streakReminder, setStreakReminder] = useLocalStorage('auramind_streakReminder', true);
   const [weeklySummary, setWeeklySummary] = useLocalStorage('auramind_weeklySummary', false);
-  const [theme, setTheme] = useLocalStorage('auramind_theme', 'Dark');
+  const [theme, setTheme] = useLocalStorage('auramind_theme', 'dark');
   const [reduceMotion, setReduceMotion] = useLocalStorage('auramind_reduceMotion', false);
   const [compactMode, setCompactMode] = useLocalStorage('auramind_compactMode', false);
   const [usageAnalytics, setUsageAnalytics] = useLocalStorage('auramind_usageAnalytics', true);
@@ -116,6 +114,53 @@ export default function SettingsPage() {
   const [autoPlayAudio, setAutoPlayAudio] = useLocalStorage('auramind_autoPlayAudio', false);
   const [_showPassword, _setShowPassword] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const {
+    requestPermissions: requestNativeNotificationPermissions,
+    schedule: scheduleNativeNotification,
+    cancel: cancelNativeNotification,
+  } = useLocalNotifications();
+
+  // Reminder controls map to real Android schedules. The browser keeps the
+  // same preferences but does not request permission for background alerts.
+  const syncNativeReminders = useCallback(async () => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    try {
+      await Promise.all(Object.values(REMINDER_IDS).map((id) => cancelNativeNotification(id)));
+      const notifications = buildReminderNotifications({
+        dailyReminder,
+        dueReminder,
+        streakReminder,
+        weeklySummary,
+        reminderTime,
+      });
+      if (notifications.length === 0) return;
+
+      const permission = await requestNativeNotificationPermissions();
+      if (permission !== 'granted') return;
+      await Promise.all(notifications.map((notification) => scheduleNativeNotification(notification)));
+    } catch (error) {
+      // A missing Android notification permission must never block Settings.
+      console.warn('[Native reminders] Could not sync reminders:', error);
+    }
+  }, [
+    dailyReminder,
+    dueReminder,
+    reminderTime,
+    requestNativeNotificationPermissions,
+    scheduleNativeNotification,
+    cancelNativeNotification,
+    streakReminder,
+    weeklySummary,
+  ]);
+
+  useEffect(() => {
+    void syncNativeReminders();
+  }, [syncNativeReminders]);
+
+  useEffect(() => {
+    if (usageAnalytics) void analyticsService.init();
+  }, [usageAnalytics]);
 
   useEffect(() => {
     if (userId === undefined) return;
@@ -256,7 +301,7 @@ export default function SettingsPage() {
   }, []);
 
   return (
-      <div className="space-y-8">
+      <div className={`android-settings-page space-y-8 ${Capacitor.getPlatform() === 'android' ? 'android-native-page' : ''}`}>
         {/* Header */}
         <div>
           <p className="nova-label text-violet-200/80">You</p>
@@ -434,10 +479,10 @@ export default function SettingsPage() {
           <SectionHeader icon={Palette} title="Appearance" subtitle="How AuraMind looks and feels on this device." />
           <div className="space-y-1">
             <SettingRow label="Theme">
-              <Select value={theme} onChange={setTheme} options={[
-                { label: 'Dark', value: 'Dark' },
-                { label: 'Light', value: 'Light' },
-                { label: 'System', value: 'System' },
+              <Select value={theme.toLowerCase()} onChange={setTheme} options={[
+                { label: 'Dark', value: 'dark' },
+                { label: 'Light', value: 'light' },
+                { label: 'System', value: 'system' },
               ]} />
             </SettingRow>
             <div className="border-t border-[#2A2A3A]/30" />

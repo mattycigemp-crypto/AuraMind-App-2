@@ -2,7 +2,13 @@
 
 The web client for **AuraMind, Your AI Learning System** — an adaptive AI learning system that turns anything you're studying (a PDF, a video, a lecture, a topic) into a personalized course, then schedules your reviews with FSRS v5 spaced repetition and tutors you with a knowledge model that remembers what you struggle with.
 
-**Stack:** React 19 · TypeScript (strict) · Vite · Tailwind 4 · Radix UI · Framer Motion · Zustand · react-router v7 · i18next · Supabase (auth + data) · Stripe (payments)
+**Stack:** React 19 · TypeScript (strict) · Vite · Tailwind 4 · Radix UI · Framer Motion · Zustand · react-router v7 · i18next · Supabase (auth + data) · Stripe (payments) · Capacitor 8 (Android)
+
+The Android build is a first-class Capacitor app, not a browser bookmark: native
+status-bar and back-button handling, Android bottom navigation, haptic review
+feedback, local study reminders, system sharing, and device-aware services are
+wired through `src/lib/nativeShim.ts`. The shared React surfaces remain the
+source of truth so web and Android stay behaviorally consistent.
 
 ## Run locally
 

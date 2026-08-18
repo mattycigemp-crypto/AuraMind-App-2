@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Zap, Lightbulb, Mic, X, Star, ChevronDown, Wind, Timer as TimerIcon, RotateCcw } from '@/components/icons';
 import { usePersonalizedFsrs } from '../../hooks/usePersonalizedFsrs';
 import { useCurrentUserId } from '../../hooks/useCurrentUserId';
+import { useHaptics } from '../../hooks/useNative';
+import { Capacitor } from '../../lib/nativeShim';
 import { PersonalizationIndicator } from '../../components/study/PersonalizationIndicator';
 import { DifficultyChip } from '../../components/study/DifficultyChip';
 import { PacingOverride, type PacingMode } from '../../components/study/PacingOverride';
@@ -13,7 +15,7 @@ import { dbService } from '../../services/database/dbService';
 import { sessionService } from '../../services/database/modules/sessionService';
 import { cardReviewsService } from '../../services/database/modules/cardReviewsService';
 import { calculateSRS } from '../../services/study/srs';
-import { isOnline, queueCardReview } from '../../services/offline/offlineStudyService';
+import { isOnline, queueCardReview, getCachedDecks, getCachedCards } from '../../services/offline/offlineStudyService';
 import { applyPersonalizedDifficultyInit } from '../../services/study/fsrs';
 import { Rating } from '../../types';
 import type { StudySession, Card, Deck } from '../../types';
@@ -25,6 +27,8 @@ import MultiplayerStudyBanner from '../../components/study/MultiplayerStudyBanne
 import SessionReplayModal from '../../components/study/SessionReplayModal';
 import { useMultiplayerStudy } from '../../hooks/useMultiplayerStudy';
 import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
+import { useAppPreference, getAppPreference } from '../../lib/appPreferences';
+import { loadOfflineAwareData } from '../../lib/offlineAwareData';
 import { trackStudySession } from '../../services/gamification/gamificationService';
 import { useTimer, MotionPath } from '../../lib/effects';
 import { VoiceStudyControls } from '../../components/study/VoiceStudyControls';
@@ -44,8 +48,8 @@ const KEY_MAP: Record<string, string> = {
   'Easy': '4',
 };
 
-const RatingButton = ({ label, rating, interval, color, onRate }: {
-  label: string; rating: Rating; interval: string; color: string; onRate: (r: Rating) => void;
+const RatingButton = ({ label, rating, interval, color, onRate, showInterval = true }: {
+  label: string; rating: Rating; interval: string; color: string; onRate: (r: Rating) => void; showInterval?: boolean;
 }) => (
   <motion.button
     onClick={() => onRate(rating)}
@@ -54,7 +58,7 @@ const RatingButton = ({ label, rating, interval, color, onRate }: {
     whileTap={{ scale: 0.95 }}
   >
     <span>{label}</span>
-    <span className="text-[10px] opacity-60">{interval}</span>
+    {showInterval && <span className="text-[10px] opacity-60">{interval}</span>}
     <kbd className="mt-1 inline-flex h-4 w-4 items-center justify-center rounded border border-current/20 bg-black/10 text-[9px] font-mono opacity-60">
       {KEY_MAP[label]}
     </kbd>
@@ -95,6 +99,7 @@ const SessionComplete = ({ stats, deckTitle, onRestart, onExit, onReplay }: {
 export default function StudyModePage() {
   const { deckId } = useParams<{ deckId: string }>();
   const navigate = useNavigate();
+  const isAndroidApp = Capacitor.getPlatform() === 'android';
 
   const [deck, setDeck] = useState<Deck | null>(null);
   const [studyCards, setStudyCards] = useState<Card[]>([]);
@@ -104,6 +109,14 @@ export default function StudyModePage() {
   const [completed, setCompleted] = useState(false);
   const userId = useCurrentUserId();
   const workspace = useDashboardWorkspace();
+  const [dailyGoal] = useAppPreference('auramind_dailyGoal', '20');
+  const [newCards] = useAppPreference('auramind_newCards', '10');
+  const [maxReviews] = useAppPreference('auramind_maxReviews', '100');
+  const [retention] = useAppPreference('auramind_retention', 'Balanced - 85%');
+  const [reviewOrder] = useAppPreference('auramind_reviewOrder', 'FSRS - Optimized');
+  const [showIntervals] = useAppPreference('auramind_showIntervals', true);
+  const [showHintFirst] = useAppPreference('auramind_showHintFirst', false);
+  const [keyboardShortcuts] = useAppPreference('auramind_keyboardShortcuts', true);
   // Tracks when the active study session began. Reset every time the user
   // resets the session via "Study Again" so a re-runs session's startTime
   // doesn't bleed into the prior session row. Used by the session-save
@@ -122,6 +135,7 @@ export default function StudyModePage() {
   const [voiceMode, setVoiceMode] = useState(false);
   const [elapsedMs, setElapsedMs] = useState(0);
   const _studyTimer = useTimer({ duration: Infinity, autoplay: true });
+  const { impact, success, warning } = useHaptics();
   useEffect(() => {
     // Poll elapsed time every second for display
     const interval = setInterval(() => {
@@ -151,17 +165,57 @@ export default function StudyModePage() {
       if (userId === undefined) return; // boot still loading
       if (userId === null) { navigate('/auth'); return; }
       try {
-        const [fetchedDecks, allCards] = await Promise.all([
-          dbService.fetchDecks(userId),
-          dbService.fetchCards(userId),
-        ]);
+        const { decks: fetchedDecks, cards: allCards } = await loadOfflineAwareData(userId, {
+          online: isOnline(),
+          offlineMode: getAppPreference('auramind_offlineMode', false),
+          autoSync: false,
+          getCachedDecks,
+          getCachedCards,
+          fetchDecks: (id) => dbService.fetchDecks(id),
+          fetchCards: (id) => dbService.fetchCards(id),
+        });
         const fetchedDeck = fetchedDecks.find(d => d.id === deckId);
         if (!fetchedDeck) { navigate('/dashboard/study'); return; }
         setDeck(fetchedDeck);
         // Filter cards for this deck
         const deckCards = allCards.filter((c: Card) => c.deckId === deckId);
         const due = deckCards.filter((c: Card) => (c.nextReview ?? 0) <= Date.now());
-        setStudyCards(due.length > 0 ? due : deckCards);
+        const queue = [...(due.length > 0 ? due : deckCards)];
+        if (reviewOrder === 'Random') {
+          queue.sort(() => Math.random() - 0.5);
+        } else if (reviewOrder === 'Newest first') {
+          queue.sort((a, b) => (b.lastReviewed ?? 0) - (a.lastReviewed ?? 0));
+        } else if (reviewOrder === 'Oldest first') {
+          queue.sort((a, b) => (a.lastReviewed ?? 0) - (b.lastReviewed ?? 0));
+        } else if (reviewOrder === 'Hardest first') {
+          queue.sort((a, b) => {
+            const difficulty = (card: Card) =>
+              (card.lapses ?? 0) * 10 + (10 - (card.understandingLevel ?? 5));
+            return difficulty(b) - difficulty(a);
+          });
+        }
+        const requestedNewCards = Number(newCards);
+        const isNewCard = (card: Card) =>
+          (card.repetition ?? 0) === 0 &&
+          !card.lastReviewed &&
+          !(card.fsrsState?.repetitions);
+        const newCardIds = new Set(
+          Number.isFinite(requestedNewCards) && requestedNewCards >= 0
+            ? queue.filter(isNewCard).slice(Math.max(0, requestedNewCards)).map((card) => card.id)
+            : [],
+        );
+        const pacedQueue = queue.filter((card) => !newCardIds.has(card.id));
+        const requestedGoal = Number(dailyGoal);
+        const requestedMax = Number(maxReviews);
+        const sessionLimit = Math.max(
+          1,
+          Math.min(
+            pacedQueue.length,
+            Number.isFinite(requestedGoal) && requestedGoal > 0 ? requestedGoal : 20,
+            Number.isFinite(requestedMax) && requestedMax > 0 ? requestedMax : 100,
+          ),
+        );
+        setStudyCards(pacedQueue.slice(0, sessionLimit));
       } catch (err) {
         console.error('Failed to load study session:', err);
         navigate('/dashboard/study');
@@ -170,7 +224,7 @@ export default function StudyModePage() {
       }
     };
     if (deckId) init();
-  }, [deckId, navigate, userId]);
+  }, [dailyGoal, deckId, maxReviews, navigate, newCards, reviewOrder, userId]);
 
   const spawnParticles = useCallback((_x: number, _y: number) => {
     const colors = ['#7C3AED', '#8B5CF6', '#3B82F6', '#A78BFA'];
@@ -196,10 +250,16 @@ export default function StudyModePage() {
   }, []);
 
   const currentCard = studyCards[index];
+  const currentHint = (currentCard?.back || "")
+    .split(/[.!?]\s+/)[0]
+    .slice(0, 120);
 
   const handleRate = useCallback(async (rating: Rating, event?: React.MouseEvent) => {
     if (!currentCard || !userId || isRating) return;
     setIsRating(true);
+    // Real Android builds provide tactile feedback for the rating outcome;
+    // browser builds keep the same flow without a forced vibration.
+    void (rating === Rating.AGAIN ? warning() : rating >= Rating.GOOD ? success() : impact());
     if (event) {
       spawnParticles(event.clientX, event.clientY);
     } else {
@@ -217,7 +277,12 @@ export default function StudyModePage() {
         personalization.weights,
         pacingTarget ?? undefined,
       );
-      const res = calculateSRS(biased.card, rating, personalization.weights);
+      const targetRetention = retention.startsWith('Conservative')
+        ? 0.9
+        : retention.startsWith('Aggressive')
+          ? 0.8
+          : 0.85;
+      const res = calculateSRS(biased.card, rating, personalization.weights, targetRetention);
       // Single round-trip: schedule writes and bias writes travel together so
       // the two never race against stale row reads.
       const update: Partial<Card> = {
@@ -359,7 +424,7 @@ export default function StudyModePage() {
       setFlipped(false);
     }
     setIsRating(false);
-  }, [currentCard, userId, index, studyCards.length, spawnParticles, isRating, personalization.profileLabel, personalization.weights, pacingTarget, deck?.id, deck?.title, sessionStats.correct, sessionStats.total, workspace]);
+  }, [currentCard, userId, index, studyCards.length, spawnParticles, isRating, personalization.profileLabel, personalization.weights, pacingTarget, retention, deck?.id, deck?.title, sessionStats.correct, sessionStats.total, workspace, impact, success, warning]);
 
   const handleTilt = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current || !tiltEnabled) return;
@@ -396,6 +461,7 @@ export default function StudyModePage() {
   };
 
   useEffect(() => {
+    if (!keyboardShortcuts) return;
     const onKey = (e: KeyboardEvent) => {
       if (completed) return;
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -414,7 +480,7 @@ export default function StudyModePage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [flipped, currentCard, handleRate, completed]);
+  }, [flipped, currentCard, handleRate, completed, keyboardShortcuts]);
 
   // Replay modal opens from the Session-Complete screen so the user can immediately
   // scrub through what they just studied. We instantiate it here so the modal
@@ -479,7 +545,7 @@ export default function StudyModePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] flex flex-col relative">
+    <div className={`min-h-screen bg-[#0A0A0F] flex flex-col relative ${isAndroidApp ? 'android-study-page' : ''}`}>
       <VideoBackground name="study-session" opacity={0.3} />
 
       {/* Multiplayer Study banner — opt-in party mode. Mounts at top of study
@@ -504,7 +570,7 @@ export default function StudyModePage() {
       )}
 
       {/* Top bar */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-[#2A2A3A]/50">
+      <div className="android-study-header flex items-center justify-between px-6 py-3 border-b border-[#2A2A3A]/50">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/dashboard/study')}
             className="w-8 h-8 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#5A5A72] hover:text-[#F0EFFE] transition-colors text-sm"
@@ -616,7 +682,7 @@ export default function StudyModePage() {
       </div>
 
       {/* Card area */}
-      <div className="flex-1 flex items-center justify-center p-6" onMouseMove={handleTilt} onMouseLeave={resetTilt}>
+      <div className="android-study-card-area flex-1 flex items-center justify-center p-6" onMouseMove={handleTilt} onMouseLeave={resetTilt}>
         {/* Radial violet spotlight behind card */}
         <div className="absolute w-[600px] h-[600px] rounded-full bg-gradient-radial from-violet-500/8 via-violet-500/3 to-transparent pointer-events-none" style={{ filter: 'blur(60px)' }} />
 
@@ -642,7 +708,7 @@ export default function StudyModePage() {
 
             <div
               ref={cardRef}
-              className="flashcard-paper relative w-[500px] max-w-[90vw] min-h-[340px] rounded-[8px] cursor-pointer select-none overflow-hidden transition-transform duration-75 ease-out"
+              className="android-study-card flashcard-paper relative w-[500px] max-w-[90vw] min-h-[340px] rounded-[8px] cursor-pointer select-none overflow-hidden transition-transform duration-75 ease-out"
               style={{
                 transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) rotate(-1.5deg)`,
                 boxShadow: '0 1px 0 0 #E8E4CC, 0 2px 0 0 #F5F0D8, 0 3px 0 0 #EDE8C8, 0 4px 6px rgba(0,0,0,0.2), 0 10px 30px rgba(0,0,0,0.35), 0 0 50px rgba(124,58,237,0.08)',
@@ -679,6 +745,15 @@ export default function StudyModePage() {
                         {currentCard?.front || ''}
                       </div>
                     </div>
+                    {showHintFirst && currentHint && (
+                      <button
+                        type="button"
+                        className="mx-auto mt-2 max-w-[85%] rounded-lg border border-[#D4CFA8] bg-[#FFF8E7] px-3 py-1.5 text-left text-[11px] text-[#6B6550]"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <span className="font-semibold">Hint · </span>{currentHint}
+                      </button>
+                    )}
                     <div className="mt-2 flex flex-col items-center gap-0.5 text-[#B8B09A]">
                       <span className="text-xs">Tap to reveal</span>
                       <ChevronDown className="h-3 w-3" />
@@ -722,7 +797,7 @@ export default function StudyModePage() {
 
       {/* Voice study controls (hands-free) */}
       {voiceMode && currentCard && (
-        <div className="px-6 pb-2">
+        <div className="android-study-voice-panel px-6 pb-2">
           <div className="max-w-lg mx-auto">
             <VoiceStudyControls
               question={currentCard.front || currentCard.question || ''}
@@ -749,7 +824,7 @@ export default function StudyModePage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.25 }}
-            className="px-6 pb-6"
+            className="android-study-rating px-6 pb-6"
           >
             <div className="max-w-lg mx-auto">
               <div className="text-center mb-3">
@@ -772,7 +847,7 @@ export default function StudyModePage() {
                       visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 260, damping: 20 } },
                     }}
                   >
-                    <RatingButton {...btn} onRate={(r) => handleRate(r, undefined)} />
+                    <RatingButton {...btn} showInterval={showIntervals} onRate={(r) => handleRate(r, undefined)} />
                   </motion.div>
                 ))}
               </motion.div>

@@ -7,7 +7,7 @@ import unusedImports from "eslint-plugin-unused-imports";
 import globals from "globals";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", ".vercel"] },
+  { ignores: ["dist", "node_modules", ".vercel", "android"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

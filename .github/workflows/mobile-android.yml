@@ -1,0 +1,131 @@
+name: Mobile Android
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      track:
+        description: 'Play Store track to upload to (internal | beta | production)'
+        required: true
+        type: choice
+        default: 'internal'
+        options:
+          - internal
+          - beta
+          - production
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    permissions:
+      contents: read
+
+    defaults:
+      run:
+        working-directory: auramind-gemini
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: auramind-gemini/package-lock.json
+
+      - name: Setup Java JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      # The web build reads VITE_* values from .env (gitignored). CI injects
+      # them from repo secrets; `.env.mobile` (committed) supplies the
+      # production API/SSE/translation endpoints for the Capacitor build.
+      - name: Write build env from secrets
+        run: |
+          set -euo pipefail
+          cat > .env <<'EOF'
+          VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_GROQ_API_KEY=${{ secrets.VITE_GROQ_API_KEY }}
+          VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+          VITE_POSTHOG_KEY=${{ secrets.VITE_POSTHOG_KEY }}
+          EOF
+          # Fail fast if the two required vars are empty (Vite would otherwise
+          # inline placeholder strings and env.ts validation would catch it late).
+          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
+            echo "::error::VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY secrets are required."
+            exit 1
+          fi
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build web bundle (mobile mode)
+        run: npm run build:android
+
+      - name: Generate Android launcher/splash assets
+        run: node scripts/generate-android-assets.mjs
+
+      - name: Decode release keystore (from CI secret)
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          mkdir -p android/keystore
+          echo -n "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/keystore/release.keystore
+          chmod 600 android/keystore/release.keystore
+          echo "Keystore size: $(stat -c%s android/keystore/release.keystore) bytes"
+          echo "Keystore fingerprint (sanity check):"
+          keytool -list -v -keystore android/keystore/release.keystore \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" | head -20
+
+      - name: Assemble signed release AAB
+        env:
+          ANDROID_KEYSTORE_PATH: android/keystore/release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cd android
+          ./gradlew --no-daemon bundleRelease
+          ls -lh app/build/outputs/bundle/release/
+
+      - name: Verify AAB is signed
+        run: |
+          keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release.aab | grep -E '(SHA1|SHA256):' || true
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload to Google Play
+        if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT_JSON }}
+          packageName: com.auramind.app
+          releaseFiles: auramind-gemini/android/app/build/outputs/bundle/release/app-release.aab
+          track: ${{ github.event.inputs.track || 'internal' }}
+          mappingFile: auramind-gemini/android/app/build/outputs/mapping/release/mapping.txt
+          whatsNewDirectory: store/android/changelogs
+          status: completed
+
+      - name: Cleanup keystore from runner
+        if: always()
+        run: |
+          rm -f android/keystore/release.keystore
+          echo "Keystore removed from runner."

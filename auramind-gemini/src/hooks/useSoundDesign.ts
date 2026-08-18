@@ -1,4 +1,5 @@
 import { useCallback, useRef, useEffect } from "react";
+import { useAppPreference } from "../lib/appPreferences";
 
 interface SoundDesignOptions {
   volume?: number;
@@ -15,7 +16,7 @@ function createOscillator(
   freq: number,
   duration: number,
   volume: number,
-  type: OscillatorType = "sine"
+  type: OscillatorType = "sine",
 ) {
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -30,19 +31,21 @@ function createOscillator(
 }
 
 export function useSoundDesign(options: SoundDesignOptions = {}) {
-  const { volume = 0.15, enabled = true } = options;
+  const { volume = 0.15, enabled } = options;
+  const [preferenceEnabled] = useAppPreference("auramind_soundEffects", true);
+  const soundEnabled = enabled ?? preferenceEnabled;
   const ctxRef = useRef<AudioContext | null>(null);
 
   const getCtx = useCallback(() => {
-    if (!enabled) return null;
+    if (!soundEnabled) return null;
     if (!ctxRef.current) {
       ctxRef.current = new AudioContext();
     }
     if (ctxRef.current.state === "suspended") {
-      ctxRef.current.resume();
+      void ctxRef.current.resume();
     }
     return ctxRef.current;
-  }, [enabled]);
+  }, [soundEnabled]);
 
   const playHover = useCallback(() => {
     const ctx = getCtx();
@@ -60,8 +63,8 @@ export function useSoundDesign(options: SoundDesignOptions = {}) {
     const ctx = getCtx();
     if (!ctx) return;
     createOscillator(ctx, SUCCESS_FREQ, 0.15, volume, "sine");
-    setTimeout(() => createOscillator(ctx!, SUCCESS_FREQ * 1.5, 0.15, volume, "sine"), 100);
-    setTimeout(() => createOscillator(ctx!, SUCCESS_FREQ * 2, 0.2, volume, "sine"), 200);
+    setTimeout(() => createOscillator(ctx, SUCCESS_FREQ * 1.5, 0.15, volume, "sine"), 100);
+    setTimeout(() => createOscillator(ctx, SUCCESS_FREQ * 2, 0.2, volume, "sine"), 200);
   }, [getCtx, volume]);
 
   const playScroll = useCallback(() => {
@@ -73,10 +76,10 @@ export function useSoundDesign(options: SoundDesignOptions = {}) {
   useEffect(() => {
     return () => {
       if (ctxRef.current && ctxRef.current.state !== "closed") {
-        ctxRef.current.close();
+        void ctxRef.current.close();
       }
     };
   }, []);
 
-  return { playHover, playClick, playSuccess, playScroll, enabled };
+  return { playHover, playClick, playSuccess, playScroll, enabled: soundEnabled };
 }

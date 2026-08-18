@@ -27,12 +27,15 @@ import PresentationViewer from '../../components/study/PresentationViewer';
 import { extractStudyAssetText } from '../../services/import/documentImportService';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { transcribeAudio } from '../../services/api/groqService';
+import { Capacitor } from '../../lib/nativeShim';
+import { useAppPreference } from '../../lib/appPreferences';
 
 type GeneratorType = 'quiz' | 'flashcards' | 'presentation';
 type InputSource = 'topic' | 'url' | 'youtube' | 'file' | 'audio';
 type Difficulty = 'easy' | 'medium' | 'hard' | 'mixed';
 
 const GeneratorPage: React.FC = () => {
+  const isAndroidApp = Capacitor.getPlatform() === 'android';
   // Provider is supplied by App for /dashboard/generator; stay null-safe so a
   // missing provider degrades to "sign in to save" instead of crashing the tree.
   const workspace = useDashboardWorkspace();
@@ -43,6 +46,9 @@ const GeneratorPage: React.FC = () => {
   const [topic, setTopic] = useState('');
   const [numItems, setNumItems] = useState(10);
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
+  const [cardsPerGeneration] = useAppPreference('auramind_cardsPerGen', '20');
+  const [includeExamples] = useAppPreference('auramind_includeExamples', true);
+  const [defaultLanguage] = useAppPreference('auramind_defaultLanguage', 'English');
   const [customNumItems, setCustomNumItems] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -67,6 +73,13 @@ const GeneratorPage: React.FC = () => {
 
   const useLocalAI = (import.meta as any).env?.VITE_USE_LOCAL_AI === 'true';
   const genEstimate = useLocalAI ? 45 : 10;
+
+  useEffect(() => {
+    const preferredCount = Number(cardsPerGeneration);
+    if (Number.isFinite(preferredCount) && preferredCount > 0) {
+      setNumItems(Math.min(30, Math.max(5, preferredCount)));
+    }
+  }, [cardsPerGeneration]);
 
   useEffect(() => {
     if (!useLocalAI) return;
@@ -237,9 +250,15 @@ const GeneratorPage: React.FC = () => {
     const diffDesc = difficulty === 'mixed'
       ? `mixed difficulty levels (include a balanced mix of easy, medium, and hard ${isPres ? 'slides' : generatorType === 'quiz' ? 'questions' : 'flashcards'})`
       : `${difficulty} difficulty level`;
+    const languageInstruction = defaultLanguage.toLowerCase() === 'english'
+      ? ''
+      : ` Write all generated content in ${defaultLanguage}.`;
+    const exampleInstruction = includeExamples
+      ? ' Include a concise concrete example whenever it improves understanding.'
+      : ' Prefer direct definitions and do not add optional examples.';
     const prompt = isPres
-      ? `Generate a presentation on "${sourceLabel}" with ${finalNumItems} slides at ${diffDesc}. Each slide should have a title, 3-5 bullet points, and a narrator script for voiceover.${sourceContext}\n\nRespond with valid JSON only. Format: { "title": "Presentation Title", "slides": [{ "title": "Slide Title", "bullets": ["Point 1", "Point 2", "Point 3"], "script": "Narrator script for this slide" }] }`
-      : `Generate a ${generatorType} on "${sourceLabel}" with ${finalNumItems} ${generatorType === 'quiz' ? 'questions' : 'flashcards'} at ${diffDesc}. ${generatorType === 'quiz' ? 'Include explanations for each question.' : 'Include difficulty levels for each card.'}${sourceContext}\n\nRespond with valid JSON only. ${generatorType === 'quiz' ? 'Format: { "questions": [{ "id": "1", "question": "...", "options": ["...", "..."], "correctAnswer": 0, "explanation": "..." }] }' : 'Format: { "cards": [{ "question": "...", "answer": "...", "difficulty": "easy|medium|hard" }] }'}`;
+      ? `Generate a presentation on "${sourceLabel}" with ${finalNumItems} slides at ${diffDesc}. Each slide should have a title, 3-5 bullet points, and a narrator script for voiceover.${languageInstruction}${exampleInstruction}${sourceContext}\n\nRespond with valid JSON only. Format: { "title": "Presentation Title", "slides": [{ "title": "Slide Title", "bullets": ["Point 1", "Point 2", "Point 3"], "script": "Narrator script for this slide" }] }`
+      : `Generate a ${generatorType} on "${sourceLabel}" with ${finalNumItems} ${generatorType === 'quiz' ? 'questions' : 'flashcards'} at ${diffDesc}. ${generatorType === 'quiz' ? 'Include explanations for each question.' : 'Include difficulty levels for each card.'}${languageInstruction}${exampleInstruction}${sourceContext}\n\nRespond with valid JSON only. ${generatorType === 'quiz' ? 'Format: { "questions": [{ "id": "1", "question": "...", "options": ["...", "..."], "correctAnswer": 0, "explanation": "..." }] }' : 'Format: { "cards": [{ "question": "...", "answer": "...", "difficulty": "easy|medium|hard" }] }'}`;
 
     try {
       const response = await auraAiClient.chatCompletion({
@@ -312,7 +331,10 @@ const GeneratorPage: React.FC = () => {
 
   const handleReset = () => {
     setTopic('');
-    setNumItems(10);
+    const preferredCount = Number(cardsPerGeneration);
+    setNumItems(Number.isFinite(preferredCount) && preferredCount > 0
+      ? Math.min(30, Math.max(5, preferredCount))
+      : 10);
     setDifficulty('medium');
     setCustomNumItems('');
     setShowCustomInput(false);
@@ -511,7 +533,7 @@ const GeneratorPage: React.FC = () => {
   ];
 
   return (
-      <div className="space-y-8">
+      <div className={`android-generator-page space-y-8 ${isAndroidApp ? 'android-native-page' : ''}`}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

@@ -15,6 +15,9 @@ import { isAdminOrHigher, isCeoOrHigher, isOwnerOnly } from '../../../utils/perm
 import { AnimatedBrandMark, PulsingDot } from './icons';
 import { PageTransition, Shimmer } from './motion';
 import OnboardingTutorial from '../../shared/OnboardingTutorial';
+import AndroidBottomNav from '../../native/AndroidBottomNav';
+import AndroidMobileTopBar from '../../native/AndroidMobileTopBar';
+import { Capacitor } from '../../../lib/nativeShim';
 
 // ─── Navigation config ──────────────────────────────────────────────────────
 
@@ -587,6 +590,9 @@ export function NovaDashboardShell({ children }: NovaDashboardShellProps) {
   const bleed = isBleedPath(location.pathname);
   const workspace = useDashboardWorkspace();
   const user = workspace?.user;
+  const isAndroidApp = Capacitor.getPlatform() === 'android';
+  const isAndroidMobile = isAndroidApp && !isOnAdminRoute && !immersive;
+  const showAndroidBottomNav = isAndroidMobile;
 
   const sections = useMemo<NavSection[]>(
     () => (isOnAdminRoute ? buildAdminNavSections(user?.role) : USER_NAV_SECTIONS),
@@ -619,19 +625,19 @@ export function NovaDashboardShell({ children }: NovaDashboardShellProps) {
   );
 
   return (
-    <div className="nova-shell relative flex h-screen overflow-hidden bg-transparent text-white">
+    <div className={`nova-shell relative flex h-screen overflow-hidden bg-transparent text-white ${isAndroidMobile ? 'android-mobile-shell' : ''}`}>
       <SkipLink />
       <AuroraGradient admin={isOnAdminRoute} />
       <FloatingOrbs />
 
-      {!immersive && (
+      {!immersive && !isAndroidMobile && (
         <div className="hidden lg:flex">
           <Sidebar isAdminRoute={isOnAdminRoute} sections={sections} brand={brand} />
         </div>
       )}
 
       <AnimatePresence>
-        {!immersive && sidebarOpen && (
+        {!immersive && !isAndroidMobile && sidebarOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -658,21 +664,29 @@ export function NovaDashboardShell({ children }: NovaDashboardShellProps) {
         )}
       </AnimatePresence>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className={`flex min-w-0 flex-1 flex-col ${isAndroidMobile ? 'android-mobile-app-column' : ''}`}>
         {!immersive && (
-          <TopBar onMenuClick={() => setSidebarOpen(true)} user={user} isAdmin={isOnAdminRoute} />
+          isAndroidMobile ? (
+            <AndroidMobileTopBar user={user} />
+          ) : (
+            <TopBar onMenuClick={() => setSidebarOpen(true)} user={user} isAdmin={isOnAdminRoute} />
+          )
         )}
         <main
           id="nova-main-content"
           role="main"
           aria-label="Main content"
-          className={`scrollbar-thin flex-1 ${bleed ? 'overflow-hidden' : 'overflow-y-auto'}`}
+          className={`scrollbar-thin flex-1 ${bleed ? 'overflow-hidden' : 'overflow-y-auto'} ${showAndroidBottomNav ? 'android-mobile-main pb-24' : ''}`}
         >
           <div
             className={
-              bleed
-                ? 'flex h-full min-h-0 flex-col'
-                : 'mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8'
+              isAndroidMobile
+                ? bleed
+                  ? 'android-mobile-bleed'
+                  : 'android-mobile-content'
+                : bleed
+                  ? 'flex h-full min-h-0 flex-col'
+                  : 'mx-auto max-w-7xl px-4 py-6 lg:px-8 lg:py-8'
             }
           >
             <Suspense fallback={<RouteFallback />}>
@@ -681,6 +695,7 @@ export function NovaDashboardShell({ children }: NovaDashboardShellProps) {
           </div>
         </main>
       </div>
+      {isAndroidMobile && <AndroidBottomNav />}
       <FirstRunGate />
     </div>
   );

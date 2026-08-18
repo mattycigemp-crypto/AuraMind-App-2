@@ -203,7 +203,7 @@ const sections = [
 
         <h4 className="text-sm font-semibold text-[#F0EFFE] mt-4 mb-2">Is there a mobile app?</h4>
         <p className="text-[#9090A8] mb-4">
-          AuraMind is available as a responsive web app and a desktop application (Windows, macOS, Linux). Mobile support is planned.
+          AuraMind is available as a responsive web app and an Android app built with Capacitor. The Android build adds native back navigation, haptics, local study reminders, system sharing, and an Android-specific bottom navigation bar.
         </p>
 
         <h4 className="text-sm font-semibold text-[#F0EFFE] mt-4 mb-2">How do I delete my account?</h4>

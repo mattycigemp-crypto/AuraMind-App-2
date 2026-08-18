@@ -1,16 +1,21 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2 } from "@/components/icons";
 import { supabase } from "../../services/database/supabase";
 import { analyticsService } from "../../services/analytics/analyticsService";
 import { FrostGlass } from "../ui/FrostGlass";
 import { BorderBeam } from "../ui/BorderBeam";
+import { Capacitor } from "../../lib/nativeShim";
 
 
 export default function AuthPage() {
+  const isNativeApp = Capacitor.isNativePlatform();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("signup");
+  const [searchParams] = useSearchParams();
+  const [mode, setMode] = useState<"login" | "signup">(
+    searchParams.get("mode") === "login" ? "login" : "signup",
+  );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -119,15 +124,14 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0F] flex flex-col">
-      {/* Back link */}
+    <div className={`${isNativeApp ? "android-auth-page" : ""} min-h-screen bg-[#0A0A0F] flex flex-col`}>
       <div className="px-6 py-4">
         <button
           onClick={() => navigate("/")}
           className="flex items-center gap-2 text-[#5A5A72] hover:text-[#F0EFFE] text-xs transition-colors"
         >
           <span>←</span>
-          <span>Back to home</span>
+          <span>{isNativeApp ? "Back" : "Back to home"}</span>
         </button>
       </div>
 
@@ -154,7 +158,7 @@ export default function AuthPage() {
           <div className="text-center mb-6">
             <div className="inline-flex items-center gap-2.5 mb-3">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-                <img src="/favicons,logos/favicon-32.png" alt="AuraMind" className="h-full w-full object-contain" />
+                <img src="/favicons,logos/favicon.svg" alt="AuraMind" className="h-full w-full object-contain" />
               </div>
               <span className="text-[#F0EFFE] text-base font-medium tracking-tight font-script">AuraMind</span>
             </div>
@@ -163,9 +167,15 @@ export default function AuthPage() {
             </h1>
             <p className="text-[#5A5A72] text-xs">
               {mode === "signup"
-                ? "Start learning for free. No credit card required."
-                : "Sign in to continue your studies."}
+                ? "Start with one topic. You can change everything else later."
+                : "Your queue is waiting where you left it."}
             </p>
+            {isNativeApp && (
+              <div className="android-auth-trust" aria-label="Sign-in details">
+                <span><i /> Secure sign-in</span>
+                <span><i /> Preferences sync</span>
+              </div>
+            )}
           </div>
 
           {/* Card */}

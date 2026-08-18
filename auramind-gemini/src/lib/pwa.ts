@@ -28,7 +28,7 @@ export const pwaConfig = VitePWA({
         src: '/favicons,logos/icon-192.png',
         sizes: '192x192',
         type: 'image/png',
-        purpose: 'any maskable',
+        purpose: 'any',
       },
       {
         src: '/favicons,logos/icon-384.png',
