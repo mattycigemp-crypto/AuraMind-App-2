@@ -18,8 +18,9 @@ export const calculateSRS = (
   card: Card,
   quality: Rating,
   weightsOverride?: number[],
+  retentionOverride?: number,
 ): SRSResult & { fsrsState?: any } => {
-  const fsrsResult = scheduleFSRS(card, quality, weightsOverride);
+  const fsrsResult = scheduleFSRS(card, quality, weightsOverride, retentionOverride);
   const cardResult = fsrsToCardResult(fsrsResult);
 
   return {

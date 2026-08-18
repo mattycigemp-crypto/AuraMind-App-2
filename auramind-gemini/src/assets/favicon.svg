@@ -1,48 +1,38 @@
-Z
-
-
-
-
-
-
-
-
-
-
-
-
-
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" shape-rendering="geometricPrecision" role="img" aria-labelledby="prism-title prism-description">
+  <title id="prism-title">Prof. Aura</title>
+  <desc id="prism-description">A faceted open diamond aperture with a luminous central core.</desc>
   <defs>
-    <linearGradient id="bg" x1="72" y1="64" x2="448" y2="448" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0A1024"/>
-      <stop offset="0.55" stop-color="#1E1B4B"/>
-      <stop offset="1" stop-color="#312E81"/>
+    <linearGradient id="prism-bg" x1="54" y1="42" x2="466" y2="472" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#100F2E" />
+      <stop offset="0.52" stop-color="#211349" />
+      <stop offset="1" stop-color="#3B1248" />
     </linearGradient>
-    <linearGradient id="accent" x1="128" y1="116" x2="389" y2="396" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#38BDF8"/>
-      <stop offset="0.42" stop-color="#A78BFA"/>
-      <stop offset="1" stop-color="#F472B6"/>
+    <linearGradient id="prism-mark" x1="112" y1="394" x2="406" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#72F4FF" />
+      <stop offset="0.38" stop-color="#8E89FF" />
+      <stop offset="0.68" stop-color="#D38BFF" />
+      <stop offset="1" stop-color="#FF9ACD" />
     </linearGradient>
-    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 256) rotate(90) scale(210)">
-      <stop stop-color="#C4B5FD" stop-opacity="0.26"/>
-      <stop offset="1" stop-color="#C4B5FD" stop-opacity="0"/>
+    <radialGradient id="prism-core" cx="32%" cy="24%" r="80%">
+      <stop stop-color="#FFFFFF" />
+      <stop offset="0.52" stop-color="#F1FEFF" />
+      <stop offset="1" stop-color="#8CEBFF" />
     </radialGradient>
+    <radialGradient id="prism-glow" cx="50%" cy="50%" r="58%">
+      <stop stop-color="#D38BFF" stop-opacity="0.24" />
+      <stop offset="0.62" stop-color="#7C3AED" stop-opacity="0.08" />
+      <stop offset="1" stop-color="#7C3AED" stop-opacity="0" />
+    </radialGradient>
+    <filter id="prism-blur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="17" />
+    </filter>
   </defs>
-
-  <rect x="32" y="32" width="448" height="448" rx="122" fill="url(#bg)"/>
-  <rect x="32" y="32" width="448" height="448" rx="122" fill="url(#glow)"/>
-
-  <path d="M170 282C170 230.085 212.085 188 264 188C315.915 188 358 230.085 358 282V292C358 339.496 319.496 378 272 378H244C203.131 378 170 344.869 170 304V282Z" stroke="url(#accent)" stroke-width="24" stroke-linecap="round"/>
-  <path d="M193 261H247" stroke="#E9D5FF" stroke-width="18" stroke-linecap="round"/>
-  <path d="M224 227V291" stroke="#E9D5FF" stroke-width="18" stroke-linecap="round"/>
-  <path d="M287 249H327" stroke="#E9D5FF" stroke-width="16" stroke-linecap="round"/>
-  <path d="M287 285H339" stroke="#E9D5FF" stroke-width="16" stroke-linecap="round"/>
-  <path d="M287 320H318" stroke="#E9D5FF" stroke-width="16" stroke-linecap="round"/>
-
-  <circle cx="224" cy="206" r="11" fill="#F5D0FE"/>
-  <circle cx="247" cy="261" r="11" fill="#F5D0FE"/>
-  <circle cx="287" cy="249" r="10" fill="#C4B5FD"/>
-  <circle cx="339" cy="285" r="10" fill="#C4B5FD"/>
-  <circle cx="318" cy="320" r="10" fill="#C4B5FD"/>
+  <rect width="512" height="512" fill="url(#prism-bg)" />
+  <circle cx="256" cy="256" r="204" fill="url(#prism-glow)" filter="url(#prism-blur)" />
+  <path d="M256 79L424 256L256 433L88 256Z" fill="none" stroke="url(#prism-mark)" stroke-width="56" stroke-linejoin="round" stroke-linecap="round" opacity="0.2" filter="url(#prism-blur)" />
+  <path d="M256 79L424 256L256 433L88 256Z" fill="none" stroke="url(#prism-mark)" stroke-width="56" stroke-linejoin="round" stroke-linecap="round" />
+  <path d="M256 151L357 256L256 361L155 256Z" fill="none" stroke="url(#prism-mark)" stroke-width="23" stroke-linejoin="round" stroke-linecap="round" />
+  <circle cx="256" cy="256" r="28" fill="url(#prism-core)" />
+  <circle cx="248" cy="248" r="7" fill="#FFFFFF" opacity="0.9" />
 </svg>

@@ -1,10 +1,22 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  History, X, Plus, Pin, PinOff, Trash2, MessageSquare, Edit2, Check,
-  Search, Sparkles, Download, CheckSquare, Square,
-} from '@/components/icons';
-import type { Message } from '../../hooks/useAIChat';
+  History,
+  X,
+  Plus,
+  Pin,
+  PinOff,
+  Trash2,
+  MessageSquare,
+  Edit2,
+  Check,
+  Search,
+  Sparkles,
+  Download,
+  CheckSquare,
+  Square,
+} from "@/components/icons";
+import type { Message } from "../../hooks/useAIChat";
 
 export interface ChatSession {
   id: string;
@@ -17,11 +29,11 @@ export interface ChatSession {
   deckName?: string;
 }
 
-const STORAGE_KEY = 'auramind.aurachat.sessions.v1';
-const ACTIVE_KEY = 'auramind.aurachat.active.v1';
+const STORAGE_KEY = "auramind.aurachat.sessions.v1";
+const ACTIVE_KEY = "auramind.aurachat.active.v1";
 
 function safeRead(): ChatSession[] {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
@@ -33,7 +45,7 @@ function safeRead(): ChatSession[] {
 }
 
 function safeWrite(sessions: ChatSession[]) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
   } catch {
@@ -42,24 +54,20 @@ function safeWrite(sessions: ChatSession[]) {
 }
 
 function titleFromMessages(msgs: Message[]): string {
-  const firstUser = msgs.find((m) => m.role === 'user');
-  if (!firstUser) return 'New chat';
-  return firstUser.content.length > 48
-    ? firstUser.content.slice(0, 48) + '…'
-    : firstUser.content;
+  const firstUser = msgs.find((m) => m.role === "user");
+  if (!firstUser) return "New chat";
+  return firstUser.content.length > 48 ? firstUser.content.slice(0, 48) + "…" : firstUser.content;
 }
 
 function previewFromMessages(msgs: Message[]): string {
   const last = msgs.filter((m) => m.content).slice(-1)[0];
-  if (!last) return 'Empty conversation';
-  return last.content.length > 72
-    ? last.content.slice(0, 72) + '…'
-    : last.content;
+  if (!last) return "Empty conversation";
+  return last.content.length > 72 ? last.content.slice(0, 72) + "…" : last.content;
 }
 
 export function fmtRelTime(ts: number): string {
   const diff = Date.now() - ts;
-  if (diff < 60_000) return 'just now';
+  if (diff < 60_000) return "just now";
   if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
   if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
   if (diff < 604_800_000) return `${Math.floor(diff / 86_400_000)}d ago`;
@@ -69,21 +77,14 @@ export function fmtRelTime(ts: number): string {
 /** Bucket a session into a recency label. */
 function bucketFromTs(ts: number, now: number = Date.now()): string {
   const diff = now - ts;
-  if (diff < 86_400_000) return 'Today';
-  if (diff < 172_800_000) return 'Yesterday';
-  if (diff < 604_800_000) return 'This week';
-  if (diff < 2_592_000_000) return 'This month';
-  return 'Older';
+  if (diff < 86_400_000) return "Today";
+  if (diff < 172_800_000) return "Yesterday";
+  if (diff < 604_800_000) return "This week";
+  if (diff < 2_592_000_000) return "This month";
+  return "Older";
 }
-const BUCKET_ORDER = [
-  'Pinned',
-  'Today',
-  'Yesterday',
-  'This week',
-  'This month',
-  'Older',
-] as const;
-type Bucket = typeof BUCKET_ORDER[number];
+const BUCKET_ORDER = ["Pinned", "Today", "Yesterday", "This week", "This month", "Older"] as const;
+type Bucket = (typeof BUCKET_ORDER)[number];
 
 /** Filter by a search query (case-insensitive over title + preview + deck + every message). */
 function filterByQuery(sessions: ChatSession[], q: string): ChatSession[] {
@@ -91,38 +92,30 @@ function filterByQuery(sessions: ChatSession[], q: string): ChatSession[] {
   if (!needle) return sessions;
   return sessions.filter((s) => {
     if (s.title.toLowerCase().includes(needle)) return true;
-    if ((s.preview || '').toLowerCase().includes(needle)) return true;
-    if ((s.deckName || '').toLowerCase().includes(needle)) return true;
-    return s.messages.some((m) => (m.content || '').toLowerCase().includes(needle));
+    if ((s.preview || "").toLowerCase().includes(needle)) return true;
+    if ((s.deckName || "").toLowerCase().includes(needle)) return true;
+    return s.messages.some((m) => (m.content || "").toLowerCase().includes(needle));
   });
 }
 
 /** Group into buckets while preserving the existing pinned-first sort. */
-function groupSessions(
-  sessions: ChatSession[],
-): Array<[Bucket, ChatSession[]]> {
+function groupSessions(sessions: ChatSession[]): Array<[Bucket, ChatSession[]]> {
   const buckets: Record<Bucket, ChatSession[]> = {
     Pinned: [],
     Today: [],
     Yesterday: [],
-    'This week': [],
-    'This month': [],
+    "This week": [],
+    "This month": [],
     Older: [],
   };
   for (const s of sessions) {
     if (s.pinned) buckets.Pinned.push(s);
-    else
-      buckets[bucketFromTs(s.updatedAt) as Exclude<Bucket, 'Pinned'>].push(
-        s,
-      );
+    else buckets[bucketFromTs(s.updatedAt) as Exclude<Bucket, "Pinned">].push(s);
   }
   for (const k of Object.keys(buckets) as Bucket[]) {
     buckets[k].sort((a, b) => b.updatedAt - a.updatedAt);
   }
-  return BUCKET_ORDER.filter((b) => buckets[b].length > 0).map((b) => [
-    b,
-    buckets[b],
-  ]);
+  return BUCKET_ORDER.filter((b) => buckets[b].length > 0).map((b) => [b, buckets[b]]);
 }
 
 interface Props {
@@ -135,6 +128,8 @@ interface Props {
   onNewChat?: () => void;
   /** Optional: parent listens to the full sessions list (for "continue last" CTAs etc.). */
   onSessionsChange?: (sessions: ChatSession[]) => void;
+  /** When false, remove local history and avoid persisting new messages. */
+  persistHistory?: boolean;
 }
 
 export default function ConversationHistory({
@@ -143,22 +138,35 @@ export default function ConversationHistory({
   onResume,
   onNewChat,
   onSessionsChange,
+  persistHistory = true,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [sessions, setSessions] = useState<ChatSession[]>(() => safeRead());
   const [activeId, setActiveId] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === "undefined") return null;
     return window.localStorage.getItem(ACTIVE_KEY);
   });
   const [renamingId, setRenamingId] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
-  const [query, setQuery] = useState('');
+  const [renameValue, setRenameValue] = useState("");
+  const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (!persistHistory) {
+      if (sessions.length > 0) setSessions([]);
+      if (activeId !== null) setActiveId(null);
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+        window.localStorage.removeItem(ACTIVE_KEY);
+      } catch {
+        // Storage is best effort.
+      }
+      onSessionsChange?.([]);
+      return;
+    }
     onSessionsChange?.(sessions);
-  }, [sessions, onSessionsChange]);
+  }, [activeId, onSessionsChange, persistHistory, sessions]);
 
   useEffect(() => {
     if (open) requestAnimationFrame(() => searchRef.current?.focus());
@@ -166,7 +174,7 @@ export default function ConversationHistory({
 
   // Auto-save current session whenever the in-memory messages change
   useEffect(() => {
-    if (messages.length === 0) return;
+    if (!persistHistory || messages.length === 0) return;
     setSessions((prev) => {
       const idx = prev.findIndex((s) => s.id === activeId);
       const title = titleFromMessages(messages);
@@ -195,7 +203,9 @@ export default function ConversationHistory({
         setActiveId(id);
         try {
           window.localStorage.setItem(ACTIVE_KEY, id);
-        } catch { /* intentionally ignored */ }
+        } catch {
+          /* intentionally ignored */
+        }
       }
       next.sort((a, b) => {
         if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
@@ -204,18 +214,14 @@ export default function ConversationHistory({
       safeWrite(next);
       return next;
     });
-  }, [messages, deckName, activeId]);
+  }, [activeId, deckName, messages, persistHistory]);
 
-  const filtered = useMemo(
-    () => filterByQuery(sessions, query),
-    [sessions, query],
-  );
+  const filtered = useMemo(() => filterByQuery(sessions, query), [sessions, query]);
   const grouped = useMemo(() => groupSessions(filtered), [filtered]);
 
   const startNew = useCallback(() => {
     setActiveId(null);
-    if (typeof window !== 'undefined')
-      window.localStorage.removeItem(ACTIVE_KEY);
+    if (typeof window !== "undefined") window.localStorage.removeItem(ACTIVE_KEY);
     setSelected(new Set());
     onNewChat?.();
     setOpen(false);
@@ -232,7 +238,9 @@ export default function ConversationHistory({
         setActiveId(null);
         try {
           window.localStorage.removeItem(ACTIVE_KEY);
-        } catch { /* intentionally ignored */ }
+        } catch {
+          /* intentionally ignored */
+        }
         onNewChat?.();
       }
     },
@@ -241,9 +249,7 @@ export default function ConversationHistory({
 
   const togglePin = useCallback((id: string) => {
     setSessions((prev) => {
-      const next = prev.map((s) =>
-        s.id === id ? { ...s, pinned: !s.pinned } : s,
-      );
+      const next = prev.map((s) => (s.id === id ? { ...s, pinned: !s.pinned } : s));
       next.sort((a, b) => {
         if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
         return b.updatedAt - a.updatedAt;
@@ -262,9 +268,7 @@ export default function ConversationHistory({
     if (!renamingId) return;
     const v = renameValue.trim();
     setSessions((prev) => {
-      const next = prev.map((s) =>
-        s.id === renamingId ? { ...s, title: v || s.title } : s,
-      );
+      const next = prev.map((s) => (s.id === renamingId ? { ...s, title: v || s.title } : s));
       safeWrite(next);
       return next;
     });
@@ -302,7 +306,9 @@ export default function ConversationHistory({
       setActiveId(null);
       try {
         window.localStorage.removeItem(ACTIVE_KEY);
-      } catch { /* intentionally ignored */ }
+      } catch {
+        /* intentionally ignored */
+      }
       onNewChat?.();
     }
     setSelected(new Set());
@@ -311,12 +317,8 @@ export default function ConversationHistory({
   const bulkPin = useCallback(() => {
     if (selected.size === 0) return;
     setSessions((prev) => {
-      const allPinned = prev
-        .filter((s) => selected.has(s.id))
-        .every((s) => s.pinned);
-      const next = prev.map((s) =>
-        selected.has(s.id) ? { ...s, pinned: !allPinned } : s,
-      );
+      const allPinned = prev.filter((s) => selected.has(s.id)).every((s) => s.pinned);
+      const next = prev.map((s) => (selected.has(s.id) ? { ...s, pinned: !allPinned } : s));
       next.sort((a, b) => {
         if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
         return b.updatedAt - a.updatedAt;
@@ -341,14 +343,12 @@ export default function ConversationHistory({
           2,
         ),
       ],
-      { type: 'application/json' },
+      { type: "application/json" },
     );
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `auramind-chat-${new Date()
-      .toISOString()
-      .slice(0, 10)}.json`;
+    a.download = `auramind-chat-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -364,6 +364,7 @@ export default function ConversationHistory({
   return (
     <>
       <button
+        data-chat-tour="history"
         onClick={() => setOpen((v) => !v)}
         title="Chat history"
         aria-label="Open chat history"
@@ -392,16 +393,14 @@ export default function ConversationHistory({
               initial={{ x: -360, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -360, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+              transition={{ type: "spring", stiffness: 400, damping: 40 }}
               className="fixed left-0 top-0 bottom-0 z-50 w-[360px] bg-[#0E0E14] border-r border-[#2A2A3A] flex flex-col"
             >
               {/* Header */}
               <div className="flex items-center justify-between p-4 border-b border-[#2A2A3A]/60">
                 <div className="flex items-center gap-2">
                   <MessageSquare size={14} className="text-[#A78BFA]" />
-                  <h3 className="text-[#F0EFFE] text-sm font-semibold">
-                    Chat History
-                  </h3>
+                  <h3 className="text-[#F0EFFE] text-sm font-semibold">Chat History</h3>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
@@ -443,9 +442,7 @@ export default function ConversationHistory({
                 {!hasAnySessions ? (
                   <div className="text-center py-12 px-6">
                     <Sparkles size={28} className="text-[#3A3A4F] mx-auto mb-3" />
-                    <p className="text-[#5A5A72] text-xs">
-                      No chat history yet.
-                    </p>
+                    <p className="text-[#5A5A72] text-xs">No chat history yet.</p>
                     <p className="text-[#3A3A4F] text-[10px] mt-1">
                       Chat sessions save automatically as you go.
                     </p>
@@ -457,7 +454,7 @@ export default function ConversationHistory({
                       No chats match &ldquo;<span className="text-[#9090A8]">{query}</span>&rdquo;.
                     </p>
                     <button
-                      onClick={() => setQuery('')}
+                      onClick={() => setQuery("")}
                       className="text-[10px] text-violet-400 hover:text-violet-300 mt-1.5"
                     >
                       Clear search
@@ -471,9 +468,7 @@ export default function ConversationHistory({
                           {bucket}
                         </span>
                         <span className="flex-1 h-px bg-[#1A1A24]" />
-                        <span className="text-[9px] text-[#3A3A4F]">
-                          {bucketSessions.length}
-                        </span>
+                        <span className="text-[9px] text-[#3A3A4F]">{bucketSessions.length}</span>
                       </div>
                       {bucketSessions.map((s) => {
                         const isActive = s.id === activeId;
@@ -484,26 +479,21 @@ export default function ConversationHistory({
                             key={s.id}
                             className={`group rounded-xl border transition-all px-3 py-2.5 cursor-pointer ${
                               isActive
-                                ? 'bg-[#15151D] border-[#7C3AED]/40'
-                                : 'bg-transparent border-transparent hover:bg-[#15151D] hover:border-[#2A2A3A]'
-                            } ${isSelected ? 'ring-1 ring-[#A78BFA]/30' : ''}`}
+                                ? "bg-[#15151D] border-[#7C3AED]/40"
+                                : "bg-transparent border-transparent hover:bg-[#15151D] hover:border-[#2A2A3A]"
+                            } ${isSelected ? "ring-1 ring-[#A78BFA]/30" : ""}`}
                             onClick={(e) => {
                               if (isRenaming) return;
-                              if (
-                                e.shiftKey ||
-                                e.metaKey ||
-                                e.ctrlKey
-                              ) {
+                              if (e.shiftKey || e.metaKey || e.ctrlKey) {
                                 toggleSelect(s.id);
                                 return;
                               }
                               setActiveId(s.id);
                               try {
-                                window.localStorage.setItem(
-                                  ACTIVE_KEY,
-                                  s.id,
-                                );
-                              } catch { /* intentionally ignored */ }
+                                window.localStorage.setItem(ACTIVE_KEY, s.id);
+                              } catch {
+                                /* intentionally ignored */
+                              }
                               onResume(s);
                               setOpen(false);
                             }}
@@ -515,36 +505,26 @@ export default function ConversationHistory({
                                   toggleSelect(s.id);
                                 }}
                                 className="w-5 h-5 mt-0.5 rounded flex items-center justify-center text-[#5A5A72] hover:text-[#A78BFA] hover:bg-[#1A1A24] shrink-0"
-                                title={isSelected ? 'Deselect' : 'Select'}
+                                title={isSelected ? "Deselect" : "Select"}
                               >
                                 {isSelected ? (
-                                  <CheckSquare
-                                    size={11}
-                                    className="text-[#A78BFA]"
-                                  />
+                                  <CheckSquare size={11} className="text-[#A78BFA]" />
                                 ) : (
                                   <Square size={11} />
                                 )}
                               </button>
                               {s.pinned && (
-                                <Pin
-                                  size={11}
-                                  className="text-[#A78BFA] mt-0.5 shrink-0"
-                                />
+                                <Pin size={11} className="text-[#A78BFA] mt-0.5 shrink-0" />
                               )}
                               <div className="flex-1 min-w-0">
                                 {isRenaming ? (
                                   <input
                                     autoFocus
                                     value={renameValue}
-                                    onChange={(e) =>
-                                      setRenameValue(e.target.value)
-                                    }
+                                    onChange={(e) => setRenameValue(e.target.value)}
                                     onKeyDown={(e) => {
-                                      if (e.key === 'Enter')
-                                        commitRename();
-                                      if (e.key === 'Escape')
-                                        setRenamingId(null);
+                                      if (e.key === "Enter") commitRename();
+                                      if (e.key === "Escape") setRenamingId(null);
                                     }}
                                     onBlur={commitRename}
                                     onClick={(e) => e.stopPropagation()}
@@ -563,15 +543,13 @@ export default function ConversationHistory({
                                   {s.deckName && (
                                     <>
                                       <span>·</span>
-                                      <span className="truncate max-w-[120px]">
-                                        {s.deckName}
-                                      </span>
+                                      <span className="truncate max-w-[120px]">{s.deckName}</span>
                                     </>
                                   )}
                                   <span>·</span>
                                   <span>
                                     {s.messages.length} msg
-                                    {s.messages.length === 1 ? '' : 's'}
+                                    {s.messages.length === 1 ? "" : "s"}
                                   </span>
                                 </div>
                               </div>
@@ -581,14 +559,10 @@ export default function ConversationHistory({
                                     e.stopPropagation();
                                     togglePin(s.id);
                                   }}
-                                  title={s.pinned ? 'Unpin' : 'Pin'}
+                                  title={s.pinned ? "Unpin" : "Pin"}
                                   className="w-6 h-6 rounded text-[#5A5A72] hover:text-[#A78BFA] hover:bg-[#1A1A24] flex items-center justify-center"
                                 >
-                                  {s.pinned ? (
-                                    <PinOff size={11} />
-                                  ) : (
-                                    <Pin size={11} />
-                                  )}
+                                  {s.pinned ? <PinOff size={11} /> : <Pin size={11} />}
                                 </button>
                                 <button
                                   onClick={(e) => {
@@ -598,11 +572,7 @@ export default function ConversationHistory({
                                   title="Rename"
                                   className="w-6 h-6 rounded text-[#5A5A72] hover:text-[#F0EFFE] hover:bg-[#1A1A24] flex items-center justify-center"
                                 >
-                                  {isRenaming ? (
-                                    <Check size={11} />
-                                  ) : (
-                                    <Edit2 size={11} />
-                                  )}
+                                  {isRenaming ? <Check size={11} /> : <Edit2 size={11} />}
                                 </button>
                                 <button
                                   onClick={(e) => {
@@ -631,8 +601,8 @@ export default function ConversationHistory({
                     onClick={() => toggleAllSelect(filtered)}
                     title={
                       selected.size === filtered.length && filtered.length > 0
-                        ? 'Deselect all'
-                        : 'Select all'
+                        ? "Deselect all"
+                        : "Select all"
                     }
                     className="w-5 h-5 rounded flex items-center justify-center text-[#5A5A72] hover:text-[#A78BFA] hover:bg-[#1A1A24]"
                   >
@@ -644,7 +614,7 @@ export default function ConversationHistory({
                   </button>
                   <span>
                     {sessions.length} session
-                    {sessions.length === 1 ? '' : 's'}
+                    {sessions.length === 1 ? "" : "s"}
                     {selected.size > 0 && ` · ${selected.size} selected`}
                   </span>
                 </div>
@@ -656,10 +626,7 @@ export default function ConversationHistory({
                         className="px-1.5 py-0.5 rounded text-[#A78BFA] hover:bg-[#7C3AED]/15 transition-colors"
                         title="Pin / unpin selected"
                       >
-                        <Pin
-                          size={9}
-                          className="inline mr-0.5 -mt-0.5"
-                        />
+                        <Pin size={9} className="inline mr-0.5 -mt-0.5" />
                         Pin
                       </button>
                       <button
@@ -667,10 +634,7 @@ export default function ConversationHistory({
                         className="px-1.5 py-0.5 rounded text-[#A8A8C0] hover:bg-[#1A1A24] transition-colors"
                         title="Export selected as JSON"
                       >
-                        <Download
-                          size={9}
-                          className="inline mr-0.5 -mt-0.5"
-                        />
+                        <Download size={9} className="inline mr-0.5 -mt-0.5" />
                         Export
                       </button>
                       <button
@@ -678,18 +642,13 @@ export default function ConversationHistory({
                         className="px-1.5 py-0.5 rounded text-red-400 hover:bg-red-500/15 transition-colors"
                         title="Delete selected"
                       >
-                        <Trash2
-                          size={9}
-                          className="inline mr-0.5 -mt-0.5"
-                        />
+                        <Trash2 size={9} className="inline mr-0.5 -mt-0.5" />
                         Delete
                       </button>
                     </>
                   )}
                   {lastActivityLabel && !selected.size && (
-                    <span className="text-[#3A3A4F]">
-                      last activity {lastActivityLabel}
-                    </span>
+                    <span className="text-[#3A3A4F]">last activity {lastActivityLabel}</span>
                   )}
                 </div>
               </div>

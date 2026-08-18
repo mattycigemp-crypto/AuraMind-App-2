@@ -14,6 +14,7 @@
  *     meaningful aria-label.
  */
 // Voice
+export { VoiceAura, type VoiceAuraProps } from './VoiceAura';
 export { VoiceOrb, type VoiceOrbState, type VoiceOrbProps } from './VoiceOrb';
 export { MicBlockedArt } from './MicBlockedArt';
 

@@ -1,39 +1,67 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Send, Sparkles, ArrowLeft, Square, Mic, MicOff, ArrowRight, Clock, MessageCircle, Volume2, VolumeX, Brain, Lightbulb, Pencil, Flame, BarChart3 } from '@/components/icons';
-import { useDashboardWorkspace } from '../../contexts/DashboardWorkspaceContext';
-import { useAIChat, type ChatContext, type ChatMode, type ProfAuraPersonality } from '../../hooks/useAIChat';
-import { useCurrentUserId } from '../../hooks/useCurrentUserId';
-import { useMoodForProfAura } from '../../hooks/useMoodForProfAura';
-import { useStudyStats } from '../../hooks/useStudyStats';
-import { useMicVolume } from '../../hooks/useMicVolume';
-import { useTTS } from '../../hooks/useTTS';
-import useSpeechRecognition from '../../hooks/useSpeechRecognition';
-import { dbService } from '../../services/database/dbService';
-import { getStoredPersonality, setStoredPersonality, PROF_AURA_PERSONALITY_OPTIONS } from '../../lib/profAuraPersonality';
-import type { Deck, Card } from '../../types';
-import ContextStrip from './ContextStrip';
-import ChatMessage from './ChatMessage';
-import SuggestedPrompts from './SuggestedPrompts';
-import ConversationHistory, { type ChatSession } from './ConversationHistory';
-import FileAttachment, { type AttachmentDraft, attachmentsToPrompt } from './FileAttachment';
-import ChatTour from './ChatTour';
-import SessionReplayModal from '../study/SessionReplayModal';
-import ReplayEventBridge from './ReplayEventBridge';
-import ProfAuraEmptyState from '../ui/ProfAuraEmptyState';
-import ProfAura from './ProfAura';
-import { queueSession } from '../../services/chatSessionService';
-import { buildConceptWeaknesses, cardLapses, WEAK_LAPSE_THRESHOLD } from '../../lib/conceptModel';
-import { buildPriorSessionMemory } from '../../lib/chatMemory';
-import PageShell from '../dashboard/PageShell';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Send,
+  Sparkles,
+  ArrowLeft,
+  Square,
+  Mic,
+  MicOff,
+  ArrowRight,
+  Clock,
+  MessageCircle,
+  Volume2,
+  VolumeX,
+  Brain,
+  Lightbulb,
+  Pencil,
+  Flame,
+  BarChart3,
+} from "@/components/icons";
+import { useDashboardWorkspace } from "../../contexts/DashboardWorkspaceContext";
+import {
+  useAIChat,
+  type ChatContext,
+  type ChatMode,
+  type ProfAuraPersonality,
+} from "../../hooks/useAIChat";
+import { useCurrentUserId } from "../../hooks/useCurrentUserId";
+import { useMoodForProfAura } from "../../hooks/useMoodForProfAura";
+import { useStudyStats } from "../../hooks/useStudyStats";
+import { useMicVolume } from "../../hooks/useMicVolume";
+import { useTTS } from "../../hooks/useTTS";
+import useSpeechRecognition from "../../hooks/useSpeechRecognition";
+import { dbService } from "../../services/database/dbService";
+import {
+  getStoredPersonality,
+  setStoredPersonality,
+  PROF_AURA_PERSONALITY_OPTIONS,
+} from "../../lib/profAuraPersonality";
+import type { Deck, Card } from "../../types";
+import ContextStrip from "./ContextStrip";
+import ChatMessage from "./ChatMessage";
+import SuggestedPrompts from "./SuggestedPrompts";
+import ConversationHistory, { type ChatSession } from "./ConversationHistory";
+import FileAttachment, { type AttachmentDraft, attachmentsToPrompt } from "./FileAttachment";
+import ChatTour from "./ChatTour";
+import SessionReplayModal from "../study/SessionReplayModal";
+import ReplayEventBridge from "./ReplayEventBridge";
+import ProfAuraEmptyState from "../ui/ProfAuraEmptyState";
+import ProfAura from "./ProfAura";
+import { queueSession } from "../../services/chatSessionService";
+import { buildConceptWeaknesses, cardLapses, WEAK_LAPSE_THRESHOLD } from "../../lib/conceptModel";
+import { buildPriorSessionMemory } from "../../lib/chatMemory";
+import PageShell from "../dashboard/PageShell";
+import { motion, AnimatePresence } from "framer-motion";
+import { Capacitor } from "../../lib/nativeShim";
+import { useAppPreference } from "../../lib/appPreferences";
 
 const MODE_LABELS: Record<ChatMode, string> = {
-  study: 'Study Coach',
-  companion: 'Companion',
+  study: "Study Coach",
+  companion: "Companion",
 };
 
-const MODES: ChatMode[] = ['study', 'companion'];
+const MODES: ChatMode[] = ["study", "companion"];
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -41,16 +69,16 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
  * Top 5 most-forgotten cards in a deck, ordered by lapse count (difficulty
  * as tiebreak), enriched with FSRS difficulty + last review for the prompt.
  */
-function buildWeakCards(cards: Card[]): ChatContext['weakCards'] {
+function buildWeakCards(cards: Card[]): ChatContext["weakCards"] {
   return cards
-    .filter(c => cardLapses(c) >= WEAK_LAPSE_THRESHOLD)
+    .filter((c) => cardLapses(c) >= WEAK_LAPSE_THRESHOLD)
     .sort(
       (a, b) =>
         cardLapses(b) - cardLapses(a) ||
         (b.fsrsState?.difficulty ?? 0) - (a.fsrsState?.difficulty ?? 0),
     )
     .slice(0, 5)
-    .map(c => ({
+    .map((c) => ({
       term: c.front,
       againCount: cardLapses(c),
       difficulty: c.fsrsState?.difficulty,
@@ -61,14 +89,14 @@ function buildWeakCards(cards: Card[]): ChatContext['weakCards'] {
 function buildInitialContext(decks: Deck[], cards: Card[]): ChatContext {
   const deck = decks[0];
   const now = Date.now();
-  const deckCards = cards.filter(c => c.deckId === deck?.id);
-  const dueCount = deckCards.filter(c => (c.nextReview ?? 0) <= now).length;
+  const deckCards = cards.filter((c) => c.deckId === deck?.id);
+  const dueCount = deckCards.filter((c) => (c.nextReview ?? 0) <= now).length;
   return {
-    deckId: deck?.id || '',
-    deckName: deck?.title || 'No deck selected',
+    deckId: deck?.id || "",
+    deckName: deck?.title || "No deck selected",
     deckCardCount: deck?.cardCount || deckCards.length,
     cardsDueToday: dueCount,
-    dueThisWeek: cards.filter(c => (c.nextReview ?? 0) <= now + WEEK_MS).length,
+    dueThisWeek: cards.filter((c) => (c.nextReview ?? 0) <= now + WEEK_MS).length,
     weakCards: buildWeakCards(deckCards),
   };
 }
@@ -81,8 +109,8 @@ function buildInitialContext(decks: Deck[], cards: Card[]): ChatContext {
  * companion mode without reading mode (defensive in case mode isn't bridged).
  */
 const COMPANION_CONTEXT: ChatContext = {
-  deckId: '',
-  deckName: 'Companion',
+  deckId: "",
+  deckName: "Companion",
   deckCardCount: 0,
   cardsDueToday: 0,
   weakCards: [],
@@ -91,7 +119,7 @@ const COMPANION_CONTEXT: ChatContext = {
 /** Compact relative-time formatter (e.g. "2h ago", "3d ago") for inline meta. */
 function fmtRelShort(ts: number, now: number = Date.now()): string {
   const diff = now - ts;
-  if (diff < 60_000) return 'just now';
+  if (diff < 60_000) return "just now";
   if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
   if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
   if (diff < 604_800_000) return `${Math.floor(diff / 86_400_000)}d ago`;
@@ -112,29 +140,30 @@ function getStarterPrompts(context: ChatContext) {
     },
     {
       icon: Lightbulb,
-      label: 'Explain a concept',
+      label: "Explain a concept",
       prompt: `I'm studying ${deckName}. Explain the hardest concept in this deck using a real-world analogy.`,
-      detail: 'Deep dive',
+      detail: "Deep dive",
     },
     {
       icon: Pencil,
-      label: 'Generate flashcards',
+      label: "Generate flashcards",
       prompt: `Generate 5 new flashcards for ${deckName}. Include mnemonics where possible.`,
-      detail: 'Auto-save',
+      detail: "Auto-save",
     },
     {
       icon: hasWeak ? Flame : BarChart3,
-      label: hasWeak ? `Fix my ${weakCards[0]?.term || 'weakest'} card` : 'Show my weak spots',
+      label: hasWeak ? `Fix my ${weakCards[0]?.term || "weakest"} card` : "Show my weak spots",
       prompt: hasWeak
         ? `I keep forgetting "${weakCards[0]?.term}". Help me understand it better with examples and mnemonics.`
         : `Analyze my review history and tell me which concepts I'm weakest on.`,
-      detail: hasWeak ? 'Personalized' : 'Analysis',
+      detail: hasWeak ? "Personalized" : "Analysis",
     },
   ];
 }
 
 export default function AIChatPage() {
   const navigate = useNavigate();
+  const isAndroidApp = Capacitor.getPlatform() === "android";
   const workspace = useDashboardWorkspace();
   const userId = useCurrentUserId();
   // Real study data (streak, 7-day retention, last-session accuracy) fed into
@@ -143,11 +172,17 @@ export default function AIChatPage() {
   const [localDecks, setLocalDecks] = useState<Deck[]>([]);
   const [localCards, setLocalCards] = useState<Card[]>([]);
 
-  const [selectedDeckId, setSelectedDeckId] = useState('');
+  const [selectedDeckId, setSelectedDeckId] = useState("");
+  const [saveChatHistory] = useAppPreference("auramind_saveChatHistory", true);
   const [personality, setPersonalityState] = useState<ProfAuraPersonality>(getStoredPersonality);
-  const userMeta = workspace?.user as ({ streakCount?: number; lastStudyAt?: number; accuracy7d?: number } | undefined);
+  const userMeta = workspace?.user as
+    | { streakCount?: number; lastStudyAt?: number; accuracy7d?: number }
+    | undefined;
   // Cross-session memory — computed once per page load (reads localStorage).
-  const priorMemory = useMemo(() => buildPriorSessionMemory(), []);
+  const priorMemory = useMemo(
+    () => (saveChatHistory ? buildPriorSessionMemory() || "" : ""),
+    [saveChatHistory],
+  );
   const [context, setContext] = useState<ChatContext>(() => ({
     ...buildInitialContext(workspace?.decks ?? [], workspace?.cards ?? []),
     priorConversations: priorMemory,
@@ -155,18 +190,18 @@ export default function AIChatPage() {
   // useAIChat must be declared BEFORE any useEffect that depends on chat.mode,
   // since hooks must appear in a stable order. The next two useEffects
   // adapt `context` based on deck selection AND chat.mode, so chat lives here.
-   
+
   const chat = useAIChat(context);
+  const { mode: chatMode, updateContext } = chat;
 
   const decks = workspace?.decks ?? localDecks;
   const cards = workspace?.cards ?? localCards;
   // Concept-level weakness model — aggregated across the current card set.
-  const conceptWeaknesses = useMemo(
-    () => buildConceptWeaknesses(cards, decks),
-    [cards, decks],
-  );
-  const selectedDeck = decks.find(d => d.id === selectedDeckId) || decks[0];
-  const dueCount = cards.filter(c => c.deckId === selectedDeck?.id && (c.nextReview ?? 0) <= Date.now()).length;
+  const conceptWeaknesses = useMemo(() => buildConceptWeaknesses(cards, decks), [cards, decks]);
+  const selectedDeck = decks.find((d) => d.id === selectedDeckId) || decks[0];
+  const dueCount = cards.filter(
+    (c) => c.deckId === selectedDeck?.id && (c.nextReview ?? 0) <= Date.now(),
+  ).length;
 
   useEffect(() => {
     if (workspace) return;
@@ -186,7 +221,9 @@ export default function AIChatPage() {
         setContext(buildInitialContext(fetchedDecks, fetchedCards));
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [workspace, userId]);
 
   useEffect(() => {
@@ -204,7 +241,7 @@ export default function AIChatPage() {
   useEffect(() => {
     const now = Date.now();
 
-    if (chat.mode === 'companion') {
+    if (chatMode === "companion") {
       // Companion mode deliberately clears deck context so the prompt
       // branch in lib/chat-prompts.ts (companion mode preamble) takes over.
       // Performance stats are preserved — companion-mode users who ask
@@ -216,18 +253,18 @@ export default function AIChatPage() {
         lastSessionAccuracy: stats.lastSessionAccuracy,
         streakCount: stats.streak,
       };
-      setContext(prev => ({ ...prev, ...payload }));
-      chat.updateContext(payload);
+      setContext((prev) => ({ ...prev, ...payload }));
+      updateContext(payload);
       return;
     }
 
-    const deckCards = selectedDeck ? cards.filter(c => c.deckId === selectedDeck.id) : [];
+    const deckCards = selectedDeck ? cards.filter((c) => c.deckId === selectedDeck.id) : [];
     const payload: Partial<ChatContext> = {
-      deckId: selectedDeck?.id ?? '',
-      deckName: selectedDeck?.title ?? 'No deck selected',
+      deckId: selectedDeck?.id ?? "",
+      deckName: selectedDeck?.title ?? "No deck selected",
       deckCardCount: selectedDeck?.cardCount ?? deckCards.length,
-      cardsDueToday: deckCards.filter(c => (c.nextReview ?? 0) <= now).length,
-      dueThisWeek: cards.filter(c => (c.nextReview ?? 0) <= now + WEEK_MS).length,
+      cardsDueToday: deckCards.filter((c) => (c.nextReview ?? 0) <= now).length,
+      dueThisWeek: cards.filter((c) => (c.nextReview ?? 0) <= now + WEEK_MS).length,
       weakCards: buildWeakCards(deckCards),
       conceptWeaknesses,
       priorConversations: priorMemory,
@@ -236,11 +273,22 @@ export default function AIChatPage() {
       lastSessionAccuracy: stats.lastSessionAccuracy,
       streakCount: stats.streak,
     };
-    setContext(prev => ({ ...prev, ...payload }));
-    chat.updateContext(payload);
-  }, [selectedDeck, cards, chat.mode, personality, stats.retention7d, stats.lastSessionAccuracy, stats.streak, conceptWeaknesses, priorMemory, chat.updateContext]);
+    setContext((prev) => ({ ...prev, ...payload }));
+    updateContext(payload);
+  }, [
+    selectedDeck,
+    cards,
+    chatMode,
+    personality,
+    stats.retention7d,
+    stats.lastSessionAccuracy,
+    stats.streak,
+    conceptWeaknesses,
+    priorMemory,
+    updateContext,
+  ]);
 
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const [replayOpen, setReplayOpen] = useState(false);
   // Sessions mirror — ConversationHistory owns the localStorage truth; we
@@ -255,9 +303,11 @@ export default function AIChatPage() {
     if (allSessions.length === 0) return null;
     const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
     const now = Date.now();
-    return [...allSessions]
-      .filter(s => s.messages.length > 0 && now - s.updatedAt <= THIRTY_DAYS)
-      .sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null;
+    return (
+      [...allSessions]
+        .filter((s) => s.messages.length > 0 && now - s.updatedAt <= THIRTY_DAYS)
+        .sort((a, b) => b.updatedAt - a.updatedAt)[0] ?? null
+    );
   }, [allSessions]);
   // Mic + mood for Prof. Aura — mic starts/stops on user click so we never
   // surprise the user with a permission prompt. Mood is a pure derivation
@@ -271,6 +321,7 @@ export default function AIChatPage() {
   const [attachments, setAttachments] = useState<AttachmentDraft[]>([]);
   const [showPersonalityPicker, setShowPersonalityPicker] = useState(false);
   const tts = useTTS();
+  const { isEnabled: ttsEnabled, speak: speakTts } = tts;
 
   const setPersonality = useCallback((p: ProfAuraPersonality) => {
     setPersonalityState(p);
@@ -288,16 +339,21 @@ export default function AIChatPage() {
 
   // Pre-fill from ?q= param (from ProfessorPage suggestions)
   useEffect(() => {
-    const q = searchParams.get('q');
+    const q = searchParams.get("q");
     if (q && q.trim()) {
       setInput(q);
-      setSearchParams((prev) => { prev.delete('q'); return prev; }, { replace: true });
+      setSearchParams(
+        (prev) => {
+          prev.delete("q");
+          return prev;
+        },
+        { replace: true },
+      );
       requestAnimationFrame(() => {
         textareaRef.current?.focus();
         if (textareaRef.current) {
-          textareaRef.current.style.height = 'auto';
-          textareaRef.current.style.height =
-            Math.min(textareaRef.current.scrollHeight, 140) + 'px';
+          textareaRef.current.style.height = "auto";
+          textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 140) + "px";
         }
       });
     }
@@ -305,7 +361,7 @@ export default function AIChatPage() {
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chat.messages.length, chat.isStreaming]);
 
   // Detect scroll position for "Jump to latest" button
@@ -316,15 +372,15 @@ export default function AIChatPage() {
       const { scrollTop, scrollHeight, clientHeight } = container;
       setShowJumpToBottom(scrollHeight - scrollTop - clientHeight > 200);
     };
-    container.addEventListener('scroll', onScroll, { passive: true });
-    return () => container.removeEventListener('scroll', onScroll);
+    container.addEventListener("scroll", onScroll, { passive: true });
+    return () => container.removeEventListener("scroll", onScroll);
   }, []);
 
   // Auto-grow textarea
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 140) + 'px';
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 140) + "px";
     }
   }, [input]);
 
@@ -333,10 +389,10 @@ export default function AIChatPage() {
     // Attachments are flattened onto the prompt body so Prof. Aura sees
     // them inline without a separate schema for "messages with files".
     const attachmentBody = attachmentsToPrompt(attachments);
-    const composed = [input.trim(), attachmentBody].filter(Boolean).join('\n\n');
+    const composed = [input.trim(), attachmentBody].filter(Boolean).join("\n\n");
     if (!composed) return;
     chat.sendMessage(composed);
-    setInput('');
+    setInput("");
     setAttachments([]);
     requestAnimationFrame(() => textareaRef.current?.focus());
   }, [chat, input, attachments]);
@@ -353,7 +409,7 @@ export default function AIChatPage() {
       // Drain the transcript. If a final result landed in the
       // millisecond before stop, we don't want it stranded.
       const drained = sr.transcript.trim();
-      if (drained) setInput(prev => prev ? `${prev} ${drained}` : drained);
+      if (drained) setInput((prev) => (prev ? `${prev} ${drained}` : drained));
       sr.resetTranscript();
       mic.stop();
     } else {
@@ -366,7 +422,7 @@ export default function AIChatPage() {
   }, [mic, sr]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -380,20 +436,20 @@ export default function AIChatPage() {
   // truth unchanged.
   const activeSessionIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (chat.messages.length === 0) return;
+    if (!saveChatHistory || chat.messages.length === 0) return;
     try {
-      const id = window.localStorage.getItem('auramind.aurachat.active.v1');
+      const id = window.localStorage.getItem("auramind.aurachat.active.v1");
       if (!id || id === activeSessionIdRef.current) return;
       activeSessionIdRef.current = id;
       queueSession({
         id,
-        title: chat.messages.find(m => m.role === 'user')?.content.slice(0, 80) ?? 'New chat',
+        title: chat.messages.find((m) => m.role === "user")?.content.slice(0, 80) ?? "New chat",
         pinned: false,
-        preview: chat.messages[chat.messages.length - 1]?.content.slice(0, 120) ?? '',
+        preview: chat.messages[chat.messages.length - 1]?.content.slice(0, 120) ?? "",
         messages: chat.messages,
         createdAt: Date.now(),
         updatedAt: Date.now(),
-        deckName: chat.mode === 'companion' ? undefined : context.deckName,
+        deckName: chat.mode === "companion" ? undefined : context.deckName,
         mode: chat.mode,
       }).catch(() => {
         /* offline or rate-limited; the next change will retry inside the queue */
@@ -401,26 +457,33 @@ export default function AIChatPage() {
     } catch {
       /* localStorage unavailable; ignore */
     }
-  }, [chat.messages, chat.mode, context.deckName]);
+  }, [chat.messages, chat.mode, context.deckName, saveChatHistory]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   // Auto-speak new assistant messages when TTS is enabled
-  const lastSpokenIdRef = useRef<string>('');
+  const lastSpokenIdRef = useRef<string>("");
   useEffect(() => {
-    if (!tts.isEnabled || chat.isStreaming) return;
-    const lastAssistant = [...chat.messages].reverse().find(m => m.role === 'assistant' && m.content);
-    if (lastAssistant && lastAssistant.id !== lastSpokenIdRef.current && lastAssistant.content.length > 5) {
+    if (!ttsEnabled || chat.isStreaming) return;
+    const lastAssistant = [...chat.messages]
+      .reverse()
+      .find((m) => m.role === "assistant" && m.content);
+    if (
+      lastAssistant &&
+      lastAssistant.id !== lastSpokenIdRef.current &&
+      lastAssistant.content.length > 5
+    ) {
       lastSpokenIdRef.current = lastAssistant.id;
-      tts.speak(lastAssistant.content);
+      speakTts(lastAssistant.content);
     }
-  }, [chat.messages, chat.isStreaming, tts]);
+  }, [chat.messages, chat.isStreaming, speakTts, ttsEnabled]);
 
   const starterPrompts = getStarterPrompts(context);
   const hasMessages = chat.messages.length > 0;
-  const PersonalityIcon = PROF_AURA_PERSONALITY_OPTIONS.find(o => o.id === personality)?.icon ?? Sparkles;
+  const PersonalityIcon =
+    PROF_AURA_PERSONALITY_OPTIONS.find((o) => o.id === personality)?.icon ?? Sparkles;
 
   return (
     <PageShell>
@@ -437,28 +500,38 @@ export default function AIChatPage() {
           (or any embedded surface) can ask us to open the replay modal
           without prop-drilling. Single-shot for the duration of this page. */}
       <ReplayEventBridge onOpen={() => setReplayOpen(true)} />
-      <div className="flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden">
+      <div
+        className={`flex flex-col h-full min-h-0 bg-transparent relative overflow-hidden ${isAndroidApp ? "android-chat-page" : ""}`}
+      >
         {/* Ambient background glow */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-violet-600/[0.04] blur-[120px] rounded-full animate-pulse" style={{ animationDuration: '8s' }} />
+          <div
+            className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-violet-600/[0.04] blur-[120px] rounded-full animate-pulse"
+            style={{ animationDuration: "8s" }}
+          />
           <div className="absolute bottom-[-20%] left-[-10%] w-[400px] h-[400px] bg-fuchsia-600/[0.03] blur-[100px] rounded-full" />
         </div>
 
         {/* Header */}
-        <div className="relative z-10 flex items-center justify-between px-6 py-3 border-b border-[#2A2A3A]/50 shrink-0">
+        <div className="android-chat-header relative z-10 flex items-center justify-between px-6 py-3 border-b border-[#2A2A3A]/50 shrink-0">
           <div className="flex items-center gap-3">
             {!workspace && (
               <button
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate("/dashboard")}
                 className="w-7 h-7 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#5A5A72] hover:text-[#F0EFFE] transition-colors"
               >
                 <ArrowLeft size={14} />
               </button>
             )}
             <div className="flex items-center gap-2.5">
-              <div className="relative">
+              <div className="relative" data-chat-tour="avatar">
                 <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#7C3AED] via-[#EC4899] to-[#06B6D4] flex items-center justify-center shadow-lg shadow-violet-500/20">
-                  <ProfAura variant={chat.isStreaming ? 'thinking' : 'badge'} size={22} mood={mood} audioLevel={mic.isActive ? mic.level : undefined} />
+                  <ProfAura
+                    variant={chat.isStreaming ? "thinking" : "badge"}
+                    size={22}
+                    mood={mood}
+                    audioLevel={mic.isActive ? mic.level : undefined}
+                  />
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#0A0A0F]">
                   <div className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-50" />
@@ -480,11 +553,15 @@ export default function AIChatPage() {
             {/* Voice OUT toggle */}
             <button
               onClick={tts.toggle}
-              title={tts.isEnabled ? 'Voice OUT: ON — click to disable' : 'Voice OUT: OFF — click to enable'}
+              title={
+                tts.isEnabled
+                  ? "Voice OUT: ON — click to disable"
+                  : "Voice OUT: OFF — click to enable"
+              }
               className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
                 tts.isEnabled
-                  ? 'bg-[#7C3AED]/15 text-[#8B5CF6] border border-[#7C3AED]/30'
-                  : 'bg-[#111118] text-[#5A5A72] border border-[#2A2A3A] hover:text-[#F0EFFE]'
+                  ? "bg-[#7C3AED]/15 text-[#8B5CF6] border border-[#7C3AED]/30"
+                  : "bg-[#111118] text-[#5A5A72] border border-[#2A2A3A] hover:text-[#F0EFFE]"
               }`}
             >
               {tts.isEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
@@ -505,16 +582,22 @@ export default function AIChatPage() {
                   <PersonalityIcon size={16} className="text-[#A78BFA]" />
                 </span>
                 <span className="text-[10px] font-medium text-[#9090A8] hidden sm:inline">
-                  {PROF_AURA_PERSONALITY_OPTIONS.find(o => o.id === personality)?.label ?? 'Personality'}
+                  {PROF_AURA_PERSONALITY_OPTIONS.find((o) => o.id === personality)?.label ??
+                    "Personality"}
                 </span>
               </button>
               {showPersonalityPicker && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowPersonalityPicker(false)} />
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowPersonalityPicker(false)}
+                  />
                   <div className="absolute right-0 top-10 z-50 w-72 p-3 rounded-2xl bg-[#111118] border border-[#2A2A3A] shadow-2xl shadow-black/50">
-                    <p className="text-[9px] uppercase tracking-widest text-[#5A5A72] mb-2 px-1">Prof. Aura's Personality</p>
+                    <p className="text-[9px] uppercase tracking-widest text-[#5A5A72] mb-2 px-1">
+                      Prof. Aura's Personality
+                    </p>
                     <div className="space-y-1">
-                      {PROF_AURA_PERSONALITY_OPTIONS.map(opt => {
+                      {PROF_AURA_PERSONALITY_OPTIONS.map((opt) => {
                         const OptionIcon = opt.icon;
                         return (
                           <button
@@ -522,14 +605,16 @@ export default function AIChatPage() {
                             onClick={() => setPersonality(opt.id)}
                             className={`w-full text-left p-2.5 rounded-xl transition-all flex items-start gap-2.5 ${
                               personality === opt.id
-                                ? 'bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-[#F0EFFE]'
-                                : 'border border-transparent hover:bg-[#1A1A24] text-[#9090A8] hover:text-[#F0EFFE]'
+                                ? "bg-[#7C3AED]/10 border border-[#7C3AED]/30 text-[#F0EFFE]"
+                                : "border border-transparent hover:bg-[#1A1A24] text-[#9090A8] hover:text-[#F0EFFE]"
                             }`}
                           >
                             <OptionIcon size={16} className="mt-0.5 shrink-0 text-[#A78BFA]" />
                             <div className="min-w-0">
                               <p className="text-xs font-medium">{opt.label}</p>
-                              <p className="text-[10px] text-[#5A5A72] leading-snug mt-0.5">{opt.description}</p>
+                              <p className="text-[10px] text-[#5A5A72] leading-snug mt-0.5">
+                                {opt.description}
+                              </p>
                             </div>
                             {personality === opt.id && (
                               <div className="ml-auto shrink-0 w-4 h-4 rounded-full bg-[#7C3AED] flex items-center justify-center mt-0.5">
@@ -552,16 +637,21 @@ export default function AIChatPage() {
               onResume={(sess: ChatSession) => chat.loadMessages(sess.messages)}
               onNewChat={() => chat.clearMessages()}
               onSessionsChange={setAllSessions}
+              persistHistory={saveChatHistory}
             />
             {/* Deck selector — hidden in companion mode since chats there
                 are decoupled from any specific deck. */}
-            {decks.length > 0 && chat.mode !== 'companion' && (
+            {decks.length > 0 && chat.mode !== "companion" && (
               <select
-                value={selectedDeck?.id || ''}
-                onChange={e => setSelectedDeckId(e.target.value)}
+                value={selectedDeck?.id || ""}
+                onChange={(e) => setSelectedDeckId(e.target.value)}
                 className="bg-[#111118] border border-[#2A2A3A] rounded-lg px-3 py-1.5 text-[#F0EFFE] text-xs outline-none focus:border-[#7C3AED]/50 max-w-[160px] truncate"
               >
-                {decks.map(d => <option key={d.id} value={d.id}>{d.title}</option>)}
+                {decks.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.title}
+                  </option>
+                ))}
               </select>
             )}
             {/* Mode switcher — rounded-full pills for a ChatGPT-style
@@ -569,17 +659,21 @@ export default function AIChatPage() {
                 than a flat tint so the selected mode reads as the
                 "primary action" without shouting. */}
             <div className="hidden md:flex bg-[#111118] border border-[#2A2A3A] rounded-full p-0.5">
-              {MODES.map(mode => (
+              {MODES.map((mode) => (
                 <button
                   key={mode}
                   onClick={() => chat.setMode(mode)}
-                  title={mode === 'companion' ? 'Talk with Prof. Aura without a deck — chat, coaching, motivation' : MODE_LABELS[mode]}
+                  title={
+                    mode === "companion"
+                      ? "Talk with Prof. Aura without a deck — chat, coaching, motivation"
+                      : MODE_LABELS[mode]
+                  }
                   className={`px-3 py-1 rounded-full text-[10px] font-medium transition-all whitespace-nowrap ${
                     chat.mode === mode
-                      ? (mode === 'companion'
-                          ? 'bg-gradient-to-r from-fuchsia-500/20 to-violet-500/20 text-[#F0ABFC] shadow-[inset_0_0_0_1px_rgba(244,114,182,0.25)]'
-                          : 'bg-gradient-to-b from-[#7C3AED]/20 to-[#EC4899]/10 text-[#C4B5FD] shadow-[inset_0_0_0_1px_rgba(124,58,237,0.35)]')
-                      : 'text-[#5A5A72] hover:text-[#F0EFFE]'
+                      ? mode === "companion"
+                        ? "bg-gradient-to-r from-fuchsia-500/20 to-violet-500/20 text-[#F0ABFC] shadow-[inset_0_0_0_1px_rgba(244,114,182,0.25)]"
+                        : "bg-gradient-to-b from-[#7C3AED]/20 to-[#EC4899]/10 text-[#C4B5FD] shadow-[inset_0_0_0_1px_rgba(124,58,237,0.35)]"
+                      : "text-[#5A5A72] hover:text-[#F0EFFE]"
                   }`}
                 >
                   {MODE_LABELS[mode]}
@@ -590,7 +684,7 @@ export default function AIChatPage() {
         </div>
 
         {/* Context strip — hidden in companion mode (no deck to surface). */}
-        {selectedDeck && hasMessages && chat.mode !== 'companion' && (
+        {selectedDeck && hasMessages && chat.mode !== "companion" && (
           <div className="relative z-10 border-b border-[#2A2A3A]/30">
             <ContextStrip
               deckName={selectedDeck.title}
@@ -603,14 +697,14 @@ export default function AIChatPage() {
         {/* Messages area */}
         <div
           ref={chatContainerRef}
-          className="flex-1 overflow-y-auto relative z-10 px-6 py-6"
+          className="android-chat-messages flex-1 overflow-y-auto relative z-10 px-6 py-6"
         >
           <div className="max-w-3xl mx-auto">
-            {chat.messages.length === 0 && chat.mode === 'companion' ? (
+            {chat.messages.length === 0 && chat.mode === "companion" ? (
               /* ─── Companion-mode welcome ─── */
               <div className="flex flex-col items-center justify-center min-h-[70vh] animate-fade-in">
                 <ProfAuraEmptyState
-                  mood={chat.isStreaming ? 'curious' : 'inviting'}
+                  mood={chat.isStreaming ? "curious" : "inviting"}
                   size="lg"
                   eyebrow="COMPANION MODE"
                   title="Talk with me about anything"
@@ -618,18 +712,18 @@ export default function AIChatPage() {
                   audioLevel={mic.isActive ? mic.level : undefined}
                   actions={[
                     {
-                      label: 'Switch back to Study Coach',
+                      label: "Switch back to Study Coach",
                       icon: ArrowLeft,
-                      onClick: () => chat.setMode('study'),
+                      onClick: () => chat.setMode("study"),
                       primary: true,
                     },
                     {
-                      label: 'Ask me about my day',
+                      label: "Ask me about my day",
                       icon: MessageCircle,
-                      onClick: () => chat.sendMessage('Hey Prof. Aura — how am I doing today?'),
+                      onClick: () => chat.sendMessage("Hey Prof. Aura — how am I doing today?"),
                     },
                   ]}
-                  badges={['No deck required', 'Voice + text', 'Lives in /dashboard/chat']}
+                  badges={["No deck required", "Voice + text", "Lives in /dashboard/chat"]}
                 />
               </div>
             ) : chat.messages.length === 0 ? (
@@ -645,11 +739,16 @@ export default function AIChatPage() {
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  transition={{ type: 'spring', stiffness: 200, damping: 20 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
                   className="relative mb-7"
                 >
                   <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#7C3AED] via-[#EC4899] to-[#06B6D4] flex items-center justify-center shadow-2xl shadow-violet-500/25">
-                    <ProfAura variant={chat.isStreaming ? 'streaming' : 'rest'} size={68} mood={mood} audioLevel={mic.isActive ? mic.level : undefined} />
+                    <ProfAura
+                      variant={chat.isStreaming ? "streaming" : "rest"}
+                      size={68}
+                      mood={mood}
+                      audioLevel={mic.isActive ? mic.level : undefined}
+                    />
                   </div>
                   <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-[3px] border-[#0A0A0F]">
                     <div className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-40" />
@@ -668,13 +767,18 @@ export default function AIChatPage() {
                     className="absolute inset-0 rounded-3xl pointer-events-none"
                     animate={{
                       boxShadow: [
-                        '0 0 0 0px rgba(124,58,237,0.0)',
-                        '0 0 0 6px rgba(124,58,237,0.18)',
-                        '0 0 0 6px rgba(124,58,237,0.18)',
-                        '0 0 0 0px rgba(124,58,237,0.0)',
+                        "0 0 0 0px rgba(124,58,237,0.0)",
+                        "0 0 0 6px rgba(124,58,237,0.18)",
+                        "0 0 0 6px rgba(124,58,237,0.18)",
+                        "0 0 0 0px rgba(124,58,237,0.0)",
                       ],
                     }}
-                    transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut', times: [0, 0.35, 0.65, 1] }}
+                    transition={{
+                      duration: 3.6,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      times: [0, 0.35, 0.65, 1],
+                    }}
                   />
                 </motion.div>
 
@@ -684,11 +788,16 @@ export default function AIChatPage() {
                   transition={{ delay: 0.15 }}
                 >
                   <h2 className="text-3xl sm:text-4xl font-bold text-[#F0EFFE] mb-3 tracking-tight">
-                    Hey, I'm <span className="bg-gradient-to-r from-[#7C3AED] via-[#EC4899] to-[#06B6D4] bg-clip-text text-transparent">Prof. Aura</span>
+                    Hey, I'm{" "}
+                    <span className="bg-gradient-to-r from-[#7C3AED] via-[#EC4899] to-[#06B6D4] bg-clip-text text-transparent">
+                      Prof. Aura
+                    </span>
                   </h2>
                   <p className="text-[#8A8AA3] text-sm sm:text-base max-w-lg leading-relaxed mb-2">
-                    Your AI study coach. I can see your <strong className="text-[#F0EFFE]">{decks.length} decks</strong>,{' '}
-                    <strong className="text-[#F0EFFE]">{cards.length} cards</strong>, and your FSRS schedule.
+                    Your AI study coach. I can see your{" "}
+                    <strong className="text-[#F0EFFE]">{decks.length} decks</strong>,{" "}
+                    <strong className="text-[#F0EFFE]">{cards.length} cards</strong>, and your FSRS
+                    schedule.
                   </p>
                   <p className="text-[#5A5A72] text-xs sm:text-sm mb-10">
                     Ask me anything — I'll quiz you, explain concepts, or generate new cards.
@@ -717,7 +826,9 @@ export default function AIChatPage() {
                       <MessageCircle size={15} className="text-[#A78BFA]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[9px] font-semibold uppercase tracking-widest text-[#A78BFA] mb-0.5">Continue where you left off</p>
+                      <p className="text-[9px] font-semibold uppercase tracking-widest text-[#A78BFA] mb-0.5">
+                        Continue where you left off
+                      </p>
                       <p className="text-sm text-[#F0EFFE] font-medium truncate group-hover:text-[#C4B5FD] transition-colors">
                         {lastSessionForResume.title}
                       </p>
@@ -725,16 +836,24 @@ export default function AIChatPage() {
                         <Clock size={9} />
                         <span>{fmtRelShort(lastSessionForResume.updatedAt)}</span>
                         <span>·</span>
-                        <span>{lastSessionForResume.messages.length} msg{lastSessionForResume.messages.length === 1 ? '' : 's'}</span>
+                        <span>
+                          {lastSessionForResume.messages.length} msg
+                          {lastSessionForResume.messages.length === 1 ? "" : "s"}
+                        </span>
                         {lastSessionForResume.deckName && (
                           <>
                             <span>·</span>
-                            <span className="truncate max-w-[140px]">{lastSessionForResume.deckName}</span>
+                            <span className="truncate max-w-[140px]">
+                              {lastSessionForResume.deckName}
+                            </span>
                           </>
                         )}
                       </div>
                     </div>
-                    <ArrowRight size={14} className="text-[#9090A8] group-hover:text-[#F0EFFE] group-hover:translate-x-0.5 transition-all shrink-0" />
+                    <ArrowRight
+                      size={14}
+                      className="text-[#9090A8] group-hover:text-[#F0EFFE] group-hover:translate-x-0.5 transition-all shrink-0"
+                    />
                   </motion.button>
                 )}
 
@@ -744,6 +863,7 @@ export default function AIChatPage() {
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.3 }}
                   className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-xl"
+                  data-chat-tour="prompts"
                 >
                   {starterPrompts.map((s, i) => {
                     const StarterIcon = s.icon;
@@ -756,9 +876,14 @@ export default function AIChatPage() {
                         className="text-left p-4 rounded-2xl bg-[#111118] border border-[#2A2A3A] hover:border-[#7C3AED]/40 hover:bg-[#15151D] transition-all group"
                       >
                         <div className="flex items-start gap-3">
-                          <StarterIcon size={20} className="shrink-0 mt-0.5 text-[#9090A8] group-hover:text-[#8B5CF6] transition-colors" />
+                          <StarterIcon
+                            size={20}
+                            className="shrink-0 mt-0.5 text-[#9090A8] group-hover:text-[#8B5CF6] transition-colors"
+                          />
                           <div className="min-w-0">
-                            <p className="text-[#F0EFFE] text-sm font-medium group-hover:text-[#8B5CF6] transition-colors">{s.label}</p>
+                            <p className="text-[#F0EFFE] text-sm font-medium group-hover:text-[#8B5CF6] transition-colors">
+                              {s.label}
+                            </p>
                             <p className="text-[#5A5A72] text-[10px] mt-0.5">{s.detail}</p>
                           </div>
                         </div>
@@ -783,7 +908,7 @@ export default function AIChatPage() {
                     Start a study session
                   </button>
                   <button
-                    onClick={() => navigate('/dashboard/generator')}
+                    onClick={() => navigate("/dashboard/generator")}
                     className="px-4 py-2 rounded-xl bg-[#1A1A24] border border-[#2A2A3A] hover:border-[#7C3AED]/40 text-[#F0EFFE] text-xs font-medium transition-all"
                   >
                     Generate a deck
@@ -828,7 +953,7 @@ export default function AIChatPage() {
 
         {/* Suggested prompts (shown after messages, before input) */}
         {hasMessages && !chat.isStreaming && (
-          <div className="relative z-10 px-6 pb-1">
+          <div className="relative z-10 px-6 pb-1" data-chat-tour="prompts">
             <SuggestedPrompts
               mode={chat.mode}
               onSelect={chat.sendMessage}
@@ -840,7 +965,7 @@ export default function AIChatPage() {
         )}
 
         {/* Input area */}
-        <div className="relative z-10 p-4 sm:p-6 border-t border-[#2A2A3A]/50 shrink-0 bg-gradient-to-t from-[#0A0A0F] via-[#0A0A0F] to-transparent">
+        <div className="android-chat-composer relative z-10 p-4 sm:p-6 border-t border-[#2A2A3A]/50 shrink-0 bg-gradient-to-t from-[#0A0A0F] via-[#0A0A0F] to-transparent">
           <div className="max-w-3xl mx-auto">
             <div className="relative group/input">
               {/* Glow on focus */}
@@ -850,9 +975,11 @@ export default function AIChatPage() {
                 <textarea
                   ref={textareaRef}
                   value={input}
-                  onChange={e => setInput(e.target.value)}
+                  onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={mic.isActive ? 'Listening — speak or type…' : 'Ask Prof. Aura anything...'}
+                  placeholder={
+                    mic.isActive ? "Listening — speak or type…" : "Ask Prof. Aura anything..."
+                  }
                   rows={1}
                   className="flex-1 bg-transparent border-none outline-none px-5 py-3.5 text-sm text-[#F0EFFE] placeholder-[#5A5A72] resize-none max-h-[140px] leading-relaxed"
                   disabled={chat.isStreaming}
@@ -861,27 +988,25 @@ export default function AIChatPage() {
                 {/* File attachment (paperclip). Drag/drop anywhere on the
                     page also engages via the global drop handler inside
                     FileAttachment itself. */}
-                <FileAttachment
-                  attachments={attachments}
-                  setAttachments={setAttachments}
-                />
+                <FileAttachment attachments={attachments} setAttachments={setAttachments} />
 
                 {/* Mic toggle. Idle = violet outline; listening = solid violet.
                     The button coordinates BOTH recognizers (volume + speech). */}
                 <button
+                  data-chat-tour="mic"
                   onClick={toggleMic}
                   title={
                     mic.isActive || sr.isListening
-                      ? 'Stop listening'
+                      ? "Stop listening"
                       : mic.error || sr.error
-                      ? `Mic/speech unavailable: ${(mic.error || sr.error || '').slice(0, 60)}`
-                      : 'Speak your question'
+                        ? `Mic/speech unavailable: ${(mic.error || sr.error || "").slice(0, 60)}`
+                        : "Speak your question"
                   }
                   aria-pressed={mic.isActive || sr.isListening}
                   className={`m-2 w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
                     mic.isActive || sr.isListening
-                      ? 'bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(124,58,237,0.4)]'
-                      : 'bg-[#1A1A24] border border-[#2A2A3A] text-[#A8A8C0] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40'
+                      ? "bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(124,58,237,0.4)]"
+                      : "bg-[#1A1A24] border border-[#2A2A3A] text-[#A8A8C0] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40"
                   }`}
                 >
                   {mic.isActive || sr.isListening ? <MicOff size={14} /> : <Mic size={14} />}
@@ -902,8 +1027,8 @@ export default function AIChatPage() {
                     disabled={!input.trim()}
                     className={`m-2 w-9 h-9 rounded-xl flex items-center justify-center transition-all shrink-0 ${
                       input.trim()
-                        ? 'bg-[#7C3AED] text-white hover:bg-[#6D28D9] shadow-[0_0_15px_rgba(124,58,237,0.3)]'
-                        : 'bg-[#1A1A24] text-[#3A3A4F] border border-[#2A2A3A]'
+                        ? "bg-[#7C3AED] text-white hover:bg-[#6D28D9] shadow-[0_0_15px_rgba(124,58,237,0.3)]"
+                        : "bg-[#1A1A24] text-[#3A3A4F] border border-[#2A2A3A]"
                     }`}
                   >
                     <Send size={14} />
@@ -915,7 +1040,14 @@ export default function AIChatPage() {
               <div className="flex items-center justify-between mt-2 px-1">
                 <div className="flex items-center gap-3">
                   <span className="text-[9px] text-[#3A3A4F]">
-                    <kbd className="px-1 py-0.5 rounded border border-[#2A2A3A] bg-[#111118] font-mono text-[8px]">Enter</kbd> send · <kbd className="px-1 py-0.5 rounded border border-[#2A2A3A] bg-[#111118] font-mono text-[8px]">Shift+Enter</kbd> newline
+                    <kbd className="px-1 py-0.5 rounded border border-[#2A2A3A] bg-[#111118] font-mono text-[8px]">
+                      Enter
+                    </kbd>{" "}
+                    send ·{" "}
+                    <kbd className="px-1 py-0.5 rounded border border-[#2A2A3A] bg-[#111118] font-mono text-[8px]">
+                      Shift+Enter
+                    </kbd>{" "}
+                    newline
                   </span>
                 </div>
                 <span className="text-[9px] text-[#3A3A4F]">
@@ -925,7 +1057,7 @@ export default function AIChatPage() {
                       Prof. Aura is thinking...
                     </span>
                   ) : (
-                    'Ready'
+                    "Ready"
                   )}
                 </span>
               </div>

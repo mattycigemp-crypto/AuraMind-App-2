@@ -1,21 +1,21 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Capacitor } from '../lib/nativeShim';
-import { Haptics, ImpactStyle, NotificationType } from '../lib/nativeShim';
-import { PushNotifications } from '../lib/nativeShim';
-import { LocalNotifications } from '../lib/nativeShim';
-import { App } from '../lib/nativeShim';
-import { Device } from '../lib/nativeShim';
-import { Network } from '../lib/nativeShim';
-import { Preferences } from '../lib/nativeShim';
-import { Filesystem, Directory } from '../lib/nativeShim';
-import { Share } from '../lib/nativeShim';
-import { Clipboard } from '../lib/nativeShim';
-import { StatusBar, Style } from '../lib/nativeShim';
-import { SplashScreen } from '../lib/nativeShim';
-import { Keyboard } from '../lib/nativeShim';
-import { NativeBiometric } from '../lib/nativeShim';
+import { useEffect, useState, useCallback } from "react";
+import { Capacitor } from "../lib/nativeShim";
+import { Haptics, ImpactStyle, NotificationType } from "../lib/nativeShim";
+import { PushNotifications } from "../lib/nativeShim";
+import { LocalNotifications } from "../lib/nativeShim";
+import { App } from "../lib/nativeShim";
+import { Device } from "../lib/nativeShim";
+import { Network } from "../lib/nativeShim";
+import { Preferences } from "../lib/nativeShim";
+import { Filesystem, Directory } from "../lib/nativeShim";
+import { Share } from "../lib/nativeShim";
+import { Clipboard } from "../lib/nativeShim";
+import { StatusBar, Style } from "../lib/nativeShim";
+import { SplashScreen } from "../lib/nativeShim";
+import { Keyboard } from "../lib/nativeShim";
+import { NativeBiometric } from "../lib/nativeShim";
 
-export type PlatformType = 'ios' | 'android' | 'web' | 'desktop';
+export type PlatformType = "ios" | "android" | "web" | "desktop";
 
 export interface NativeDeviceInfo {
   platform: PlatformType;
@@ -31,14 +31,14 @@ export interface NetworkStatus {
 }
 
 export function usePlatform(): PlatformType {
-  const [platform, setPlatform] = useState<PlatformType>('web');
+  const [platform, setPlatform] = useState<PlatformType>("web");
 
   useEffect(() => {
     const initPlatform = async () => {
       const platform = Capacitor.getPlatform();
-      if (platform === 'ios') setPlatform('ios');
-      else if (platform === 'android') setPlatform('android');
-      else if (platform === 'web') setPlatform('web');
+      if (platform === "ios") setPlatform("ios");
+      else if (platform === "android") setPlatform("android");
+      else if (platform === "web") setPlatform("web");
     };
     initPlatform();
   }, []);
@@ -52,31 +52,28 @@ export function useNativeDeviceInfo(): NativeDeviceInfo | null {
   useEffect(() => {
     const getDeviceInfo = async () => {
       const platform = Capacitor.getPlatform();
-      if (platform === 'web') {
+      if (platform === "web") {
         setDeviceInfo({
-          platform: 'web',
+          platform: "web",
           model: navigator.userAgent,
-          osVersion: '',
-          appVersion: '2.0.0',
+          osVersion: "",
+          appVersion: "2.0.0",
           isNative: false,
         });
         return;
       }
 
       try {
-        const [device, appInfo] = await Promise.all([
-          Device.getInfo(),
-          App.getInfo(),
-        ]);
+        const [device, appInfo] = await Promise.all([Device.getInfo(), App.getInfo()]);
         setDeviceInfo({
-          platform: platform === 'ios' ? 'ios' : platform === 'android' ? 'android' : 'web',
+          platform: platform === "ios" ? "ios" : platform === "android" ? "android" : "web",
           model: device.model,
           osVersion: device.osVersion,
           appVersion: appInfo.version,
           isNative: true,
         });
       } catch (error) {
-        console.error('Failed to get device info:', error);
+        console.error("Failed to get device info:", error);
       }
     };
     getDeviceInfo();
@@ -86,29 +83,70 @@ export function useNativeDeviceInfo(): NativeDeviceInfo | null {
 }
 
 export function useNetworkStatus(): NetworkStatus {
-  const [status, setStatus] = useState<NetworkStatus>({ connected: true, connectionType: 'unknown' });
+  const [status, setStatus] = useState<NetworkStatus>({
+    connected: true,
+    connectionType: "unknown",
+  });
 
   useEffect(() => {
-    const initNetwork = async () => {
-      if (!Capacitor.isNativePlatform()) {
-        setStatus({ connected: navigator.onLine, connectionType: 'wifi' });
-        window.addEventListener('online', () => setStatus(s => ({ ...s, connected: true })));
-        window.addEventListener('offline', () => setStatus(s => ({ ...s, connected: false })));
-        return;
-      }
+    let disposed = false;
+    let nativeListener: { remove: () => void | Promise<void> } | null = null;
 
-      const status = await Network.getStatus();
-      setStatus({ connected: status.connected, connectionType: status.connectionType });
+    if (!Capacitor.isNativePlatform()) {
+      const updateOnlineState = (connected: boolean) => {
+        setStatus({ connected, connectionType: connected ? "wifi" : "none" });
+      };
+      const handleOnline = () => updateOnlineState(true);
+      const handleOffline = () => updateOnlineState(false);
+      updateOnlineState(navigator.onLine);
+      window.addEventListener("online", handleOnline);
+      window.addEventListener("offline", handleOffline);
+      return () => {
+        // Keep stable handler references so every mounted screen cleans up its
+        // listeners. The previous anonymous callbacks accumulated after route
+        // changes and continued updating unmounted settings/chat surfaces.
+        window.removeEventListener("online", handleOnline);
+        window.removeEventListener("offline", handleOffline);
+      };
+    }
 
-      // The shim types addListener's args as `unknown[]`, so callback
-      // params get no contextual type. These annotations mirror the real
-      // @capacitor/network ConnectionStatus payload.
-      const listener = await Network.addListener('networkStatusChange', (s: { connected: boolean; connectionType: string }) => {
-        setStatus({ connected: s.connected, connectionType: s.connectionType });
-      });
-      return () => listener.remove();
+    void Network.getStatus()
+      .then((networkStatus) => {
+        if (disposed) return;
+        setStatus({
+          connected: networkStatus.connected,
+          connectionType: networkStatus.connectionType,
+        });
+      })
+      .catch(() => undefined);
+
+    // The shim types addListener's args as `unknown[]`, so callback
+    // params get no contextual type. These annotations mirror the real
+    // @capacitor/network ConnectionStatus payload.
+    void Network.addListener(
+      "networkStatusChange",
+      (networkStatus: { connected: boolean; connectionType: string }) => {
+        if (!disposed) {
+          setStatus({
+            connected: networkStatus.connected,
+            connectionType: networkStatus.connectionType,
+          });
+        }
+      },
+    )
+      .then((listener) => {
+        if (disposed) {
+          void listener.remove();
+        } else {
+          nativeListener = listener;
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      disposed = true;
+      if (nativeListener) void nativeListener.remove();
     };
-    initNetwork();
   }, []);
 
   return status;
@@ -145,13 +183,13 @@ export function useHaptics() {
 
 export function usePushNotifications() {
   const [token, setToken] = useState<string | null>(null);
-  const [permission, setPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
+  const [permission, setPermission] = useState<"granted" | "denied" | "prompt">("prompt");
 
   const requestPermissions = useCallback(async () => {
     if (!Capacitor.isNativePlatform()) return;
     const perm = await PushNotifications.requestPermissions();
-    setPermission(perm.receive as 'granted' | 'denied' | 'prompt');
-    if (perm.receive === 'granted') {
+    setPermission(perm.receive as "granted" | "denied" | "prompt");
+    if (perm.receive === "granted") {
       await PushNotifications.register();
     }
   }, []);
@@ -159,12 +197,12 @@ export function usePushNotifications() {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
-    PushNotifications.addListener('registration', (t: { value: string }) => {
+    PushNotifications.addListener("registration", (t: { value: string }) => {
       setToken(t.value);
     });
 
-    PushNotifications.addListener('registrationError', (err: unknown) => {
-      console.error('Push registration error:', err);
+    PushNotifications.addListener("registrationError", (err: unknown) => {
+      console.error("Push registration error:", err);
     });
 
     return () => {
@@ -176,24 +214,39 @@ export function usePushNotifications() {
 }
 
 export function useLocalNotifications() {
-  const schedule = useCallback(async (notification: {
-    title: string;
-    body: string;
-    id: number;
-    schedule?: { at: Date; repeats?: boolean };
-    sound?: string;
-    attachments?: Array<{ id: string; url: string }>;
-  }) => {
-    if (!Capacitor.isNativePlatform()) return;
-    await LocalNotifications.schedule({
-      notifications: [{
-        ...notification,
-        schedule: notification.schedule ? { at: notification.schedule.at, repeats: notification.schedule.repeats } : undefined,
-        sound: notification.sound || 'default',
-        attachments: notification.attachments,
-      }],
-    });
+  const requestPermissions = useCallback(async (): Promise<string> => {
+    if (!Capacitor.isNativePlatform()) return "denied";
+    const result = await LocalNotifications.requestPermissions();
+    return result.display;
   }, []);
+
+  const schedule = useCallback(
+    async (notification: {
+      title: string;
+      body: string;
+      id: number;
+      schedule?: {
+        at?: Date;
+        repeats?: boolean;
+        on?: { weekday?: number; hour?: number; minute?: number };
+      };
+      sound?: string;
+      attachments?: Array<{ id: string; url: string }>;
+    }) => {
+      if (!Capacitor.isNativePlatform()) return;
+      await LocalNotifications.schedule({
+        notifications: [
+          {
+            ...notification,
+            schedule: notification.schedule ? { ...notification.schedule } : undefined,
+            sound: notification.sound || "default",
+            attachments: notification.attachments,
+          },
+        ],
+      });
+    },
+    [],
+  );
 
   const cancel = useCallback(async (id: number) => {
     if (!Capacitor.isNativePlatform()) return;
@@ -206,21 +259,21 @@ export function useLocalNotifications() {
     return result.notifications;
   }, []);
 
-  return { schedule, cancel, getPending };
+  return { requestPermissions, schedule, cancel, getPending };
 }
 
 export function useAppLifecycle() {
-  const [state, setState] = useState<'active' | 'background'>('active');
+  const [state, setState] = useState<"active" | "background">("active");
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
     const handleStateChange = ({ isActive }: { isActive: boolean }) => {
-      setState(isActive ? 'active' : 'background');
+      setState(isActive ? "active" : "background");
     };
 
     const setup = async () => {
-      await App.addListener('appStateChange', handleStateChange);
+      await App.addListener("appStateChange", handleStateChange);
     };
     setup();
     return () => {
@@ -262,8 +315,8 @@ export function useKeyboard() {
     if (!Capacitor.isNativePlatform()) return;
 
     const setup = async () => {
-      const showListener = await Keyboard.addListener('keyboardWillShow', () => setIsOpen(true));
-      const hideListener = await Keyboard.addListener('keyboardWillHide', () => setIsOpen(false));
+      const showListener = await Keyboard.addListener("keyboardWillShow", () => setIsOpen(true));
+      const hideListener = await Keyboard.addListener("keyboardWillHide", () => setIsOpen(false));
       return () => {
         showListener.remove();
         hideListener.remove();
@@ -271,7 +324,7 @@ export function useKeyboard() {
     };
     const cleanup = setup();
     return () => {
-      cleanup.then(fn => fn());
+      cleanup.then((fn) => fn());
     };
   }, []);
 
@@ -298,7 +351,7 @@ export function useSplashScreen() {
 }
 
 export function usePreferences() {
-  const get = useCallback(async <T,>(key: string, defaultValue?: T): Promise<T | undefined> => {
+  const get = useCallback(async <T>(key: string, defaultValue?: T): Promise<T | undefined> => {
     if (!Capacitor.isNativePlatform()) {
       const item = localStorage.getItem(key);
       return item ? JSON.parse(item) : defaultValue;
@@ -307,7 +360,7 @@ export function usePreferences() {
     return value ? JSON.parse(value) : defaultValue;
   }, []);
 
-  const set = useCallback(async <T,>(key: string, value: T) => {
+  const set = useCallback(async <T>(key: string, value: T) => {
     if (!Capacitor.isNativePlatform()) {
       localStorage.setItem(key, JSON.stringify(value));
       return;
@@ -335,31 +388,37 @@ export function usePreferences() {
 }
 
 export function useFilesystem() {
-  const readFile = useCallback(async (path: string, directory: Directory = Directory.Data): Promise<string> => {
-    if (!Capacitor.isNativePlatform()) {
-      throw new Error('Filesystem not available on web');
-    }
-    const result = await Filesystem.readFile({ path, directory });
-    return result.data as string;
-  }, []);
+  const readFile = useCallback(
+    async (path: string, directory: Directory = Directory.Data): Promise<string> => {
+      if (!Capacitor.isNativePlatform()) {
+        throw new Error("Filesystem not available on web");
+      }
+      const result = await Filesystem.readFile({ path, directory });
+      return result.data as string;
+    },
+    [],
+  );
 
-  const writeFile = useCallback(async (path: string, data: string, directory: Directory = Directory.Data) => {
-    if (!Capacitor.isNativePlatform()) {
-      throw new Error('Filesystem not available on web');
-    }
-    await Filesystem.writeFile({ path, data, directory });
-  }, []);
+  const writeFile = useCallback(
+    async (path: string, data: string, directory: Directory = Directory.Data) => {
+      if (!Capacitor.isNativePlatform()) {
+        throw new Error("Filesystem not available on web");
+      }
+      await Filesystem.writeFile({ path, data, directory });
+    },
+    [],
+  );
 
   const deleteFile = useCallback(async (path: string, directory: Directory = Directory.Data) => {
     if (!Capacitor.isNativePlatform()) {
-      throw new Error('Filesystem not available on web');
+      throw new Error("Filesystem not available on web");
     }
     await Filesystem.deleteFile({ path, directory });
   }, []);
 
   const listFiles = useCallback(async (path: string, directory: Directory = Directory.Data) => {
     if (!Capacitor.isNativePlatform()) {
-      throw new Error('Filesystem not available on web');
+      throw new Error("Filesystem not available on web");
     }
     const result = await Filesystem.readdir({ path, directory });
     return result.files;
@@ -417,9 +476,9 @@ export function useBiometricAuth() {
     if (!Capacitor.isNativePlatform()) return false;
     try {
       await NativeBiometric.verifyIdentity({
-        reason: reason || 'Authentication required',
-        title: 'Authentication Required',
-        subtitle: 'Please authenticate to continue',
+        reason: reason || "Authentication required",
+        title: "Authentication Required",
+        subtitle: "Please authenticate to continue",
         useFallback: true,
       });
       return true;

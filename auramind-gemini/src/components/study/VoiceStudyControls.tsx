@@ -11,11 +11,15 @@
  * interactions live inside useVoiceStudy, and answer grading lives in
  * voiceEvaluationService. No coupling to the StudyModePage's state.
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Volume2, Mic, MicOff, Headphones } from '@/components/icons';
-import { useVoiceStudy } from '../../hooks/useVoiceStudy';
-import { VoiceOrb, MicBlockedArt, VerdictMark, type VoiceOrbState } from '../graphics';
-import { evaluateSpokenAnswer, type VoiceVerdict } from '../../services/study/voiceEvaluationService';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { Volume2, Mic, MicOff, Headphones } from "@/components/icons";
+import { useVoiceStudy } from "../../hooks/useVoiceStudy";
+import { VoiceAura, MicBlockedArt, VerdictMark, type VoiceOrbState } from "../graphics";
+import {
+  evaluateSpokenAnswer,
+  type VoiceVerdict,
+} from "../../services/study/voiceEvaluationService";
+import { useAppPreference } from "../../lib/appPreferences";
 
 interface VoiceStudyControlsProps {
   question: string;
@@ -33,6 +37,8 @@ export function VoiceStudyControls({
   onRequestNextCard,
 }: VoiceStudyControlsProps) {
   const [handsFree, setHandsFree] = useState(false);
+  const [textToSpeech] = useAppPreference("auramind_textToSpeech", false);
+  const [autoPlayAudio] = useAppPreference("auramind_autoPlayAudio", false);
   const [verdict, setVerdict] = useState<VoiceVerdict | null>(null);
   const [evaluating, setEvaluating] = useState(false);
   // Written in an effect, not during render — assigning to a ref in the
@@ -53,42 +59,56 @@ export function VoiceStudyControls({
         setVerdict(v);
         onAnswerEvaluated?.(v.correct, spoken, v);
         if (handsFree) {
-          // Hands-free: announce verdict then auto-advance.
-          voice.speak(v.correct ? 'Correct!' : 'Not quite.', () => {
-            nextRef.current?.();
-          });
+          // Hands-free can still listen when spoken output is disabled.
+          const advance = () => nextRef.current?.();
+          if (textToSpeech) {
+            voice.speak(v.correct ? "Correct!" : "Not quite.", advance);
+          } else {
+            advance();
+          }
         }
       } finally {
         setEvaluating(false);
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [question, handsFree, onAnswerEvaluated],
+    [question, handsFree, onAnswerEvaluated, textToSpeech],
   );
 
   const voice = useVoiceStudy({
     onTranscript: handleTranscript,
     rate: 1,
   });
+  const { speak, cancelSpeech } = voice;
+
+  useEffect(() => {
+    if (!autoPlayAudio || !textToSpeech || !question.trim()) return;
+    speak(question);
+    return () => cancelSpeech();
+  }, [autoPlayAudio, cancelSpeech, question, speak, textToSpeech]);
 
   // The orb is a readout of the engine, so state is derived rather than
   // stored — it can never drift from what the hook is actually doing.
   const orbState: VoiceOrbState = voice.error?.needsPermission
-    ? 'blocked'
+    ? "blocked"
     : voice.listening
-      ? 'listening'
+      ? "listening"
       : voice.speaking
-        ? 'speaking'
+        ? "speaking"
         : evaluating
-          ? 'thinking'
-          : 'idle';
+          ? "thinking"
+          : "idle";
 
   const toggleHandsFree = () => {
     const next = !handsFree;
     setHandsFree(next);
     if (next) {
-      // Kick off: speak the question, then listen.
-      voice.speak(question, () => voice.startListening());
+      // Kick off: optionally speak the question, then listen.
+      if (textToSpeech) {
+        voice.speak(question, () => voice.startListening());
+      } else {
+        voice.startListening();
+      }
     } else {
       voice.cancelSpeech();
       voice.stopListening();
@@ -96,6 +116,7 @@ export function VoiceStudyControls({
   };
 
   const speakQuestion = () => {
+    if (!textToSpeech) return;
     voice.cancelSpeech();
     voice.speak(question);
   };
@@ -116,20 +137,20 @@ export function VoiceStudyControls({
     ? verdict.correct
       ? `Correct — ${verdict.feedback}`
       : verdict.feedback
-    : '';
+    : "";
 
   return (
     <div className="flex flex-col items-center gap-3 w-full">
-      <VoiceOrb
+      <VoiceAura
         state={orbState}
         level={voice.level}
-        size={72}
+        size={220}
         className={
-          orbState === 'blocked'
-            ? 'text-red-400/80'
-            : orbState === 'idle'
-              ? 'text-[#5A5A72]'
-              : 'text-[#8B5CF6]'
+          orbState === "blocked"
+            ? "text-red-400/80"
+            : orbState === "idle"
+              ? "text-[#5A5A72]"
+              : "text-[#8B5CF6]"
         }
       />
 
@@ -140,23 +161,23 @@ export function VoiceStudyControls({
           title="Hands-free: AI speaks each question, listens to your answer, then advances"
           className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border text-[11px] font-medium transition-colors ${
             handsFree
-              ? 'bg-[#7C3AED]/20 border-[#7C3AED]/40 text-[#8B5CF6]'
-              : 'bg-[#111118] border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40'
+              ? "bg-[#7C3AED]/20 border-[#7C3AED]/40 text-[#8B5CF6]"
+              : "bg-[#111118] border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40"
           }`}
         >
-          <Headphones size={13} className={handsFree ? 'animate-pulse' : ''} />
-          {handsFree ? 'Hands-Free On' : 'Hands-Free'}
+          <Headphones size={13} className={handsFree ? "animate-pulse" : ""} />
+          {handsFree ? "Hands-Free On" : "Hands-Free"}
         </button>
 
         {/* Speak Question */}
         <button
           onClick={speakQuestion}
-          disabled={voice.speaking}
-          title="Read the question aloud"
+          disabled={voice.speaking || !textToSpeech}
+          title={textToSpeech ? "Read the question aloud" : "Turn on Read cards aloud in Settings"}
           className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[#2A2A3A] bg-[#111118] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-colors text-[11px] font-medium disabled:opacity-40"
         >
-          <Volume2 size={13} className={voice.speaking ? 'animate-pulse text-[#8B5CF6]' : ''} />
-          {voice.speaking ? 'Speaking…' : 'Speak Question'}
+          <Volume2 size={13} className={voice.speaking ? "animate-pulse text-[#8B5CF6]" : ""} />
+          {voice.speaking ? "Speaking…" : "Speak Question"}
         </button>
 
         {/* Answer Aloud */}
@@ -165,12 +186,12 @@ export function VoiceStudyControls({
           title="Answer aloud — your speech will be transcribed and graded"
           className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border text-[11px] font-medium transition-colors ${
             voice.listening
-              ? 'bg-red-500/15 border-red-500/40 text-red-400'
-              : 'bg-[#111118] border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40'
+              ? "bg-red-500/15 border-red-500/40 text-red-400"
+              : "bg-[#111118] border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40"
           }`}
         >
           {voice.listening ? <MicOff size={13} className="animate-pulse" /> : <Mic size={13} />}
-          {voice.listening ? 'Listening…' : evaluating ? 'Grading…' : 'Answer Aloud'}
+          {voice.listening ? "Listening…" : evaluating ? "Grading…" : "Answer Aloud"}
         </button>
       </div>
 
@@ -191,7 +212,7 @@ export function VoiceStudyControls({
           {!voice.listening && verdict && (
             <p
               className={`text-xs font-medium inline-flex items-center gap-1.5 ${
-                verdict.correct ? 'text-emerald-400' : 'text-amber-400'
+                verdict.correct ? "text-emerald-400" : "text-amber-400"
               }`}
             >
               <VerdictMark correct={verdict.correct} size={16} className="shrink-0" />

@@ -80,3 +80,394 @@
   .am-draw   { animation: none; stroke-dashoffset: 0; }
   .am-bar    { transition: none; }
 }
+
+/* -------------------------------------------------------------------------
+   VoiceAura — original amplitude-reactive ribbon visual
+   ------------------------------------------------------------------------- */
+@keyframes am-aura-breathe {
+  0%, 100% { opacity: 0.58; transform: scale(0.98); }
+  50%      { opacity: 0.92; transform: scale(1.02); }
+}
+
+@keyframes am-aura-ribbon-one {
+  0%, 100% { transform: rotate(-3deg) translateY(0); }
+  50%      { transform: rotate(4deg) translateY(-3px); }
+}
+
+@keyframes am-aura-ribbon-two {
+  0%, 100% { transform: rotate(3deg) translateY(2px); }
+  50%      { transform: rotate(-5deg) translateY(-2px); }
+}
+
+@keyframes am-aura-ribbon-three {
+  0%, 100% { transform: rotate(-1deg) scaleX(0.98); }
+  50%      { transform: rotate(5deg) scaleX(1.03); }
+}
+
+@keyframes am-aura-halo-drift {
+  0%, 100% { transform: rotate(0deg) scale(0.98); opacity: 0.28; }
+  50%      { transform: rotate(8deg) scale(1.04); opacity: 0.52; }
+}
+
+@keyframes am-aura-signal {
+  0%, 100% { opacity: 0.28; transform: translateX(-2px); }
+  50%      { opacity: 0.9; transform: translateX(2px); }
+}
+
+@keyframes am-aura-sweep {
+  to { stroke-dashoffset: -220; transform: rotate(360deg); }
+}
+
+.am-aura {
+  display: block;
+  overflow: visible;
+}
+
+.am-aura-halo,
+.am-aura-ribbons,
+.am-aura-core-breath,
+.am-aura-signal,
+.am-aura-sweep {
+  transform-box: fill-box;
+  transform-origin: 120px 90px;
+}
+
+.am-aura-halo {
+  stroke: currentColor;
+  stroke-width: 1.5;
+  opacity: 0.18;
+  transition: rx 100ms linear, ry 100ms linear;
+}
+
+.am-aura-halo-back {
+  stroke-dasharray: 2 8;
+  opacity: 0.08;
+}
+
+.am-aura-ribbon {
+  fill: none;
+  stroke-width: 2;
+  opacity: 0.34;
+}
+
+.am-aura-core-breath {
+  animation: am-aura-breathe 3.1s ease-in-out infinite;
+}
+
+.am-aura-core-fill {
+  fill: currentColor;
+  opacity: 0.1;
+  stroke: none;
+}
+
+.am-aura-core-line {
+  stroke: currentColor;
+  stroke-width: 1.5;
+  opacity: 0.7;
+}
+
+.am-aura-bar {
+  stroke-width: 4;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scaleY(var(--am-aura-bar-scale, 0.18));
+  transition: transform 80ms linear;
+}
+
+.am-aura-signal {
+  stroke-width: 2;
+  animation: am-aura-signal 1.8s ease-in-out infinite;
+}
+
+.am-aura-sweep {
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 22 198;
+  animation: am-aura-sweep 1.7s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.am-aura-blocked {
+  stroke-width: 4;
+  opacity: 0.8;
+}
+
+.am-aura-listening .am-aura-ribbon-one {
+  animation: am-aura-ribbon-one 1.8s ease-in-out infinite;
+}
+
+.am-aura-listening .am-aura-ribbon-two {
+  animation: am-aura-ribbon-two 2.2s ease-in-out infinite reverse;
+}
+
+.am-aura-listening .am-aura-ribbon-three {
+  animation: am-aura-ribbon-three 1.5s ease-in-out infinite;
+}
+
+.am-aura-speaking .am-aura-ribbon-one,
+.am-aura-speaking .am-aura-ribbon-two,
+.am-aura-speaking .am-aura-ribbon-three {
+  animation: am-aura-ribbon-one 1.25s ease-in-out infinite;
+}
+
+.am-aura-speaking .am-aura-halo,
+.am-aura-thinking .am-aura-halo {
+  animation: am-aura-halo-drift 2.4s ease-in-out infinite;
+}
+
+.am-aura-thinking .am-aura-ribbons {
+  opacity: 0.45;
+}
+
+.am-aura-thinking .am-aura-signal {
+  animation: none;
+  opacity: 0.8;
+}
+
+.am-aura-blocked .am-aura-ribbons,
+.am-aura-blocked .am-aura-halo {
+  opacity: 0.18;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .am-aura-core-breath,
+  .am-aura-ribbon,
+  .am-aura-halo,
+  .am-aura-signal,
+  .am-aura-sweep {
+    animation: none;
+  }
+
+  .am-aura-core-breath {
+    opacity: 0.78;
+    transform: none;
+  }
+
+  .am-aura-bar {
+    transition: none;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   VoiceAura — fluid, amplitude-reactive voice presence
+   ------------------------------------------------------------------------- */
+@keyframes am-voice-cloud-drift-a {
+  0%, 100% { transform: translate(-4px, 3px) rotate(-1deg) scale(1.02); }
+  50%      { transform: translate(7px, -5px) rotate(3deg) scale(1.06); }
+}
+
+@keyframes am-voice-cloud-drift-b {
+  0%, 100% { transform: translate(5px, -4px) rotate(2deg) scale(1.04); }
+  50%      { transform: translate(-8px, 6px) rotate(-4deg) scale(0.98); }
+}
+
+@keyframes am-voice-cloud-drift-c {
+  0%, 100% { transform: translate(3px, 4px) rotate(1deg) scale(1); }
+  50%      { transform: translate(-6px, -4px) rotate(-3deg) scale(1.08); }
+}
+
+@keyframes am-voice-cloud-tide {
+  0%, 100% { transform: translate(-2px, 4px) scale(1.02); }
+  50%      { transform: translate(8px, -3px) scale(1.08); }
+}
+
+@keyframes am-voice-bloom-breathe {
+  0%, 100% { opacity: 0.13; transform: scale(0.97); }
+  50%      { opacity: 0.25; transform: scale(1.04); }
+}
+
+@keyframes am-voice-highlight-drift {
+  0%, 100% { transform: translate(-3px, 1px) rotate(-4deg); opacity: 0.22; }
+  50%      { transform: translate(6px, 4px) rotate(5deg); opacity: 0.36; }
+}
+
+@keyframes am-voice-reactive-ring {
+  0%, 100% { opacity: 0.12; transform: scale(0.99); }
+  50%      { opacity: 0.32; transform: scale(1.025); }
+}
+
+@keyframes am-voice-thinking-ring {
+  to { stroke-dashoffset: -104; transform: rotate(360deg); }
+}
+
+.am-voice-orb {
+  display: block;
+  overflow: visible;
+  contain: layout;
+}
+
+.am-voice-orb-bloom,
+.am-voice-orb-shell,
+.am-voice-orb-clouds,
+.am-voice-orb-highlight-layer,
+.am-voice-orb-reactive-ring,
+.am-voice-orb-thinking-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.am-voice-orb-bloom {
+  opacity: calc(0.1 + var(--am-voice-level, 0) * 0.28);
+  transform: scale(var(--am-voice-aura-scale, 1));
+  transition: opacity 120ms ease-out, transform 120ms ease-out;
+  animation: am-voice-bloom-breathe 5.5s ease-in-out infinite;
+}
+
+.am-voice-orb-bloom-back {
+  opacity: 0.08;
+  animation-delay: -2.2s;
+  animation-duration: 7s;
+}
+
+.am-voice-orb-shell {
+  transform: scale(var(--am-voice-core-scale, 1));
+  transform-origin: 50% 50%;
+  transition: transform 110ms ease-out;
+}
+
+.am-voice-orb-clouds {
+  transform: translateZ(0);
+  transform-origin: center;
+  animation: am-voice-cloud-drift-a 12s ease-in-out infinite;
+  will-change: transform;
+}
+
+.am-voice-orb-cloud-cyan {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: am-voice-cloud-drift-b 10s ease-in-out -2s infinite;
+}
+
+.am-voice-orb-cloud-blue {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: am-voice-cloud-drift-c 9s ease-in-out -4s infinite;
+}
+
+.am-voice-orb-cloud-violet {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: am-voice-cloud-drift-b 13s ease-in-out -6s infinite reverse;
+}
+
+.am-voice-orb-cloud-pearl {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: am-voice-cloud-drift-a 15s ease-in-out -8s infinite reverse;
+}
+
+.am-voice-orb-cloud-tide {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: am-voice-cloud-tide 8s ease-in-out -3s infinite;
+}
+
+.am-voice-orb-cloud-warm {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: am-voice-highlight-drift 7s ease-in-out infinite;
+}
+
+.am-voice-orb-highlight-layer {
+  animation: am-voice-highlight-drift 6s ease-in-out -1s infinite;
+  transform-origin: center;
+}
+
+.am-voice-orb-highlight-soft {
+  animation-delay: -3s;
+  animation-duration: 8s;
+}
+
+.am-voice-orb-edge {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.22);
+  stroke-width: 1.25;
+  opacity: 0.72;
+}
+
+.am-voice-orb-listening .am-voice-orb-clouds {
+  animation-duration: 5.5s;
+}
+
+.am-voice-orb-listening .am-voice-orb-cloud-cyan,
+.am-voice-orb-listening .am-voice-orb-cloud-blue {
+  animation-duration: 4.2s;
+}
+
+.am-voice-orb-speaking .am-voice-orb-clouds {
+  animation-duration: 7s;
+}
+
+.am-voice-orb-speaking .am-voice-orb-bloom,
+.am-voice-orb-thinking .am-voice-orb-bloom {
+  animation-duration: 3.8s;
+}
+
+.am-voice-orb-thinking .am-voice-orb-clouds {
+  animation-duration: 18s;
+  opacity: 0.75;
+}
+
+.am-voice-orb-reactive-ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  opacity: 0.16;
+  animation: am-voice-reactive-ring 1.8s ease-in-out infinite;
+  transition: r 110ms ease-out;
+}
+
+.am-voice-orb-thinking-ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-dasharray: 18 34;
+  stroke-dashoffset: 0;
+  opacity: 0.38;
+  animation: am-voice-thinking-ring 2.2s linear infinite;
+}
+
+.am-voice-orb-blocked-wash {
+  fill: #0e1022;
+  opacity: 0.58;
+}
+
+.am-voice-orb-blocked-line {
+  fill: none;
+  stroke: #ff8c9b;
+  stroke-width: 7;
+  stroke-linecap: round;
+  opacity: 0.86;
+}
+
+.am-voice-orb-blocked .am-voice-orb-bloom,
+.am-voice-orb-blocked .am-voice-orb-clouds,
+.am-voice-orb-blocked .am-voice-orb-highlight-layer {
+  opacity: 0.22;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .am-voice-orb-bloom,
+  .am-voice-orb-clouds,
+  .am-voice-orb-cloud-cyan,
+  .am-voice-orb-cloud-blue,
+  .am-voice-orb-cloud-violet,
+  .am-voice-orb-cloud-pearl,
+  .am-voice-orb-cloud-tide,
+  .am-voice-orb-cloud-warm,
+  .am-voice-orb-highlight-layer,
+  .am-voice-orb-reactive-ring,
+  .am-voice-orb-thinking-ring {
+    animation: none;
+  }
+
+  .am-voice-orb-bloom {
+    opacity: 0.18;
+  }
+
+  .am-voice-orb-shell,
+  .am-voice-orb-bloom {
+    transition: none;
+  }
+}

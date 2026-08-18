@@ -226,10 +226,22 @@ export function calculateRetrievability(state: FSRSCardState): number {
  * by loadPersonalizedFsrs in ./fsrsAdaptation. When undefined the global
  * DEFAULT_WEIGHTS are used.
  */
-export function scheduleFSRS(card: Card, rating: Rating, weightsOverride?: number[]): FSRSScheduleResult {
-  const config: FSRSConfig = weightsOverride && weightsOverride.length === DEFAULT_WEIGHTS.length
-    ? { ...DEFAULT_CONFIG, weights: weightsOverride }
-    : DEFAULT_CONFIG;
+export function scheduleFSRS(
+  card: Card,
+  rating: Rating,
+  weightsOverride?: number[],
+  retentionOverride?: number,
+): FSRSScheduleResult {
+  const requestRetention = Number.isFinite(retentionOverride)
+    ? Math.min(0.99, Math.max(0.7, retentionOverride as number))
+    : DEFAULT_CONFIG.requestRetention;
+  const config: FSRSConfig = {
+    ...DEFAULT_CONFIG,
+    requestRetention,
+    ...(weightsOverride && weightsOverride.length === DEFAULT_WEIGHTS.length
+      ? { weights: weightsOverride }
+      : {}),
+  };
   const state = getFSRSState(card);
   const grade = RATING_TO_GRADE[rating] ?? 2;
   

@@ -29,21 +29,22 @@
 
 ## 2. Build artifacts
 
-- [ ] Android AAB signed with the **production upload keystore**
+- [x] Android AAB signed with the **production upload keystore**
       (`auramind-gemini/android/keystore/release.keystore`).
-- [ ] Android `versionCode` increments by 1 every release.
+- [x] Android `versionCode` increments by 1 every release (currently `1`).
 - [ ] iOS IPA signed with **Apple Distribution** identity (not Ad Hoc,
       not Development).
 - [ ] iOS `CFBundleShortVersionString` matches the marketing version
       (e.g., "1.0.0", "1.1.0").
 - [ ] iOS `CFBundleVersion` is a positive integer ≥ previous build.
-- [ ] Android target SDK ≥ 34 (we ship 36).
+- [x] Android target SDK ≥ 34 (we ship **36**).
 - [ ] iOS deployment target: 15.0+
 - [ ] No leftover debug logs in release AAB (verify with `adb logcat`
       on a sideloaded release build — there should be no `console.log`.
       We use Sentry's `beforeSend` stripper to strip browser debug logs.)
-- [ ] ProGuard / R8 mapping file uploaded to Crashlytics / Sentry for
-      symbolicated crashes.
+- [x] ProGuard / R8 mapping file generated
+      (`auramind-gemini/android/app/build/outputs/mapping/release/mapping.txt`)
+      — upload to Sentry/Crashlytics for symbolicated crashes.
 
 ## 3. Capabilities & permissions
 
@@ -96,10 +97,11 @@
 
 - [ ] App name "AuraMind" entered.
 - [ ] Short + long description from `store/android/listing.md` pasted.
-- [ ] Phone screenshots uploaded (4+).
-- [ ] Tablet screenshots uploaded (2+).
-- [ ] Feature graphic 1024×500 uploaded.
-- [ ] App icon 512×512 uploaded (with adaptive icon foreground).
+- [x] Phone screenshots generated (7) — `store/graphics/android/screenshots/`.
+- [ ] Tablet screenshots captured (2+).
+- [x] Feature graphic generated — `store/graphics/android/feature-1024x500.png`.
+- [x] App icon generated — `store/graphics/android/icon-512.png`
+      (with adaptive icon foreground).
 - [ ] Privacy policy URL set.
 - [ ] Content rating (IARC) questionnaire complete.
 - [ ] Data safety form accurate (we collect: account email, optional name,
@@ -117,7 +119,21 @@
 - [ ] On-call rotation documented (one human responsible for launches).
 - [ ] Runbook (this file!) up to date with each launch.
 
-## 7. Final go/no-go
+## 7. Monetization & advertising (free tier)
+
+- [ ] Integrate Google AdMob for Android free-tier native/rewarded placements.
+- [ ] Keep ads off the auth screen, onboarding, active flashcards, voice study,
+      and exam-focused sessions.
+- [ ] Premium subscription removes all ads.
+- [ ] Use rewarded ads only when the learner explicitly opts in (for example,
+      an extra AI generation or audio allowance).
+- [ ] Evaluate Gravity separately for clearly labeled sponsored suggestions
+      inside Prof. Aura responses; it is optional and not a replacement for
+      standard Android ad inventory.
+- [ ] Complete consent, Data safety, and Google Play "Contains ads" disclosures
+      before enabling the ad SDK in a release build.
+
+## 8. Final go/no-go
 
 - [ ] All "P0" bugs from Internal Testing closed.
 - [ ] No crashlytics signal during last 7-day Internal Testing window.

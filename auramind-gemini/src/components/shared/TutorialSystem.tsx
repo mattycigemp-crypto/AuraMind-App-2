@@ -1,18 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   XIcon as X,
   ArrowRightIcon as ArrowRight,
   ArrowLeftIcon as ArrowLeft,
   CheckIcon as Check,
-} from '../icons/CustomIcons';
+} from "../icons/CustomIcons";
 
 export interface TutorialStep {
   id: string;
   title: string;
   content: string;
   target?: string; // CSS selector for highlighting element
-  position?: 'top' | 'bottom' | 'left' | 'right' | 'center';
+  position?: "top" | "bottom" | "left" | "right" | "center";
   action?: () => void; // Optional action to perform when step is shown
   completionAction?: () => void; // Action when step is completed
   canSkip?: boolean;
@@ -38,7 +38,7 @@ const TutorialSystem: React.FC<TutorialSystemProps> = ({
   onStepChange,
   showProgress = true,
   allowSkip = true,
-  className = '',
+  className = "",
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [highlightedElement, setHighlightedElement] = useState<Element | null>(null);
@@ -46,23 +46,79 @@ const TutorialSystem: React.FC<TutorialSystemProps> = ({
   const tooltipRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (isOpen && steps[currentStep]?.target) {
-      const element = document.querySelector(steps[currentStep].target!);
-      setHighlightedElement(element || null);
-      
-      if (element) {
-        const rect = element.getBoundingClientRect();
-        setHighlightRect(rect);
-        
-        // Execute action if provided
-        steps[currentStep].action?.();
-      } else {
-        setHighlightRect(null);
-      }
-    } else {
+    if (!isOpen || !steps[currentStep]) {
       setHighlightedElement(null);
       setHighlightRect(null);
+      return;
     }
+
+    const step = steps[currentStep];
+    // A step action describes the step itself, not whether its optional
+    // spotlight target happens to be mounted. This keeps action-only steps
+    // useful on responsive routes where a control may be hidden.
+    step.action?.();
+
+    if (!step.target) {
+      setHighlightedElement(null);
+      setHighlightRect(null);
+      return;
+    }
+
+    let frame = 0;
+    let observedElement: Element | null = null;
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(schedule) : null;
+
+    const measure = () => {
+      const element = document.querySelector(step.target!);
+      if (!element) {
+        setHighlightedElement(null);
+        setHighlightRect(null);
+        return;
+      }
+
+      if (element !== observedElement) {
+        if (observedElement) resizeObserver?.unobserve(observedElement);
+        observedElement = element;
+        resizeObserver?.observe(element);
+      }
+
+      const nextRect = element.getBoundingClientRect();
+      setHighlightedElement((previous) => (previous === element ? previous : element));
+      setHighlightRect((previous) => {
+        if (
+          previous &&
+          previous.left === nextRect.left &&
+          previous.top === nextRect.top &&
+          previous.width === nextRect.width &&
+          previous.height === nextRect.height
+        ) {
+          return previous;
+        }
+        return nextRect;
+      });
+    };
+
+    function schedule() {
+      if (frame) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    }
+
+    measure();
+    schedule();
+    window.addEventListener("resize", schedule);
+    window.addEventListener("scroll", schedule, true);
+    const mutationObserver =
+      typeof MutationObserver !== "undefined" ? new MutationObserver(schedule) : null;
+    mutationObserver?.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("scroll", schedule, true);
+      resizeObserver?.disconnect();
+      mutationObserver?.disconnect();
+    };
   }, [currentStep, isOpen, steps]);
 
   // Auto-focus on tutorial panel when it opens
@@ -73,22 +129,22 @@ const TutorialSystem: React.FC<TutorialSystemProps> = ({
         if (tooltipRef.current) {
           // Focus the tutorial panel for better accessibility and visibility
           tooltipRef.current.focus();
-          
+
           // Ensure the tutorial panel is visible in viewport
           const tooltipRect = tooltipRef.current.getBoundingClientRect();
           const margin = 20; // Add margin for better visibility
-          const isInViewport = 
+          const isInViewport =
             tooltipRect.top >= margin &&
             tooltipRect.left >= margin &&
-            tooltipRect.bottom <= (window.innerHeight - margin) &&
-            tooltipRect.right <= (window.innerWidth - margin);
+            tooltipRect.bottom <= window.innerHeight - margin &&
+            tooltipRect.right <= window.innerWidth - margin;
 
           if (!isInViewport) {
             // Scroll the tutorial panel into view if it's outside viewport
             tooltipRef.current.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-              inline: 'center',
+              behavior: "smooth",
+              block: "center",
+              inline: "center",
             });
           }
         }
@@ -107,7 +163,7 @@ const TutorialSystem: React.FC<TutorialSystemProps> = ({
   const handleNext = () => {
     const step = steps[currentStep];
     step.completionAction?.();
-    
+
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
@@ -131,38 +187,64 @@ const TutorialSystem: React.FC<TutorialSystemProps> = ({
   };
 
   const getTooltipPosition = () => {
-    if (!highlightRect || !tooltipRef.current) return { top: '50%', left: '50%' };
-    
+    if (!highlightRect || !tooltipRef.current) return { top: "50%", left: "50%" };
+
     const tooltipRect = tooltipRef.current.getBoundingClientRect();
-    const position = steps[currentStep].position || 'bottom';
+    const position = steps[currentStep].position || "bottom";
     const margin = 20;
+    const viewportMargin = 16;
+    const maxTop = Math.max(
+      viewportMargin,
+      window.innerHeight - tooltipRect.height - viewportMargin,
+    );
+    const maxLeft = Math.max(
+      viewportMargin,
+      window.innerWidth - tooltipRect.width - viewportMargin,
+    );
+    const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
     switch (position) {
-      case 'top':
+      case "top":
         return {
-          top: highlightRect.top - tooltipRect.height - margin,
-          left: highlightRect.left + highlightRect.width / 2 - tooltipRect.width / 2,
+          top: clamp(highlightRect.top - tooltipRect.height - margin, viewportMargin, maxTop),
+          left: clamp(
+            highlightRect.left + highlightRect.width / 2 - tooltipRect.width / 2,
+            viewportMargin,
+            maxLeft,
+          ),
         };
-      case 'bottom':
+      case "bottom":
         return {
-          top: highlightRect.bottom + margin,
-          left: highlightRect.left + highlightRect.width / 2 - tooltipRect.width / 2,
+          top: clamp(highlightRect.bottom + margin, viewportMargin, maxTop),
+          left: clamp(
+            highlightRect.left + highlightRect.width / 2 - tooltipRect.width / 2,
+            viewportMargin,
+            maxLeft,
+          ),
         };
-      case 'left':
+      case "left":
         return {
-          top: highlightRect.top + highlightRect.height / 2 - tooltipRect.height / 2,
-          left: highlightRect.left - tooltipRect.width - margin,
+          top: clamp(
+            highlightRect.top + highlightRect.height / 2 - tooltipRect.height / 2,
+            viewportMargin,
+            maxTop,
+          ),
+          left: clamp(highlightRect.left - tooltipRect.width - margin, viewportMargin, maxLeft),
         };
-      case 'right':
+      case "right":
         return {
-          top: highlightRect.top + highlightRect.height / 2 - tooltipRect.height / 2,
-          left: highlightRect.right + margin,
+          top: clamp(
+            highlightRect.top + highlightRect.height / 2 - tooltipRect.height / 2,
+            viewportMargin,
+            maxTop,
+          ),
+          left: clamp(highlightRect.right + margin, viewportMargin, maxLeft),
         };
-      case 'center':
+      case "center":
       default:
         return {
-          top: '50%',
-          left: '50%',
+          top: "50%",
+          left: "50%",
         };
     }
   };
@@ -224,7 +306,8 @@ const TutorialSystem: React.FC<TutorialSystemProps> = ({
           className={`fixed z-50 w-[480px] max-w-[calc(100vw-2rem)] border border-arch-border-bold bg-arch-bg p-8 shadow-[0_24px_80px_rgba(0,0,0,0.25)] ${className}`}
           style={{
             ...getTooltipPosition(),
-            transform: steps[currentStep].position === 'center' ? 'translate(-50%, -50%)' : undefined,
+            transform:
+              steps[currentStep].position === "center" ? "translate(-50%, -50%)" : undefined,
           }}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -233,7 +316,7 @@ const TutorialSystem: React.FC<TutorialSystemProps> = ({
           tabIndex={-1}
         >
           <div className="absolute top-0 right-0 p-4">
-             <div className="h-1.5 w-1.5 bg-arch-fg" />
+            <div className="h-1.5 w-1.5 bg-arch-fg" />
           </div>
 
           <button
@@ -250,12 +333,12 @@ const TutorialSystem: React.FC<TutorialSystemProps> = ({
                 <Icon size={22} />
               </div>
             )}
-            
+
             <div className="space-y-3">
               <h3 className="text-xl font-black uppercase tracking-tight text-arch-fg">
                 {currentTutorialStep.title}
               </h3>
-              
+
               <p className="text-sm font-medium leading-relaxed text-arch-muted">
                 {currentTutorialStep.content}
               </p>
@@ -266,7 +349,9 @@ const TutorialSystem: React.FC<TutorialSystemProps> = ({
           {showProgress && (
             <div className="mb-8 space-y-2">
               <div className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-arch-muted">
-                <span>Step {currentStep + 1} of {steps.length}</span>
+                <span>
+                  Step {currentStep + 1} of {steps.length}
+                </span>
                 <span>{Math.round(((currentStep + 1) / steps.length) * 100)}%</span>
               </div>
               <div className="h-[2px] bg-arch-fg/10">
@@ -284,15 +369,12 @@ const TutorialSystem: React.FC<TutorialSystemProps> = ({
           <div className="flex items-center justify-between gap-4 pt-6 border-t border-arch-border">
             <div className="flex items-center gap-3">
               {currentStep > 0 && (
-                <button
-                  onClick={handlePrevious}
-                  className="btn-arch-outline px-5 py-3 text-xs"
-                >
+                <button onClick={handlePrevious} className="btn-arch-outline px-5 py-3 text-xs">
                   <ArrowLeft size={14} />
                   Prev
                 </button>
               )}
-              
+
               {allowSkip && currentTutorialStep.canSkip !== false && (
                 <button
                   onClick={handleSkip}
@@ -303,10 +385,7 @@ const TutorialSystem: React.FC<TutorialSystemProps> = ({
               )}
             </div>
 
-            <button
-              onClick={handleNext}
-              className="btn-arch px-6 py-3 text-xs"
-            >
+            <button onClick={handleNext} className="btn-arch px-6 py-3 text-xs">
               {currentStep === steps.length - 1 ? (
                 <div className="flex items-center gap-2">
                   <span>Get Started</span>
@@ -331,19 +410,23 @@ export const useTutorial = () => {
   const [isTutorialOpen, setIsTutorialOpen] = useState(false);
   const [completedTutorials, setCompletedTutorials] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem('auramind:completedTutorials');
+      const stored = localStorage.getItem("auramind:completedTutorials");
       if (stored) {
         const parsed = JSON.parse(stored);
         return new Set<string>(parsed);
       }
-    } catch { /* intentionally ignored */ }
+    } catch {
+      /* intentionally ignored */
+    }
     return new Set<string>();
   });
 
   const persistTutorials = (updated: Set<string>) => {
     try {
-      localStorage.setItem('auramind:completedTutorials', JSON.stringify([...updated]));
-    } catch { /* intentionally ignored */ }
+      localStorage.setItem("auramind:completedTutorials", JSON.stringify([...updated]));
+    } catch {
+      /* intentionally ignored */
+    }
   };
 
   const startTutorial = (_tutorialId: string) => {
@@ -355,7 +438,7 @@ export const useTutorial = () => {
   };
 
   const completeTutorial = (tutorialId: string) => {
-    setCompletedTutorials(prev => {
+    setCompletedTutorials((prev) => {
       const updated = new Set([...prev, tutorialId]);
       persistTutorials(updated);
       return updated;
@@ -378,6 +461,3 @@ export const useTutorial = () => {
 };
 
 export default TutorialSystem;
-
-
-

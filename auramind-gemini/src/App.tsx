@@ -10,11 +10,23 @@ import {
   persistCardMetadata,
 } from "./services/study/roadmapService";
 import { syncCurrentUser } from "./services/database/syncUser";
+import {
+  cacheDeckForOffline,
+  getCachedCards,
+  getCachedDecks,
+  isOnline,
+} from "./services/offline/offlineStudyService";
+import { storeSubscriptionStatus, subscriptionFallback } from "./lib/offlineSubscriptionStatus";
+import { loadOfflineAwareData } from "./lib/offlineAwareData";
+import { getAppPreference } from "./lib/appPreferences";
 import { resetUserData } from "./services/gamification/gamificationService";
 import { analyticsService } from "./services/analytics/analyticsService";
 import { getPermissions, getDefaultRole } from "./utils/permissions";
 import { addNotification } from "./services/notifications/notificationStore";
-import { initRealtimeNotifications, destroyRealtimeNotifications } from "./services/notifications/realtimeNotifications";
+import {
+  initRealtimeNotifications,
+  destroyRealtimeNotifications,
+} from "./services/notifications/realtimeNotifications";
 import { checkReducedMotion } from "./styles/animations/awe";
 import {
   getPageTransitionVariant,
@@ -27,15 +39,15 @@ import { AchievementProvider } from "./components/achievements/AchievementUnlock
 import ReducedMotionGuard from "./components/shared/ReducedMotionGuard";
 import StreakBurst from "./components/gamification/StreakBurst";
 import Announcer from "./components/shared/Announcer";
-import {
-  GenericPageSkeleton,
-} from "./components/shared/RouteSkeleton";
+import { GenericPageSkeleton } from "./components/shared/RouteSkeleton";
 import { SkeletonProvider } from "./components/shared/SkeletonProvider";
 
 const AmbientPlayer = React.lazy(() => import("./components/shared/AmbientPlayer"));
 import HmrRefreshNotice from "./components/shared/HmrRefreshNotice";
 import { ErrorBoundary } from "./components/shared/ErrorBoundary";
 import { KeyboardAware } from "./components/shared/KeyboardAware";
+import NativeRuntime from "./components/native/NativeRuntime";
+import { Capacitor } from "./lib/nativeShim";
 import QuizGenerationNotifier from "./components/notifications/QuizGenerationNotifier";
 import { Toaster } from "./components/ui/sonner";
 import { ThemeProvider } from "./hooks/useTheme";
@@ -46,20 +58,29 @@ import { CustomCursor } from "./components/ui/CustomCursor";
 
 function LegacyStudyRedirect() {
   const { deckId } = useParams<{ deckId: string }>();
-  return <Navigate to={`/dashboard/study/${deckId || ''}`} replace />;
+  return <Navigate to={`/dashboard/study/${deckId || ""}`} replace />;
 }
 
 function _milestoneCopy(days: number): string {
   switch (days) {
-    case 3:   return 'Three days of momentum — your habit is forming.';
-    case 7:   return 'One full week — the habit is locked.';
-    case 14:  return 'Two weeks of daily review — recall is compounding.';
-    case 30:  return 'A month in. Your future self thanks you.';
-    case 50:  return 'Fifty days strong — you are in the top decile of learners.';
-    case 100: return 'One hundred days. Triple-digit mastery.';
-    case 200: return 'Two hundred days. This is who you are now.';
-    case 365: return 'A full year of streaks. Legendary.';
-    default:  return 'Keep going.';
+    case 3:
+      return "Three days of momentum — your habit is forming.";
+    case 7:
+      return "One full week — the habit is locked.";
+    case 14:
+      return "Two weeks of daily review — recall is compounding.";
+    case 30:
+      return "A month in. Your future self thanks you.";
+    case 50:
+      return "Fifty days strong — you are in the top decile of learners.";
+    case 100:
+      return "One hundred days. Triple-digit mastery.";
+    case 200:
+      return "Two hundred days. This is who you are now.";
+    case 365:
+      return "A full year of streaks. Legendary.";
+    default:
+      return "Keep going.";
   }
 }
 
@@ -88,25 +109,27 @@ if (typeof window !== "undefined" && !window.requestIdleCallback) {
 //   • NovaHub   — every /dashboard/* path (overview, tools, study, etc.)
 // ─────────────────────────────────────────────────────────────────────────
 
-const NovaHub   = React.lazy(() => import("./pages/dashboard/NovaHub"));
-const AdminShellRoute    = React.lazy(() => import("./pages/admin/AdminShell"));
-const AdminUsersRoute    = React.lazy(() => import("./pages/admin/AdminUsersPage"));
+const NovaHub = React.lazy(() => import("./pages/dashboard/NovaHub"));
+const AdminShellRoute = React.lazy(() => import("./pages/admin/AdminShell"));
+const AdminUsersRoute = React.lazy(() => import("./pages/admin/AdminUsersPage"));
 const AdminAppCheckRoute = React.lazy(() => import("./pages/admin/AdminAppCheckPage"));
 
-const AuraLandingPage      = React.lazy(() => import("./components/landing/ModernLandingPage"));
-const AuthPage             = React.lazy(() => import("./components/auth/AuthPage"));
-const DeckDetailRoute      = React.lazy(() => import("./pages/deck/DeckDetailRoute"));
-const DocsPage             = React.lazy(() => import("./pages/legal/DocsPage"));
-const PrivacyPolicyPage    = React.lazy(() => import("./pages/legal/PrivacyPolicyPage"));
-const TermsOfServicePage   = React.lazy(() => import("./pages/legal/TermsOfServicePage"));
-const AboutPage            = React.lazy(() => import("./pages/system/AboutPage"));
-const ResetPasswordPage    = React.lazy(() => import("./pages/auth/ResetPasswordPage"));
-const RestoreAccountPage   = React.lazy(() => import("./pages/auth/RestoreAccountPage"));
-const CallbackPage         = React.lazy(() => import("./pages/auth/CallbackPage"));
+const AuraLandingPage = React.lazy(() => import("./components/landing/ModernLandingPage"));
+const AndroidWelcomeScreen = React.lazy(() => import("./components/native/AndroidWelcomeScreen"));
+const AndroidVisualPreview = React.lazy(() => import("./components/native/AndroidVisualPreview"));
+const AuthPage = React.lazy(() => import("./components/auth/AuthPage"));
+const DeckDetailRoute = React.lazy(() => import("./pages/deck/DeckDetailRoute"));
+const DocsPage = React.lazy(() => import("./pages/legal/DocsPage"));
+const PrivacyPolicyPage = React.lazy(() => import("./pages/legal/PrivacyPolicyPage"));
+const TermsOfServicePage = React.lazy(() => import("./pages/legal/TermsOfServicePage"));
+const AboutPage = React.lazy(() => import("./pages/system/AboutPage"));
+const ResetPasswordPage = React.lazy(() => import("./pages/auth/ResetPasswordPage"));
+const RestoreAccountPage = React.lazy(() => import("./pages/auth/RestoreAccountPage"));
+const CallbackPage = React.lazy(() => import("./pages/auth/CallbackPage"));
 const SchoologyCallbackPage = React.lazy(() => import("./pages/auth/SchoologyCallbackPage"));
-const NotFoundPage         = React.lazy(() => import("./pages/NotFoundPage"));
-const PaymentPage          = React.lazy(() => import("./components/auth/PaymentPage"));
-const DownloadPage         = React.lazy(() => import("./pages/DownloadPage"));
+const NotFoundPage = React.lazy(() => import("./pages/NotFoundPage"));
+const PaymentPage = React.lazy(() => import("./components/auth/PaymentPage"));
+const DownloadPage = React.lazy(() => import("./pages/DownloadPage"));
 
 import {
   ArrowDownIcon as ArrowDown,
@@ -135,8 +158,8 @@ const LoadingOverlay = () => (
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
-              animate={{	height: [4, 12, 4], opacity: [0.1, 1, 0.1]}}
-              transition={{duration: 1, repeat: Infinity, delay: i * 0.2}}
+              animate={{ height: [4, 12, 4], opacity: [0.1, 1, 0.1] }}
+              transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
               className="w-[3px] bg-zinc-300 rounded-full"
             />
           ))}
@@ -164,7 +187,10 @@ const ScrollTopButton = () => {
           exit={{ opacity: 0, scale: 0.8, y: 20 }}
           aria-label="Scroll to top"
         >
-          <ArrowDown size={20} className="rotate-180 group-hover:-translate-y-1 transition-transform" />
+          <ArrowDown
+            size={20}
+            className="rotate-180 group-hover:-translate-y-1 transition-transform"
+          />
         </motion.button>
       )}
     </AnimatePresence>
@@ -228,7 +254,11 @@ const PageTransition = ({
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0, transition: { duration: 0.3, ease: [0.23, 1, 0.32, 1] as const } }}
+      animate={{
+        opacity: 1,
+        y: 0,
+        transition: { duration: 0.3, ease: [0.23, 1, 0.32, 1] as const },
+      }}
       exit={{ opacity: 0, y: -8, transition: { duration: 0.3, ease: [0.23, 1, 0.32, 1] as const } }}
       className="min-h-screen gpu-accelerated relative"
     >
@@ -363,19 +393,19 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
       });
       if (!response.ok) {
         console.error("Subscription check failed:", response.status);
-        setSubscriptionStatus("none");
+        setSubscriptionStatus(subscriptionFallback());
         return;
       }
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        setSubscriptionStatus("none");
+        setSubscriptionStatus(subscriptionFallback());
         return;
       }
       const data = await response.json();
       if (forceCheck && data.status !== "active" && data.status !== "trialing") {
         setSubscriptionStatus("loading");
         for (let attempt = 0; attempt < 3; attempt++) {
-          await new Promise(r => setTimeout(r, 2000));
+          await new Promise((r) => setTimeout(r, 2000));
           const retryRes = await fetch(`${apiBase}/api/subscription`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -398,37 +428,42 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
         url.searchParams.delete("payment");
         window.history.replaceState({}, "", url.toString());
       }
-      setSubscriptionStatus(data.status || "none");
+      const resolvedStatus = data.status || "none";
+      storeSubscriptionStatus(resolvedStatus);
+      setSubscriptionStatus(resolvedStatus);
     } catch (err) {
       console.error("Subscription check failed:", err);
-      setSubscriptionStatus("none");
+      setSubscriptionStatus(subscriptionFallback());
     }
   };
 
   const roleOf = useCallback((email?: string): UserRole => getDefaultRole(email), []);
 
-  const mapAuthUserToProfile = useCallback((authUser: any): UserProfile => {
-    const metadata = authUser.user_metadata || {};
-    const role = (metadata.role as UserRole) || roleOf(authUser.email);
-    const permissions = getPermissions(role);
-    onUserRoleChange(role);
-    return {
-      id: authUser.id,
-      name: metadata.full_name || authUser.email?.split("@")[0] || "User",
-      email: authUser.email || "",
-      avatar: metadata.avatar_url,
-      plan: metadata.plan || "Starter",
-      streak: typeof metadata.streak === "number" ? metadata.streak : 0,
-      streakFreezes: typeof metadata.streak_freezes === "number" ? metadata.streak_freezes : 2,
-      joinedDate: metadata.joined_date ? Number(metadata.joined_date) : Date.now(),
-      isAdmin: permissions.canAccessAdminPanel,
-      role,
-      isEmailVerified: !!authUser.email_confirmed_at,
-      isPhoneVerified: !!authUser.phone_confirmed_at,
-      phone: authUser.phone || "",
-      lastStudyDate: metadata.last_study_date,
-    };
-  }, [onUserRoleChange, roleOf]);
+  const mapAuthUserToProfile = useCallback(
+    (authUser: any): UserProfile => {
+      const metadata = authUser.user_metadata || {};
+      const role = (metadata.role as UserRole) || roleOf(authUser.email);
+      const permissions = getPermissions(role);
+      onUserRoleChange(role);
+      return {
+        id: authUser.id,
+        name: metadata.full_name || authUser.email?.split("@")[0] || "User",
+        email: authUser.email || "",
+        avatar: metadata.avatar_url,
+        plan: metadata.plan || "Starter",
+        streak: typeof metadata.streak === "number" ? metadata.streak : 0,
+        streakFreezes: typeof metadata.streak_freezes === "number" ? metadata.streak_freezes : 2,
+        joinedDate: metadata.joined_date ? Number(metadata.joined_date) : Date.now(),
+        isAdmin: permissions.canAccessAdminPanel,
+        role,
+        isEmailVerified: !!authUser.email_confirmed_at,
+        isPhoneVerified: !!authUser.phone_confirmed_at,
+        phone: authUser.phone || "",
+        lastStudyDate: metadata.last_study_date,
+      };
+    },
+    [onUserRoleChange, roleOf],
+  );
 
   useEffect(() => {
     const syncSession = async (session: any) => {
@@ -463,7 +498,9 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
         }
         setUser(profile);
         setAuthChecked(true);
-        analyticsService.identify(profile.id, { email: profile.email, plan: profile.plan }).catch(() => {});
+        analyticsService
+          .identify(profile.id, { email: profile.email, plan: profile.plan })
+          .catch(() => {});
 
         const permissions = getPermissions(profile.role || UserRole.USER);
         if (permissions.hasFreeAccess) {
@@ -476,24 +513,49 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
           );
         }
 
-        await syncCurrentUser();
-        const [fetchedDecks, fetchedCards] = await Promise.all([
-          dbService.fetchDecks(session.user.id),
-          dbService.fetchCards(session.user.id),
-        ]);
+        const { decks: fetchedDecks, cards: fetchedCards } = await loadOfflineAwareData(
+          session.user.id,
+          {
+            online: isOnline(),
+            offlineMode: getAppPreference("auramind_offlineMode", false),
+            autoSync: getAppPreference("auramind_autoSync", true),
+            getCachedDecks,
+            getCachedCards,
+            fetchDecks: (userId) => dbService.fetchDecks(userId),
+            fetchCards: (userId) => dbService.fetchCards(userId),
+            cacheDeck: cacheDeckForOffline,
+            syncUser: syncCurrentUser,
+          },
+        );
+
         setDecks(fetchedDecks);
         setCards(fetchedCards);
       } catch (err) {
         console.error("Failed to sync session:", err);
+        setSubscriptionStatus("none");
         setAuthChecked(true);
       }
     };
 
     let subscription: { unsubscribe: () => void } | null = null;
+    // Supabase emits INITIAL_SESSION when the auth client is ready. Keep the
+    // explicit getSession fallback for unusual adapters, but dedupe it so a
+    // normal boot does not fetch decks, subscriptions, and offline caches
+    // twice before the first screen becomes interactive.
+    let initialSessionKey: string | null | undefined;
+    const syncInitialSessionOnce = (session: any) => {
+      const key = session?.user?.id ?? null;
+      if (initialSessionKey === key) return;
+      initialSessionKey = key;
+      void syncSession(session);
+    };
+
     if (!supabase) {
       setAuthChecked(true);
     } else {
-      const { data: { subscription: sub } } = requireSupabase().auth.onAuthStateChange((event, session) => {
+      const {
+        data: { subscription: sub },
+      } = requireSupabase().auth.onAuthStateChange((event, session) => {
         if (event === "SIGNED_OUT") {
           // Clear all app state so protected routes fall through to /auth.
           // Without this, the UI stays "logged in" even after the session dies
@@ -501,32 +563,41 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
           clearSessionState();
           return;
         }
-        if (event === "SIGNED_IN" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
-          syncSession(session);
+        if (event === "INITIAL_SESSION") {
+          syncInitialSessionOnce(session);
+          return;
+        }
+        if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+          void syncSession(session);
         }
       });
       subscription = sub;
     }
     supabase?.auth
       .getSession()
-      .then(({ data: { session } }) => { syncSession(session); })
+      .then(({ data: { session } }) => {
+        syncInitialSessionOnce(session);
+      })
       .catch((err) => console.error("Failed to get session:", err));
     return () => subscription?.unsubscribe();
   }, [mapAuthUserToProfile, clearSessionState]);
 
-  const createDeck = useCallback(async (t: string, d: string) => {
-    if (!user) return null;
-    const deck = await dbService.createDeck(user.id, t, d);
-    setDecks((prev) => [...prev, deck]);
-    addNotification({
-      title: "Deck Created",
-      description: `"${t}" is ready for study`,
-      type: "success",
-      actionUrl: `/deck/${deck.id}`,
-      actionLabel: "Open Deck",
-    });
-    return deck;
-  }, [user]);
+  const createDeck = useCallback(
+    async (t: string, d: string) => {
+      if (!user) return null;
+      const deck = await dbService.createDeck(user.id, t, d);
+      setDecks((prev) => [...prev, deck]);
+      addNotification({
+        title: "Deck Created",
+        description: `"${t}" is ready for study`,
+        type: "success",
+        actionUrl: `/deck/${deck.id}`,
+        actionLabel: "Open Deck",
+      });
+      return deck;
+    },
+    [user],
+  );
 
   const deleteDeck = useCallback(async (id: string) => {
     try {
@@ -540,60 +611,75 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
     }
   }, []);
 
-  const addCardsToDeck = useCallback(async (deckId: string, newCards: any[]) => {
-    if (!user) return;
-    const s = newCards.map((c) =>
-      getInitialCardState(deckId, c.front || c.question, c.back || c.answer),
-    );
-    const templates = createMetadataTemplates(newCards, "AuraMind AI", "ai");
-    const saved = mergeCardMetadata(await dbService.saveCards(user.id, s), templates);
-    persistCardMetadata(saved);
-    setCards((prev) => [...prev, ...saved]);
-    setDecks((prev) =>
-      prev.map((deck) =>
-        deck.id === deckId ? { ...deck, cardCount: deck.cardCount + saved.length } : deck,
-      ),
-    );
-    return saved.length;
-  }, [user]);
+  const addCardsToDeck = useCallback(
+    async (deckId: string, newCards: any[]) => {
+      if (!user) return;
+      const s = newCards.map((c) =>
+        getInitialCardState(deckId, c.front || c.question, c.back || c.answer),
+      );
+      const templates = createMetadataTemplates(newCards, "AuraMind AI", "ai");
+      const saved = mergeCardMetadata(await dbService.saveCards(user.id, s), templates);
+      persistCardMetadata(saved);
+      setCards((prev) => [...prev, ...saved]);
+      setDecks((prev) =>
+        prev.map((deck) =>
+          deck.id === deckId ? { ...deck, cardCount: deck.cardCount + saved.length } : deck,
+        ),
+      );
+      return saved.length;
+    },
+    [user],
+  );
 
-  const updateUserProfile = useCallback(async (updates: Partial<UserProfile>) => {
-    if (!user) return;
-    const nextProfile = { ...user, ...updates };
-    const { data, error } = await requireSupabase().auth.updateUser({
-      data: {
-        full_name: nextProfile.name,
-        avatar_url: nextProfile.avatar,
-        plan: nextProfile.plan,
-        role: nextProfile.role,
-        streak: nextProfile.streak,
-        streak_freezes: nextProfile.streakFreezes,
-        joined_date: nextProfile.joinedDate,
-        // is_admin is NOT set here: it lives in app_metadata (service-role
-        // only) and must never be writable by the client SDK.
-        last_study_date: nextProfile.lastStudyDate,
-      },
-    });
-    if (error) throw error;
-    if (updates.name) {
-      await requireSupabase().from("user_profiles").update({ name: updates.name }).eq("id", user.id);
-    }
-    setUser(mapAuthUserToProfile(data.user ?? { ...user, user_metadata: {} }));
-  }, [user, mapAuthUserToProfile]);
+  const updateUserProfile = useCallback(
+    async (updates: Partial<UserProfile>) => {
+      if (!user) return;
+      const nextProfile = { ...user, ...updates };
+      const { data, error } = await requireSupabase().auth.updateUser({
+        data: {
+          full_name: nextProfile.name,
+          avatar_url: nextProfile.avatar,
+          plan: nextProfile.plan,
+          role: nextProfile.role,
+          streak: nextProfile.streak,
+          streak_freezes: nextProfile.streakFreezes,
+          joined_date: nextProfile.joinedDate,
+          // is_admin is NOT set here: it lives in app_metadata (service-role
+          // only) and must never be writable by the client SDK.
+          last_study_date: nextProfile.lastStudyDate,
+        },
+      });
+      if (error) throw error;
+      if (updates.name) {
+        await requireSupabase()
+          .from("user_profiles")
+          .update({ name: updates.name })
+          .eq("id", user.id);
+      }
+      setUser(mapAuthUserToProfile(data.user ?? { ...user, user_metadata: {} }));
+    },
+    [user, mapAuthUserToProfile],
+  );
 
   const currentUser = user || null;
   const onLogout = useCallback(() => {
     // Reset device-local gamification so the next account starts fresh.
     // This must happen before any network signOut so a failed signOut
     // (or null client) never leaves XP/streak lingering in localStorage.
-    try { resetUserData(); } catch { /* non-fatal */ }
+    try {
+      resetUserData();
+    } catch {
+      /* non-fatal */
+    }
     if (supabase) {
-      void requireSupabase().auth.signOut().catch((err) => {
-        console.error("signOut failed:", err);
-        // Even if the network call fails, clear in-memory state so the UI
-        // never stays "logged in" forever.
-        clearSessionState();
-      });
+      void requireSupabase()
+        .auth.signOut()
+        .catch((err) => {
+          console.error("signOut failed:", err);
+          // Even if the network call fails, clear in-memory state so the UI
+          // never stays "logged in" forever.
+          clearSessionState();
+        });
     } else {
       clearSessionState();
     }
@@ -613,7 +699,16 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
             onLogout,
           }
         : null,
-    [currentUser, decks, cards, createDeck, deleteDeck, addCardsToDeck, updateUserProfile, onLogout],
+    [
+      currentUser,
+      decks,
+      cards,
+      createDeck,
+      deleteDeck,
+      addCardsToDeck,
+      updateUserProfile,
+      onLogout,
+    ],
   );
 
   if (!authChecked) {
@@ -624,6 +719,7 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
     <div className="min-h-screen bg-background text-foreground font-body selection:bg-primary selection:text-primary-foreground">
       <CinematicLoader />
       <CustomCursor />
+      <NativeRuntime />
       <StreakBurstMount />
       <AnnouncerMount />
       <Toaster
@@ -643,8 +739,38 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
           <Suspense fallback={<LoadingOverlay />}>
             <Routes location={location}>
               {/* ───── Public routes ───────────────────────────────────────── */}
-              <Route path="/" element={<PageTransition variant={transitionVariant}><AuraLandingPage /></PageTransition>} />
-              <Route path="/auth" element={<PageTransition><AuthPage /></PageTransition>} />
+              <Route
+                path="/__e2e/android"
+                element={
+                  import.meta.env.DEV ? <AndroidVisualPreview /> : <Navigate to="/" replace />
+                }
+              />
+              <Route
+                path="/"
+                element={
+                  Capacitor.isNativePlatform() ? (
+                    user ? (
+                      <Navigate to="/dashboard" replace />
+                    ) : (
+                      <PageTransition variant="lite">
+                        <AndroidWelcomeScreen />
+                      </PageTransition>
+                    )
+                  ) : (
+                    <PageTransition variant={transitionVariant}>
+                      <AuraLandingPage />
+                    </PageTransition>
+                  )
+                }
+              />
+              <Route
+                path="/auth"
+                element={
+                  <PageTransition>
+                    <AuthPage />
+                  </PageTransition>
+                }
+              />
               {/* /showcase was a component playground (Particles, Meteors,
                   BorderBeam…) with no inbound links from anywhere in the app —
                   a 62 kB dev artifact reachable only by typing the URL. The
@@ -658,25 +784,78 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                     <Navigate to="/dashboard" replace />
                   ) : (
                     <PageTransition>
-                      <PaymentPage user={currentUser as any} cancelled={window.location.search.includes("payment=cancelled")} />
+                      <PaymentPage
+                        user={currentUser as any}
+                        cancelled={window.location.search.includes("payment=cancelled")}
+                      />
                     </PageTransition>
                   )
                 }
               />
 
-              <Route path="/docs" element={<PageTransition><DocsPage /></PageTransition>} />
-              <Route path="/privacy" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
-              <Route path="/terms" element={<PageTransition><TermsOfServicePage /></PageTransition>} />
-              <Route path="/download" element={<PageTransition><DownloadPage /></PageTransition>} />
-              <Route path="/about" element={<PageTransition><AboutPage /></PageTransition>} />
+              <Route
+                path="/docs"
+                element={
+                  <PageTransition>
+                    <DocsPage />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/privacy"
+                element={
+                  <PageTransition>
+                    <PrivacyPolicyPage />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/terms"
+                element={
+                  <PageTransition>
+                    <TermsOfServicePage />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/download"
+                element={
+                  <PageTransition>
+                    <DownloadPage />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/about"
+                element={
+                  <PageTransition>
+                    <AboutPage />
+                  </PageTransition>
+                }
+              />
 
               {/* ───── Deck detail (standalone) ───────────────────────────── */}
-              <Route element={<ProtectedRoute user={user} status={subscriptionStatus} onLogout={onLogout} />}>
-                <Route path="/deck/:id" element={<PageTransition><DeckDetailRoute /></PageTransition>} />
+              <Route
+                element={
+                  <ProtectedRoute user={user} status={subscriptionStatus} onLogout={onLogout} />
+                }
+              >
+                <Route
+                  path="/deck/:id"
+                  element={
+                    <PageTransition>
+                      <DeckDetailRoute />
+                    </PageTransition>
+                  }
+                />
               </Route>
 
               {/* ───── /dashboard/* — NovaHub owns every sub-route ─────────── */}
-              <Route element={<ProtectedRoute user={user} status={subscriptionStatus} onLogout={onLogout} />}>
+              <Route
+                element={
+                  <ProtectedRoute user={user} status={subscriptionStatus} onLogout={onLogout} />
+                }
+              >
                 <Route
                   path="/dashboard/*"
                   element={
@@ -705,11 +884,16 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
               </Route>
 
               {/* ───── /admin/* — Users + App Check, admin-gated ────────── */}
-              <Route element={<ProtectedRoute user={user} status={subscriptionStatus} onLogout={onLogout} />}>
+              <Route
+                element={
+                  <ProtectedRoute user={user} status={subscriptionStatus} onLogout={onLogout} />
+                }
+              >
                 <Route
                   path="/admin"
                   element={
-                    currentUser && getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel ? (
+                    currentUser &&
+                    getPermissions(currentUser.role || UserRole.USER).canAccessAdminPanel ? (
                       <Suspense fallback={<GenericPageSkeleton />}>
                         <AdminShellRoute />
                       </Suspense>
@@ -719,20 +903,69 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                   }
                 >
                   <Route index element={<Navigate to="users" replace />} />
-                  <Route path="users" element={<Suspense fallback={<GenericPageSkeleton />}><AdminUsersRoute /></Suspense>} />
-                  <Route path="check" element={<Suspense fallback={<GenericPageSkeleton />}><AdminAppCheckRoute /></Suspense>} />
+                  <Route
+                    path="users"
+                    element={
+                      <Suspense fallback={<GenericPageSkeleton />}>
+                        <AdminUsersRoute />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="check"
+                    element={
+                      <Suspense fallback={<GenericPageSkeleton />}>
+                        <AdminAppCheckRoute />
+                      </Suspense>
+                    }
+                  />
                 </Route>
               </Route>
 
               {/* ───── Auth callback / restore pages ────────────────────── */}
               <Route path="/study/:deckId" element={<LegacyStudyRedirect />} />
-              <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
-              <Route path="/restore-account" element={<PageTransition><RestoreAccountPage /></PageTransition>} />
-              <Route path="/auth/callback" element={<PageTransition><CallbackPage /></PageTransition>} />
-              <Route path="/auth/schoology/callback" element={<PageTransition><SchoologyCallbackPage /></PageTransition>} />
+              <Route
+                path="/reset-password"
+                element={
+                  <PageTransition>
+                    <ResetPasswordPage />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/restore-account"
+                element={
+                  <PageTransition>
+                    <RestoreAccountPage />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/auth/callback"
+                element={
+                  <PageTransition>
+                    <CallbackPage />
+                  </PageTransition>
+                }
+              />
+              <Route
+                path="/auth/schoology/callback"
+                element={
+                  <PageTransition>
+                    <SchoologyCallbackPage />
+                  </PageTransition>
+                }
+              />
 
               {/* ───── 404 ──────────────────────────────────────────────── */}
-              <Route path="*" element={<PageTransition><NotFoundPage /></PageTransition>} />
+              <Route
+                path="*"
+                element={
+                  <PageTransition>
+                    <NotFoundPage />
+                  </PageTransition>
+                }
+              />
             </Routes>
           </Suspense>
         </AnimatePresence>

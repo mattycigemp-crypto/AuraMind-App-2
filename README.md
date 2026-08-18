@@ -17,10 +17,11 @@
 
 An **adaptive AI learning system** — turn anything you're studying (a PDF, a video, a lecture, a topic) into a personalized course of cards, lessons, and quizzes. FSRS v5 spaced repetition schedules your reviews; Prof. Aura, the AI tutor, remembers what you actually struggle with — weak cards, concepts, retention, and past conversations — and teaches to those gaps. Freemium via Stripe, all in one repo.
 
-> **Status:** active development · pre-M6 release · deployed via Vercel (web).
+> **Status:** active development · pre-M6 release · deployed via Vercel (web) with an active Capacitor 8 Android build.
 >
-> The Tauri 2 desktop and Capacitor 8 mobile stacks are **archived**
-> (web-only for now); see `auramind-gemini/archive/` to re-enable them.
+> The Tauri 2 desktop stack remains archived. The Android app uses the shared
+> learning UI plus native status-bar/back navigation, haptics, local study
+> reminders, system sharing, and mobile navigation.
 
 ## ✅ What's in here
 

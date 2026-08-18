@@ -14,6 +14,11 @@ import { NovaOverview } from "../../components/dashboard/nova/NovaOverview";
 import { NovaLibrary } from "../../components/dashboard/nova/NovaLibrary";
 import { NovaStudy } from "../../components/dashboard/nova/NovaStudy";
 import { Shimmer } from "../../components/dashboard/nova/motion";
+import { AndroidLibrary, AndroidOverview, AndroidStudy } from "../../components/native/AndroidMobileScreens";
+import AndroidGeneratorScreen from "../../components/native/AndroidGeneratorScreen";
+import AndroidSettingsScreen from "../../components/native/AndroidSettingsScreen";
+import { resolveDashboardSurface } from "../../components/native/androidSurface";
+import { Capacitor } from "../../lib/nativeShim";
 
 const AIChatPage = React.lazy(() => import("../../components/chat/AIChatPage"));
 const GeneratorPage = React.lazy(() => import("../generator/GeneratorPage"));
@@ -55,6 +60,7 @@ const NovaHub: React.FC<NovaHubProps> = (props) => {
     createDeck, deleteDeck, addCardsToDeck,
     updateProfile, onLogout,
   } = props;
+  const isAndroidApp = Capacitor.getPlatform() === 'android';
 
   return (
     <DashboardWorkspaceProvider
@@ -70,14 +76,14 @@ const NovaHub: React.FC<NovaHubProps> = (props) => {
       <NovaDashboardShell>
         <Suspense fallback={<LazyFallback />}>
           <Routes>
-            <Route path="/" element={<NovaOverview />} />
-            <Route path="/decks" element={<NovaLibrary />} />
-            <Route path="/study" element={<NovaStudy />} />
+            <Route path="/" element={isAndroidApp ? <AndroidOverview /> : <NovaOverview />} />
+            <Route path="/decks" element={isAndroidApp ? <AndroidLibrary /> : <NovaLibrary />} />
+            <Route path="/study" element={isAndroidApp ? <AndroidStudy /> : <NovaStudy />} />
             <Route path="/study/:deckId" element={<StudyModeRoute />} />
             <Route path="/chat" element={<AIChatPage />} />
-            <Route path="/generator" element={<GeneratorPage />} />
+            <Route path="/generator" element={resolveDashboardSurface(isAndroidApp, '/generator') === 'android-generator' ? <AndroidGeneratorScreen /> : <GeneratorPage />} />
             <Route path="/study-tools" element={<StudyToolsRoute />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings" element={resolveDashboardSurface(isAndroidApp, '/settings') === 'android-settings' ? <AndroidSettingsScreen /> : <SettingsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

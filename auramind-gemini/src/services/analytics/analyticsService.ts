@@ -1,5 +1,6 @@
 import { supabase } from '../database/supabase';
 import { getFSRSAnalytics } from '../study/fsrs';
+import { getAppPreference } from '../../lib/appPreferences';
 
 const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY;
 const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com';
@@ -10,6 +11,7 @@ export const isPostHogConfigured = POSTHOG_KEY && POSTHOG_KEY !== 'phc_placehold
 let posthog: any = null;
 
 export async function getPostHog() {
+  if (getAppPreference<boolean>('auramind_usageAnalytics', true) === false) return null;
   if (!posthog && isPostHogConfigured && typeof window !== 'undefined') {
     const module = await import('posthog-js');
     posthog = module.default;
@@ -21,6 +23,7 @@ let initialized = false;
 
 export const analyticsService = {
   init: async () => {
+    if (getAppPreference<boolean>('auramind_usageAnalytics', true) === false) return;
     if (import.meta.env.MODE === 'test' || initialized) return;
     initialized = true;
     const ph = await getPostHog();
