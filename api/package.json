@@ -4,7 +4,7 @@
   "type": "module",
   "dependencies": {
     "@supabase/supabase-js": "^2.101.1",
-    "@vercel/node": "^5.5.22",
+    "@vercel/node": "^5.10.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
