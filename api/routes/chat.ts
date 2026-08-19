@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express';
-import { handleChatStream } from '../chatHandler.js';
+import { handleChatStream } from '../_chatHandler.js';
 
 const router = Router();
 

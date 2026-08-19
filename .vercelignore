@@ -7,6 +7,20 @@ api/welcome.ts
 # API tests (never deployed as functions; run in CI)
 api/tests/
 
+# Dev-only API tooling (local dev server, scripts, and express router).
+# The only deployed functions are api/index.ts (catch-all) and
+# api/stripe-webhook.ts (raw-body webhook). Imported helpers live under
+# underscore-prefixed paths (_chatHandler.ts, _middleware.ts, _lib/) which
+# Vercel ignores as function entry points but still bundles.
+# NOTE: api/package.json, package-lock.json, and tsconfig.json are NOT ignored
+# — Vercel needs them to install function dependencies and compile TS.
+api/scripts/
+api/server.js
+api/routes/
+api/vitest.config.mts
+api/.env
+api/node_modules/
+
 # AI model files (local inference only, not for Vercel)
 content/
 model-service/
