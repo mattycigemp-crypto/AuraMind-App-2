@@ -1,0 +1,55 @@
+name: Migration drift gate
+
+# Catches the two migration-drift regressions that broke this repo before:
+#
+#   1. Structural drift (no secrets) — duplicate timestamp prefixes and
+#      byte-vs-chronological sort desync in supabase/migrations/. These are
+#      the exact causes of the PR #33 (ledger primary-key collision) and
+#      PR #34 ("Remote migration versions not found") failures. Runs on every
+#      PR that touches migrations and nightly.
+#
+#   2. Remote reconcile (needs Supabase secrets) — compares the local
+#      migration history against the remote supabase_migrations ledger via
+#      the read-only execute_sql RPC. Runs nightly + manual only, so a real
+#      remote/local divergence alarms without blocking a PR merge.
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # nightly 02:00 UTC
+  workflow_dispatch: {}   # manual run from the Actions tab
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/migrations-extra/**'
+      - 'run-migrations.js'
+      - 'auramind-gemini/scripts/migrate-status.cjs'
+      - 'auramind-gemini/scripts/check-migration-drift.cjs'
+      - 'auramind-gemini/scripts/check-remote-drift.cjs'
+
+jobs:
+  structural-drift:
+    name: Structural migration drift
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check duplicate prefixes and sort desync
+        run: node auramind-gemini/scripts/check-migration-drift.cjs
+
+  remote-reconcile:
+    name: Remote reconcile (Supabase ledger)
+    runs-on: ubuntu-latest
+    # Only on schedule/manual — a remote divergence needs human reconciliation
+    # and must not block a PR merge on its own.
+    if: github.event_name != 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Compare local history vs remote ledger (read-only)
+        run: node auramind-gemini/scripts/check-remote-drift.cjs
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
