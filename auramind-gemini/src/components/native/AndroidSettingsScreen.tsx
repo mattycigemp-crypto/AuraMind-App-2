@@ -22,6 +22,7 @@ import { useDashboardWorkspace } from "../../contexts/DashboardWorkspaceContext"
 import { useCurrentUserId } from "../../hooks/useCurrentUserId";
 import { useLocalNotifications } from "../../hooks/useNative";
 import { useAppPreference } from "../../lib/appPreferences";
+import { hapticSelection, hapticSuccess, hapticTap, hapticWarning } from "./androidHaptics";
 import { userService } from "../../services/user/userService";
 import { analyticsService } from "../../services/analytics/analyticsService";
 import { buildReminderNotifications, REMINDER_IDS } from "../../lib/reminderSchedule";
@@ -99,7 +100,10 @@ function AndroidToggle({
       aria-checked={value}
       aria-label={label}
       className={`android-settings-toggle ${value ? "is-on" : ""}`}
-      onClick={() => onChange(!value)}
+      onClick={() => {
+        hapticSelection();
+        onChange(!value);
+      }}
     >
       <span />
     </button>
@@ -121,7 +125,10 @@ function AndroidSelect({
     <select
       className="android-settings-select"
       value={value}
-      onChange={(event) => onChange(event.target.value)}
+      onChange={(event) => {
+        hapticSelection();
+        onChange(event.target.value);
+      }}
       aria-label={label}
     >
       {options.map((option) => (
@@ -253,6 +260,7 @@ export default function AndroidSettingsScreen() {
       await workspace?.updateProfile({ name: nextName });
       setProfile((previous) => (previous ? { ...previous, name: nextName } : previous));
       setEditingName(false);
+      hapticSuccess();
       toast.success("Name updated");
     } catch {
       setProfileError("Could not save your name. Try again.");
@@ -270,6 +278,7 @@ export default function AndroidSettingsScreen() {
       if (!result.ok || !("url" in result)) throw new Error("Avatar upload failed.");
       await workspace?.updateProfile({ avatar: result.url });
       setProfile((previous) => (previous ? { ...previous, avatar: result.url } : previous));
+      hapticSuccess();
       toast.success("Avatar updated");
     } catch (cause) {
       setProfileError(cause instanceof Error ? cause.message : "Could not update your avatar.");
@@ -308,6 +317,7 @@ export default function AndroidSettingsScreen() {
     link.download = `auramind-settings-${Date.now()}.json`;
     link.click();
     URL.revokeObjectURL(url);
+    hapticSuccess();
     toast.success("Settings exported");
   };
 
@@ -346,6 +356,7 @@ export default function AndroidSettingsScreen() {
     Object.keys(localStorage)
       .filter((key) => key.startsWith("auramind_") && !preferenceKeys.has(key))
       .forEach((key) => localStorage.removeItem(key));
+    hapticSuccess();
     toast.success("Local cache cleared");
   };
 
@@ -668,11 +679,25 @@ export default function AndroidSettingsScreen() {
         <AndroidSettingRow label="Offline mode" detail="Prefer local study data">
           <AndroidToggle value={offlineMode} onChange={setOfflineMode} label="Offline mode" />
         </AndroidSettingRow>
-        <button type="button" className="android-settings-action" onClick={clearLocalData}>
+        <button
+          type="button"
+          className="android-settings-action"
+          onClick={() => {
+            hapticTap();
+            clearLocalData();
+          }}
+        >
           <Trash2 className="h-4 w-4" aria-hidden /> Clear local cache{" "}
           <ChevronRight className="ml-auto h-4 w-4" aria-hidden />
         </button>
-        <button type="button" className="android-settings-action" onClick={exportData}>
+        <button
+          type="button"
+          className="android-settings-action"
+          onClick={() => {
+            hapticTap();
+            exportData();
+          }}
+        >
           <Download className="h-4 w-4" aria-hidden /> Export device settings{" "}
           <ChevronRight className="ml-auto h-4 w-4" aria-hidden />
         </button>
@@ -689,10 +714,24 @@ export default function AndroidSettingsScreen() {
             <X className="h-4 w-4" aria-hidden /> Remove avatar
           </button>
         )}
-        <button type="button" className="android-native-secondary" onClick={signOut}>
+        <button
+          type="button"
+          className="android-native-secondary"
+          onClick={() => {
+            hapticWarning();
+            signOut();
+          }}
+        >
           <LogOut className="h-4 w-4" aria-hidden /> Sign out
         </button>
-        <button type="button" className="android-native-danger" onClick={() => setDeleteOpen(true)}>
+        <button
+          type="button"
+          className="android-native-danger"
+          onClick={() => {
+            hapticWarning();
+            setDeleteOpen(true);
+          }}
+        >
           <ShieldCheck className="h-4 w-4" aria-hidden /> Delete account
         </button>
       </div>

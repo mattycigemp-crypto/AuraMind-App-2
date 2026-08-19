@@ -1,5 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { BookOpen, Brain, GraduationCap, Home, Settings } from "@/components/icons";
+import { hapticSelection, hapticTap } from "./androidHaptics";
 
 type AndroidTab = {
   label: string;
@@ -34,15 +36,30 @@ export function AndroidBottomNav() {
       <div className="android-mobile-bottom-nav-inner">
         {TABS.map(({ label, path, icon: Icon, featured }) => {
           const active = isActive(location.pathname, path);
+          const handlePress = () => {
+            if (active) {
+              hapticTap();
+              return;
+            }
+            hapticSelection();
+            navigate(path);
+          };
           return (
             <button
               key={path}
               type="button"
               aria-current={active ? "page" : undefined}
               aria-label={label}
-              onClick={() => navigate(path)}
+              onClick={handlePress}
               className={`android-nav-item ${featured ? "android-nav-item-featured" : ""} ${active ? "is-active" : ""}`}
             >
+              {active && !featured && (
+                <motion.span
+                  layoutId="android-nav-active-pill"
+                  className="android-nav-active-pill"
+                  transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                />
+              )}
               <span className={featured ? "android-nav-feature-icon" : "android-nav-icon"}>
                 {featured ? (
                   <img src="/favicons,logos/favicon.svg" alt="" aria-hidden="true" />

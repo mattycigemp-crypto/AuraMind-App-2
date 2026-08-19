@@ -1055,26 +1055,71 @@
   background: linear-gradient(145deg, rgba(49, 46, 129, 0.9), rgba(23, 33, 58, 0.96) 64%, rgba(8, 145, 178, 0.38));
 }
 
-.android-focus-orb {
+.android-focus-aura {
   position: absolute;
-  top: -70px;
-  right: -35px;
-  width: 190px;
-  height: 190px;
-  border: 1px solid rgba(196, 181, 253, 0.3);
-  border-radius: 50%;
-  box-shadow: 0 0 0 20px rgba(196, 181, 253, 0.04), 0 0 0 42px rgba(196, 181, 253, 0.035);
+  top: -60px;
+  right: -44px;
+  width: 224px;
+  height: 224px;
+  pointer-events: none;
+  opacity: 0.9;
+  will-change: transform;
 }
 
-.android-focus-orb::after {
-  position: absolute;
-  top: 46px;
-  left: 46px;
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(196, 181, 253, 0.5), rgba(34, 211, 238, 0.12) 45%, transparent 70%);
-  content: '';
+/* Aura motion is CSS-driven (not SMIL) so `prefers-reduced-motion` and
+   Playwright's `animations: disabled` both freeze it deterministically. */
+@keyframes aura-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes aura-spin-reverse {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes aura-breathe {
+  0%, 100% { opacity: 0.55; transform: scale(0.92); }
+  50% { opacity: 0.2; transform: scale(1.05); }
+}
+
+@keyframes aura-core-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.14); }
+}
+
+@keyframes aura-prism-fade {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 0.6; }
+}
+
+.android-focus-aura .aura-orbit {
+  transform-origin: 120px 120px;
+  transform-box: view-box;
+}
+
+.android-focus-aura .aura-breathe,
+.android-focus-aura .aura-core-breathe {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.android-focus-aura .aura-orbit-a { animation: aura-spin 30s linear infinite; }
+.android-focus-aura .aura-orbit-b { animation: aura-spin-reverse 22s linear infinite; }
+.android-focus-aura .aura-particle-0 { animation: aura-spin 11s linear infinite; }
+.android-focus-aura .aura-particle-1 { animation: aura-spin-reverse 15s linear infinite; }
+.android-focus-aura .aura-particle-2 { animation: aura-spin 19s linear infinite; }
+.android-focus-aura .aura-breathe { animation: aura-breathe 7s ease-in-out infinite; }
+.android-focus-aura .aura-core-breathe { animation: aura-core-breathe 5.5s ease-in-out infinite; }
+.android-focus-aura .aura-prism { animation: aura-prism-fade 5.5s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .android-focus-aura .aura-orbit,
+  .android-focus-aura .aura-breathe,
+  .android-focus-aura .aura-core-breathe,
+  .android-focus-aura .aura-prism {
+    animation: none;
+  }
 }
 
 .android-focus-label {
@@ -1630,8 +1675,29 @@
 }
 
 .android-nav-item.is-active .android-nav-icon {
-  color: #c4b5fd;
-  background: rgba(124, 58, 237, 0.22);
+  color: #e7e2ff;
+}
+
+/* Material 3-style sliding indicator. framer-motion animates this pill across
+   the five destinations so switching tabs feels continuous rather than a
+   hard cut. */
+.android-nav-active-pill {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 46px;
+  height: 30px;
+  margin-left: -23px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.55), rgba(124, 58, 237, 0.26));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.14), 0 4px 14px rgba(124, 58, 237, 0.28);
+  z-index: 0;
+}
+
+.android-nav-item .android-nav-icon,
+.android-nav-item .android-nav-label {
+  position: relative;
+  z-index: 1;
 }
 
 .android-nav-item-featured {

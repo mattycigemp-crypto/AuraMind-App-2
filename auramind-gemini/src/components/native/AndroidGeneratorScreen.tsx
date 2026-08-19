@@ -20,6 +20,7 @@ import {
 } from "@/components/icons";
 import { toast } from "sonner";
 import { useAppPreference } from "../../lib/appPreferences";
+import { hapticError, hapticSelection, hapticSuccess, hapticTap } from "./androidHaptics";
 
 type GeneratorKind = "flashcards" | "quiz" | "presentation";
 type SourceKind = "topic" | "url" | "youtube" | "file" | "audio";
@@ -111,6 +112,7 @@ export default function AndroidGeneratorScreen() {
   };
 
   const selectSource = (next: SourceKind) => {
+    hapticSelection();
     setSource(next);
     setError(null);
     if (next !== "topic") setSourceText("");
@@ -237,6 +239,7 @@ export default function AndroidGeneratorScreen() {
         response_format: { type: "json_object" },
       });
       const parsed = parseJsonResponse(response.choices[0]?.message?.content || "");
+      hapticSuccess();
       if (kind === "quiz" && Array.isArray(parsed.questions) && parsed.questions.length > 0) {
         setQuiz({
           id: crypto.randomUUID(),
@@ -257,6 +260,7 @@ export default function AndroidGeneratorScreen() {
         throw new Error("Aura did not return enough study material.");
       }
     } catch (cause) {
+      hapticError();
       setError(cause instanceof Error ? cause.message : "Generation failed. Try again.");
     } finally {
       setGenerating(false);
@@ -292,6 +296,7 @@ export default function AndroidGeneratorScreen() {
         await workspace.deleteDeck(deck.id);
         throw new Error("Could not save the generated cards.");
       }
+      hapticSuccess();
       toast.success(`${saved} cards saved to ${deck.title}`);
       clearGenerated();
     } catch (cause) {
@@ -334,6 +339,7 @@ export default function AndroidGeneratorScreen() {
               aria-selected={kind === option.value}
               className={kind === option.value ? "is-selected" : ""}
               onClick={() => {
+                hapticSelection();
                 setKind(option.value);
                 clearGenerated();
               }}
@@ -496,7 +502,10 @@ export default function AndroidGeneratorScreen() {
               <div className="android-count-control">
                 <button
                   type="button"
-                  onClick={() => setCount((value) => Math.max(5, value - 5))}
+                  onClick={() => {
+                    hapticTap();
+                    setCount((value) => Math.max(5, value - 5));
+                  }}
                   aria-label="Decrease count"
                 >
                   −
@@ -504,7 +513,10 @@ export default function AndroidGeneratorScreen() {
                 <strong>{count}</strong>
                 <button
                   type="button"
-                  onClick={() => setCount((value) => Math.min(50, value + 5))}
+                  onClick={() => {
+                    hapticTap();
+                    setCount((value) => Math.min(50, value + 5));
+                  }}
                   aria-label="Increase count"
                 >
                   +
@@ -517,7 +529,10 @@ export default function AndroidGeneratorScreen() {
                   key={value}
                   type="button"
                   className={difficulty === value ? "is-selected" : ""}
-                  onClick={() => setDifficulty(value)}
+                  onClick={() => {
+                    hapticSelection();
+                    setDifficulty(value);
+                  }}
                 >
                   {value}
                 </button>
@@ -528,7 +543,10 @@ export default function AndroidGeneratorScreen() {
           <button
             type="button"
             className="android-native-primary"
-            onClick={() => void generate()}
+            onClick={() => {
+              hapticTap();
+              void generate();
+            }}
             disabled={generating || loadingSource || !sourceReady}
           >
             <Sparkles className="h-5 w-5" aria-hidden />{" "}
@@ -588,7 +606,10 @@ export default function AndroidGeneratorScreen() {
             <button
               type="button"
               className="android-native-primary"
-              onClick={() => void save()}
+              onClick={() => {
+                hapticTap();
+                void save();
+              }}
               disabled={saving}
             >
               <Save className="h-4 w-4" aria-hidden /> {saving ? "Saving…" : "Save as deck"}
