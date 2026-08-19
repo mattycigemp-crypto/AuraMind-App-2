@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { applyMiddleware } from './middleware.js';
-import { handleChatStream } from './chatHandler.js';
+import { applyMiddleware } from './_middleware.js';
+import { handleChatStream } from './_chatHandler.js';
 import { z } from 'zod';
-import { sendEmail as sendEmailViaResend } from './lib/emails.js';
+import { sendEmail as sendEmailViaResend } from './_lib/emails.js';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || '';
 
