@@ -40,7 +40,13 @@ import * as path from 'node:path';
 
 const ROOT = path.resolve(__dirname, '../../..');             // repo root (file is at auramind-gemini/src/__tests__/<test>.ts; three levels up)
 const SRC_DIR = path.join(ROOT, 'auramind-gemini', 'src');
-const MIGRATIONS_DIR = path.join(ROOT, 'supabase', 'migrations');
+// supabase/migrations/ is the Supabase CLI-managed history; migrations applied
+// out-of-band to production via run-migrations.js live in migrations-extra/.
+// The contract must see both, since both declare objects referenced in src/.
+const MIGRATION_DIRS = [
+  path.join(ROOT, 'supabase', 'migrations'),
+  path.join(ROOT, 'supabase', 'migrations-extra'),
+];
 
 function* walk(dir: string): Generator<string> {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -137,10 +143,12 @@ function _collectColumnDeclarations(sqlFiles: Iterable<string>): Set<string> {
 
 const ALL_TS_FILES = Array.from(walk(SRC_DIR));
 const ALL_SQL_FILES = (() => {
-  if (!fs.existsSync(MIGRATIONS_DIR)) return [];
-  return fs.readdirSync(MIGRATIONS_DIR)
-    .filter(f => f.endsWith('.sql'))
-    .map(f => path.join(MIGRATIONS_DIR, f));
+  return MIGRATION_DIRS.flatMap((dir) => {
+    if (!fs.existsSync(dir)) return [];
+    return fs.readdirSync(dir)
+      .filter(f => f.endsWith('.sql'))
+      .map(f => path.join(dir, f));
+  });
 })();
 
 describe('Supabase schema contract — defensive regression', () => {
