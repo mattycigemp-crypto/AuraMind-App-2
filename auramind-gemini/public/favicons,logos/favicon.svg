@@ -3,11 +3,6 @@
   <title id="prism-title">Prof. Aura</title>
   <desc id="prism-description">A faceted open diamond aperture with a luminous central core.</desc>
   <defs>
-    <linearGradient id="prism-bg" x1="54" y1="42" x2="466" y2="472" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#100F2E" />
-      <stop offset="0.52" stop-color="#211349" />
-      <stop offset="1" stop-color="#3B1248" />
-    </linearGradient>
     <linearGradient id="prism-mark" x1="112" y1="394" x2="406" y2="112" gradientUnits="userSpaceOnUse">
       <stop stop-color="#72F4FF" />
       <stop offset="0.38" stop-color="#8E89FF" />
@@ -29,7 +24,6 @@
     </filter>
   </defs>
 
-  <rect width="512" height="512" fill="url(#prism-bg)" />
   <circle cx="256" cy="256" r="204" fill="url(#prism-glow)" filter="url(#prism-blur)" />
 
   <!-- The Prism Aperture: a single faceted silhouette with a focused center. -->
