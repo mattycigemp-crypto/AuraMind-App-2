@@ -3,20 +3,42 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Supabase environment variables are missing. Some features may not work properly.');
+/** True when the value is a well-formed http(s) URL the Supabase client accepts. */
+function isValidSupabaseUrl(value: string | undefined): value is string {
+    if (!value) return false;
+    try {
+        const url = new URL(value);
+        return url.protocol === 'http:' || url.protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
+if (!isValidSupabaseUrl(supabaseUrl) || !supabaseAnonKey) {
+    console.warn('Supabase environment variables are missing or invalid. Some features may not work properly.');
 }
 
 /**
- * The Supabase client, or `null` when the environment variables are absent.
+ * The Supabase client, or `null` when the environment variables are absent,
+ * malformed, or the client fails to initialize.
+ *
+ * This module is imported at startup, so initialization must never throw:
+ * a bad env value (e.g. a Vercel `[SENSITIVE]` placeholder) used to crash
+ * the entire app before React mounted.
  *
  * Prefer `requireSupabase()` in service code. Use this nullable export only
  * where the caller genuinely handles the unconfigured case (feature
  * detection, optional analytics, boot-time diagnostics).
  */
-export const supabase = supabaseUrl && supabaseAnonKey
-    ? createClient(supabaseUrl, supabaseAnonKey)
-    : null;
+export const supabase: SupabaseClient | null = (() => {
+    if (!isValidSupabaseUrl(supabaseUrl) || !supabaseAnonKey) return null;
+    try {
+        return createClient(supabaseUrl, supabaseAnonKey);
+    } catch (err) {
+        console.warn('Failed to initialize Supabase client:', err);
+        return null;
+    }
+})();
 
 /** True when both Supabase env vars were present at startup. */
 export const isSupabaseConfigured = supabase !== null;
