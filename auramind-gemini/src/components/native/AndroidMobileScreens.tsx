@@ -19,6 +19,8 @@ import {
   Trash2,
 } from "@/components/icons";
 import { useDashboardWorkspace } from "../../contexts/DashboardWorkspaceContext";
+import { hapticSuccess, hapticTap, hapticWarning } from "./androidHaptics";
+import AndroidAura from "./AndroidAura";
 import type { Card, Deck } from "../../types";
 import { toast } from "sonner";
 
@@ -81,7 +83,14 @@ function AndroidAction({
   onClick: () => void;
 }) {
   return (
-    <button type="button" className={`android-action android-action-${tone}`} onClick={onClick}>
+    <button
+      type="button"
+      className={`android-action android-action-${tone}`}
+      onClick={() => {
+        hapticTap();
+        onClick();
+      }}
+    >
       <span className="android-action-icon">
         <Icon className="h-5 w-5" aria-hidden />
       </span>
@@ -112,7 +121,14 @@ function AndroidDeckRow({
 
   return (
     <article className="android-deck-row">
-      <button type="button" className="android-deck-main" onClick={onStudy}>
+      <button
+        type="button"
+        className="android-deck-main"
+        onClick={() => {
+          hapticTap();
+          onStudy();
+        }}
+      >
         <span className="android-deck-icon">
           <BookOpen className="h-5 w-5" aria-hidden />
         </span>
@@ -135,11 +151,23 @@ function AndroidDeckRow({
         </span>
       </button>
       <div className="android-deck-actions">
-        <button type="button" onClick={onStudy}>
+        <button
+          type="button"
+          onClick={() => {
+            hapticTap();
+            onStudy();
+          }}
+        >
           <Play className="h-3.5 w-3.5 fill-current" aria-hidden />
           Study
         </button>
-        <button type="button" onClick={onEdit}>
+        <button
+          type="button"
+          onClick={() => {
+            hapticTap();
+            onEdit();
+          }}
+        >
           <Pencil className="h-3.5 w-3.5" aria-hidden />
           Edit
         </button>
@@ -147,7 +175,10 @@ function AndroidDeckRow({
           <button
             type="button"
             className="android-deck-delete"
-            onClick={onDelete}
+            onClick={() => {
+              hapticWarning();
+              onDelete();
+            }}
             aria-label={`Delete ${deck.title}`}
           >
             <Trash2 className="h-3.5 w-3.5" aria-hidden />
@@ -196,7 +227,7 @@ export function AndroidOverview() {
       </div>
 
       <section className="android-focus-card">
-        <div className="android-focus-orb" aria-hidden />
+        <AndroidAura className="android-focus-aura" />
         <div className="relative z-10">
           <div className="flex items-center justify-between gap-3">
             <span className="android-focus-label">
@@ -214,7 +245,11 @@ export function AndroidOverview() {
             <button
               type="button"
               className="android-primary-button"
-              onClick={() => (firstDueDeck ? startQuickStudy() : navigate("/dashboard/decks"))}
+              onClick={() => {
+                hapticTap();
+                if (firstDueDeck) startQuickStudy();
+                else navigate("/dashboard/decks");
+              }}
             >
               <Play className="h-4 w-4 fill-current" aria-hidden />
               {firstDueDeck ? "Start review" : "Create a deck"}
@@ -319,7 +354,10 @@ export function AndroidOverview() {
           <button
             type="button"
             className="android-empty-card"
-            onClick={() => navigate("/dashboard/generator")}
+            onClick={() => {
+              hapticTap();
+              navigate("/dashboard/generator");
+            }}
           >
             <span className="android-empty-icon">
               <Layers className="h-5 w-5" aria-hidden />
@@ -362,6 +400,7 @@ export function AndroidLibrary() {
       if (!deck) throw new Error("Could not create the deck.");
       setNewDeckTitle("");
       setCreateOpen(false);
+      hapticSuccess();
       toast.success(`Created ${deck.title}`);
     } catch (cause) {
       toast.error(cause instanceof Error ? cause.message : "Could not create the deck.");
@@ -375,6 +414,7 @@ export function AndroidLibrary() {
     setActionBusy(true);
     try {
       await deleteDeck(deleteTarget.id);
+      hapticSuccess();
       toast.success(`Deleted ${deleteTarget.title}`);
       setDeleteTarget(null);
     } catch (cause) {
@@ -394,7 +434,10 @@ export function AndroidLibrary() {
           <button
             type="button"
             className="android-round-action"
-            onClick={() => setCreateOpen(true)}
+            onClick={() => {
+              hapticTap();
+              setCreateOpen(true);
+            }}
             aria-label="Create deck"
           >
             <Plus className="h-5 w-5" aria-hidden />
@@ -533,7 +576,10 @@ export function AndroidLibrary() {
           <button
             type="button"
             className="android-primary-button"
-            onClick={() => navigate("/dashboard/generator")}
+            onClick={() => {
+              hapticTap();
+              navigate("/dashboard/generator");
+            }}
           >
             <Sparkles className="h-4 w-4" aria-hidden /> Generate with AI
           </button>
@@ -600,7 +646,10 @@ export function AndroidStudy() {
         <button
           type="button"
           className="android-primary-button android-primary-button-small"
-          onClick={() => decks.length > 0 && startQuickStudy()}
+          onClick={() => {
+            hapticTap();
+            if (decks.length > 0) startQuickStudy();
+          }}
           disabled={decks.length === 0}
         >
           <Play className="h-4 w-4 fill-current" aria-hidden /> Go
@@ -646,7 +695,10 @@ export function AndroidStudy() {
             <button
               type="button"
               className="android-primary-button"
-              onClick={() => navigate("/dashboard/generator")}
+              onClick={() => {
+                hapticTap();
+                navigate("/dashboard/generator");
+              }}
             >
               <Plus className="h-4 w-4" aria-hidden /> Create a deck
             </button>

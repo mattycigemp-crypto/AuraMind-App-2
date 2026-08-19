@@ -2,6 +2,7 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Flame, Settings } from "@/components/icons";
 import { useAppPreference } from "../../lib/appPreferences";
+import { hapticTap } from "./androidHaptics";
 import type { UserProfile } from "../../types";
 
 function pageTitle(pathname: string): string {
@@ -54,7 +55,10 @@ export function AndroidMobileTopBar({ user }: { user: UserProfile | null | undef
         <button
           type="button"
           className="android-top-icon"
-          onClick={() => navigate("/dashboard/settings")}
+          onClick={() => {
+            hapticTap();
+            navigate("/dashboard/settings");
+          }}
           aria-label="Open settings"
         >
           <Settings className="h-5 w-5" aria-hidden />
@@ -62,7 +66,10 @@ export function AndroidMobileTopBar({ user }: { user: UserProfile | null | undef
         <button
           type="button"
           className="android-avatar"
-          onClick={() => navigate("/dashboard/settings")}
+          onClick={() => {
+            hapticTap();
+            navigate("/dashboard/settings");
+          }}
           aria-label={`Open ${user?.name ?? "account"} settings`}
         >
           {initials(user)}
