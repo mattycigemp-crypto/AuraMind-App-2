@@ -158,5 +158,4 @@ verifies every response, and **always restores `api/.env`** — even on failure.
 
 ---
 
-*See also: `COMPLETED_TASKS.md` (runbook + status table), `SECURITY.md`
-(audit residuals), `DEPLOYMENT.md` (deployment notes).*
+*See also: `SECURITY.md` (audit residuals) and `DEPLOYMENT.md` (deployment notes).*

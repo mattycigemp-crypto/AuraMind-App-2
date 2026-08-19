@@ -23,8 +23,9 @@ cd ..
 You will need:
 
 - **Node 18+** (project targets Vite 6 which requires ≥18).
-- The native Tauri/Capacitor stacks are archived (web-only) — no Rust,
-  Xcode, or Android Studio toolchains are required.
+- The Tauri desktop stack is archived. The Android (Capacitor) app is
+  active but only needs the Android SDK/Java toolchain if you build it;
+  running the web app needs no native toolchains.
 
 To run only the web app without native toolchains:
 

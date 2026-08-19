@@ -6,13 +6,14 @@
 
 ## System Overview
 
-AuraMind is a full-stack adaptive AI learning system — it turns any input (PDF, video, lecture, topic) into a personalized course, schedules review with FSRS v5, and tutors with a knowledge model of the user's actual weaknesses. Three deployable units:
+AuraMind is a full-stack adaptive AI learning system — it turns any input (PDF, video, lecture, topic) into a personalized course, schedules review with FSRS v5, and tutors with a knowledge model of the user's actual weaknesses. Deployable units:
 
 | Unit | Path | Tech | Purpose |
 |---|---|---|---|
-| Frontend SPA | `auramind-gemini/` | React 19 + Vite + Tailwind 4 | Main application |
+| Web SPA | `auramind-gemini/` | React 19 + Vite 6 + Tailwind 4 | Main application (PWA) |
+| Android app | `auramind-gemini/android/` | Capacitor 8 | Active native build |
 | Backend API | `api/` | Express + Vercel Serverless | Auth, Stripe, admin, chat |
-| Desktop/Mobile | `archive/src-tauri/`, `archive/android/`, `archive/ios/` | Tauri v2 + Capacitor | Archived — web-only |
+| Desktop (archived) | `auramind-gemini/archive/src-tauri/` | Tauri 2 | Not in the build pipeline |
 
 **Key dependencies:** Supabase (auth + DB), Stripe (payments), Resend (email), PostHog (analytics). AI providers: Groq, OpenRouter, local (Ollama/LM Studio).
 
@@ -47,13 +48,13 @@ All tables have Row Level Security (RLS) policies: users can only access their o
 | Delete Users | ✓ | ✗ | ✗ | ✗ | ✗ |
 | Free Access | ✓ | ✓ | ✓ | ✗ | ✗ |
 
-Role is determined by `user.user_metadata.role`. The owner email (`matty.cigemp@gmail.com`) is hardcoded. Admins skip subscription checks automatically.
+Role is read from `app_metadata.role` (synced into `user_profiles.role` by `sync_auth_role_to_profiles`); `user_metadata` is attacker-writable and is **not** trusted for authorization. The owner email is configured via `VITE_OWNER_EMAIL`. Admins skip subscription checks automatically.
 
 ---
 
 ## AI Integration
 
-### Provider priority: Local AI → Groq → OpenRouter → DeepSeek
+### Provider priority: Local AI → Groq → OpenRouter (BYOK)
 - **Local**: LM Studio / Ollama on port 1234, proxied via Vite (`/local-ai`)
 - **Groq**: Fastest free tier, model `llama-3.3-70b-versatile`
 - **OpenRouter**: Multiple models, model `deepseek/deepseek-r1-0528:free`
@@ -64,11 +65,10 @@ Role is determined by `user.user_metadata.role`. The owner email (`matty.cigemp@
 - `auraAiService.ts` — Multi-provider unified chat
 - `freeAiService.ts` — Ollama-based chat
 - `factCheckService.ts` — AI content verification
-- `chatHandler.ts` (API) — SSE streaming chat via model-service
-- `deepseekService.ts` — Socratic tutor with enhanced prompts
+- `_chatHandler.ts` (API) — SSE streaming chat via model-service
 
 ### Chat streaming flow
-Client → `/api/chat/stream?message=...&token=...` → Express router → `chatHandler.ts` → SSE stream from model-service → token-by-token to client. Rate limited: 30 req/min per IP. Responses logged to `chat_logs`.
+Client → `/api/chat/stream?message=...&token=...` → Express router → `_chatHandler.ts` → SSE stream from model-service → token-by-token to client. Rate limited: 30 req/min per IP. Responses logged to `chat_logs`.
 
 ---
 
@@ -166,10 +166,12 @@ Enrollment: localStorage-first with best-effort Supabase sync. Lessons open as p
 
 ## Native Apps
 
-> **Archived (web-only for now).** The Tauri 2 desktop and Capacitor 8
-> mobile stacks were moved under `archive/` in Aug 2026 and are not part
-> of the current build/release pipeline. Re-enable by restoring the
-> directories from `archive/` and the workflows from `archive/.github/`.
+- **Android** — active Capacitor 8 app at `auramind-gemini/android/`, built
+  from the same React source with a native bottom nav, status-bar/back
+  handling, haptics, local reminders, and system sharing.
+- **Desktop** — the Tauri 2 stack is archived under
+  `auramind-gemini/archive/src-tauri/` and is not part of the current
+  build/release pipeline.
 
 ---
 
@@ -190,7 +192,7 @@ Enrollment: localStorage-first with best-effort Supabase sync. Lessons open as p
 Key differentiators vs competitors (Quizlet, Anki, Knowt, RemNote, StudyFetch, Brainscape):
 - AI-powered content generation from multiple input formats
 - FSRS v5 algorithm (matching Anki's latest)
-- Multi-platform: web-first (native desktop/mobile stacks archived)
+- Multi-platform: web + native Android (desktop stack archived)
 - Source-grounded flashcards with citations
 - Multi-provider AI with local fallback (no API costs)
 - Integrated learning paths with structured curricula
@@ -206,7 +208,6 @@ AuraMind uses Framer Motion + GSAP + Three.js. Key patterns:
 - Glass cards with `backdrop-filter: blur(20px) saturate(180%)`
 - Animated gradients with CSS `@property --angle`
 - Respects `prefers-reduced-motion` throughout
-- Refer to `ANIMATION_GUIDE.md` (now deleted) for detailed code examples
 
 ---
 

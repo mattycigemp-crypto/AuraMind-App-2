@@ -12,9 +12,9 @@
 ### 1. Database Setup (Supabase)
 
 1. Create a new project at [supabase.com](https://supabase.com)
-2. Go to SQL Editor and run the migration:
-   - Copy the contents of `supabase/migrations/20260521_fsrs_factcheck.sql`
-   - Paste and run in the SQL Editor
+2. Apply the migrations from `supabase/migrations/` in time-stamp order:
+   - `node run-migrations.js` from the repo root, or
+   - paste each file into the SQL Editor
 3. Note your project URL and anon key from Settings → API
 
 ### 2. Environment Variables
@@ -71,7 +71,6 @@ The built files will be in `auramind-gemini/dist/`.
 | Variable | Description | Where to get |
 |----------|-------------|--------------|
 | `VITE_GROQ_API_KEY` | Groq AI API key | console.groq.com |
-| `VITE_OPENROUTER_API_KEY` | OpenRouter API key | openrouter.ai |
 
 ### Optional
 | Variable | Description |
@@ -82,22 +81,23 @@ The built files will be in `auramind-gemini/dist/`.
 
 ## PWA Setup
 
-1. Add your app icons to `auramind-gemini/public/icons/`:
-   - `icon-192x192.png`
-   - `icon-384x384.png`
-   - `icon-512x512.png`
+1. App icons live in `auramind-gemini/public/favicons,logos/`:
+   - `icon-192.png`
+   - `icon-384.png`
+   - `icon-512.png`
+   - plus `favicon.svg`, `favicon.ico`, and the apple-touch icon
 
-2. Add an OG image at `auramind-gemini/public/og-image.png` (1200x630px)
+2. The OG image is `auramind-gemini/public/favicons,logos/og-image.png` (1200x630px)
 
-3. Update `manifest.json` with your app details
+3. `manifest.json` references the icons above
 
 ## Security Checklist
 
 Verified against the code in this repo (Aug 2026):
 
 - [x] **Security headers** — CSP, HSTS, X-Frame-Options, Referrer-Policy,
-      Permissions-Policy set in `api/middleware.ts` and `vercel.json`.
-- [x] **Rate limiting** — per-IP limiter in `api/middleware.ts` (100 req/min
+      Permissions-Policy set in `api/_middleware.ts` and `vercel.json`.
+- [x] **Rate limiting** — per-IP limiter in `api/_middleware.ts` (100 req/min
       default, 30 for AI, 10 for auth) applied to every API route.
 - [x] **Cookie consent banner** — `src/components/shared/CookieConsentBanner.tsx`.
 - [x] **RLS policies** — created by the append-only migrations in
@@ -121,8 +121,7 @@ Still requires manual/out-of-band setup (cannot be verified from the repo):
 > run, live launch steps, monitoring, rollback): see `STRIPE_LAUNCH_CHECKLIST.md`.
 - [ ] Custom domain configured with HTTPS in Vercel.
 - [x] Apply the migrations in `supabase/migrations/` to the live project
-      — all 31 applied via `node run-migrations.js` (Aug 9, 2026);
-      re-running is idempotent.
+      via `node run-migrations.js` (idempotent — re-running is safe).
 
 ## Monitoring
 

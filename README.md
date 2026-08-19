@@ -30,15 +30,17 @@ An **adaptive AI learning system** — turn anything you're studying (a PDF, a v
 ## ✅ What's in here
 
 - **Web app** — React 19 + Vite 6 + Tailwind, served by Vercel (PWA with offline support).
+- **Android app** — a first-class Capacitor 8 build (`auramind-gemini/android/`) generated from the same React source, with a native bottom nav, status-bar/back-button handling, haptics, local reminders, and system sharing.
 - **Backend** — Vercel serverless functions under `/api`.
 - **Database** — Supabase (Postgres) with append-only migrations in `./supabase/migrations/`.
+- **Desktop** — the Tauri 2 stack is archived under `auramind-gemini/archive/src-tauri/`.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js 18+
-- npm or yarn
+- npm
 - Git
 
 ### Local Development
@@ -51,9 +53,9 @@ An **adaptive AI learning system** — turn anything you're studying (a PDF, a v
 
 2. **Install dependencies**
    ```bash
-   # Install root dependencies
+   # Install root orchestration dependencies
    npm install
-   
+
    # Install frontend dependencies
    cd auramind-gemini
    npm install
@@ -61,31 +63,15 @@ An **adaptive AI learning system** — turn anything you're studying (a PDF, a v
    ```
 
 3. **Set up environment variables**
-   
+
    Copy the example environment file:
    ```bash
    cp auramind-gemini/.env.example auramind-gemini/.env
    ```
-   
-   Edit `auramind-gemini/.env` and add your credentials:
-   ```env
-   # AI Configuration (choose one or more)
-   VITE_GROQ_API_KEY=your_groq_api_key_here
-   VITE_OPENROUTER_API_KEY=your_openrouter_api_key_here
-   
-   # Supabase Configuration (REQUIRED)
-   VITE_SUPABASE_URL=your_supabase_url_here
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
-   
-   # Stripe Configuration (for payments)
-   VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key_here
-   VITE_STRIPE_PRICE_ID_MONTHLY=price_1TqjKHGhRq84JnUVogflTfeY
-   VITE_STRIPE_PRICE_ID_ANNUAL=price_1SNlxOGhRq84JnUV1DzlFMS8
 
-   # Email Configuration (IMPORTANT: Must use verified domain in Resend)
-   RESEND_FROM_EMAIL=noreply@mail.auramind.app
-   RESEND_API_KEY=your_resend_api_key_here
-   ```
+   Then fill in your keys. Supabase is required; AI, Stripe, email, and
+   analytics keys are optional. The full list is in
+   [Environment Variables](#environment-variables).
 
    > **⚠️ Which keys ship to the browser.** Everything prefixed `VITE_` is
    > inlined into the public JS bundle at build time — treat those as
@@ -107,30 +93,43 @@ An **adaptive AI learning system** — turn anything you're studying (a PDF, a v
    ```bash
    npm run dev
    ```
-   
-   The app will be available at `http://localhost:3000`
+
+   The web app is at `http://localhost:3000`; the API dev server runs
+   alongside it on `http://localhost:3001`.
 
 ## 📁 Project Structure
 
 ```
-AuraMind App 2/
-├── api/                      # Backend API routes (Vercel serverless)
-│   ├── check-subscription.ts
-│   ├── create-checkout-session.ts
-│   ├── stripe-webhook.ts
-│   └── ...
-├── auramind-gemini/          # Frontend React application
+AuraMind-App-2/
+├── api/                      # Backend API (Vercel serverless + Express dev server)
+│   ├── index.ts              # Route handler for every /api endpoint
+│   ├── stripe-webhook.ts     # Stripe webhook handler
+│   ├── server.js             # Express dev server (port 3001)
+│   ├── routes/               # Express routes
+│   ├── scripts/              # One-off verification/launch scripts
+│   └── tests/                # API tests
+├── auramind-gemini/          # Frontend React application (web + Android)
 │   ├── src/
-│   │   ├── components/       # React components
-│   │   ├── services/         # API and business logic
-│   │   ├── hooks/           # Custom React hooks
-│   │   ├── types/           # TypeScript type definitions
-│   │   └── data/            # Static data and sample content
-│   ├── public/               # Static assets
+│   │   ├── components/       # React components (incl. native/ for Android)
+│   │   ├── pages/            # Route pages
+│   │   ├── hooks/            # Custom React hooks
+│   │   ├── services/         # API clients, DB modules, AI providers
+│   │   ├── lib/              # Pure logic (FSRS, prompts, memory)
+│   │   ├── contexts/         # React context providers
+│   │   ├── types/            # TypeScript type definitions
+│   │   └── __tests__/        # Vitest suite
+│   ├── android/              # Capacitor 8 Android project
+│   ├── archive/              # Archived Tauri 2 / old Capacitor stacks
+│   ├── public/               # Static assets (PWA manifest, icons)
 │   └── package.json
-├── vercel.json              # Vercel deployment configuration
-├── package.json             # Root package.json (scripts)
-└── .gitignore
+├── supabase/
+│   └── migrations/           # Append-only, idempotent SQL migrations
+├── model-service/            # Optional Python streaming-chat backend (FastAPI)
+├── docs/                     # Store-submission playbooks
+├── store/                    # App store listings, screenshots, checklists
+├── vercel.json               # Vercel deployment configuration
+├── run-migrations.js         # Migration runner (node run-migrations.js)
+└── package.json              # Root orchestration scripts
 ```
 
 ## 🔧 Environment Variables
@@ -149,13 +148,13 @@ AuraMind App 2/
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `VITE_GROQ_API_KEY` | Groq AI API key (fastest free tier) | - |
-| `VITE_OPENROUTER_API_KEY` | OpenRouter API key (multiple models) | - |
 | `VITE_USE_LOCAL_AI` | Enable local AI server (LM Studio/Ollama) | `false` |
 | `VITE_AI_MODEL` | Custom AI model selection | `deepseek/deepseek-r1-0528:free` |
 | `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key | - |
 | `VITE_STRIPE_PRICE_ID_MONTHLY` | Stripe monthly price ID | - |
 | `VITE_STRIPE_PRICE_ID_ANNUAL` | Stripe annual price ID | - |
 | `VITE_POSTHOG_KEY` | PostHog analytics key | - |
+| `VITE_OWNER_EMAIL` | Owner email (grants admin automatically) | - |
 
 ### Backend Environment Variables (Vercel)
 
@@ -178,6 +177,17 @@ cd auramind-gemini
 npm run build
 ```
 
+### Android Build
+
+```bash
+cd auramind-gemini
+npm run build:apk:debug      # debug APK (assembleDebug)
+npm run build:aab:release    # release AAB (requires signing env vars)
+```
+
+The debug APK lands at `android/app/build/outputs/apk/debug/app-debug.apk`.
+See `scripts/README-MOBILE-PUBLISHING.md` for the full publishing flow.
+
 ### Vercel Deployment
 
 1. **Install Vercel CLI**
@@ -198,19 +208,6 @@ npm run build
    ```bash
    vercel --prod
    ```
-
-### Watch Mode (Auto-deploy)
-
-For continuous development with auto-deployment:
-
-```bash
-npm run watch
-```
-
-This will:
-- Watch for file changes in `auramind-gemini/` and `api/`
-- Automatically build the frontend
-- Deploy to Vercel production
 
 ## 🧪 Testing
 
@@ -234,14 +231,18 @@ npm run type-check
 
 1. Create a new project at [supabase.com](https://supabase.com).
 2. Apply the migrations from [`supabase/migrations/`](./supabase/migrations/)
-   in **time-stamp order** via the Supabase SQL Editor. They are append-only
-   and idempotent — each picks up where the previous one left off, and every
-   one writes a bookkeeping row to `schema_migrations`.
+   in **time-stamp order**. They are append-only and idempotent — each picks
+   up where the previous one left off, and every one writes a bookkeeping row
+   to `schema_migrations`. Apply them one of three ways:
+
+   - `node run-migrations.js` from the repo root (uses the Supabase CLI),
+   - `npx supabase db push` or `supabase migration up` with the Supabase CLI, or
+   - paste each file into the Supabase SQL Editor.
 
    **The schema is intentionally NOT reproduced in this README.**
    It goes stale as soon as the next migration ships. The directory of
    numbered `.sql` files is the single source of truth, and
-   `schema_migrations.ORDER BY applied_at DESC` tells you which ones
+   `schema_migrations ORDER BY applied_at DESC` tells you which ones
    the live DB currently has.
 
 To check what has been applied:
@@ -265,6 +266,8 @@ ORDER  BY applied_at DESC;
    - `invoice.payment_succeeded`
    - `invoice.payment_failed`
 
+> See `STRIPE_LAUNCH_CHECKLIST.md` for the full go-live runbook.
+
 ### Resend Setup (Email)
 
 1. Create account at [resend.com](https://resend.com)
@@ -286,13 +289,14 @@ ORDER  BY applied_at DESC;
 
 ## 📊 Tech Stack
 
-- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS
+- **Frontend**: React 19, TypeScript (strict), Vite 6, Tailwind CSS 4, React Router 7
 - **UI Components**: Radix UI, Framer Motion, custom SVG icon set
-- **Backend**: Vercel Serverless Functions
-- **Database**: Supabase (PostgreSQL)
+- **Mobile**: Capacitor 8 (Android)
+- **Backend**: Vercel Serverless Functions (Express dev server locally)
+- **Database**: Supabase (PostgreSQL, RLS)
 - **Payments**: Stripe
 - **Email**: Resend
-- **AI**: Groq, OpenRouter, Local AI (Ollama/LM Studio)
+- **AI**: Groq, OpenRouter, local AI (Ollama/LM Studio), Puter fallback
 
 ## 🐛 Troubleshooting
 
