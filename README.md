@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="docs/assets/banner.png" alt="AuraMind — turn anything into a course that sticks" width="100%" />
+</div>
+
 # AuraMind
 
 <div align="center">
@@ -270,18 +274,20 @@ ORDER  BY applied_at DESC;
 
 ## 🎨 Features
 
-- **AI-Powered Learning**: Generate flashcards and quizzes using AI
-- **Spaced Repetition**: Optimized review scheduling with SM-2 algorithm
-- **Multiple AI Providers**: Support for Groq, OpenRouter, and local AI
-- **Study Modes**: Flashcard review, quiz mode, and AI chat
-- **Progress Tracking**: Streak tracking and analytics
-- **Subscription Management**: Stripe integration for payments
-- **Responsive Design**: Works on desktop and mobile
+- **AI tutor (Prof. Aura)** — a conversational coach that remembers your weak cards, concepts, retention, and past conversations, then teaches to the gaps.
+- **AI generation** — turn a topic, PDF, video, URL, or voice memo into flashcards, quizzes, and narrated slides.
+- **FSRS v5 spaced repetition** — reviews scheduled by the Free Spaced Repetition Scheduler, not a fixed interval.
+- **Native Android app** — Capacitor 8 shell with status-bar/back navigation, haptics, local reminders, system sharing, and offline study.
+- **Offline-first PWA** — cached decks and cards, queued reviews, and reconnect sync.
+- **Voice study** — text-to-speech cards and hands-free review.
+- **Gamification** — streaks, mastery stats, and progress analytics.
+- **Freemium via Stripe** — subscription checks, webhooks, and entitlement fallback.
+- **Multiple AI providers** — Groq, OpenRouter, and local (Ollama/LM Studio), with a user-pays Puter fallback.
 
 ## 📊 Tech Stack
 
 - **Frontend**: React 19, TypeScript, Vite, Tailwind CSS
-- **UI Components**: Radix UI, Framer Motion, Lucide Icons
+- **UI Components**: Radix UI, Framer Motion, custom SVG icon set
 - **Backend**: Vercel Serverless Functions
 - **Database**: Supabase (PostgreSQL)
 - **Payments**: Stripe
