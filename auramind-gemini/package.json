@@ -2,6 +2,8 @@
   "name": "auramind",
   "private": true,
   "version": "2.0.0",
+  "description": "AuraMind — adaptive AI learning system (React app, PWA, and Capacitor Android).",
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "vite",

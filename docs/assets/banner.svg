@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" shape-rendering="geometricPrecision">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#080d1b" />
+      <stop offset="0.55" stop-color="#0b1121" />
+      <stop offset="1" stop-color="#1a1033" />
+    </linearGradient>
+    <radialGradient id="glow-violet" cx="50%" cy="50%" r="50%">
+      <stop stop-color="#7c3aed" stop-opacity="0.32" />
+      <stop offset="1" stop-color="#7c3aed" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="glow-cyan" cx="50%" cy="50%" r="50%">
+      <stop stop-color="#06b6d4" stop-opacity="0.18" />
+      <stop offset="1" stop-color="#06b6d4" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="prism-mark" x1="112" y1="394" x2="406" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#72F4FF" />
+      <stop offset="0.38" stop-color="#8E89FF" />
+      <stop offset="0.68" stop-color="#D38BFF" />
+      <stop offset="1" stop-color="#FF9ACD" />
+    </linearGradient>
+    <radialGradient id="prism-core" cx="32%" cy="24%" r="80%">
+      <stop stop-color="#FFFFFF" />
+      <stop offset="0.52" stop-color="#F1FEFF" />
+      <stop offset="1" stop-color="#8CEBFF" />
+    </radialGradient>
+    <linearGradient id="wordmark" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#EDE9FE" />
+      <stop offset="0.5" stop-color="#C4B5FD" />
+      <stop offset="1" stop-color="#72F4FF" />
+    </linearGradient>
+    <filter id="blur-lg" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="24" />
+    </filter>
+    <filter id="blur-md" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" />
+    </filter>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)" />
+  <circle cx="150" cy="60" r="420" fill="url(#glow-violet)" />
+  <circle cx="1160" cy="600" r="380" fill="url(#glow-cyan)" />
+
+  <!-- Prism Aperture mark -->
+  <g transform="translate(330 320) scale(0.62) translate(-256 -256)">
+    <circle cx="256" cy="256" r="250" fill="url(#glow-violet)" filter="url(#blur-lg)" opacity="0.8" />
+    <path d="M256 79L424 256L256 433L88 256Z" fill="none" stroke="url(#prism-mark)" stroke-width="56" stroke-linejoin="round" stroke-linecap="round" opacity="0.2" filter="url(#blur-md)" />
+    <path d="M256 79L424 256L256 433L88 256Z" fill="none" stroke="url(#prism-mark)" stroke-width="56" stroke-linejoin="round" stroke-linecap="round" />
+    <path d="M256 151L357 256L256 361L155 256Z" fill="none" stroke="url(#prism-mark)" stroke-width="23" stroke-linejoin="round" stroke-linecap="round" />
+    <circle cx="256" cy="256" r="28" fill="url(#prism-core)" />
+    <circle cx="248" cy="248" r="7" fill="#FFFFFF" opacity="0.9" />
+  </g>
+
+  <!-- Wordmark + tagline -->
+  <text x="560" y="300" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="104" font-weight="800" letter-spacing="-2" fill="url(#wordmark)">AuraMind</text>
+  <text x="564" y="372" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="36" font-weight="400" fill="#cbd5f5">Turn anything into a course that sticks.</text>
+  <text x="564" y="424" font-family="'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="5" fill="#8b98b8">WEB  ·  PWA  ·  ANDROID</text>
+</svg>

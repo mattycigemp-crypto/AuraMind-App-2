@@ -2,7 +2,7 @@
   "name": "auramind",
   "version": "1.0.0",
   "private": true,
-  "description": "AuraMind - AI-powered learning platform",
+  "description": "AuraMind — adaptive AI learning system for web, PWA, and native Android.",
   "scripts": {
     "dev": "concurrently -n \"vite,api\" -c \"cyan,yellow\" \"cd auramind-gemini && npm run dev\" \"cd api && npx tsx server.js\"",
     "dev:frontend": "cd auramind-gemini && npm run dev",
@@ -14,13 +14,29 @@
     "start": "npm run build && cd api && npx tsx server.js"
   },
   "keywords": [
-    "learning",
-    "flashcards",
     "ai",
-    "education"
+    "flashcards",
+    "spaced-repetition",
+    "fsrs",
+    "learning",
+    "react",
+    "typescript",
+    "supabase",
+    "stripe",
+    "capacitor",
+    "android",
+    "pwa"
   ],
-  "author": "",
-  "license": "MIT",
+  "author": "CogniVect, Inc.",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mattycigemp-crypto/AuraMind-App-2.git"
+  },
+  "homepage": "https://auramind.app",
+  "bugs": {
+    "url": "https://github.com/mattycigemp-crypto/AuraMind-App-2/issues"
+  },
   "dependencies": {
     "react-responsive": "^10.0.1",
     "recharts": "^3.8.1"
