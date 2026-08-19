@@ -23,6 +23,7 @@ import { hapticSuccess, hapticTap, hapticWarning } from "./androidHaptics";
 import AndroidAura from "./AndroidAura";
 import type { Card, Deck } from "../../types";
 import { toast } from "sonner";
+import { toastError } from "../../lib/errorToast";
 
 function startOfToday(): number {
   const today = new Date();
@@ -403,7 +404,7 @@ export function AndroidLibrary() {
       hapticSuccess();
       toast.success(`Created ${deck.title}`);
     } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Could not create the deck.");
+      toastError(cause, "Could not create the deck.");
     } finally {
       setActionBusy(false);
     }
@@ -418,7 +419,7 @@ export function AndroidLibrary() {
       toast.success(`Deleted ${deleteTarget.title}`);
       setDeleteTarget(null);
     } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Could not delete the deck.");
+      toastError(cause, "Could not delete the deck.");
     } finally {
       setActionBusy(false);
     }

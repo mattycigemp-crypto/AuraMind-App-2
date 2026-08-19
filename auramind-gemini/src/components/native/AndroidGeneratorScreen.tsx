@@ -20,6 +20,7 @@ import {
 } from "@/components/icons";
 import { toast } from "sonner";
 import { useAppPreference } from "../../lib/appPreferences";
+import { toastError } from "../../lib/errorToast";
 import { hapticError, hapticSelection, hapticSuccess, hapticTap } from "./androidHaptics";
 
 type GeneratorKind = "flashcards" | "quiz" | "presentation";
@@ -300,7 +301,7 @@ export default function AndroidGeneratorScreen() {
       toast.success(`${saved} cards saved to ${deck.title}`);
       clearGenerated();
     } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Could not save this deck.");
+      toastError(cause, "Could not save this deck.");
     } finally {
       setSaving(false);
     }
