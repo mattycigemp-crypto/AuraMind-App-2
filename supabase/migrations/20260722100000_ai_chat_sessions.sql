@@ -107,7 +107,7 @@ GRANT EXECUTE ON FUNCTION public.prune_old_chat_sessions(UUID, INTEGER) TO authe
 
 -- 5. Migration bookkeeping ───────────────────────────────────────────────
 INSERT INTO schema_migrations (version, description)
-VALUES ('20260722_ai_chat_sessions', 'Adds ai_chat_sessions table for cross-device Prof. Aura persistence; localStorage remains source of truth on client')
+VALUES ('20260722100000_ai_chat_sessions', 'Adds ai_chat_sessions table for cross-device Prof. Aura persistence; localStorage remains source of truth on client')
 ON CONFLICT (version) DO NOTHING;
 
 -- Migration complete.

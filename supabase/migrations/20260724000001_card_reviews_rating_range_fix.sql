@@ -55,7 +55,7 @@ COMMENT ON CONSTRAINT card_reviews_rating_check ON public.card_reviews
   IS 'Relaxed from 0..4 to 0..5 in 20260724000000 so FSRS v5 Rating.EASY (=5) writes succeed. Upper bound still capped to defend against accidental numeric-as-rating writes. Idempotent on re-apply.';
 
 INSERT INTO schema_migrations (version, description)
-VALUES ('20260724000000_card_reviews_rating_range_fix',
+VALUES ('20260724000001_card_reviews_rating_range_fix',
         'card_reviews.rating CHECK: 0..4 → 0..5 (supports FSRS v5 0=Again / 3=Hard / 4=Good / 5=Easy written by StudyModePage.handleRate and FlowMode.handleAnswer)')
 ON CONFLICT (version) DO NOTHING;
 
