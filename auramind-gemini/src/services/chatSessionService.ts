@@ -141,7 +141,7 @@ async function flushQueue(): Promise<void> {
       id: isUuidLike(session.id) ? session.id : slugToUuidLike(session.id),
       user_id: userId,
       title: session.title,
-      mode: migrateChatMode(session.mode),
+      mode: modeToDb(migrateChatMode(session.mode)),
       deck_id: session.deckId ?? null,
       deck_name: session.deckName ?? null,
       pinned: session.pinned,
@@ -188,6 +188,16 @@ async function getAuthedUserId(): Promise<{ userId: string | null }> {
   if (!supabase) return { userId: null };
   const { data } = await supabase.auth.getUser();
   return { userId: data?.user?.id ?? null };
+}
+
+/**
+ * modeToDb — map the app's ChatMode union onto the values the DB CHECK
+ * constraint accepts. Once the migration to relax the constraint is applied,
+ * this can be removed.
+ */
+function modeToDb(mode: string): string {
+  if (mode === 'study' || mode === 'companion') return 'free';
+  return mode;
 }
 
 /** Best-effort: a slug is "uuid-like" when it has the right shape. */
