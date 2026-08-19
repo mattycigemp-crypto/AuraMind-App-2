@@ -22,7 +22,12 @@ const path = require('path');
 const crypto = require('crypto');
 
 const PROJECT_ROOT = path.join(__dirname, '..', '..');
-const MIGRATIONS_DIR = path.join(PROJECT_ROOT, 'supabase', 'migrations');
+// supabase/migrations/ is the Supabase CLI-managed history; migrations applied
+// out-of-band to production via run-migrations.js live in migrations-extra/.
+const MIGRATION_DIRS = [
+  path.join(PROJECT_ROOT, 'supabase', 'migrations'),
+  path.join(PROJECT_ROOT, 'supabase', 'migrations-extra'),
+];
 
 const args = process.argv.slice(2);
 const json = args.includes('--json');
@@ -76,22 +81,28 @@ function fmtBytes(n) {
 }
 
 async function main() {
-  if (!fs.existsSync(MIGRATIONS_DIR)) {
-    console.error(`[AuraMind/migrate-status] Migrations dir not found: ${MIGRATIONS_DIR}`);
+  const allFiles = MIGRATION_DIRS.flatMap((dir) =>
+    fs.existsSync(dir)
+      ? fs
+          .readdirSync(dir)
+          .filter((f) => f.endsWith('.sql'))
+          .filter((f) => f !== 'schema.sql')
+          .map((f) => ({ name: f, dir }))
+      : [],
+  ).sort((a, b) => a.name.localeCompare(b.name));
+
+  if (allFiles.length === 0) {
+    console.error(
+      `[AuraMind/migrate-status] No migrations found in: ${MIGRATION_DIRS.join(', ')}`,
+    );
     process.exit(1);
   }
 
-  const allFiles = fs
-    .readdirSync(MIGRATIONS_DIR)
-    .filter((f) => f.endsWith('.sql'))
-    .filter((f) => f !== 'schema.sql')
-    .sort();
-
   console.log(`[AuraMind/migrate-status] ${allFiles.length} migration file(s) on disk:`);
-  for (const f of allFiles) {
-    const fp = path.join(MIGRATIONS_DIR, f);
+  for (const entry of allFiles) {
+    const fp = path.join(entry.dir, entry.name);
     const size = fs.statSync(fp).size;
-    console.log(`  • ${f}  (${fmtBytes(size)})  sha256:${sha256(fp).slice(0, 12)}…`);
+    console.log(`  • ${entry.name}  (${fmtBytes(size)})  sha256:${sha256(fp).slice(0, 12)}…`);
   }
   console.log('');
 
@@ -106,11 +117,12 @@ async function main() {
   const byVersion = new Map(ledger.map((r) => [r.version, r]));
 
   // Derive the canonical version name from the filename (strip .sql).
-  const rows = allFiles.map((f) => {
+  const rows = allFiles.map((entry) => {
+    const f = entry.name;
     const version = f.replace(/\.sql$/, '');
     const row = byVersion.get(version);
-    const diskHash = sha256(path.join(MIGRATIONS_DIR, f));
-    const diskSize = fs.statSync(path.join(MIGRATIONS_DIR, f)).size;
+    const diskHash = sha256(path.join(entry.dir, f));
+    const diskSize = fs.statSync(path.join(entry.dir, f)).size;
     const status = !row
       ? 'PENDING'
       : row.sha256 && !row.sha256.startsWith('pending-re-fingerprint:') && row.sha256 !== diskHash

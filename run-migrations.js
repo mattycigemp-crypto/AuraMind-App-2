@@ -27,9 +27,10 @@
  *     and the --password path don't need it.
  *   - Loud-fail on missing credentials — no silent fallback to anon key.
  *
- * Migrations are auto-discovered from `supabase/migrations/` in
- * alphabetical (= chronological) order; `schema.sql` is excluded because
- * it's a baseline dump, not a delta migration.
+ * Migrations are auto-discovered from `supabase/migrations/` and
+ * `supabase/migrations-extra/` (merged) in alphabetical (= chronological)
+ * order; `schema.sql` is excluded because it's a baseline dump, not a delta
+ * migration.
  */
 
 const { execSync } = require('child_process');
@@ -50,21 +51,27 @@ const DB_URL = usePassword
   : null;
 const SUPABASE_URL = process.env.SUPABASE_URL || `https://${PROJECT_REF}.supabase.co`;
 
-const MIGRATIONS_DIR = path.join(__dirname, 'supabase', 'migrations');
+// supabase/migrations/ is the Supabase CLI-managed history (reconciled with
+// supabase_migrations.schema_migrations). supabase/migrations-extra/ holds
+// migrations applied to production out-of-band via this runner, which the CLI
+// intentionally does not track. The runner applies both, merged chronologically.
+const MIGRATION_DIRS = [
+  path.join(__dirname, 'supabase', 'migrations'),
+  path.join(__dirname, 'supabase', 'migrations-extra'),
+];
 
-if (!fs.existsSync(MIGRATIONS_DIR)) {
-  console.error(`Migrations directory not found: ${MIGRATIONS_DIR}`);
-  process.exit(1);
-}
-
-const ALL_SQL_FILES = fs
-  .readdirSync(MIGRATIONS_DIR)
-  .filter((f) => f.endsWith('.sql'))
-  .filter((f) => f !== 'schema.sql')
-  .sort();
+const ALL_SQL_FILES = MIGRATION_DIRS.flatMap((dir) =>
+  fs.existsSync(dir)
+    ? fs
+        .readdirSync(dir)
+        .filter((f) => f.endsWith('.sql'))
+        .filter((f) => f !== 'schema.sql')
+        .map((f) => ({ name: f, dir }))
+    : [],
+).sort((a, b) => a.name.localeCompare(b.name));
 
 if (ALL_SQL_FILES.length === 0) {
-  console.error(`No .sql files found in ${MIGRATIONS_DIR}`);
+  console.error(`No .sql files found in ${MIGRATION_DIRS.join(', ')}`);
   process.exit(1);
 }
 
@@ -86,10 +93,10 @@ function modeLabel() {
 }
 
 console.log(`Found ${ALL_SQL_FILES.length} migration file(s):`);
-for (const f of ALL_SQL_FILES) {
-  const fp = path.join(MIGRATIONS_DIR, f);
+for (const entry of ALL_SQL_FILES) {
+  const fp = path.join(entry.dir, entry.name);
   const size = fs.statSync(fp).size;
-  console.log(`  • ${f}  (${fmtBytes(size)})  sha256:${sha256(fp).slice(0, 12)}…`);
+  console.log(`  • ${entry.name}  (${fmtBytes(size)})  sha256:${sha256(fp).slice(0, 12)}…`);
 }
 console.log('');
 console.log(`Mode: ${modeLabel()}`);
@@ -102,17 +109,17 @@ let dryPlan = [];
 let failed = 0;
 const failures = [];
 
-for (const file of ALL_SQL_FILES) {
-  const filePath = path.join(MIGRATIONS_DIR, file);
+for (const entry of ALL_SQL_FILES) {
+  const filePath = path.join(entry.dir, entry.name);
   const hash = sha256(filePath);
   const size = fs.statSync(filePath).size;
 
   if (dryRun) {
-    dryPlan.push({ file, sha256: hash, bytes: size });
+    dryPlan.push({ file: entry.name, sha256: hash, bytes: size });
     continue;
   }
 
-  console.log(`\n📦 Applying ${file}…`);
+  console.log(`\n📦 Applying ${entry.name}…`);
   try {
     const cmd = useServiceRole
       ? // PostgREST /rest/v1/ RPC path — requires a SECURITY DEFINER RPC on the DB
@@ -129,7 +136,7 @@ for (const file of ALL_SQL_FILES) {
       timeout: 120000,
       encoding: 'utf-8',
     });
-    console.log(`  ✅ ${file} — OK  sha256:${hash.slice(0, 12)}…  (${fmtBytes(size)})`);
+    console.log(`  ✅ ${entry.name} — OK  sha256:${hash.slice(0, 12)}…  (${fmtBytes(size)})`);
     applied++;
   } catch (err) {
     const stdout = (err.stdout || '').toString();
@@ -138,14 +145,14 @@ for (const file of ALL_SQL_FILES) {
     const looksLikeAlreadyApplied =
       /already exists|duplicate|already defined|relation ".+" already/i.test(combined);
     if (looksLikeAlreadyApplied) {
-      console.log(`  ⚠️  ${file} — already applied (skipped)`);
+      console.log(`  ⚠️  ${entry.name} — already applied (skipped)`);
       skipped++;
       continue;
     }
-    console.error(`  ❌ ${file} — FAILED`);
+    console.error(`  ❌ ${entry.name} — FAILED`);
     if (stdout) console.error(`     stdout: ${stdout.slice(0, 400)}`);
     if (stderr) console.error(`     stderr: ${stderr.slice(0, 400)}`);
-    failures.push(file);
+    failures.push(entry.name);
     failed++;
   }
 }
