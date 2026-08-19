@@ -96,3 +96,5 @@ opencode.json
 
 # Local verify-build output
 auramind-gemini/dist-verify/
+.vercel
+.env*
