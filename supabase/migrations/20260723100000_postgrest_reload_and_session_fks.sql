@@ -109,7 +109,7 @@ NOTIFY pgrst, 'reload schema';
 -- ============================================================
 INSERT INTO schema_migrations (version, description)
 VALUES (
-  '20260723_postgrest_reload_and_session_fks',
+  '20260723100000_postgrest_reload_and_session_fks',
   'Idempotently restores study_sessions/card_reviews FKs + reloads PostgREST schema cache (fixes live 403 RPC + 400 study_sessions.join).'
 )
 ON CONFLICT (version) DO NOTHING;

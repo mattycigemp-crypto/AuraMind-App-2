@@ -124,6 +124,6 @@ GRANT EXECUTE ON FUNCTION avatar_upload_secure(TEXT, TEXT) TO authenticated;
 -- Migration bookkeeping
 -- ============================================================
 INSERT INTO schema_migrations (version, description)
-VALUES ('20260722_avatar_storage',
+VALUES ('20260722110000_avatar_storage',
         'Adds avatars storage bucket with per-user RLS + avatar_upload_secure helper RPC')
 ON CONFLICT (version) DO NOTHING;

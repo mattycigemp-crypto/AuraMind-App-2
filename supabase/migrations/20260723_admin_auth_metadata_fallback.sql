@@ -2,7 +2,7 @@
 -- Date: 2026-07-23
 -- Version: 3.8.1
 --
--- After 20260723_postgrest_reload_and_session_fks fired NOTIFY pgrst, the
+-- After 20260723100000_postgrest_reload_and_session_fks fired NOTIFY pgrst, the
 -- list_admin_users_secure RPC *still* returned 403 from the live console.
 -- Probe confirmed public.profiles is empty AND public.user_profiles is
 -- not guaranteed to carry an admin row for every admin user. The root

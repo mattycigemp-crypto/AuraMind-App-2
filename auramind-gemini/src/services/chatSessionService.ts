@@ -13,7 +13,7 @@
  *     collapses to a single round-trip. `flush()` is exposed so the host
  *     can drain on tab-unload (best-effort via `navigator.sendBeacon`).
  *
- * Schema (migration `20260722_ai_chat_sessions`):
+ * Schema (migration `20260722100000_ai_chat_sessions`):
  *   user_id           UUID PRIMARY KEY part
  *   id                UUID PRIMARY KEY (separate so we can key By-record)
  *   title             TEXT

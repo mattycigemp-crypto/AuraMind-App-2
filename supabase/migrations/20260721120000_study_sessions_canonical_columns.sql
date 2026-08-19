@@ -1,4 +1,4 @@
--- 20260721_study_sessions_canonical_columns.sql
+-- 20260721120000_study_sessions_canonical_columns.sql
 --
 -- Adds the full set of columns that sessionService.saveStudySession writes.
 -- Until now only cards_correct / cards_reviewed / started_at / ended_at existed;
@@ -23,5 +23,5 @@ COMMENT ON COLUMN public.study_sessions.accuracy        IS 'Integer 0-100 percen
 COMMENT ON COLUMN public.study_sessions.duration_ms     IS 'Session duration in milliseconds (started_at → ended_at)';
 
 INSERT INTO schema_migrations (version, description)
-VALUES ('20260721_study_sessions_canonical_columns', 'Adds canonical session columns: cards_studied, correct_answers, total_answers, accuracy, duration_ms')
+VALUES ('20260721120000_study_sessions_canonical_columns', 'Adds canonical session columns: cards_studied, correct_answers, total_answers, accuracy, duration_ms')
 ON CONFLICT (version) DO NOTHING;

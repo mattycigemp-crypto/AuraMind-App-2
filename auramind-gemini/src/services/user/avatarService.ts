@@ -8,7 +8,7 @@
  *     via a Supabase Edge Function.
  *
  * RLS for the avatars bucket is enforced by migration
- * 20260722_avatar_storage.sql. We never construct a service-role key
+ * 20260722110000_avatar_storage.sql. We never construct a service-role key
  * client-side; the user's session JWT is what carries through to
  * supabase.storage.
  */

@@ -326,7 +326,7 @@ export default function StudyModePage() {
       // replay yet". Fire-and-forget on purpose: a Supabase hiccup must
       // never block the user from seeing the next card. PSQL constraint
       // `card_reviews.rating >= 0` (relaxed from 0..4 → 0..∞ by
-      // migration 20260724000000_card_reviews_rating_range_fix) covers
+      // migration 20260724000001_card_reviews_rating_range_fix) covers
       // FSRS v5 Rating.EASY (=5) writes that were silently rejected by
       // the old `rating <= 4` check.
       if (userId) {
