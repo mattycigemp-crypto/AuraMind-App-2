@@ -47,7 +47,7 @@
     "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
     "@dicebear/collection": "^9.4.2",
-    "@dicebear/core": "^9.4.2",
+    "@dicebear/core": "^10.5.0",
     "@formkit/auto-animate": "^0.10.0",
     "@gsap/react": "^2.1.2",
     "@heyputer/puter.js": "2.6.0",
