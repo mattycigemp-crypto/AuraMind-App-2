@@ -14,6 +14,7 @@ import { Capacitor } from '../../lib/nativeShim';
 import { useAppPreference } from '../../lib/appPreferences';
 import { analyticsService } from '../../services/analytics/analyticsService';
 import { buildReminderNotifications, REMINDER_IDS } from '../../lib/reminderSchedule';
+import { getAIProvider, setAIProvider, type AIProvider } from '../../lib/aiProvider';
 import type { UserProfile } from '../../types';
 
 function useLocalStorage<T>(key: string, defaultValue: T): [T, (v: T | ((prev: T) => T)) => void] {
@@ -112,6 +113,7 @@ export default function SettingsPage() {
   const [reviewOrder, setReviewOrder] = useLocalStorage('auramind_reviewOrder', 'FSRS - Optimized');
   const [showHintFirst, setShowHintFirst] = useLocalStorage('auramind_showHintFirst', false);
   const [autoPlayAudio, setAutoPlayAudio] = useLocalStorage('auramind_autoPlayAudio', false);
+  const [aiProvider, setAiProviderState] = useState<AIProvider>(getAIProvider());
   const [_showPassword, _setShowPassword] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const {
@@ -424,6 +426,27 @@ export default function SettingsPage() {
         <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
           <SectionHeader icon={Zap} title="AI Generation" subtitle="Defaults applied when Aura builds new cards." />
           <div className="space-y-1">
+            <SettingRow
+              label="AI engine"
+              desc="Cloud is fast and always available. On-device runs a small model in your browser — private, offline, needs WebGPU (Chrome or Edge)."
+            >
+              <Select
+                value={aiProvider}
+                onChange={(v) => {
+                  const next = v as AIProvider;
+                  setAIProvider(next);
+                  setAiProviderState(next);
+                  if (next === 'local') {
+                    toast.info('On-device AI enabled — the model will download on first use.');
+                  }
+                }}
+                options={[
+                  { label: 'Cloud (recommended)', value: 'cloud' },
+                  { label: 'On-device (offline)', value: 'local' },
+                ]}
+              />
+            </SettingRow>
+            <div className="border-t border-[#2A2A3A]/30" />
             <SettingRow label="Cards per generation">
               <Select value={cardsPerGen} onChange={setCardsPerGen} options={[5,10,15,20,25,30].map(n => ({ label: `${n} cards`, value: String(n) }))} />
             </SettingRow>

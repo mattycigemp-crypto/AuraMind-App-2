@@ -29,6 +29,7 @@ import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { transcribeAudio } from '../../services/api/groqService';
 import { Capacitor } from '../../lib/nativeShim';
 import { useAppPreference } from '../../lib/appPreferences';
+import { useLocalAI as useLocalAIEnabled } from '../../lib/aiProvider';
 
 type GeneratorType = 'quiz' | 'flashcards' | 'presentation';
 type InputSource = 'topic' | 'url' | 'youtube' | 'file' | 'audio';
@@ -71,7 +72,7 @@ const GeneratorPage: React.FC = () => {
   const [editForm, setEditForm] = useState<Record<string, any>>({});
   const [localAIProgress, setLocalAIProgress] = useState<InitProgress | null>(null);
 
-  const useLocalAI = (import.meta as any).env?.VITE_USE_LOCAL_AI === 'true';
+  const useLocalAI = useLocalAIEnabled();
   const genEstimate = useLocalAI ? 45 : 10;
 
   useEffect(() => {

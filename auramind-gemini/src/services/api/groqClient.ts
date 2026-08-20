@@ -45,7 +45,11 @@
  * Puter is in `puterProvider.ts`; offline is `templateDeckGenerator.ts`.
  */
 
+import { requireSupabase } from '../database/supabase';
+import { useLocalAI } from '../../lib/aiProvider';
+
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
+const PROXY_BASE_URL = '/api/ai';
 const LOCAL_BASE_URL = '/local-ai/v1';
 
 function readEnv(key: string, fallback = ''): string {
@@ -53,11 +57,22 @@ function readEnv(key: string, fallback = ''): string {
 }
 
 function isLocalAI(): boolean {
-  return readEnv('VITE_USE_LOCAL_AI') === 'true';
+  return useLocalAI();
 }
 
 function getGroqKey(): string {
   return readEnv('VITE_GROQ_API_KEY');
+}
+
+/** Supabase session token, or null when there's no signed-in session (or the
+ *  Supabase client isn't configured — e.g. in isolated unit tests). */
+async function getSessionToken(): Promise<string | null> {
+  try {
+    const { data } = await requireSupabase().auth.getSession();
+    return data.session?.access_token ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export type GroqRole = 'system' | 'user' | 'assistant' | 'tool';
@@ -214,11 +229,27 @@ export async function groqChat(opts: GroqChatOptions): Promise<GroqChatResult> {
 
   const localAI = isLocalAI();
   const key = getGroqKey();
-  if (!localAI && !key) {
-    throw new GroqUnavailableError(
-      'groqChat: no API key. Set VITE_GROQ_API_KEY in .env or enable VITE_USE_LOCAL_AI=true.',
-      {},
-    );
+  const token = await getSessionToken();
+
+  // Route: on-device → local server; signed-in → server proxy (key stays
+  // server-side); otherwise → direct Groq with the client key (dev/tests).
+  let endpoint: string;
+  let auth: string;
+  if (localAI) {
+    endpoint = `${LOCAL_BASE_URL}/chat/completions`;
+    auth = 'not-needed';
+  } else if (token) {
+    endpoint = `${PROXY_BASE_URL}/chat`;
+    auth = token;
+  } else {
+    if (!key) {
+      throw new GroqUnavailableError(
+        'groqChat: no API key. Set VITE_GROQ_API_KEY in .env or enable VITE_USE_LOCAL_AI=true.',
+        {},
+      );
+    }
+    endpoint = `${GROQ_BASE_URL}/chat/completions`;
+    auth = key;
   }
 
   // TypeScript narrows `opts` correctly here: when the prompt branch is
@@ -230,12 +261,12 @@ export async function groqChat(opts: GroqChatOptions): Promise<GroqChatResult> {
       : opts.messages;
 
   const res = await fetch(
-    `${localAI ? LOCAL_BASE_URL : GROQ_BASE_URL}/chat/completions`,
+    endpoint,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: localAI ? 'Bearer not-needed' : `Bearer ${key}`,
+        Authorization: `Bearer ${auth}`,
       },
       body: JSON.stringify({
         model: resolveModel(modelOverride),
@@ -250,7 +281,7 @@ export async function groqChat(opts: GroqChatOptions): Promise<GroqChatResult> {
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({} as any));
     const upstreamMessage: string =
-      errBody?.error?.message ?? `HTTP ${res.status} ${res.statusText}`;
+      errBody?.error?.message ?? errBody?.error ?? `HTTP ${res.status} ${res.statusText}`;
 
     if (AUTH_STATUSES.has(res.status)) {
       // Categorised auth failure — never retry, callers must fall back.
@@ -382,11 +413,27 @@ export async function* groqChatStream(
 
   const localAI = isLocalAI();
   const key = getGroqKey();
-  if (!localAI && !key) {
-    throw new GroqUnavailableError(
-      'groqChatStream: no API key. Set VITE_GROQ_API_KEY in .env or enable VITE_USE_LOCAL_AI=true.',
-      {},
-    );
+  const token = await getSessionToken();
+
+  // Same routing as groqChat(): on-device → local server; signed-in → server
+  // proxy; otherwise → direct Groq with the client key (dev/tests).
+  let endpoint: string;
+  let auth: string;
+  if (localAI) {
+    endpoint = `${LOCAL_BASE_URL}/chat/completions`;
+    auth = 'not-needed';
+  } else if (token) {
+    endpoint = `${PROXY_BASE_URL}/chat/stream`;
+    auth = token;
+  } else {
+    if (!key) {
+      throw new GroqUnavailableError(
+        'groqChatStream: no API key. Set VITE_GROQ_API_KEY in .env or enable VITE_USE_LOCAL_AI=true.',
+        {},
+      );
+    }
+    endpoint = `${GROQ_BASE_URL}/chat/completions`;
+    auth = key;
   }
 
   const finalMessages: GroqChatMessage[] =
@@ -395,12 +442,12 @@ export async function* groqChatStream(
       : opts.messages;
 
   const res = await fetch(
-    `${localAI ? LOCAL_BASE_URL : GROQ_BASE_URL}/chat/completions`,
+    endpoint,
     {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: localAI ? 'Bearer not-needed' : `Bearer ${key}`,
+        Authorization: `Bearer ${auth}`,
       },
       body: JSON.stringify({
         model: resolveModel(modelOverride),
@@ -416,7 +463,7 @@ export async function* groqChatStream(
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({} as any));
     const upstreamMessage: string =
-      errBody?.error?.message ?? `HTTP ${res.status} ${res.statusText}`;
+      errBody?.error?.message ?? errBody?.error ?? `HTTP ${res.status} ${res.statusText}`;
     // Same classification as groqChat() — streaming failures also produce
     // GroqUnavailableError so callers can branch uniformly.
     throw new GroqUnavailableError(

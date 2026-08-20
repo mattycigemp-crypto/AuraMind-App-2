@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { applyMiddleware } from './_middleware.js';
 import { handleChatStream } from './_chatHandler.js';
+import { handleAI } from './_aiHandler.js';
 import { z } from 'zod';
 import { sendEmail as sendEmailViaResend } from './_lib/emails.js';
 
@@ -174,10 +175,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return json(res, 400, { error: 'Invalid path' });
   }
 
-  const [endpoint, action] = path.split('/');
+  // Split into endpoint + remaining action. Using the full remainder (not a
+  // single segment) lets nested actions like `chat/stream` and `ai/chat/stream`
+  // route correctly through the catch-all.
+  const segments = path.split('/');
+  const endpoint = segments[0];
+  const action = segments.slice(1).join('/');
 
   // Apply security headers and rate limiting. Returns false if already responded.
-  if (!applyMiddleware(req, res, { rateLimitType: endpoint === 'stripe' ? 'auth' : 'default' })) {
+  if (!applyMiddleware(req, res, {
+    rateLimitType: endpoint === 'ai' ? 'ai' : endpoint === 'stripe' ? 'auth' : 'default',
+  })) {
     return;
   }
 
@@ -192,6 +200,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return await handleSubscription(req, res, action);
       case 'chat':
         return await handleChat(req, res, action);
+      case 'ai':
+        return await handleAI(req, res, action);
       case 'stripe':
         return await handleStripe(req, res, action);
       case 'account':

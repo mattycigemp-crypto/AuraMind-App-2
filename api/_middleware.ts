@@ -15,7 +15,7 @@ const SECURITY_HEADERS = {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: blob: https:",
     "font-src 'self' https://fonts.gstatic.com",
-    "connect-src 'self' https://*.supabase.co https://*.posthog.com https://api.groq.com https://api.stripe.com",
+    "connect-src 'self' https://*.supabase.co https://*.posthog.com https://api.groq.com https://api.stripe.com https://huggingface.co https://cdn-lfs.huggingface.co https://wasm.huggingface.co",
     "frame-src 'self' https://js.stripe.com",
     "object-src 'none'",
     "base-uri 'self'",

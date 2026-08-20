@@ -4,6 +4,8 @@
 import { logger } from '../../lib/logger';
 import { localInference } from './localInferenceService';
 import { GroqUnavailableError } from './groqClient';
+import { requireSupabase } from '../database/supabase';
+import { useLocalAI } from '../../lib/aiProvider';
 // Re-export so callers that imported the typed error from this barrel
 // (the legacy location) keep working without an import-path rewrite.
 export { GroqUnavailableError } from './groqClient';
@@ -167,6 +169,7 @@ const getEnv = (key: string): string => {
 // vi.stubEnv / test-time overrides take effect before the singleton
 // reads them.
 const localBaseUrl = '/local-ai/v1';
+const PROXY_BASE_URL = '/api/ai';
 
 export class AuraAiClient {
   private readonly apiKey: string;
@@ -177,20 +180,21 @@ export class AuraAiClient {
 
   constructor(apiKey?: string, baseUrl?: string, model?: string) {
     const groqKey = apiKey || getEnv('VITE_GROQ_API_KEY');
-    this.useLocalAI = getEnv('VITE_USE_LOCAL_AI') === 'true';
+    this.useLocalAI = useLocalAI();
 
     if (this.useLocalAI) {
       this.apiKey = 'not-needed';
       this.baseUrl = localBaseUrl;
       this.defaultModel = model || 'local-model';
       this.apiKeySource = 'local';
-    } else if (groqKey) {
+    } else {
       this.apiKey = groqKey;
-      this.baseUrl = 'https://api.groq.com/openai/v1';
+      // Direct Groq base — used only as a no-session dev/test fallback.
+      // Signed-in callers route through the server proxy (/api/ai) so the
+      // key never ships in the client bundle.
+      this.baseUrl = baseUrl || 'https://api.groq.com/openai/v1';
       this.defaultModel = model || 'openai/gpt-oss-120b';
       this.apiKeySource = 'groq';
-    } else {
-      throw new Error('No valid API key found. Please set VITE_GROQ_API_KEY in your .env file or enable VITE_USE_LOCAL_AI=true');
     }
   }
 
@@ -204,6 +208,17 @@ export class AuraAiClient {
     }
   }
 
+  /** Supabase session token, or null when there's no signed-in session (or the
+   *  Supabase client isn't configured — e.g. in isolated unit tests). */
+  private async getAuthToken(): Promise<string | null> {
+    try {
+      const { data } = await requireSupabase().auth.getSession();
+      return data.session?.access_token ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   async chatCompletion(options: ChatCompletionOptions & Record<string, any>, useCache: boolean = true): Promise<ChatCompletionResponse> {
     const {
       model = this.defaultModel,
@@ -213,12 +228,21 @@ export class AuraAiClient {
       ...extraOptions
     } = options;
 
-    // If USE_LOCAL_AI is set, use WebLLM in-browser inference
+    // If on-device AI is enabled, use WebLLM in-browser inference
     if (this.useLocalAI) {
       return localInference.chatCompletion({ messages, temperature, max_tokens, ...extraOptions });
     }
 
-    this.checkApiKey();
+    // Signed-in → route through the server proxy so the Groq key never ships
+    // in the client bundle. No session (dev/tests) → direct Groq fallback.
+    const token = await this.getAuthToken();
+    const proxyMode = !!token;
+    const endpoint = proxyMode ? `${PROXY_BASE_URL}/chat` : `${this.baseUrl}/chat/completions`;
+    const authValue = proxyMode ? (token as string) : this.apiKey || 'not-needed';
+
+    if (!proxyMode) {
+      this.checkApiKey();
+    }
 
     // Check cache first
     const cacheKey = getCacheKey(model, messages, temperature);
@@ -243,10 +267,10 @@ export class AuraAiClient {
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${this.apiKey || 'not-needed'}`,
+            'Authorization': `Bearer ${authValue}`,
             'Content-Type': 'application/json',
             'HTTP-Referer': typeof window !== 'undefined' ? window.location.href : 'http://localhost:3000',
             'X-Title': typeof document !== 'undefined' ? (document.title || 'AuraMind') : 'AuraMind App',
@@ -476,13 +500,28 @@ export class AuraAiClient {
       signal,
     } = options;
 
-    this.checkApiKey();
+    const token = await this.getAuthToken();
+    const proxyMode = !this.useLocalAI && !!token;
+    const endpoint = this.useLocalAI
+      ? `${this.baseUrl}/chat/completions`
+      : proxyMode
+        ? `${PROXY_BASE_URL}/chat/stream`
+        : `${this.baseUrl}/chat/completions`;
+    const authValue = this.useLocalAI
+      ? 'not-needed'
+      : proxyMode
+        ? (token as string)
+        : this.apiKey || 'not-needed';
+
+    if (!this.useLocalAI && !proxyMode) {
+      this.checkApiKey();
+    }
 
     try {
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey || 'not-needed'}`,
+          'Authorization': `Bearer ${authValue}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': typeof window !== 'undefined' ? window.location.href : 'http://localhost:3000',
           'X-Title': typeof window !== 'undefined' ? (document.title || 'AuraMind') : 'AuraMind App',
