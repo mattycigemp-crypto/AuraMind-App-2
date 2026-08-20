@@ -42,7 +42,7 @@ export interface GeneratedCard {
 export class FreeAIClient {
   private readonly apiKey: string;
   private readonly baseUrl = 'https://api.groq.com/openai/v1';
-  private readonly defaultModel = 'llama3-8b-8192'; // Free model
+  private readonly defaultModel = 'openai/gpt-oss-20b'; // Free model
 
   constructor(apiKey: string) {
     // No throw here: this client is instantiated at module scope and a

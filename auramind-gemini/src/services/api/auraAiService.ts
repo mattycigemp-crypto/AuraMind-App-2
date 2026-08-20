@@ -187,7 +187,7 @@ export class AuraAiClient {
     } else if (groqKey) {
       this.apiKey = groqKey;
       this.baseUrl = 'https://api.groq.com/openai/v1';
-      this.defaultModel = model || 'llama-3.3-70b-versatile';
+      this.defaultModel = model || 'openai/gpt-oss-120b';
       this.apiKeySource = 'groq';
     } else {
       throw new Error('No valid API key found. Please set VITE_GROQ_API_KEY in your .env file or enable VITE_USE_LOCAL_AI=true');

@@ -148,7 +148,7 @@ let authFailureBannerLogged = false;
 function resolveModel(override?: string): string {
   // Order: per-call → env → hardcoded Groq-current-model fallback.
   const env = readEnv('VITE_GROQ_MODEL');
-  const fallback = 'llama-3.3-70b-versatile';
+  const fallback = 'openai/gpt-oss-120b';
   const resolved = override ?? env ?? fallback;
   // Auto-fallback when the configured model is deprecated. Groq 400s with
   // "The model `xyz` has been decommissioned" when an old model name is
@@ -174,6 +174,7 @@ function resolveModel(override?: string): string {
 const DEPRECATED_MODEL_NAMES = new Set<string>([
   'llama3-8b-8192',
   'llama3-70b-8192',
+  'llama-3.3-70b-versatile',
   'mixtral-8x7b-32768',
   'gemma-7b-it',
 ]);
