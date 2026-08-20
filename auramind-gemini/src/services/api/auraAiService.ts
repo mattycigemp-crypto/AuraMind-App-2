@@ -5,7 +5,7 @@ import { logger } from '../../lib/logger';
 import { localInference } from './localInferenceService';
 import { GroqUnavailableError } from './groqClient';
 import { requireSupabase } from '../database/supabase';
-import { useLocalAI } from '../../lib/aiProvider';
+import { usesLocalAI } from '../../lib/aiProvider';
 // Re-export so callers that imported the typed error from this barrel
 // (the legacy location) keep working without an import-path rewrite.
 export { GroqUnavailableError } from './groqClient';
@@ -180,7 +180,7 @@ export class AuraAiClient {
 
   constructor(apiKey?: string, baseUrl?: string, model?: string) {
     const groqKey = apiKey || getEnv('VITE_GROQ_API_KEY');
-    this.useLocalAI = useLocalAI();
+    this.useLocalAI = usesLocalAI();
 
     if (this.useLocalAI) {
       this.apiKey = 'not-needed';

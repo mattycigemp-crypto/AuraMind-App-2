@@ -46,7 +46,7 @@
  */
 
 import { requireSupabase } from '../database/supabase';
-import { useLocalAI } from '../../lib/aiProvider';
+import { usesLocalAI } from '../../lib/aiProvider';
 
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 const PROXY_BASE_URL = '/api/ai';
@@ -57,7 +57,7 @@ function readEnv(key: string, fallback = ''): string {
 }
 
 function isLocalAI(): boolean {
-  return useLocalAI();
+  return usesLocalAI();
 }
 
 function getGroqKey(): string {

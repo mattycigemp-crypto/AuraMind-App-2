@@ -29,7 +29,7 @@ import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import { transcribeAudio } from '../../services/api/groqService';
 import { Capacitor } from '../../lib/nativeShim';
 import { useAppPreference } from '../../lib/appPreferences';
-import { useLocalAI as useLocalAIEnabled } from '../../lib/aiProvider';
+import { usesLocalAI as useLocalAIEnabled } from '../../lib/aiProvider';
 
 type GeneratorType = 'quiz' | 'flashcards' | 'presentation';
 type InputSource = 'topic' | 'url' | 'youtube' | 'file' | 'audio';

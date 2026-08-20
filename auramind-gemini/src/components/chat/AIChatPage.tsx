@@ -28,7 +28,7 @@ import {
 import { useCurrentUserId } from "../../hooks/useCurrentUserId";
 import { useMoodForProfAura } from "../../hooks/useMoodForProfAura";
 import { useStudyStats } from "../../hooks/useStudyStats";
-import { useLocalAI } from "../../lib/aiProvider";
+import { usesLocalAI } from "../../lib/aiProvider";
 import { useMicVolume } from "../../hooks/useMicVolume";
 import { useTTS } from "../../hooks/useTTS";
 import useSpeechRecognition from "../../hooks/useSpeechRecognition";
@@ -1060,7 +1060,7 @@ export default function AIChatPage() {
                   ) : (
                     "Ready"
                   )}
-                  {useLocalAI() && (
+                  {usesLocalAI() && (
                     <span
                       className="ml-2 inline-flex items-center gap-1 rounded-full border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-0.5 text-[9px] text-[#34D399]"
                       title="AI runs on this device — no data leaves it, works offline"

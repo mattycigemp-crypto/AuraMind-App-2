@@ -41,11 +41,11 @@ export function setAIProvider(provider: AIProvider): void {
 }
 
 /** True when the on-device WebLLM engine should be used. */
-export function useLocalAI(): boolean {
+export function usesLocalAI(): boolean {
   return getAIProvider() === 'local';
 }
 
 /** True when AI calls should route through the server-side proxy. */
-export function useCloudProxy(): boolean {
+export function usesCloudProxy(): boolean {
   return getAIProvider() === 'cloud';
 }
