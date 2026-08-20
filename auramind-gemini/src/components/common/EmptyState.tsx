@@ -91,7 +91,7 @@ const CardIllustration = () => (
     <g transform="rotate(-8 100 90)">
       <rect x="40" y="55" width="120" height="70" rx="10" fill="#1A1A24" stroke="#3A3A4F" />
       <rect x="50" y="65" width="60" height="2" rx="1" fill="#06B6D4" opacity="0.7" />
-      <rect x="50" y="75" width="40" height="2" rx="1" fill="#5A5A72" />
+      <rect x="50" y="75" width="40" height="2" rx="1" fill="#7A7A96" />
     </g>
     <g transform="rotate(8 100 80)">
       <rect x="40" y="45" width="120" height="70" rx="10" fill="url(#cardGrad)" stroke="#06B6D4" />
@@ -174,8 +174,8 @@ const SearchIllustration = () => (
       </radialGradient>
     </defs>
     <circle cx="90" cy="70" r="55" fill="url(#searchHalo)" />
-    <circle cx="90" cy="65" r="32" fill="none" stroke="#5A5A72" strokeWidth="6" />
-    <line x1="116" y1="90" x2="145" y2="120" stroke="#5A5A72" strokeWidth="6" strokeLinecap="round" />
+    <circle cx="90" cy="65" r="32" fill="none" stroke="#7A7A96" strokeWidth="6" />
+    <line x1="116" y1="90" x2="145" y2="120" stroke="#7A7A96" strokeWidth="6" strokeLinecap="round" />
     <line x1="78" y1="55" x2="100" y2="55" stroke="#7C3AED" strokeWidth="3" strokeLinecap="round" />
     <line
       x1="78"
@@ -209,7 +209,7 @@ const LockIllustration = () => (
     />
     <circle cx="100" cy="100" r="6" fill="#111118" />
     <rect x="98" y="100" width="4" height="14" fill="#111118" />
-    <text x="100" y="150" textAnchor="middle" fill="#5A5A72" fontSize="11">
+    <text x="100" y="150" textAnchor="middle" fill="#7A7A96" fontSize="11">
       AURA+ REQUIRED
     </text>
   </IllustrationShell>
@@ -263,7 +263,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       </div>
 
       {eyebrow && (
-        <span className="text-[10px] uppercase tracking-[0.2em] text-[#5A5A72]">
+        <span className="text-[10px] uppercase tracking-[0.2em] text-[#7A7A96]">
           {eyebrow}
         </span>
       )}

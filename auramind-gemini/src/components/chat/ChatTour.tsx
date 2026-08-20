@@ -224,7 +224,7 @@ export default function ChatTour({ force = false }: Props) {
           <button
             onClick={() => close(true)}
             aria-label="Close tour"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#5A5A72] hover:bg-[#1A1A24] hover:text-[#F0EFFE]"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[#7A7A96] hover:bg-[#1A1A24] hover:text-[#F0EFFE]"
           >
             <X size={14} />
           </button>
@@ -249,7 +249,7 @@ export default function ChatTour({ force = false }: Props) {
         <div className="flex items-center justify-between">
           <button
             onClick={() => close(true)}
-            className="text-[11px] text-[#5A5A72] transition-colors hover:text-[#9090A8]"
+            className="text-[11px] text-[#7A7A96] transition-colors hover:text-[#9090A8]"
           >
             Skip tour
           </button>

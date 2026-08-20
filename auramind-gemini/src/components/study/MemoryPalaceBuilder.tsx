@@ -120,13 +120,13 @@ export const MemoryPalaceBuilder: React.FC<MemoryPalaceBuilderProps> = ({
             </div>
             <div>
               <h2 className="text-base font-semibold text-[#F0EFFE]">Memory Palace</h2>
-              <p className="text-[10px] text-[#5A5A72]">Method of Loci · A competitive mnemonist's secret</p>
+              <p className="text-[10px] text-[#7A7A96]">Method of Loci · A competitive mnemonist's secret</p>
             </div>
           </div>
           {onClose && (
             <button
               onClick={onClose}
-              className="p-2 rounded-lg bg-[#111118] border border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE]"
+              className="p-2 rounded-lg bg-[#111118] border border-[#2A2A3A] text-[#7A7A96] hover:text-[#F0EFFE]"
             >
               <X size={16} />
             </button>
@@ -147,7 +147,7 @@ export const MemoryPalaceBuilder: React.FC<MemoryPalaceBuilderProps> = ({
                 placeholder={'Pomodoro timer\nActive Recall\nSpaced Repetition\nSleep\n...'}
                 className="w-full mt-2 p-3 text-sm bg-[#0A0A0F] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] placeholder-[#3A3A4F] focus:outline-none focus:border-[#7C3AED]/40 resize-none font-mono"
               />
-              <div className="text-[10px] text-[#5A5A72] mt-1">
+              <div className="text-[10px] text-[#7A7A96] mt-1">
                 {items.length} / {capacity} items · {capacityHint}
               </div>
             </div>
@@ -177,7 +177,7 @@ export const MemoryPalaceBuilder: React.FC<MemoryPalaceBuilderProps> = ({
                   const demo = ['Pomodoro Timer', 'Active Recall', 'Spaced Repetition', 'Sleep', 'Curiosity', 'Mnemonics'];
                   setItemsText(demo.join('\n'));
                 }}
-                className="flex items-center gap-1 text-[10px] text-[#5A5A72] hover:text-[#8B5CF6] uppercase tracking-widest font-bold"
+                className="flex items-center gap-1 text-[10px] text-[#7A7A96] hover:text-[#8B5CF6] uppercase tracking-widest font-bold"
               >
                 <Shuffle size={10} /> Example
               </button>
@@ -200,7 +200,7 @@ export const MemoryPalaceBuilder: React.FC<MemoryPalaceBuilderProps> = ({
           <>
             <div className="flex-1 flex flex-col">
               <div className="px-6 py-3 border-b border-[#2A2A3A] bg-[#111118] flex items-center justify-between">
-                <div className="flex items-center gap-2 text-[10px] text-[#5A5A72] uppercase tracking-widest">
+                <div className="flex items-center gap-2 text-[10px] text-[#7A7A96] uppercase tracking-widest">
                   <span>Setting:</span>
                   <span className="text-[#F0EFFE] font-medium">{palace.setting}</span>
                 </div>
@@ -274,7 +274,7 @@ export const MemoryPalaceBuilder: React.FC<MemoryPalaceBuilderProps> = ({
                       >
                         <Eye className="mb-3 text-[#3A3A4F] group-hover:text-[#8B5CF6] transition-colors" size={32} />
                         <p className="text-sm text-[#9090A8] mb-1">Picture yourself walking into {palace.stations[currentStation].location}.</p>
-                        <p className="text-[10px] text-[#5A5A72] uppercase tracking-widest">Click to reveal what's here</p>
+                        <p className="text-[10px] text-[#7A7A96] uppercase tracking-widest">Click to reveal what's here</p>
                       </button>
                     )}
                   </motion.div>
@@ -301,7 +301,7 @@ export const MemoryPalaceBuilder: React.FC<MemoryPalaceBuilderProps> = ({
                 <button
                   onClick={() => setCurrentStation(s => Math.max(0, s - 1))}
                   disabled={currentStation === 0}
-                  className="flex items-center gap-1 px-3 py-2 text-xs text-[#5A5A72] hover:text-[#F0EFFE] disabled:opacity-30 transition-colors"
+                  className="flex items-center gap-1 px-3 py-2 text-xs text-[#7A7A96] hover:text-[#F0EFFE] disabled:opacity-30 transition-colors"
                 >
                   <ChevronLeft size={14} /> Previous
                 </button>

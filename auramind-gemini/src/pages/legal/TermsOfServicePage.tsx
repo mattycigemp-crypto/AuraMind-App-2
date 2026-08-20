@@ -304,7 +304,7 @@ const sections = [
         <p>
           If you do not agree to the updated Terms, you may terminate your account before the changes take effect. Continued use after the effective date constitutes acceptance of the updated Terms.
         </p>
-        <p className="text-[#5A5A72]">
+        <p className="text-[#7A7A96]">
           Last updated: July 9, 2026
         </p>
       </>
@@ -331,12 +331,12 @@ export default function TermsOfServicePage(): React.ReactElement {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-[#2A2A3A]/50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-4">
-          <Link to="/" className="p-2 -ml-2 text-[#5A5A72] hover:text-[#F0EFFE] rounded-lg transition-colors">
+          <Link to="/" className="p-2 -ml-2 text-[#7A7A96] hover:text-[#F0EFFE] rounded-lg transition-colors">
             <ArrowLeft size={18} />
           </Link>
           <div>
             <h1 className="text-base font-medium text-[#F0EFFE]">Terms of Service</h1>
-            <p className="text-[10px] text-[#5A5A72]">Last updated: July 9, 2026</p>
+            <p className="text-[10px] text-[#7A7A96]">Last updated: July 9, 2026</p>
           </div>
         </div>
       </div>

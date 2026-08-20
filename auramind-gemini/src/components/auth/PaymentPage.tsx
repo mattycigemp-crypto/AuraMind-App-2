@@ -106,7 +106,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user, cancelled = false }) =>
       <div className="px-6 py-4 relative z-10">
         <button
           onClick={() => navigate('/')}
-          className="flex items-center gap-2 text-[#5A5A72] hover:text-[#F0EFFE] text-xs transition-colors"
+          className="flex items-center gap-2 text-[#7A7A96] hover:text-[#F0EFFE] text-xs transition-colors"
         >
           <ArrowLeft size={14} />
           Back to home
@@ -128,7 +128,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user, cancelled = false }) =>
             <h1 className="text-[#F0EFFE] text-3xl font-light tracking-tight mb-3">
               Upgrade your learning
             </h1>
-            <p className="text-[#5A5A72] text-sm max-w-md mx-auto">
+            <p className="text-[#7A7A96] text-sm max-w-md mx-auto">
               Unlock AI-powered study tools, unlimited decks, and accelerated learning. Cancel anytime.
             </p>
           </div>
@@ -149,13 +149,13 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user, cancelled = false }) =>
                   </div>
                   <div>
                     <h3 className="text-sm font-medium text-[#F0EFFE] mb-0.5">{feature.label}</h3>
-                    <p className="text-[10px] text-[#5A5A72] leading-relaxed">{feature.detail}</p>
+                    <p className="text-[10px] text-[#7A7A96] leading-relaxed">{feature.detail}</p>
                   </div>
                 </motion.div>
               ))}
 
               {/* Trust badges */}
-              <div className="flex items-center justify-center gap-6 pt-2 text-[#5A5A72]">
+              <div className="flex items-center justify-center gap-6 pt-2 text-[#7A7A96]">
                 <div className="flex items-center gap-1.5 text-[10px] font-medium">
                   <ShieldCheck size={14} className="text-[#10B981]" />
                   Secure checkout
@@ -201,12 +201,12 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user, cancelled = false }) =>
                         </div>
                         <div className="flex items-baseline gap-1">
                           <span className="text-2xl font-bold text-[#F0EFFE] tracking-tight">{plan.price}</span>
-                          <span className="text-xs text-[#5A5A72]">{plan.interval}</span>
+                          <span className="text-xs text-[#7A7A96]">{plan.interval}</span>
                         </div>
                         {plan.totalBilled && (
-                          <p className="text-[10px] text-[#5A5A72] mt-1.5">{plan.totalBilled}</p>
+                          <p className="text-[10px] text-[#7A7A96] mt-1.5">{plan.totalBilled}</p>
                         )}
-                        <p className="text-[10px] text-[#5A5A72] mt-1">{plan.desc}</p>
+                        <p className="text-[10px] text-[#7A7A96] mt-1">{plan.desc}</p>
                       </button>
                     );
                   })}
@@ -243,7 +243,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user, cancelled = false }) =>
                     )}
                   </button>
 
-                  <p className="text-center text-[10px] text-[#5A5A72] mt-4 leading-relaxed">
+                  <p className="text-center text-[10px] text-[#7A7A96] mt-4 leading-relaxed">
                     No charge until your trial ends. By upgrading, you agree to our{' '}
                     <span className="text-[#8B5CF6]">Terms</span> and{' '}
                     <span className="text-[#8B5CF6]">Privacy Policy</span>.
@@ -252,7 +252,7 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user, cancelled = false }) =>
               </div>
 
               {/* Stripe badge */}
-              <div className="flex items-center justify-center gap-2 mt-4 text-[#5A5A72] text-[10px]">
+              <div className="flex items-center justify-center gap-2 mt-4 text-[#7A7A96] text-[10px]">
                 <svg className="w-4 h-4 opacity-40" viewBox="0 0 24 24" fill="none">
                   <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" strokeWidth="1.5"/>
                   <path d="M2 10h20" stroke="currentColor" strokeWidth="1.5"/>

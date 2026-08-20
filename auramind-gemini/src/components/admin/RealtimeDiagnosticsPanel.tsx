@@ -175,7 +175,7 @@ export function RealtimeDiagnosticsPanel() {
               <Radio className="h-6 w-6 text-violet-400" />
               Realtime Diagnostics
             </h1>
-            <p className="text-sm text-[#5A5A72] mt-1">
+            <p className="text-sm text-[#7A7A96] mt-1">
               Live health monitoring for Supabase Realtime subscriptions
             </p>
           </div>
@@ -230,7 +230,7 @@ export function RealtimeDiagnosticsPanel() {
             Lazy Service Loader
           </h3>
           {snapshot.serviceLoaderStatus.length === 0 ? (
-            <p className="text-xs text-[#5A5A72]">No services registered yet. Services are registered at app mount.</p>
+            <p className="text-xs text-[#7A7A96]">No services registered yet. Services are registered at app mount.</p>
           ) : (
             <div className="space-y-2">
               {snapshot.serviceLoaderStatus.map((svc) => (
@@ -251,11 +251,11 @@ export function RealtimeDiagnosticsPanel() {
                     <div>
                       <span className="text-sm font-medium text-[#F0EFFE]">{svc.name}</span>
                       {svc.description && (
-                        <span className="ml-2 text-xs text-[#5A5A72]">{svc.description}</span>
+                        <span className="ml-2 text-xs text-[#7A7A96]">{svc.description}</span>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-[#5A5A72]">
+                  <div className="flex items-center gap-3 text-xs text-[#7A7A96]">
                     {svc.loadTimeMs !== null && <span>{svc.loadTimeMs.toFixed(0)}ms</span>}
                     {svc.error && <span className="text-red-400">{svc.error}</span>}
                   </div>
@@ -282,11 +282,11 @@ export function RealtimeDiagnosticsPanel() {
                 <span className="text-sm font-medium text-[#F0EFFE]">
                   user:*:notifications
                 </span>
-                <span className="rounded-full border border-[#2A2A3A] bg-[#1A1A24] px-2 py-0.5 text-[10px] text-[#5A5A72]">
+                <span className="rounded-full border border-[#2A2A3A] bg-[#1A1A24] px-2 py-0.5 text-[10px] text-[#7A7A96]">
                   public broadcast
                 </span>
               </div>
-              <span className="text-xs text-[#5A5A72]">
+              <span className="text-xs text-[#7A7A96]">
                 {snapshot.overallStatus === 'connected' ? 'SUBSCRIBED' : snapshot.overallStatus.toUpperCase()}
               </span>
             </div>

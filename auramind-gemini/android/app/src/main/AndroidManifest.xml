@@ -38,4 +38,10 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Voice study mode + audio transcription (MediaRecorder/getUserMedia) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Haptic feedback on study answers (Capacitor Haptics uses the Vibrator) -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- Review reminders on Android 13+ (local notifications) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

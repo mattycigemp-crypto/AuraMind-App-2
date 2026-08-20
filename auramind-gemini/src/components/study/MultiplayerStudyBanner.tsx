@@ -43,7 +43,7 @@ export default function MultiplayerStudyBanner({ state, onToggleJoin, joined, de
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-[#F0EFFE]">Study with others</p>
-            <p className="text-[10px] text-[#5A5A72]">Find who's reviewing "{deckTitle}" right now</p>
+            <p className="text-[10px] text-[#7A7A96]">Find who's reviewing "{deckTitle}" right now</p>
           </div>
           <span className="text-[10px] text-[#A78BFA] font-semibold">JOIN →</span>
         </div>
@@ -71,7 +71,7 @@ export default function MultiplayerStudyBanner({ state, onToggleJoin, joined, de
         </div>
         <button
           onClick={onToggleJoin}
-          className="text-[10px] text-[#5A5A72] hover:text-[#9090A8] uppercase tracking-wider font-bold"
+          className="text-[10px] text-[#7A7A96] hover:text-[#9090A8] uppercase tracking-wider font-bold"
         >
           Leave
         </button>
@@ -79,7 +79,7 @@ export default function MultiplayerStudyBanner({ state, onToggleJoin, joined, de
 
       <div className="px-2 py-1.5 max-h-60 overflow-y-auto">
         {others.length === 0 ? (
-          <p className="text-[10px] text-[#5A5A72] text-center py-4">
+          <p className="text-[10px] text-[#7A7A96] text-center py-4">
             {connected ? 'Waiting for someone to join…' : 'Reconnecting…'}
           </p>
         ) : (
@@ -102,7 +102,7 @@ export default function MultiplayerStudyBanner({ state, onToggleJoin, joined, de
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-[#F0EFFE] truncate">{peer.name}</p>
-                  <p className="text-[10px] text-[#5A5A72]">on card #{peer.currentCardIndex + 1}</p>
+                  <p className="text-[10px] text-[#7A7A96]">on card #{peer.currentCardIndex + 1}</p>
                 </div>
                 {peer.lastRating && (
                   <span className={`text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded border ${RATING_COLOR[peer.lastRating]}`}>

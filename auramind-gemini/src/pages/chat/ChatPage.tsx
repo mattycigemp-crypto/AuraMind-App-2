@@ -695,7 +695,7 @@ export default function ChatPage() {
       {/* Quick Prompts */}
       {showQuickPrompts && messages.length === 0 && (
         <div className="quick-prompts px-4 py-3">
-          <p className="text-[#5A5A72] text-[10px] uppercase tracking-wider mb-2 font-medium">Quick actions</p>
+          <p className="text-[#7A7A96] text-[10px] uppercase tracking-wider mb-2 font-medium">Quick actions</p>
           <div className="flex flex-wrap gap-2">
             {QUICK_PROMPTS.map((prompt) => (
               <button
@@ -743,7 +743,7 @@ export default function ChatPage() {
                 <Target size={14} className="text-[#7C3AED]" />
                 Quick diagnostic
               </h3>
-              <span className="text-[#5A5A72] text-xs">{diagStep + 1} / {DIAGNOSTIC_QUESTIONS.length}</span>
+              <span className="text-[#7A7A96] text-xs">{diagStep + 1} / {DIAGNOSTIC_QUESTIONS.length}</span>
             </div>
 
             <div className="w-full h-1 rounded-full bg-[#2A2A3A] mb-6">
@@ -791,7 +791,7 @@ export default function ChatPage() {
             <div className="flex justify-between mt-6">
               <button
                 onClick={() => { setShowDiagnostic(false); setDiagAnswers({}); setDiagStep(0); }}
-                className="px-4 py-2 rounded-lg border border-[#2A2A3A] text-[#5A5A72] text-xs hover:text-[#F0EFFE] transition-colors"
+                className="px-4 py-2 rounded-lg border border-[#2A2A3A] text-[#7A7A96] text-xs hover:text-[#F0EFFE] transition-colors"
               >
                 Skip
               </button>

@@ -74,15 +74,15 @@ const SessionComplete = ({ stats, deckTitle, onRestart, onExit, onReplay }: {
     <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-8 max-w-sm w-full text-center">
       <div className="text-3xl mb-4"><Sparkles size={36} /></div>
       <h2 className="text-[#F0EFFE] text-lg font-light mb-1">Session Complete</h2>
-      <p className="text-[#5A5A72] text-xs mb-6">{deckTitle}</p>
+      <p className="text-[#7A7A96] text-xs mb-6">{deckTitle}</p>
       <div className="grid grid-cols-2 gap-3 mb-6">
         <div className="bg-[#1A1A24] rounded-lg p-3">
           <div className="text-[#F0EFFE] text-xl font-semibold">{stats.total}</div>
-          <div className="text-[#5A5A72] text-[11px]">Cards reviewed</div>
+          <div className="text-[#7A7A96] text-[11px]">Cards reviewed</div>
         </div>
         <div className="bg-[#1A1A24] rounded-lg p-3">
           <div className="text-emerald-400 text-xl font-semibold">{Math.round((stats.correct / Math.max(stats.total, 1)) * 100)}%</div>
-          <div className="text-[#5A5A72] text-[11px]">Accuracy</div>
+          <div className="text-[#7A7A96] text-[11px]">Accuracy</div>
         </div>
       </div>
       <button onClick={onRestart} className="w-full py-2.5 bg-[#7C3AED] text-white text-xs font-medium rounded-lg hover:bg-[#6D28D9] transition-all mb-2">Study Again</button>
@@ -91,7 +91,7 @@ const SessionComplete = ({ stats, deckTitle, onRestart, onExit, onReplay }: {
           <RotateCcw size={12} /> Replay what I just studied
         </button>
       )}
-      <button onClick={onExit} className="w-full py-2.5 border border-[#2A2A3A] text-[#5A5A72] text-xs font-medium rounded-lg hover:text-[#F0EFFE] transition-all">Back to Dashboard</button>
+      <button onClick={onExit} className="w-full py-2.5 border border-[#2A2A3A] text-[#7A7A96] text-xs font-medium rounded-lg hover:text-[#F0EFFE] transition-all">Back to Dashboard</button>
     </div>
   </motion.div>
 );
@@ -504,7 +504,7 @@ export default function StudyModePage() {
     typeof window !== 'undefined' ? localStorage.getItem('auramind_user_xp') ?? 0 : 0,
   );
 
-  if (loading) return <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center"><div className="text-[#5A5A72] text-sm">Loading...</div></div>;
+  if (loading) return <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center"><div className="text-[#7A7A96] text-sm">Loading...</div></div>;
 
   if (completed) return (
     <>
@@ -539,7 +539,7 @@ export default function StudyModePage() {
   if (studyCards.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#0A0A0F]">
-        <div className="text-[#5A5A72] text-sm">No cards to study</div>
+        <div className="text-[#7A7A96] text-sm">No cards to study</div>
       </div>
     );
   }
@@ -573,7 +573,7 @@ export default function StudyModePage() {
       <div className="android-study-header flex items-center justify-between px-6 py-3 border-b border-[#2A2A3A]/50">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/dashboard/study')}
-            className="w-8 h-8 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#5A5A72] hover:text-[#F0EFFE] transition-colors text-sm"
+            className="w-8 h-8 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#7A7A96] hover:text-[#F0EFFE] transition-colors text-sm"
           ><X size={14} /></button>
           <span className="text-[#F0EFFE] text-sm font-medium">{deck?.title || 'Study'}</span>
         </div>
@@ -587,10 +587,10 @@ export default function StudyModePage() {
               }`} />
             ))}
           </div>
-          <span className="text-[#5A5A72] text-xs">{index + 1} / {studyCards.length}</span>
+          <span className="text-[#7A7A96] text-xs">{index + 1} / {studyCards.length}</span>
           <Zap size={14} className="text-amber-400" />
           <span id="xp-counter" className="text-amber-400 text-xs tabular-nums">{displayedXP}</span>              {/* Study timer — elapsed time since session start */}
-          <div className="flex items-center gap-1.5 text-[#5A5A72] text-[11px] tabular-nums">
+          <div className="flex items-center gap-1.5 text-[#7A7A96] text-[11px] tabular-nums">
             <TimerIcon size={12} />
             {Math.floor(elapsedMs / 60000)}:{String(Math.floor((elapsedMs % 60000) / 1000)).padStart(2, '0')}
           </div>
@@ -601,7 +601,7 @@ export default function StudyModePage() {
             className={`inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg border transition-colors text-[11px] ${
               voiceMode
                 ? 'bg-[#7C3AED]/20 border-[#7C3AED]/40 text-[#8B5CF6]'
-                : 'bg-[#111118] border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40'
+                : 'bg-[#111118] border-[#2A2A3A] text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40'
             }`}
           >
             <Mic size={12} />
@@ -609,7 +609,7 @@ export default function StudyModePage() {
           </button>
           <button onClick={() => setFlowModeOpen(true)}
             title="Flow Mode awards weekly XP toward your League. Card scheduling is unchanged."
-            className="hidden sm:inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-[#111118] border border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-colors text-[11px]"
+            className="hidden sm:inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-[#111118] border border-[#2A2A3A] text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-colors text-[11px]"
           >
             <Wind size={12} />
             Flow Mode
@@ -629,7 +629,7 @@ export default function StudyModePage() {
             initialMode={pacingMode}
             onChange={setPacingMode}
           />
-          <button className="w-7 h-7 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#5A5A72] hover:text-[#F0EFFE] transition-colors text-xs">
+          <button className="w-7 h-7 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#7A7A96] hover:text-[#F0EFFE] transition-colors text-xs">
             ↩
           </button>
         </div>
@@ -828,7 +828,7 @@ export default function StudyModePage() {
           >
             <div className="max-w-lg mx-auto">
               <div className="text-center mb-3">
-                <span className="text-[#5A5A72] text-[11px]">How well did you know this?</span>
+                <span className="text-[#7A7A96] text-[11px]">How well did you know this?</span>
               </div>
               <motion.div
                 className="flex gap-2"
@@ -853,12 +853,12 @@ export default function StudyModePage() {
               </motion.div>
               <div className="text-center mt-2 flex items-center justify-center gap-1.5">
                 <span className="text-[#3A3A4F] text-[10px]">Press</span>
-                <kbd className="inline-flex h-4 w-4 items-center justify-center rounded border border-[#2A2A3A] bg-[#1A1A24] text-[9px] font-mono text-[#5A5A72]">1</kbd>
-                <kbd className="inline-flex h-4 w-4 items-center justify-center rounded border border-[#2A2A3A] bg-[#1A1A24] text-[9px] font-mono text-[#5A5A72]">2</kbd>
-                <kbd className="inline-flex h-4 w-4 items-center justify-center rounded border border-[#2A2A3A] bg-[#1A1A24] text-[9px] font-mono text-[#5A5A72]">3</kbd>
-                <kbd className="inline-flex h-4 w-4 items-center justify-center rounded border border-[#2A2A3A] bg-[#1A1A24] text-[9px] font-mono text-[#5A5A72]">4</kbd>
+                <kbd className="inline-flex h-4 w-4 items-center justify-center rounded border border-[#2A2A3A] bg-[#1A1A24] text-[9px] font-mono text-[#7A7A96]">1</kbd>
+                <kbd className="inline-flex h-4 w-4 items-center justify-center rounded border border-[#2A2A3A] bg-[#1A1A24] text-[9px] font-mono text-[#7A7A96]">2</kbd>
+                <kbd className="inline-flex h-4 w-4 items-center justify-center rounded border border-[#2A2A3A] bg-[#1A1A24] text-[9px] font-mono text-[#7A7A96]">3</kbd>
+                <kbd className="inline-flex h-4 w-4 items-center justify-center rounded border border-[#2A2A3A] bg-[#1A1A24] text-[9px] font-mono text-[#7A7A96]">4</kbd>
                 <span className="text-[#3A3A4F] text-[10px]">or</span>
-                <kbd className="inline-flex h-5 items-center gap-0.5 rounded border border-[#2A2A3A] bg-[#1A1A24] px-1.5 text-[9px] font-mono text-[#5A5A72]">Space</kbd>
+                <kbd className="inline-flex h-5 items-center gap-0.5 rounded border border-[#2A2A3A] bg-[#1A1A24] px-1.5 text-[9px] font-mono text-[#7A7A96]">Space</kbd>
                 <span className="text-[#3A3A4F] text-[10px]">to flip</span>
               </div>
             </div>

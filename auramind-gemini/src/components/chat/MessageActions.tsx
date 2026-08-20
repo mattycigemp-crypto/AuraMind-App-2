@@ -149,7 +149,7 @@ function ActionChip({ label, icon, onClick, accent = 'neutral', active }: ChipPr
       ? 'text-[#8B5CF6] hover:text-[#A78BFA] hover:bg-[#7C3AED]/10'
       : accent === 'amber'
       ? 'text-[#F59E0B] hover:text-[#FBBF24] hover:bg-[#F59E0B]/10'
-      : 'text-[#5A5A72] hover:text-[#8A8AA3] hover:bg-[#1A1A24]';
+      : 'text-[#7A7A96] hover:text-[#8A8AA3] hover:bg-[#1A1A24]';
   return (
     <button
       onClick={onClick}

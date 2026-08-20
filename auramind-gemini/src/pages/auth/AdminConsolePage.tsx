@@ -50,8 +50,8 @@ interface AuditEvent {
 const MetricCard = ({ label, value, trend, icon: Icon }: { label: string; value: string; trend: string; icon: React.ComponentType<{ size?: number; className?: string }> }) => (
   <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-5">
     <div className="flex items-center justify-between mb-3">
-      <div className="text-[#5A5A72] text-[10px] font-medium tracking-wider uppercase">{label}</div>
-      <Icon size={20} className="text-[#5A5A72]" />
+      <div className="text-[#7A7A96] text-[10px] font-medium tracking-wider uppercase">{label}</div>
+      <Icon size={20} className="text-[#7A7A96]" />
     </div>
     <div className="text-2xl font-semibold text-[#F0EFFE] mb-1">{value}</div>
     <div className="text-emerald-400 text-[10px]">{trend}</div>
@@ -70,7 +70,7 @@ const TabButton = ({ active, label, icon: Icon, onClick }: { active: boolean; la
     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-medium transition-all ${
       active
         ? 'bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(124,58,237,0.2)]'
-        : 'bg-[#111118] border border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#3A3A4F]'
+        : 'bg-[#111118] border border-[#2A2A3A] text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#3A3A4F]'
     }`}
   >
     <Icon size={14} />
@@ -401,7 +401,7 @@ export default function AdminConsolePage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-[#F0EFFE] text-lg font-light tracking-tight">Admin Control Panel</h1>
-            <p className="text-[#5A5A72] text-xs mt-0.5">
+            <p className="text-[#7A7A96] text-xs mt-0.5">
               {loading ? 'Loading...' : `Last updated ${formatRelativeTime(lastUpdated.getTime())} · Full system control`}
             </p>
             {error && <p className="text-orange-400 text-[10px] mt-0.5">{error}</p>}
@@ -440,7 +440,7 @@ export default function AdminConsolePage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-[#F0EFFE] text-sm font-medium">Revenue (Last 30 Days)</h3>
-                  <p className="text-[#5A5A72] text-[10px] mt-0.5">Daily MRR in USD</p>
+                  <p className="text-[#7A7A96] text-[10px] mt-0.5">Daily MRR in USD</p>
                 </div>
                 <span className="text-[#F0EFFE] text-lg font-semibold">${mrr.toLocaleString()}</span>
               </div>
@@ -461,7 +461,7 @@ export default function AdminConsolePage() {
                 <h3 className="text-[#F0EFFE] text-sm font-medium mb-4">Recent Users</h3>
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="text-[#5A5A72] text-[10px] uppercase tracking-wider">
+                    <tr className="text-[#7A7A96] text-[10px] uppercase tracking-wider">
                       <th className="pb-3 font-medium">Email</th>
                       <th className="pb-3 font-medium">Role</th>
                       <th className="pb-3 font-medium">Plan</th>
@@ -474,14 +474,14 @@ export default function AdminConsolePage() {
                       <tr key={i} className="border-t border-[#2A2A3A]/30 text-[#F0EFFE] text-xs">
                         <td className="py-3">{u.email}</td>
                         <td className="py-3">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#2A2A3A] text-[#5A5A72]">{u.role || 'user'}</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#2A2A3A] text-[#7A7A96]">{u.role || 'user'}</span>
                         </td>
                         <td className="py-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getDisplayPlan(u) === 'Admin' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : u.plan === 'Pro' || u.plan === 'pro' || u.plan === 'Scholar' ? 'bg-[#7C3AED]/10 text-[#8B5CF6]' : 'bg-[#2A2A3A] text-[#5A5A72]'}`}>{getDisplayPlan(u)}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getDisplayPlan(u) === 'Admin' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : u.plan === 'Pro' || u.plan === 'pro' || u.plan === 'Scholar' ? 'bg-[#7C3AED]/10 text-[#8B5CF6]' : 'bg-[#2A2A3A] text-[#7A7A96]'}`}>{getDisplayPlan(u)}</span>
                         </td>
-                        <td className="py-3 text-[#5A5A72]">{u.cards.toLocaleString()}</td>
+                        <td className="py-3 text-[#7A7A96]">{u.cards.toLocaleString()}</td>
                         <td className="py-3">
-                          <span className={`text-[10px] ${u.lastActive.includes('m') || u.lastActive.includes('s') ? 'text-emerald-400' : 'text-[#5A5A72]'}`}>{u.lastActive}</span>
+                          <span className={`text-[10px] ${u.lastActive.includes('m') || u.lastActive.includes('s') ? 'text-emerald-400' : 'text-[#7A7A96]'}`}>{u.lastActive}</span>
                         </td>
                       </tr>
                     ))}
@@ -503,8 +503,8 @@ export default function AdminConsolePage() {
                   ))}
                 </div>
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[#2A2A3A]/30">
-                  <div><div className="text-[#5A5A72] text-[10px] mb-0.5">Error rate 24h</div><div className="text-[#F0EFFE] text-sm font-medium">0.34%</div></div>
-                  <div><div className="text-[#5A5A72] text-[10px] mb-0.5">P95 Latency</div><div className="text-[#F0EFFE] text-sm font-medium">412ms</div></div>
+                  <div><div className="text-[#7A7A96] text-[10px] mb-0.5">Error rate 24h</div><div className="text-[#F0EFFE] text-sm font-medium">0.34%</div></div>
+                  <div><div className="text-[#7A7A96] text-[10px] mb-0.5">P95 Latency</div><div className="text-[#F0EFFE] text-sm font-medium">412ms</div></div>
                 </div>
               </div>
             </div>
@@ -519,21 +519,21 @@ export default function AdminConsolePage() {
             {/* Search */}
             <div className="flex items-center gap-3">
               <div className="relative flex-1 max-w-md">
-                <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5A5A72]" />
+                <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7A7A96]" />
                 <input
                   type="text" value={userSearch} onChange={e => setUserSearch(e.target.value)}
                   placeholder="Search users by email..."
                   className="w-full pl-9 pr-4 py-2 bg-[#111118] border border-[#2A2A3A] rounded-xl text-[11px] text-[#F0EFFE] focus:outline-none focus:border-[#7C3AED]/30 transition-all"
                 />
               </div>
-              <span className="text-[10px] text-[#5A5A72]">{filteredUsers.length} of {users.length} users</span>
+              <span className="text-[10px] text-[#7A7A96]">{filteredUsers.length} of {users.length} users</span>
             </div>
 
             {/* User Table */}
             <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl overflow-hidden">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-[#5A5A72] text-[10px] uppercase tracking-wider border-b border-[#2A2A3A]">
+                  <tr className="text-[#7A7A96] text-[10px] uppercase tracking-wider border-b border-[#2A2A3A]">
                     <th className="px-4 py-3 font-medium">Email</th>
                     <th className="px-4 py-3 font-medium">Role</th>
                     <th className="px-4 py-3 font-medium">Plan</th>
@@ -551,13 +551,13 @@ export default function AdminConsolePage() {
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                           u.role === 'admin' || u.role === 'ceo' || u.role === 'owner'
                             ? 'bg-primary/10 text-primary border border-primary/20'
-                            : 'bg-[#2A2A3A] text-[#5A5A72]'
+                            : 'bg-[#2A2A3A] text-[#7A7A96]'
                         }`}>{u.role || 'user'}</span>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                           getDisplayPlan(u) === 'Admin' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                          u.plan === 'Pro' || u.plan === 'Scholar' ? 'bg-[#7C3AED]/10 text-[#8B5CF6]' : 'bg-[#2A2A3A] text-[#5A5A72]'
+                          u.plan === 'Pro' || u.plan === 'Scholar' ? 'bg-[#7C3AED]/10 text-[#8B5CF6]' : 'bg-[#2A2A3A] text-[#7A7A96]'
                         }`}>{getDisplayPlan(u)}</span>
                       </td>
                       <td className="px-4 py-3">
@@ -566,18 +566,18 @@ export default function AdminConsolePage() {
                             ? 'bg-emerald-500/10 text-emerald-400'
                             : u.subscriptionStatus === 'past_due'
                             ? 'bg-orange-500/10 text-orange-400'
-                            : 'bg-[#2A2A3A] text-[#5A5A72]'
+                            : 'bg-[#2A2A3A] text-[#7A7A96]'
                         }`}>{u.subscriptionStatus || 'none'}</span>
                       </td>
-                      <td className="px-4 py-3 text-[#5A5A72]">{u.cards.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-[#5A5A72]">{u.lastActive}</td>
+                      <td className="px-4 py-3 text-[#7A7A96]">{u.cards.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-[#7A7A96]">{u.lastActive}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => handleEditUser(u)} className="p-1.5 rounded-lg bg-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:bg-[#7C3AED]/20 transition-all" title="Edit user">
+                          <button onClick={() => handleEditUser(u)} className="p-1.5 rounded-lg bg-[#2A2A3A] text-[#7A7A96] hover:text-[#F0EFFE] hover:bg-[#7C3AED]/20 transition-all" title="Edit user">
                             <Edit3 size={12} />
                           </button>
                           <button onClick={() => { if (window.confirm(`Delete user ${u.email}?`)) handleDeleteUser(u.id); }} disabled={deletingUser === u.id}
-                            className="p-1.5 rounded-lg bg-[#2A2A3A] text-[#5A5A72] hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50" title="Delete user">
+                            className="p-1.5 rounded-lg bg-[#2A2A3A] text-[#7A7A96] hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50" title="Delete user">
                             {deletingUser === u.id ? <RefreshCw size={12} className="animate-spin" /> : <Trash2 size={12} />}
                           </button>
                         </div>
@@ -594,11 +594,11 @@ export default function AdminConsolePage() {
                 <div className="w-full max-w-md bg-[#111118] border border-[#2A2A3A] rounded-2xl p-6" onClick={e => e.stopPropagation()}>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-[#F0EFFE] text-sm font-medium">Edit User: {editingUser.email}</h3>
-                    <button onClick={() => setEditingUser(null)} className="text-[#5A5A72] hover:text-[#F0EFFE]"><X size={16} /></button>
+                    <button onClick={() => setEditingUser(null)} className="text-[#7A7A96] hover:text-[#F0EFFE]"><X size={16} /></button>
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <label className="text-[#5A5A72] text-[10px] uppercase tracking-wider block mb-1">Role</label>
+                      <label className="text-[#7A7A96] text-[10px] uppercase tracking-wider block mb-1">Role</label>
                       <select value={editRole} onChange={e => setEditRole(e.target.value)}
                         className="w-full px-3 py-2 bg-[#1A1A24] border border-[#2A2A3A] rounded-xl text-[#F0EFFE] text-xs focus:outline-none focus:border-[#7C3AED]/30">
                         <option value="user">User</option>
@@ -609,7 +609,7 @@ export default function AdminConsolePage() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-[#5A5A72] text-[10px] uppercase tracking-wider block mb-1">Plan</label>
+                      <label className="text-[#7A7A96] text-[10px] uppercase tracking-wider block mb-1">Plan</label>
                       <select value={editPlan} onChange={e => setEditPlan(e.target.value)}
                         className="w-full px-3 py-2 bg-[#1A1A24] border border-[#2A2A3A] rounded-xl text-[#F0EFFE] text-xs focus:outline-none focus:border-[#7C3AED]/30">
                         <option value="Starter">Starter (Free)</option>
@@ -618,7 +618,7 @@ export default function AdminConsolePage() {
                       </select>
                     </div>
                     <div>
-                      <label className="text-[#5A5A72] text-[10px] uppercase tracking-wider block mb-1">Subscription Status</label>
+                      <label className="text-[#7A7A96] text-[10px] uppercase tracking-wider block mb-1">Subscription Status</label>
                       <select value={editStatus} onChange={e => setEditStatus(e.target.value)}
                         className="w-full px-3 py-2 bg-[#1A1A24] border border-[#2A2A3A] rounded-xl text-[#F0EFFE] text-xs focus:outline-none focus:border-[#7C3AED]/30">
                         <option value="none">None</option>
@@ -651,15 +651,15 @@ export default function AdminConsolePage() {
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6 text-center">
                 <div className="text-3xl font-bold text-emerald-400">{activeSubs}</div>
-                <div className="text-[#5A5A72] text-[10px] mt-1">Active Subscriptions</div>
+                <div className="text-[#7A7A96] text-[10px] mt-1">Active Subscriptions</div>
               </div>
               <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6 text-center">
                 <div className="text-3xl font-bold text-[#F0EFFE]">${mrr}</div>
-                <div className="text-[#5A5A72] text-[10px] mt-1">Monthly Recurring Revenue</div>
+                <div className="text-[#7A7A96] text-[10px] mt-1">Monthly Recurring Revenue</div>
               </div>
               <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6 text-center">
                 <div className="text-3xl font-bold text-[#8B5CF6]">{mrr * 12}</div>
-                <div className="text-[#5A5A72] text-[10px] mt-1">Annual Run Rate</div>
+                <div className="text-[#7A7A96] text-[10px] mt-1">Annual Run Rate</div>
               </div>
             </div>
 
@@ -667,7 +667,7 @@ export default function AdminConsolePage() {
               <h3 className="text-[#F0EFFE] text-sm font-medium mb-4">Users by Subscription Status</h3>
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-[#5A5A72] text-[10px] uppercase tracking-wider">
+                  <tr className="text-[#7A7A96] text-[10px] uppercase tracking-wider">
                     <th className="pb-3 font-medium">Email</th>
                     <th className="pb-3 font-medium">Plan</th>
                     <th className="pb-3 font-medium">Status</th>
@@ -684,7 +684,7 @@ export default function AdminConsolePage() {
                           u.subscriptionStatus === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-orange-500/10 text-orange-400'
                         }`}>{u.subscriptionStatus || 'unknown'}</span>
                       </td>
-                      <td className="py-3 text-[#5A5A72]">{u.cards.toLocaleString()}</td>
+                      <td className="py-3 text-[#7A7A96]">{u.cards.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -702,18 +702,18 @@ export default function AdminConsolePage() {
               {['all', 'admin', 'user', 'subscription', 'security', 'system'].map(f => (
                 <button key={f} onClick={() => setAuditFilter(f)}
                   className={`px-3 py-1 rounded-lg text-[10px] font-medium capitalize transition-all ${
-                    auditFilter === f ? 'bg-[#7C3AED] text-white' : 'bg-[#111118] border border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE]'
+                    auditFilter === f ? 'bg-[#7C3AED] text-white' : 'bg-[#111118] border border-[#2A2A3A] text-[#7A7A96] hover:text-[#F0EFFE]'
                   }`}>{f}</button>
               ))}
               <button onClick={fetchAuditLogs} disabled={auditLoading}
-                className="ml-auto px-3 py-1 rounded-lg bg-[#111118] border border-[#2A2A3A] text-[#5A5A72] text-[10px] hover:text-[#F0EFFE] flex items-center gap-1.5">
+                className="ml-auto px-3 py-1 rounded-lg bg-[#111118] border border-[#2A2A3A] text-[#7A7A96] text-[10px] hover:text-[#F0EFFE] flex items-center gap-1.5">
                 <RefreshCw size={11} className={auditLoading ? 'animate-spin' : ''} /> Refresh
               </button>
             </div>
             <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl overflow-hidden">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="text-[#5A5A72] text-[10px] uppercase tracking-wider border-b border-[#2A2A3A]">
+                  <tr className="text-[#7A7A96] text-[10px] uppercase tracking-wider border-b border-[#2A2A3A]">
                     <th className="px-4 py-3 font-medium">Time</th>
                     <th className="px-4 py-3 font-medium">Actor</th>
                     <th className="px-4 py-3 font-medium">Action</th>
@@ -725,18 +725,18 @@ export default function AdminConsolePage() {
                 <tbody>
                   {auditEvents.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-10 text-center text-[#5A5A72] text-xs">
+                      <td colSpan={6} className="px-4 py-10 text-center text-[#7A7A96] text-xs">
                         {auditLoading ? 'Loading...' : 'No audit events found'}
                       </td>
                     </tr>
                   ) : (
                     auditEvents.map((e) => (
                       <tr key={e.id} className="border-b border-[#2A2A3A]/30 text-xs hover:bg-[#1A1A24]">
-                        <td className="px-4 py-3 text-[#5A5A72] font-mono text-[10px]">{new Date(e.timestamp).toLocaleString()}</td>
+                        <td className="px-4 py-3 text-[#7A7A96] font-mono text-[10px]">{new Date(e.timestamp).toLocaleString()}</td>
                         <td className="px-4 py-3 text-[#F0EFFE]">{e.actor}</td>
                         <td className="px-4 py-3 text-[#F0EFFE]">{e.action}</td>
                         <td className="px-4 py-3">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#2A2A3A] text-[#5A5A72]">{e.category}</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#2A2A3A] text-[#7A7A96]">{e.category}</span>
                         </td>
                         <td className="px-4 py-3">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
@@ -744,7 +744,7 @@ export default function AdminConsolePage() {
                             e.severity === 'warning' ? 'bg-orange-500/10 text-orange-400' : 'bg-blue-500/10 text-blue-400'
                           }`}>{e.severity}</span>
                         </td>
-                        <td className="px-4 py-3 text-[#5A5A72] max-w-[200px] truncate">{e.details || '—'}</td>
+                        <td className="px-4 py-3 text-[#7A7A96] max-w-[200px] truncate">{e.details || '—'}</td>
                       </tr>
                     ))
                   )}
@@ -764,7 +764,7 @@ export default function AdminConsolePage() {
                 <h3 className="text-[#F0EFFE] text-sm font-medium flex items-center gap-2">
                   <Database size={14} className="text-[#7C3AED]" /> SQL Query Explorer
                 </h3>
-                <span className="text-[#5A5A72] text-[9px]">Read-only: SELECT, EXPLAIN, SHOW, DESCRIBE, WITH</span>
+                <span className="text-[#7A7A96] text-[9px]">Read-only: SELECT, EXPLAIN, SHOW, DESCRIBE, WITH</span>
               </div>
               <div className="relative">
                 <textarea
@@ -785,7 +785,7 @@ export default function AdminConsolePage() {
                 {sqlHistory.length > 0 && (
                   <select
                     onChange={e => { if (e.target.value) setSqlQuery(e.target.value); }}
-                    className="px-3 py-1.5 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#5A5A72] text-[10px] focus:outline-none"
+                    className="px-3 py-1.5 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#7A7A96] text-[10px] focus:outline-none"
                     defaultValue=""
                   >
                     <option value="" disabled>Query history...</option>
@@ -814,14 +814,14 @@ export default function AdminConsolePage() {
                     {sqlResult.rows?.length ?? 0} rows
                     {sqlResult.columns && ` · ${sqlResult.columns.length} columns`}
                   </span>
-                  <span className="text-[#5A5A72] text-[10px]">Read-only query</span>
+                  <span className="text-[#7A7A96] text-[10px]">Read-only query</span>
                 </div>
                 <div className="overflow-x-auto max-h-80">
                   <table className="w-full text-left text-xs">
                     <thead>
                       <tr className="border-b border-[#2A2A3A]">
                         {sqlResult.columns?.map((col: string) => (
-                          <th key={col} className="px-3 py-2 text-[#5A5A72] font-medium uppercase text-[10px]">{col}</th>
+                          <th key={col} className="px-3 py-2 text-[#7A7A96] font-medium uppercase text-[10px]">{col}</th>
                         ))}
                       </tr>
                     </thead>
@@ -852,7 +852,7 @@ export default function AdminConsolePage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-[#F0EFFE] text-sm font-medium">System Diagnostics</h3>
-                  <p className="text-[#5A5A72] text-[10px] mt-0.5">Test Supabase connection, Stripe API, and more</p>
+                  <p className="text-[#7A7A96] text-[10px] mt-0.5">Test Supabase connection, Stripe API, and more</p>
                 </div>
                 <button onClick={runSystemTest} disabled={systemTestRunning}
                   className="px-4 py-1.5 bg-[#7C3AED] text-white text-[10px] font-bold rounded-lg hover:bg-[#6D28D9] disabled:opacity-50 flex items-center gap-1.5 transition-all">
@@ -871,7 +871,7 @@ export default function AdminConsolePage() {
                         {test.status === 'passed' ? <Check size={14} className="text-emerald-400" /> : <AlertTriangle size={14} className="text-red-400" />}
                         <div>
                           <span className="text-[#F0EFFE] font-medium">{test.name}</span>
-                          <p className="text-[#5A5A72] text-[10px]">{test.message}</p>
+                          <p className="text-[#7A7A96] text-[10px]">{test.message}</p>
                         </div>
                       </div>
                       <span className={`text-[10px] font-medium ${test.status === 'passed' ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -883,7 +883,7 @@ export default function AdminConsolePage() {
               )}
 
               {!systemTestResult && !systemTestRunning && (
-                <div className="flex items-center justify-center h-32 text-[#5A5A72] text-xs">
+                <div className="flex items-center justify-center h-32 text-[#7A7A96] text-xs">
                   Click "Run Diagnostics" to test system connectivity
                 </div>
               )}
@@ -911,7 +911,7 @@ export default function AdminConsolePage() {
                 ] as { label: string; configured?: boolean; value?: string }[]).map(
                   ({ label, configured, value }) => (
                     <div key={label} className="flex items-center justify-between p-2 rounded-lg bg-[#1A1A24]">
-                      <span className="text-[#5A5A72]">{label}</span>
+                      <span className="text-[#7A7A96]">{label}</span>
                       {configured === undefined ? (
                         <span className="font-mono text-[10px] text-[#F0EFFE]">{value}</span>
                       ) : (

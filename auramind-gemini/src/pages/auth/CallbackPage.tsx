@@ -120,7 +120,7 @@ const CallbackPage: React.FC = () => {
               <Loader2 size={28} className="text-[#7C3AED] animate-spin" />
             </div>
             <h2 className="text-[#F0EFFE] text-lg font-light tracking-tight mb-2">Signing you in</h2>
-            <p className="text-[#5A5A72] text-xs">Completing authentication, one moment...</p>
+            <p className="text-[#7A7A96] text-xs">Completing authentication, one moment...</p>
           </>
         )}
 
@@ -130,7 +130,7 @@ const CallbackPage: React.FC = () => {
               <Check size={28} className="text-emerald-400" />
             </div>
             <h2 className="text-[#F0EFFE] text-lg font-light tracking-tight mb-2">Signed in!</h2>
-            <p className="text-[#5A5A72] text-xs">Redirecting to your dashboard...</p>
+            <p className="text-[#7A7A96] text-xs">Redirecting to your dashboard...</p>
           </>
         )}
 
@@ -140,7 +140,7 @@ const CallbackPage: React.FC = () => {
               <AlertTriangle size={28} className="text-red-400" />
             </div>
             <h2 className="text-[#F0EFFE] text-lg font-light tracking-tight mb-2">Sign-in failed</h2>
-            <p className="text-[#5A5A72] text-xs mb-6">{errorMsg || 'Authentication failed. Please try again.'}</p>
+            <p className="text-[#7A7A96] text-xs mb-6">{errorMsg || 'Authentication failed. Please try again.'}</p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => navigate('/auth', { replace: true })}

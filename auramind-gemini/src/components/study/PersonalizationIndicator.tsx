@@ -24,7 +24,7 @@ export const PersonalizationIndicator: React.FC<PersonalizationIndicatorProps> =
   if (status === 'loading') {
     return (
       <span
-        className="hidden sm:inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-[#111118] border border-[#2A2A3A] text-[#5A5A72] text-[11px]"
+        className="hidden sm:inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg bg-[#111118] border border-[#2A2A3A] text-[#7A7A96] text-[11px]"
         title="Tuning your FSRS schedule to your recall history"
       >
         <Loader2 size={11} className="animate-spin" />

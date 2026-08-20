@@ -74,7 +74,7 @@ export default function ResetPasswordPage() {
             <CheckCircle size={28} className="text-emerald-400" />
           </div>
           <h1 className="text-[#F0EFFE] text-lg font-light">Password updated</h1>
-          <p className="text-[#5A5A72] text-xs">Your password has been changed successfully</p>
+          <p className="text-[#7A7A96] text-xs">Your password has been changed successfully</p>
           <button onClick={() => navigate('/dashboard')} className="px-5 py-2.5 bg-[#7C3AED] text-white text-xs font-medium rounded-xl hover:bg-[#6D28D9] transition-all">
             Go to dashboard
           </button>
@@ -90,28 +90,28 @@ export default function ResetPasswordPage() {
         <div className="w-full max-w-sm space-y-8">
           <div className="space-y-2">
             <h1 className="text-[#F0EFFE] text-lg font-light">Set new password</h1>
-            <p className="text-[#5A5A72] text-xs">Enter your new password below</p>
+            <p className="text-[#7A7A96] text-xs">Enter your new password below</p>
           </div>
 
           <form onSubmit={handleUpdatePassword} className="space-y-4">
             <div className="relative">
-              <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5A5A72]" />
+              <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7A7A96]" />
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="New password"
-                className="w-full bg-[#111118] border border-[#2A2A3A] rounded-xl pl-9 pr-4 py-3 text-[#F0EFFE] text-sm placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50"
+                className="w-full bg-[#111118] border border-[#2A2A3A] rounded-xl pl-9 pr-4 py-3 text-[#F0EFFE] text-sm placeholder-[#7A7A96] outline-none focus:border-[#7C3AED]/50"
               />
             </div>
             <div className="relative">
-              <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5A5A72]" />
+              <Lock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7A7A96]" />
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
-                className="w-full bg-[#111118] border border-[#2A2A3A] rounded-xl pl-9 pr-4 py-3 text-[#F0EFFE] text-sm placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50"
+                className="w-full bg-[#111118] border border-[#2A2A3A] rounded-xl pl-9 pr-4 py-3 text-[#F0EFFE] text-sm placeholder-[#7A7A96] outline-none focus:border-[#7C3AED]/50"
               />
             </div>
 
@@ -140,7 +140,7 @@ export default function ResetPasswordPage() {
             <CheckCircle size={28} className="text-[#8B5CF6]" />
           </div>
           <h1 className="text-[#F0EFFE] text-lg font-light">Check your email</h1>
-          <p className="text-[#5A5A72] text-xs">We sent a password reset link to <span className="text-[#F0EFFE]">{email}</span></p>
+          <p className="text-[#7A7A96] text-xs">We sent a password reset link to <span className="text-[#F0EFFE]">{email}</span></p>
           <button onClick={() => navigate('/auth')} className="text-[#8B5CF6] text-xs font-medium hover:text-[#7C3AED] transition-colors">
             Back to sign in
           </button>
@@ -152,24 +152,24 @@ export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-[#0A0A0F] flex items-center justify-center p-6">
       <div className="w-full max-w-sm space-y-8">
-        <button onClick={() => navigate('/auth')} className="flex items-center gap-2 text-[#5A5A72] hover:text-[#F0EFFE] text-xs transition-colors">
+        <button onClick={() => navigate('/auth')} className="flex items-center gap-2 text-[#7A7A96] hover:text-[#F0EFFE] text-xs transition-colors">
           <ArrowLeft size={14} /> Back
         </button>
 
         <div className="space-y-2">
           <h1 className="text-[#F0EFFE] text-lg font-light">Reset password</h1>
-          <p className="text-[#5A5A72] text-xs">Enter your email and we'll send you a recovery link</p>
+          <p className="text-[#7A7A96] text-xs">Enter your email and we'll send you a recovery link</p>
         </div>
 
         <form onSubmit={handleReset} className="space-y-4">
           <div className="relative">
-            <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#5A5A72]" />
+            <Mail size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7A7A96]" />
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full bg-[#111118] border border-[#2A2A3A] rounded-xl pl-9 pr-4 py-3 text-[#F0EFFE] text-sm placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50"
+              className="w-full bg-[#111118] border border-[#2A2A3A] rounded-xl pl-9 pr-4 py-3 text-[#F0EFFE] text-sm placeholder-[#7A7A96] outline-none focus:border-[#7C3AED]/50"
             />
           </div>
 

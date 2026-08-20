@@ -103,7 +103,7 @@ export default function SessionReplayModal({ open, onClose }: Props) {
               {session?.deckTitle || 'Your latest session'}
             </h2>
             {session && session.entries.length > 0 && (
-              <p className="text-[10px] text-[#5A5A72] mt-0.5">
+              <p className="text-[10px] text-[#7A7A96] mt-0.5">
                 {session.entries.length} card{session.entries.length === 1 ? '' : 's'} reviewed
               </p>
             )}
@@ -112,7 +112,7 @@ export default function SessionReplayModal({ open, onClose }: Props) {
             ref={closeRef}
             onClick={onClose}
             aria-label="Close replay"
-            className="w-8 h-8 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#3A3A4F] transition-colors"
+            className="w-8 h-8 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#3A3A4F] transition-colors"
           >
             <X size={14} />
           </button>
@@ -148,7 +148,7 @@ export default function SessionReplayModal({ open, onClose }: Props) {
               {/* Stepped card display */}
               <div className="rounded-xl border border-[#2A2A3A] bg-[#111118] overflow-hidden">
                 <div className="px-5 py-3 border-b border-[#2A2A3A]/40 flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-[#5A5A72] uppercase tracking-widest">
+                  <span className="text-[10px] font-bold text-[#7A7A96] uppercase tracking-widest">
                     Card {index + 1} of {session.entries.length}
                   </span>
                   <span
@@ -184,7 +184,7 @@ export default function SessionReplayModal({ open, onClose }: Props) {
                 </AnimatePresence>
 
                 {next && (
-                  <div className="px-5 py-2.5 border-t border-[#2A2A3A]/40 bg-[#0A0A12] flex items-center gap-2 text-[10px] text-[#5A5A72]">
+                  <div className="px-5 py-2.5 border-t border-[#2A2A3A]/40 bg-[#0A0A12] flex items-center gap-2 text-[10px] text-[#7A7A96]">
                     <Clock size={10} className="text-[#7C3AED]" />
                     <span>Then you answered</span>
                     <span className="font-semibold text-[#9090A8]">{next.front.slice(0, 28)}{next.front.length > 28 ? '…' : ''}</span>
@@ -234,7 +234,7 @@ export default function SessionReplayModal({ open, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 border-t border-[#2A2A3A]/50 flex items-center justify-between text-[10px] text-[#5A5A72]">
+        <div className="px-5 py-3 border-t border-[#2A2A3A]/50 flex items-center justify-between text-[10px] text-[#7A7A96]">
           <span className="flex items-center gap-1.5">
             <RotateCcw size={10} />
             Replays read-only · no FSRS rewrites

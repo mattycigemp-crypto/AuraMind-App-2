@@ -116,7 +116,7 @@ export function CommandPalette() {
             >
               <item.icon className="h-4 w-4 text-violet-400" />
               <span>{item.label}</span>
-              <span className="ml-auto text-xs text-[#5A5A72]">{item.hint}</span>
+              <span className="ml-auto text-xs text-[#7A7A96]">{item.hint}</span>
             </CommandItem>
           ))}
         </CommandGroup>
@@ -145,7 +145,7 @@ export function CommandPalette() {
             <kbd className="ml-auto rounded border border-[#2A2A3A] bg-[#1A1A24] px-1.5 py-0.5 text-[10px]">
               ⌘K
             </kbd>
-            <span className="text-xs text-[#5A5A72]">anytime to open this palette</span>
+            <span className="text-xs text-[#7A7A96]">anytime to open this palette</span>
           </CommandItem>
         </CommandGroup>
       </CommandList>

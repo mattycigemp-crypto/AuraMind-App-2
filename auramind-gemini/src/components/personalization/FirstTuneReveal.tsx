@@ -65,7 +65,7 @@ export const FirstTuneReveal: React.FC = () => {
             </div>
             <div>
               <h3 className="text-[#F0EFFE] text-sm font-medium">AuraMind learned your rhythm</h3>
-              <p className="text-[10px] text-[#5A5A72] uppercase tracking-widest font-bold mt-0.5">
+              <p className="text-[10px] text-[#7A7A96] uppercase tracking-widest font-bold mt-0.5">
                 Personalized FSRS · first tune
               </p>
             </div>
@@ -73,7 +73,7 @@ export const FirstTuneReveal: React.FC = () => {
           <button
             onClick={markShown}
             aria-label="Dismiss"
-            className="text-[#5A5A72] hover:text-[#F0EFFE] transition-colors shrink-0"
+            className="text-[#7A7A96] hover:text-[#F0EFFE] transition-colors shrink-0"
           >
             <X size={16} />
           </button>
@@ -98,7 +98,7 @@ export const FirstTuneReveal: React.FC = () => {
           </button>
           <button
             onClick={markShown}
-            className="px-3 py-2 text-[#5A5A72] text-xs hover:text-[#F0EFFE] transition-colors"
+            className="px-3 py-2 text-[#7A7A96] text-xs hover:text-[#F0EFFE] transition-colors"
           >
             Just study
           </button>
@@ -111,7 +111,7 @@ export const FirstTuneReveal: React.FC = () => {
 function Row({ label, value, wrap }: { label: string; value: string; wrap?: boolean }) {
   return (
     <div className="flex items-start gap-3 text-xs">
-      <span className="text-[10px] text-[#5A5A72] uppercase tracking-widest font-bold w-24 shrink-0 pt-0.5">
+      <span className="text-[10px] text-[#7A7A96] uppercase tracking-widest font-bold w-24 shrink-0 pt-0.5">
         {label}
       </span>
       <span className={`text-[#F0EFFE] flex-1 ${wrap ? 'leading-relaxed' : ''}`}>{value}</span>

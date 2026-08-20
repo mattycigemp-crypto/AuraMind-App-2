@@ -28,6 +28,7 @@ import {
 import { useCurrentUserId } from "../../hooks/useCurrentUserId";
 import { useMoodForProfAura } from "../../hooks/useMoodForProfAura";
 import { useStudyStats } from "../../hooks/useStudyStats";
+import { useLocalAI } from "../../lib/aiProvider";
 import { useMicVolume } from "../../hooks/useMicVolume";
 import { useTTS } from "../../hooks/useTTS";
 import useSpeechRecognition from "../../hooks/useSpeechRecognition";
@@ -518,7 +519,7 @@ export default function AIChatPage() {
             {!workspace && (
               <button
                 onClick={() => navigate("/dashboard")}
-                className="w-7 h-7 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#5A5A72] hover:text-[#F0EFFE] transition-colors"
+                className="w-7 h-7 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#7A7A96] hover:text-[#F0EFFE] transition-colors"
               >
                 <ArrowLeft size={14} />
               </button>
@@ -544,7 +545,7 @@ export default function AIChatPage() {
                     Online
                   </span>
                 </h1>
-                <p className="text-[#5A5A72] text-[10px]">AI Study Coach</p>
+                <p className="text-[#7A7A96] text-[10px]">AI Study Coach</p>
               </div>
             </div>
           </div>
@@ -561,7 +562,7 @@ export default function AIChatPage() {
               className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
                 tts.isEnabled
                   ? "bg-[#7C3AED]/15 text-[#8B5CF6] border border-[#7C3AED]/30"
-                  : "bg-[#111118] text-[#5A5A72] border border-[#2A2A3A] hover:text-[#F0EFFE]"
+                  : "bg-[#111118] text-[#7A7A96] border border-[#2A2A3A] hover:text-[#F0EFFE]"
               }`}
             >
               {tts.isEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
@@ -576,7 +577,7 @@ export default function AIChatPage() {
               <button
                 onClick={() => setShowPersonalityPicker(!showPersonalityPicker)}
                 title="Change Prof. Aura's personality"
-                className="h-8 px-2.5 rounded-full bg-[#111118] border border-[#2A2A3A] flex items-center gap-1.5 text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-colors"
+                className="h-8 px-2.5 rounded-full bg-[#111118] border border-[#2A2A3A] flex items-center gap-1.5 text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-colors"
               >
                 <span className="text-sm leading-none">
                   <PersonalityIcon size={16} className="text-[#A78BFA]" />
@@ -593,7 +594,7 @@ export default function AIChatPage() {
                     onClick={() => setShowPersonalityPicker(false)}
                   />
                   <div className="absolute right-0 top-10 z-50 w-72 p-3 rounded-2xl bg-[#111118] border border-[#2A2A3A] shadow-2xl shadow-black/50">
-                    <p className="text-[9px] uppercase tracking-widest text-[#5A5A72] mb-2 px-1">
+                    <p className="text-[9px] uppercase tracking-widest text-[#7A7A96] mb-2 px-1">
                       Prof. Aura's Personality
                     </p>
                     <div className="space-y-1">
@@ -612,7 +613,7 @@ export default function AIChatPage() {
                             <OptionIcon size={16} className="mt-0.5 shrink-0 text-[#A78BFA]" />
                             <div className="min-w-0">
                               <p className="text-xs font-medium">{opt.label}</p>
-                              <p className="text-[10px] text-[#5A5A72] leading-snug mt-0.5">
+                              <p className="text-[10px] text-[#7A7A96] leading-snug mt-0.5">
                                 {opt.description}
                               </p>
                             </div>
@@ -673,7 +674,7 @@ export default function AIChatPage() {
                       ? mode === "companion"
                         ? "bg-gradient-to-r from-fuchsia-500/20 to-violet-500/20 text-[#F0ABFC] shadow-[inset_0_0_0_1px_rgba(244,114,182,0.25)]"
                         : "bg-gradient-to-b from-[#7C3AED]/20 to-[#EC4899]/10 text-[#C4B5FD] shadow-[inset_0_0_0_1px_rgba(124,58,237,0.35)]"
-                      : "text-[#5A5A72] hover:text-[#F0EFFE]"
+                      : "text-[#7A7A96] hover:text-[#F0EFFE]"
                   }`}
                 >
                   {MODE_LABELS[mode]}
@@ -799,7 +800,7 @@ export default function AIChatPage() {
                     <strong className="text-[#F0EFFE]">{cards.length} cards</strong>, and your FSRS
                     schedule.
                   </p>
-                  <p className="text-[#5A5A72] text-xs sm:text-sm mb-10">
+                  <p className="text-[#7A7A96] text-xs sm:text-sm mb-10">
                     Ask me anything — I'll quiz you, explain concepts, or generate new cards.
                   </p>
                 </motion.div>
@@ -832,7 +833,7 @@ export default function AIChatPage() {
                       <p className="text-sm text-[#F0EFFE] font-medium truncate group-hover:text-[#C4B5FD] transition-colors">
                         {lastSessionForResume.title}
                       </p>
-                      <div className="flex items-center gap-2 mt-0.5 text-[9px] text-[#5A5A72]">
+                      <div className="flex items-center gap-2 mt-0.5 text-[9px] text-[#7A7A96]">
                         <Clock size={9} />
                         <span>{fmtRelShort(lastSessionForResume.updatedAt)}</span>
                         <span>·</span>
@@ -884,7 +885,7 @@ export default function AIChatPage() {
                             <p className="text-[#F0EFFE] text-sm font-medium group-hover:text-[#8B5CF6] transition-colors">
                               {s.label}
                             </p>
-                            <p className="text-[#5A5A72] text-[10px] mt-0.5">{s.detail}</p>
+                            <p className="text-[#7A7A96] text-[10px] mt-0.5">{s.detail}</p>
                           </div>
                         </div>
                       </motion.button>
@@ -981,7 +982,7 @@ export default function AIChatPage() {
                     mic.isActive ? "Listening — speak or type…" : "Ask Prof. Aura anything..."
                   }
                   rows={1}
-                  className="flex-1 bg-transparent border-none outline-none px-5 py-3.5 text-sm text-[#F0EFFE] placeholder-[#5A5A72] resize-none max-h-[140px] leading-relaxed"
+                  className="flex-1 bg-transparent border-none outline-none px-5 py-3.5 text-sm text-[#F0EFFE] placeholder-[#7A7A96] resize-none max-h-[140px] leading-relaxed"
                   disabled={chat.isStreaming}
                 />
 
@@ -1058,6 +1059,15 @@ export default function AIChatPage() {
                     </span>
                   ) : (
                     "Ready"
+                  )}
+                  {useLocalAI() && (
+                    <span
+                      className="ml-2 inline-flex items-center gap-1 rounded-full border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-0.5 text-[9px] text-[#34D399]"
+                      title="AI runs on this device — no data leaves it, works offline"
+                    >
+                      <span className="w-1 h-1 rounded-full bg-[#34D399]" />
+                      On-device AI · Private
+                    </span>
                   )}
                 </span>
               </div>

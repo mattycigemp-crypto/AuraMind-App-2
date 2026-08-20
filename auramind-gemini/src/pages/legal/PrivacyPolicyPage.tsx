@@ -83,7 +83,7 @@ const sections = [
         <p>We use the following third-party service providers:</p>
         <div className="overflow-x-auto mt-3">
           <table className="w-full text-xs text-left">
-            <thead className="text-[#5A5A72] border-b border-[#2A2A3A]">
+            <thead className="text-[#7A7A96] border-b border-[#2A2A3A]">
               <tr>
                 <th className="py-2 pr-4">Provider</th>
                 <th className="py-2 pr-4">Purpose</th>
@@ -275,7 +275,7 @@ const sections = [
         <p>
           We may update this Privacy Policy from time to time. Material changes will be notified via email or through the Service.
         </p>
-        <p className="text-[#5A5A72]">
+        <p className="text-[#7A7A96]">
           Last updated: July 9, 2026
         </p>
       </>
@@ -302,12 +302,12 @@ export default function PrivacyPolicyPage(): React.ReactElement {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-[#2A2A3A]/50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-4">
-          <Link to="/" className="p-2 -ml-2 text-[#5A5A72] hover:text-[#F0EFFE] rounded-lg transition-colors">
+          <Link to="/" className="p-2 -ml-2 text-[#7A7A96] hover:text-[#F0EFFE] rounded-lg transition-colors">
             <ArrowLeft size={18} />
           </Link>
           <div>
             <h1 className="text-base font-medium text-[#F0EFFE]">Privacy Policy</h1>
-            <p className="text-[10px] text-[#5A5A72]">Last updated: July 9, 2026</p>
+            <p className="text-[10px] text-[#7A7A96]">Last updated: July 9, 2026</p>
           </div>
         </div>
       </div>

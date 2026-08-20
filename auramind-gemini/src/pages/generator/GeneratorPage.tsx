@@ -565,7 +565,7 @@ const GeneratorPage: React.FC = () => {
                   transition={{ duration: 0.3 }}
                 />
               </div>
-              <p className="text-[#5A5A72] text-xs mt-2">{localAIProgress.text}</p>
+              <p className="text-[#7A7A96] text-xs mt-2">{localAIProgress.text}</p>
             </div>
           )}
           {localAIProgress.status === 'error' && (
@@ -575,8 +575,8 @@ const GeneratorPage: React.FC = () => {
               </div>
               <div>
                 <p className="text-red-400 text-sm font-medium mb-1">Failed to load local model</p>
-                <p className="text-[#5A5A72] text-xs">{localAIProgress.error}</p>
-                <p className="text-[#5A5A72] text-xs mt-2">The app will use the cloud API instead.</p>
+                <p className="text-[#7A7A96] text-xs">{localAIProgress.error}</p>
+                <p className="text-[#7A7A96] text-xs mt-2">The app will use the cloud API instead.</p>
               </div>
             </div>
           )}
@@ -611,11 +611,11 @@ const GeneratorPage: React.FC = () => {
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                       isActive ? 'bg-[#7C3AED]' : 'bg-[#1A1A24]'
                     }`}>
-                      <Icon size={20} className={isActive ? 'text-white' : 'text-[#5A5A72]'} />
+                      <Icon size={20} className={isActive ? 'text-white' : 'text-[#7A7A96]'} />
                     </div>
                     <div>
                       <h3 className={`text-sm font-medium ${isActive ? 'text-[#8B5CF6]' : 'text-[#F0EFFE]'}`}>{card.label}</h3>
-                      <p className="text-xs text-[#5A5A72]">{card.description}</p>
+                      <p className="text-xs text-[#7A7A96]">{card.description}</p>
                     </div>
                   </div>
               </button>
@@ -637,7 +637,7 @@ const GeneratorPage: React.FC = () => {
 
           {/* Source Type Tabs */}
           <div className="mb-6">
-            <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">Source</label>
+            <label className="block text-[10px] font-medium uppercase tracking-widest text-[#7A7A96] mb-3">Source</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {sourceOptions.map((src) => (
                 <button
@@ -646,7 +646,7 @@ const GeneratorPage: React.FC = () => {
                   className={`flex items-center justify-center gap-2 p-3 rounded-lg border text-xs transition-all ${
                     inputSource === src.value
                       ? 'bg-[#7C3AED]/10 border-[#7C3AED] text-[#8B5CF6]'
-                      : 'bg-[#1A1A24] border-[#2A2A3A] text-[#5A5A72] hover:border-[#3A3A4F] hover:text-[#F0EFFE]'
+                      : 'bg-[#1A1A24] border-[#2A2A3A] text-[#7A7A96] hover:border-[#3A3A4F] hover:text-[#F0EFFE]'
                   }`}
                 >
                   <src.icon size={14} />
@@ -659,13 +659,13 @@ const GeneratorPage: React.FC = () => {
           {/* Topic Input */}
           {inputSource === 'topic' && (
             <div className="mb-6">
-              <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">Topic</label>
+              <label className="block text-[10px] font-medium uppercase tracking-widest text-[#7A7A96] mb-3">Topic</label>
               <input
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 placeholder="e.g., Biology, History, Mathematics"
-                className="w-full p-4 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] placeholder-[#5A5A72] focus:outline-none focus:border-[#7C3AED]/50 transition-colors text-sm"
+                className="w-full p-4 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] placeholder-[#7A7A96] focus:outline-none focus:border-[#7C3AED]/50 transition-colors text-sm"
               />
             </div>
           )}
@@ -673,14 +673,14 @@ const GeneratorPage: React.FC = () => {
           {/* URL Input */}
           {inputSource === 'url' && (
             <div className="mb-6">
-              <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">Website URL</label>
+              <label className="block text-[10px] font-medium uppercase tracking-widest text-[#7A7A96] mb-3">Website URL</label>
               <div className="flex gap-3">
                 <input
                   type="url"
                   value={topic}
                   onChange={(e) => { setTopic(e.target.value); setExtractedContent(null); }}
                   placeholder="https://example.com/article"
-                  className="flex-1 p-4 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] placeholder-[#5A5A72] focus:outline-none focus:border-[#7C3AED]/50 transition-colors text-sm"
+                  className="flex-1 p-4 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] placeholder-[#7A7A96] focus:outline-none focus:border-[#7C3AED]/50 transition-colors text-sm"
                 />
                 <button
                   onClick={handleFetchUrl}
@@ -695,7 +695,7 @@ const GeneratorPage: React.FC = () => {
               {extractedContent && (
                 <div className="mt-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
                   <p className="text-xs text-emerald-400 font-medium mb-1">Fetched: {extractedTitle}</p>
-                  <p className="text-[10px] text-[#5A5A72]">{extractedContent.length.toLocaleString()} characters extracted</p>
+                  <p className="text-[10px] text-[#7A7A96]">{extractedContent.length.toLocaleString()} characters extracted</p>
                 </div>
               )}
             </div>
@@ -704,14 +704,14 @@ const GeneratorPage: React.FC = () => {
           {/* YouTube Input */}
           {inputSource === 'youtube' && (
             <div className="mb-6">
-              <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">YouTube Video URL</label>
+              <label className="block text-[10px] font-medium uppercase tracking-widest text-[#7A7A96] mb-3">YouTube Video URL</label>
               <div className="flex gap-3">
                 <input
                   type="url"
                   value={topic}
                   onChange={(e) => { setTopic(e.target.value); setExtractedContent(null); }}
                   placeholder="https://youtube.com/watch?v=..."
-                  className="flex-1 p-4 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] placeholder-[#5A5A72] focus:outline-none focus:border-[#7C3AED]/50 transition-colors text-sm"
+                  className="flex-1 p-4 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] placeholder-[#7A7A96] focus:outline-none focus:border-[#7C3AED]/50 transition-colors text-sm"
                 />
                 <button
                   onClick={handleFetchYoutube}
@@ -726,7 +726,7 @@ const GeneratorPage: React.FC = () => {
               {extractedContent && (
                 <div className="mt-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
                   <p className="text-xs text-emerald-400 font-medium mb-1">Transcript: {extractedTitle}</p>
-                  <p className="text-[10px] text-[#5A5A72]">{extractedContent.length.toLocaleString()} characters</p>
+                  <p className="text-[10px] text-[#7A7A96]">{extractedContent.length.toLocaleString()} characters</p>
                 </div>
               )}
             </div>
@@ -735,7 +735,7 @@ const GeneratorPage: React.FC = () => {
           {/* File Upload */}
           {inputSource === 'file' && (
             <div className="mb-6">
-              <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">Upload Document</label>
+              <label className="block text-[10px] font-medium uppercase tracking-widest text-[#7A7A96] mb-3">Upload Document</label>
               <div
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
@@ -752,20 +752,20 @@ const GeneratorPage: React.FC = () => {
                 {isExtracting ? (
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-8 h-8 border-2 border-[#7C3AED]/30 border-t-[#7C3AED] rounded-full animate-spin" />
-                    <p className="text-[#5A5A72] text-sm">Extracting text...</p>
+                    <p className="text-[#7A7A96] text-sm">Extracting text...</p>
                   </div>
                 ) : extractedContent ? (
                   <div className="flex flex-col items-center gap-3">
                     <FileText size={32} className="text-emerald-400" />
                     <p className="text-emerald-400 font-medium text-sm">{extractedTitle}</p>
-                    <p className="text-[10px] text-[#5A5A72]">{extractedContent.length.toLocaleString()} characters extracted</p>
-                    <p className="text-[10px] text-[#5A5A72]">Click or drop a new file to replace</p>
+                    <p className="text-[10px] text-[#7A7A96]">{extractedContent.length.toLocaleString()} characters extracted</p>
+                    <p className="text-[10px] text-[#7A7A96]">Click or drop a new file to replace</p>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3">
-                    <BookOpen size={32} className="text-[#5A5A72]" />
+                    <BookOpen size={32} className="text-[#7A7A96]" />
                     <p className="text-[#F0EFFE] font-medium text-sm">Drop a file here or click to browse</p>
-                    <p className="text-[10px] text-[#5A5A72]">PDF, DOCX, TXT, MD, PPTX</p>
+                    <p className="text-[10px] text-[#7A7A96]">PDF, DOCX, TXT, MD, PPTX</p>
                   </div>
                 )}
               </div>
@@ -778,7 +778,7 @@ const GeneratorPage: React.FC = () => {
           {/* Audio Input (record or upload) */}
           {inputSource === 'audio' && (
             <div className="mb-6">
-              <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">
+              <label className="block text-[10px] font-medium uppercase tracking-widest text-[#7A7A96] mb-3">
                 Audio (record a lecture or upload a recording)
               </label>
 
@@ -795,7 +795,7 @@ const GeneratorPage: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-[#F0EFFE] text-sm font-medium">Record lecture</p>
-                      <p className="text-[10px] text-[#5A5A72]">
+                      <p className="text-[10px] text-[#7A7A96]">
                         {recorder.supported ? 'Tap to start recording from your mic' : 'Mic not available in this browser'}
                       </p>
                     </div>
@@ -807,7 +807,7 @@ const GeneratorPage: React.FC = () => {
                     </div>
                     <div className="flex-1">
                       <p className="text-red-400 text-sm font-medium">Recording…</p>
-                      <p className="text-[10px] text-[#5A5A72]">
+                      <p className="text-[10px] text-[#7A7A96]">
                         {Math.floor(recorder.durationMs / 60000)}:{String(Math.floor((recorder.durationMs % 60000) / 1000)).padStart(2, '0')}
                       </p>
                     </div>
@@ -819,7 +819,7 @@ const GeneratorPage: React.FC = () => {
                     </button>
                     <button
                       onClick={() => recorder.cancel()}
-                      className="px-3 py-2 rounded-lg border border-[#2A2A3A] text-[#5A5A72] text-xs hover:text-[#F0EFFE] transition-colors"
+                      className="px-3 py-2 rounded-lg border border-[#2A2A3A] text-[#7A7A96] text-xs hover:text-[#F0EFFE] transition-colors"
                     >
                       Cancel
                     </button>
@@ -829,7 +829,7 @@ const GeneratorPage: React.FC = () => {
                     <Mic size={18} className="text-emerald-400" />
                     <div className="flex-1">
                       <p className="text-emerald-400 text-sm font-medium">Recording ready</p>
-                      <p className="text-[10px] text-[#5A5A72]">
+                      <p className="text-[10px] text-[#7A7A96]">
                         {Math.floor(recorder.durationMs / 60000)}:{String(Math.floor((recorder.durationMs % 60000) / 1000)).padStart(2, '0')} captured
                       </p>
                     </div>
@@ -841,7 +841,7 @@ const GeneratorPage: React.FC = () => {
                     </button>
                     <button
                       onClick={() => recorder.clear()}
-                      className="px-3 py-2 rounded-lg border border-[#2A2A3A] text-[#5A5A72] text-xs hover:text-[#F0EFFE] transition-colors"
+                      className="px-3 py-2 rounded-lg border border-[#2A2A3A] text-[#7A7A96] text-xs hover:text-[#F0EFFE] transition-colors"
                     >
                       Discard
                     </button>
@@ -873,20 +873,20 @@ const GeneratorPage: React.FC = () => {
                 {isExtracting ? (
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-8 h-8 border-2 border-[#7C3AED]/30 border-t-[#7C3AED] rounded-full animate-spin" />
-                    <p className="text-[#5A5A72] text-sm">Transcribing audio…</p>
+                    <p className="text-[#7A7A96] text-sm">Transcribing audio…</p>
                   </div>
                 ) : extractedContent ? (
                   <div className="flex flex-col items-center gap-3">
                     <Mic size={32} className="text-emerald-400" />
                     <p className="text-emerald-400 font-medium text-sm">{extractedTitle}</p>
-                    <p className="text-[10px] text-[#5A5A72]">{extractedContent.length.toLocaleString()} characters transcribed</p>
-                    <p className="text-[10px] text-[#5A5A72]">Click or drop new audio to replace</p>
+                    <p className="text-[10px] text-[#7A7A96]">{extractedContent.length.toLocaleString()} characters transcribed</p>
+                    <p className="text-[10px] text-[#7A7A96]">Click or drop new audio to replace</p>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3">
-                    <Mic size={32} className="text-[#5A5A72]" />
+                    <Mic size={32} className="text-[#7A7A96]" />
                     <p className="text-[#F0EFFE] font-medium text-sm">Drop audio here or click to browse</p>
-                    <p className="text-[10px] text-[#5A5A72]">MP3, WAV, M4A, OGG, WEBM</p>
+                    <p className="text-[10px] text-[#7A7A96]">MP3, WAV, M4A, OGG, WEBM</p>
                   </div>
                 )}
               </div>
@@ -901,7 +901,7 @@ const GeneratorPage: React.FC = () => {
           )}
 
           <div className="mb-6">
-            <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">
+            <label className="block text-[10px] font-medium uppercase tracking-widest text-[#7A7A96] mb-3">
               Number of {generatorType === 'quiz' ? 'Questions' : generatorType === 'presentation' ? 'Slides' : 'Cards'}
             </label>
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3">
@@ -916,7 +916,7 @@ const GeneratorPage: React.FC = () => {
                   className={`p-4 rounded-lg border text-sm font-medium transition-all ${
                     numItems === num && !showCustomInput
                       ? 'bg-[#7C3AED]/10 border-[#7C3AED] text-[#8B5CF6]'
-                      : 'bg-[#1A1A24] border-[#2A2A3A] text-[#5A5A72] hover:border-[#3A3A4F] hover:text-[#F0EFFE]'
+                      : 'bg-[#1A1A24] border-[#2A2A3A] text-[#7A7A96] hover:border-[#3A3A4F] hover:text-[#F0EFFE]'
                   }`}
                 >
                   {num}
@@ -927,7 +927,7 @@ const GeneratorPage: React.FC = () => {
                 className={`p-4 rounded-lg border text-sm font-medium transition-all ${
                   showCustomInput
                     ? 'bg-[#7C3AED]/10 border-[#7C3AED] text-[#8B5CF6]'
-                    : 'bg-[#1A1A24] border-[#2A2A3A] text-[#5A5A72] hover:border-[#3A3A4F] hover:text-[#F0EFFE]'
+                    : 'bg-[#1A1A24] border-[#2A2A3A] text-[#7A7A96] hover:border-[#3A3A4F] hover:text-[#F0EFFE]'
                 }`}
               >
                 Custom
@@ -945,7 +945,7 @@ const GeneratorPage: React.FC = () => {
                   value={customNumItems}
                   onChange={(e) => setCustomNumItems(e.target.value)}
                   placeholder="Enter custom number..."
-                  className="w-full p-4 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] placeholder-[#5A5A72] focus:outline-none focus:border-[#7C3AED]/50 transition-colors text-sm"
+                  className="w-full p-4 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg text-[#F0EFFE] placeholder-[#7A7A96] focus:outline-none focus:border-[#7C3AED]/50 transition-colors text-sm"
                   min="1"
                   max="50"
                 />
@@ -954,7 +954,7 @@ const GeneratorPage: React.FC = () => {
           </div>
 
           <div className="mb-8">
-            <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-3">Difficulty</label>
+            <label className="block text-[10px] font-medium uppercase tracking-widest text-[#7A7A96] mb-3">Difficulty</label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {difficultyOptions.map((diff) => (
                 <button
@@ -963,7 +963,7 @@ const GeneratorPage: React.FC = () => {
                   className={`p-4 rounded-lg border text-sm font-medium transition-all ${
                     difficulty === diff.value
                       ? 'bg-[#7C3AED]/10 border-[#7C3AED] text-[#8B5CF6]'
-                      : 'bg-[#1A1A24] border-[#2A2A3A] text-[#5A5A72] hover:border-[#3A3A4F] hover:text-[#F0EFFE]'
+                      : 'bg-[#1A1A24] border-[#2A2A3A] text-[#7A7A96] hover:border-[#3A3A4F] hover:text-[#F0EFFE]'
                   }`}
                 >
                   {diff.label}
@@ -977,7 +977,7 @@ const GeneratorPage: React.FC = () => {
             disabled={!topic.trim() || isGenerating || isExtracting}
             className={`w-full flex items-center justify-center gap-3 p-4 rounded-lg text-sm font-medium transition-all ${
               !topic.trim() || isGenerating || isExtracting
-                ? 'bg-[#1A1A24] text-[#5A5A72] cursor-not-allowed'
+                ? 'bg-[#1A1A24] text-[#7A7A96] cursor-not-allowed'
                 : 'bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-[0_0_20px_rgba(124,58,237,0.2)]'
             }`}
           >
@@ -1015,7 +1015,7 @@ const GeneratorPage: React.FC = () => {
                 <h2 className="text-lg font-medium text-[#F0EFFE]">
                   Generated {generatorType === 'quiz' ? 'Quiz' : generatorType === 'presentation' ? 'Presentation' : 'Flashcards'}
                 </h2>
-                <p className="text-xs text-[#5A5A72] mt-1">
+                <p className="text-xs text-[#7A7A96] mt-1">
                   {generatorType === 'quiz' ? (
                     <>Topic: {generatedQuiz?.topic} &middot; {generatedQuiz?.difficulty} &middot; {generatedQuiz?.questions.length} questions</>
                   ) : generatorType === 'presentation' ? (
@@ -1028,7 +1028,7 @@ const GeneratorPage: React.FC = () => {
               <div className="flex items-center gap-3">
                 <button
                   onClick={handleReset}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#111118] border border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#3A3A4F] transition-all text-xs font-medium"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#111118] border border-[#2A2A3A] text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#3A3A4F] transition-all text-xs font-medium"
                 >
                   <RotateCcw size={14} />
                   Start Over
@@ -1087,7 +1087,7 @@ const GeneratorPage: React.FC = () => {
                               <button onClick={handleSaveQuestionEdit} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-all">
                                 <Check size={14} /> Save
                               </button>
-                              <button onClick={handleCancelEdit} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1A1A24] text-[#5A5A72] hover:text-[#F0EFFE] text-xs font-medium transition-all">
+                              <button onClick={handleCancelEdit} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1A1A24] text-[#7A7A96] hover:text-[#F0EFFE] text-xs font-medium transition-all">
                                 <X size={14} /> Cancel
                               </button>
                             </div>
@@ -1104,13 +1104,13 @@ const GeneratorPage: React.FC = () => {
                                     className={`flex items-center gap-3 px-4 py-3 rounded-lg border text-sm ${
                                       isCorrect
                                         ? 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300'
-                                        : 'border-[#2A2A3A] text-[#5A5A72]'
+                                        : 'border-[#2A2A3A] text-[#7A7A96]'
                                     }`}
                                   >
                                     <span className={`flex-shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold ${
                                       isCorrect
                                         ? 'bg-emerald-500/20 text-emerald-400'
-                                        : 'bg-[#1A1A24] text-[#5A5A72]'
+                                        : 'bg-[#1A1A24] text-[#7A7A96]'
                                     }`}>
                                       {String.fromCharCode(65 + oi)}
                                     </span>
@@ -1121,7 +1121,7 @@ const GeneratorPage: React.FC = () => {
                               })}
                             </div>
                             {q.explanation && (
-                              <div className="mt-3 px-4 py-3 rounded-lg bg-[#7C3AED]/5 border border-[#7C3AED]/10 text-sm text-[#5A5A72]">
+                              <div className="mt-3 px-4 py-3 rounded-lg bg-[#7C3AED]/5 border border-[#7C3AED]/10 text-sm text-[#7A7A96]">
                                 <span className="text-[#8B5CF6] font-medium mr-2">Explanation:</span>
                                 {q.explanation}
                               </div>
@@ -1130,10 +1130,10 @@ const GeneratorPage: React.FC = () => {
                         )}
                       </div>
                       <div className="flex-shrink-0 flex flex-row sm:flex-col gap-1.5">
-                        <button onClick={() => handleEditQuestion(i)} className="w-9 h-9 rounded-lg bg-[#1A1A24] text-[#5A5A72] hover:text-[#F0EFFE] flex items-center justify-center transition-all" title="Edit">
+                        <button onClick={() => handleEditQuestion(i)} className="w-9 h-9 rounded-lg bg-[#1A1A24] text-[#7A7A96] hover:text-[#F0EFFE] flex items-center justify-center transition-all" title="Edit">
                           <Pencil size={15} />
                         </button>
-                        <button onClick={() => handleDeleteQuestion(i)} className="w-9 h-9 rounded-lg bg-[#1A1A24] hover:bg-red-500/20 flex items-center justify-center text-[#5A5A72] hover:text-red-400 transition-all" title="Delete">
+                        <button onClick={() => handleDeleteQuestion(i)} className="w-9 h-9 rounded-lg bg-[#1A1A24] hover:bg-red-500/20 flex items-center justify-center text-[#7A7A96] hover:text-red-400 transition-all" title="Delete">
                           <Trash size={15} />
                         </button>
                       </div>
@@ -1170,7 +1170,7 @@ const GeneratorPage: React.FC = () => {
             <div className="sticky bottom-0 bg-[#0A0A0F]/90 backdrop-blur-xl border-t border-[#2A2A3A] -mx-3 sm:-mx-4 md:-mx-6 px-3 sm:px-4 md:px-6 py-4 md:py-5 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 md:gap-4">
               <button
                 onClick={handleReset}
-                className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg border border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#3A3A4F] transition-all text-xs font-medium"
+                className="flex items-center justify-center gap-2 px-6 py-3 rounded-lg border border-[#2A2A3A] text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#3A3A4F] transition-all text-xs font-medium"
               >
                 <RotateCcw size={14} />
                 Discard
@@ -1237,7 +1237,7 @@ const FlashcardRow: React.FC<{
                 rows={2}
               />
               <div>
-                <label className="block text-[10px] font-medium uppercase tracking-widest text-[#5A5A72] mb-1">Difficulty</label>
+                <label className="block text-[10px] font-medium uppercase tracking-widest text-[#7A7A96] mb-1">Difficulty</label>
                 <select
                   value={editForm.difficulty}
                   onChange={e => setEditForm(f => ({ ...f, difficulty: e.target.value }))}
@@ -1252,7 +1252,7 @@ const FlashcardRow: React.FC<{
                 <button onClick={onSave} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-all">
                   <Check size={14} /> Save
                 </button>
-                <button onClick={onCancel} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1A1A24] text-[#5A5A72] hover:text-[#F0EFFE] text-xs font-medium transition-all">
+                <button onClick={onCancel} className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#1A1A24] text-[#7A7A96] hover:text-[#F0EFFE] text-xs font-medium transition-all">
                   <X size={14} /> Cancel
                 </button>
               </div>
@@ -1278,17 +1278,17 @@ const FlashcardRow: React.FC<{
                       </span>
                     )}
                   </div>
-                  <p className="text-[#5A5A72] text-sm">{card.answer}</p>
+                  <p className="text-[#7A7A96] text-sm">{card.answer}</p>
                 </div>
               </motion.div>
             </>
           )}
         </div>
         <div className="flex-shrink-0 flex flex-row sm:flex-col gap-1.5">
-          <button onClick={() => onEdit(index)} disabled={editingIndex !== null && editingIndex !== index} className="w-9 h-9 rounded-lg bg-[#1A1A24] text-[#5A5A72] hover:text-[#F0EFFE] flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Edit">
+          <button onClick={() => onEdit(index)} disabled={editingIndex !== null && editingIndex !== index} className="w-9 h-9 rounded-lg bg-[#1A1A24] text-[#7A7A96] hover:text-[#F0EFFE] flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Edit">
             <Pencil size={15} />
           </button>
-          <button onClick={() => onDelete(index)} disabled={editingIndex !== null} className="w-9 h-9 rounded-lg bg-[#1A1A24] hover:bg-red-500/20 flex items-center justify-center text-[#5A5A72] hover:text-red-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Delete">
+          <button onClick={() => onDelete(index)} disabled={editingIndex !== null} className="w-9 h-9 rounded-lg bg-[#1A1A24] hover:bg-red-500/20 flex items-center justify-center text-[#7A7A96] hover:text-red-400 transition-all disabled:opacity-30 disabled:cursor-not-allowed" title="Delete">
             <Trash size={15} />
           </button>
         </div>
@@ -1296,7 +1296,7 @@ const FlashcardRow: React.FC<{
       {!isEditing && (
         <button
           onClick={() => setShowAnswer(!showAnswer)}
-          className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#1A1A24] hover:bg-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] text-xs font-medium transition-all"
+          className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#1A1A24] hover:bg-[#2A2A3A] text-[#7A7A96] hover:text-[#F0EFFE] text-xs font-medium transition-all"
         >
           <Eye size={14} /> {showAnswer ? 'Hide' : 'Show'} Answer
         </button>

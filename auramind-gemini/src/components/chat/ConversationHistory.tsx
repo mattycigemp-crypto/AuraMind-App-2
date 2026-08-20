@@ -413,7 +413,7 @@ export default function ConversationHistory({
                   <button
                     onClick={() => setOpen(false)}
                     aria-label="Close history"
-                    className="w-7 h-7 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#5A5A72] hover:text-[#F0EFFE] transition-colors"
+                    className="w-7 h-7 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#7A7A96] hover:text-[#F0EFFE] transition-colors"
                   >
                     <X size={13} />
                   </button>
@@ -425,14 +425,14 @@ export default function ConversationHistory({
                 <div className="relative">
                   <Search
                     size={11}
-                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#5A5A72] pointer-events-none"
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#7A7A96] pointer-events-none"
                   />
                   <input
                     ref={searchRef}
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search past chats…"
-                    className="w-full bg-[#15151D] border border-[#2A2A3A] rounded-lg pl-8 pr-3 py-2 text-xs text-[#F0EFFE] placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/40"
+                    className="w-full bg-[#15151D] border border-[#2A2A3A] rounded-lg pl-8 pr-3 py-2 text-xs text-[#F0EFFE] placeholder-[#7A7A96] outline-none focus:border-[#7C3AED]/40"
                   />
                 </div>
               </div>
@@ -442,7 +442,7 @@ export default function ConversationHistory({
                 {!hasAnySessions ? (
                   <div className="text-center py-12 px-6">
                     <Sparkles size={28} className="text-[#3A3A4F] mx-auto mb-3" />
-                    <p className="text-[#5A5A72] text-xs">No chat history yet.</p>
+                    <p className="text-[#7A7A96] text-xs">No chat history yet.</p>
                     <p className="text-[#3A3A4F] text-[10px] mt-1">
                       Chat sessions save automatically as you go.
                     </p>
@@ -450,7 +450,7 @@ export default function ConversationHistory({
                 ) : !matchesAny ? (
                   <div className="text-center py-10 px-6">
                     <Search size={26} className="text-[#3A3A4F] mx-auto mb-3" />
-                    <p className="text-[#5A5A72] text-xs">
+                    <p className="text-[#7A7A96] text-xs">
                       No chats match &ldquo;<span className="text-[#9090A8]">{query}</span>&rdquo;.
                     </p>
                     <button
@@ -464,7 +464,7 @@ export default function ConversationHistory({
                   grouped.map(([bucket, bucketSessions]) => (
                     <div key={bucket} className="space-y-1">
                       <div className="px-2 pt-2 pb-1 flex items-center gap-2">
-                        <span className="text-[9px] font-bold uppercase tracking-widest text-[#5A5A72]">
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-[#7A7A96]">
                           {bucket}
                         </span>
                         <span className="flex-1 h-px bg-[#1A1A24]" />
@@ -504,7 +504,7 @@ export default function ConversationHistory({
                                   e.stopPropagation();
                                   toggleSelect(s.id);
                                 }}
-                                className="w-5 h-5 mt-0.5 rounded flex items-center justify-center text-[#5A5A72] hover:text-[#A78BFA] hover:bg-[#1A1A24] shrink-0"
+                                className="w-5 h-5 mt-0.5 rounded flex items-center justify-center text-[#7A7A96] hover:text-[#A78BFA] hover:bg-[#1A1A24] shrink-0"
                                 title={isSelected ? "Deselect" : "Select"}
                               >
                                 {isSelected ? (
@@ -535,7 +535,7 @@ export default function ConversationHistory({
                                     {s.title}
                                   </p>
                                 )}
-                                <p className="text-[10px] text-[#5A5A72] line-clamp-2 mt-0.5">
+                                <p className="text-[10px] text-[#7A7A96] line-clamp-2 mt-0.5">
                                   {s.preview}
                                 </p>
                                 <div className="flex items-center gap-2 mt-1.5 text-[9px] text-[#3A3A4F]">
@@ -560,7 +560,7 @@ export default function ConversationHistory({
                                     togglePin(s.id);
                                   }}
                                   title={s.pinned ? "Unpin" : "Pin"}
-                                  className="w-6 h-6 rounded text-[#5A5A72] hover:text-[#A78BFA] hover:bg-[#1A1A24] flex items-center justify-center"
+                                  className="w-6 h-6 rounded text-[#7A7A96] hover:text-[#A78BFA] hover:bg-[#1A1A24] flex items-center justify-center"
                                 >
                                   {s.pinned ? <PinOff size={11} /> : <Pin size={11} />}
                                 </button>
@@ -570,7 +570,7 @@ export default function ConversationHistory({
                                     startRename(s);
                                   }}
                                   title="Rename"
-                                  className="w-6 h-6 rounded text-[#5A5A72] hover:text-[#F0EFFE] hover:bg-[#1A1A24] flex items-center justify-center"
+                                  className="w-6 h-6 rounded text-[#7A7A96] hover:text-[#F0EFFE] hover:bg-[#1A1A24] flex items-center justify-center"
                                 >
                                   {isRenaming ? <Check size={11} /> : <Edit2 size={11} />}
                                 </button>
@@ -580,7 +580,7 @@ export default function ConversationHistory({
                                     remove(s.id);
                                   }}
                                   title="Delete"
-                                  className="w-6 h-6 rounded text-[#5A5A72] hover:text-red-400 hover:bg-red-500/10 flex items-center justify-center"
+                                  className="w-6 h-6 rounded text-[#7A7A96] hover:text-red-400 hover:bg-red-500/10 flex items-center justify-center"
                                 >
                                   <Trash2 size={11} />
                                 </button>
@@ -604,7 +604,7 @@ export default function ConversationHistory({
                         ? "Deselect all"
                         : "Select all"
                     }
-                    className="w-5 h-5 rounded flex items-center justify-center text-[#5A5A72] hover:text-[#A78BFA] hover:bg-[#1A1A24]"
+                    className="w-5 h-5 rounded flex items-center justify-center text-[#7A7A96] hover:text-[#A78BFA] hover:bg-[#1A1A24]"
                   >
                     {selected.size === filtered.length && filtered.length > 0 ? (
                       <CheckSquare size={10} />

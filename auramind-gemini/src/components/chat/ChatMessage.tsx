@@ -49,7 +49,7 @@ function renderMarkdown(text: string): React.ReactNode[] {
         <div key={i} className="my-3 rounded-xl overflow-hidden border border-[#2A2A3A] bg-[#0D0D14]">
           {lang && (
             <div className="flex items-center justify-between px-4 py-1.5 border-b border-[#2A2A3A] bg-[#111118]">
-              <span className="text-[10px] font-medium text-[#5A5A72] uppercase tracking-wider">{lang}</span>
+              <span className="text-[10px] font-medium text-[#7A7A96] uppercase tracking-wider">{lang}</span>
             </div>
           )}
           <pre className="p-4 overflow-x-auto text-sm leading-relaxed">
@@ -203,7 +203,7 @@ export default function ChatMessage({
             {message.content}
           </div>
           <div className="w-7 h-7 rounded-lg bg-[#1A1A24] border border-[#2A2A3A] flex items-center justify-center shrink-0">
-            <User size={12} className="text-[#5A5A72]" />
+            <User size={12} className="text-[#7A7A96]" />
           </div>
         </div>
       </motion.div>

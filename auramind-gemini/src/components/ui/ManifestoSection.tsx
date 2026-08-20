@@ -51,7 +51,7 @@ export function ManifestoSection() {
 
         <motion.div
           style={{ opacity: line4Opacity }}
-          className="mt-12 flex items-center gap-2 text-sm text-[#5A5A72]"
+          className="mt-12 flex items-center gap-2 text-sm text-[#7A7A96]"
         >
           <Star className="h-4 w-4 text-violet-400" />
           <span>That&apos;s it. That&apos;s the whole product.</span>

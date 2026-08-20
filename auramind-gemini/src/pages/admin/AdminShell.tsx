@@ -12,7 +12,7 @@ import { Users, ClipboardCheck, ArrowLeft, ShieldCheck } from '@/components/icon
 const linkBase =
   'inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-[11px] font-medium transition-colors';
 const activeLink = 'bg-[#7C3AED]/20 border border-[#7C3AED]/40 text-[#8B5CF6]';
-const idleLink = 'bg-[#111118] border border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#3A3A4F]';
+const idleLink = 'bg-[#111118] border border-[#2A2A3A] text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#3A3A4F]';
 
 export default function AdminShell() {
   return (

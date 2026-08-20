@@ -70,6 +70,7 @@ function Cell({ state, highlight }: { state: CellState; highlight: boolean }) {
             : "bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/20"
         }`}
         aria-label={state}
+        role="img"
       >
         <Check className="w-3 h-3" strokeWidth={3} />
       </span>
@@ -84,13 +85,14 @@ function Cell({ state, highlight }: { state: CellState; highlight: boolean }) {
             : "bg-zinc-700/40 text-zinc-400 ring-1 ring-zinc-600/20"
         }`}
         aria-label={state}
+        role="img"
       >
         <Minus className="w-3 h-3" strokeWidth={3} />
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-transparent text-zinc-700" aria-label={state}>
+    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-transparent text-zinc-700" aria-label={state} role="img">
       <Minus className="w-3 h-3" strokeWidth={3} />
     </span>
   );
@@ -131,7 +133,7 @@ export function ComparisonSection() {
           className="text-center mb-12"
           style={{ willChange: "opacity, transform" }}
         >
-          <span className="text-[#5A5A72] text-[10px] font-medium tracking-[0.2em] uppercase mb-3 block">
+          <span className="text-[#7A7A96] text-[10px] font-medium tracking-[0.2em] uppercase mb-3 block">
             How AuraMind stacks up
           </span>
           <h2 className="text-[#F0EFFE] text-2xl md:text-3xl font-light tracking-tight mb-3">
@@ -139,7 +141,7 @@ export function ComparisonSection() {
             <span className="font-serif italic text-[#8B5CF6]">actually finish</span>{" "}
             a deck.
           </h2>
-          <p className="text-[#5A5A72] text-xs max-w-2xl mx-auto leading-relaxed">
+          <p className="text-[#7A7A96] text-xs max-w-2xl mx-auto leading-relaxed">
             Other tools either drown you in manual card creation or hand-wave the
             science. AuraMind lives at the intersection — modern algorithms, modern
             UX, built for people who actually want to remember what they study.
@@ -163,7 +165,7 @@ export function ComparisonSection() {
             <div className="min-w-[700px]">
               {/* Header row */}
               <div className="grid grid-cols-[1.5fr_repeat(4,minmax(0,1fr))] border-b border-[#2A2A3A]">
-                <div className="p-4 text-[#5A5A72] text-[10px] uppercase tracking-[0.2em] font-medium flex items-center">
+                <div className="p-4 text-[#7A7A96] text-[10px] uppercase tracking-[0.2em] font-medium flex items-center">
                   Feature
                 </div>
                 {PRODUCTS.map((p) => (
@@ -207,7 +209,7 @@ export function ComparisonSection() {
                       <div className="text-[#F0EFFE] text-xs font-medium">
                         {row.feature}
                       </div>
-                      <div className="text-[#5A5A72] text-[10px] mt-0.5 leading-relaxed">
+                      <div className="text-[#7A7A96] text-[10px] mt-0.5 leading-relaxed">
                         {row.detail}
                       </div>
                     </div>

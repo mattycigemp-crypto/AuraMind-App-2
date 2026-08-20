@@ -52,7 +52,7 @@ function SectionHeader({ icon: Icon, title, subtitle }: { icon: React.ComponentT
       </div>
       <div>
         <h3 className="text-[#F0EFFE] text-sm font-medium">{title}</h3>
-        <p className="text-[#5A5A72] text-[11px]">{subtitle}</p>
+        <p className="text-[#7A7A96] text-[11px]">{subtitle}</p>
       </div>
     </div>
   );
@@ -63,7 +63,7 @@ function SettingRow({ label, desc, children }: { label: string; desc?: string; c
     <div className="flex items-center justify-between py-2.5">
       <div>
         <div className="text-[#F0EFFE] text-xs">{label}</div>
-        {desc && <div className="text-[#5A5A72] text-[10px] mt-0.5">{desc}</div>}
+        {desc && <div className="text-[#7A7A96] text-[10px] mt-0.5">{desc}</div>}
       </div>
       {children}
     </div>
@@ -347,7 +347,7 @@ export default function SettingsPage() {
                   <button onClick={saveName} disabled={nameSaving} className="p-1.5 rounded-lg bg-[#7C3AED] text-white hover:bg-[#6D28D9] disabled:opacity-50 transition-colors">
                     <Check size={14} />
                   </button>
-                  <button onClick={() => { setEditingName(false); setNameInput(profile?.name || ''); }} className="p-1.5 rounded-lg hover:bg-[#2A2A3A] text-[#5A5A72]">
+                  <button onClick={() => { setEditingName(false); setNameInput(profile?.name || ''); }} className="p-1.5 rounded-lg hover:bg-[#2A2A3A] text-[#7A7A96]">
                     <X size={14} />
                   </button>
                 </div>
@@ -360,7 +360,7 @@ export default function SettingsPage() {
                   >
                     {profileLoading && !workspace ? 'Loading...' : displayName}
                   </span>
-                  <button onClick={() => { setNameInput(profile?.name || ''); setEditingName(true); }} className="text-[#5A5A72] hover:text-[#8B5CF6] transition-colors">
+                  <button onClick={() => { setNameInput(profile?.name || ''); setEditingName(true); }} className="text-[#7A7A96] hover:text-[#8B5CF6] transition-colors">
                     <Pencil size={14} />
                   </button>
                 </div>
@@ -370,7 +370,7 @@ export default function SettingsPage() {
                   {profile?.plan || 'Free'}
                 </span>
               </div>
-              <p className="text-[#5A5A72] text-xs mt-1">{profile?.email || ''}</p>
+              <p className="text-[#7A7A96] text-xs mt-1">{profile?.email || ''}</p>
               <button onClick={handleManageSubscription} className="text-[#8B5CF6] text-[10px] font-medium hover:text-[#7C3AED] transition-colors mt-1">
                 Manage subscription
               </button>
@@ -379,7 +379,7 @@ export default function SettingsPage() {
               <button onClick={handleChangePassword} className="px-4 py-2 border border-[#2A2A3A] text-[#F0EFFE] text-xs font-medium rounded-lg hover:border-[#3A3A4F] transition-all">
                 Change Password
               </button>
-              <button onClick={handleSignOut} className="inline-flex items-center gap-1.5 px-4 py-2 border border-[#2A2A3A] text-[#5A5A72] text-xs font-medium rounded-lg hover:border-[#7C3AED]/40 hover:text-[#F0EFFE] transition-all">
+              <button onClick={handleSignOut} className="inline-flex items-center gap-1.5 px-4 py-2 border border-[#2A2A3A] text-[#7A7A96] text-xs font-medium rounded-lg hover:border-[#7C3AED]/40 hover:text-[#F0EFFE] transition-all">
                 <LogOut size={12} /> Sign out
               </button>
             </div>
@@ -576,9 +576,9 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between py-2.5">
               <div>
                 <div className="text-[#F0EFFE] text-xs">Clear local cache</div>
-                <div className="text-[#5A5A72] text-[10px] mt-0.5">Free up storage on this device</div>
+                <div className="text-[#7A7A96] text-[10px] mt-0.5">Free up storage on this device</div>
               </div>
-              <button onClick={handleClearCache} className="px-4 py-1.5 border border-[#2A2A3A] text-[#5A5A72] text-[11px] font-medium rounded-lg hover:border-[#3A3A4F] hover:text-[#F0EFFE] transition-all">
+              <button onClick={handleClearCache} className="px-4 py-1.5 border border-[#2A2A3A] text-[#7A7A96] text-[11px] font-medium rounded-lg hover:border-[#3A3A4F] hover:text-[#F0EFFE] transition-all">
                 Clear
               </button>
             </div>
@@ -586,7 +586,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between py-2.5">
               <div>
                 <div className="text-[#F0EFFE] text-xs">Reset progress</div>
-                <div className="text-[#5A5A72] text-[10px] mt-0.5">Reset all study progress and streaks</div>
+                <div className="text-[#7A7A96] text-[10px] mt-0.5">Reset all study progress and streaks</div>
               </div>
               <button onClick={handleResetProgress} className="px-4 py-1.5 border border-red-500/30 text-red-400 text-[11px] font-medium rounded-lg hover:bg-red-500/10 transition-all">
                 Reset
@@ -653,7 +653,7 @@ export default function SettingsPage() {
                   <button onClick={handler} className={`px-4 py-1.5 text-[11px] font-medium rounded-lg border transition-all ${
                     item === 'Delete account'
                       ? 'border-red-500/30 text-red-400 hover:bg-red-500/10'
-                      : 'border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#3A3A4F]'
+                      : 'border-[#2A2A3A] text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#3A3A4F]'
                   }`}>
                     {item === 'Delete account' ? 'Delete' : 'Export'}
                   </button>
@@ -808,7 +808,7 @@ function AvatarEditor({
           <p className="text-[#F0EFFE] text-sm font-medium">
             {hasUploaded ? 'Custom avatar' : 'Using Prof. Aura as default'}
           </p>
-          <p className="text-[#5A5A72] text-[11px] mt-1 leading-relaxed">
+          <p className="text-[#7A7A96] text-[11px] mt-1 leading-relaxed">
             PNG, JPG, WEBP up to 5 MB · GIF and SVG also supported (animated GIFs play as themselves).
             We resize raster images to 256×256 before upload to save bandwidth.
           </p>
@@ -828,7 +828,7 @@ function AvatarEditor({
               <button
                 onClick={stableOnRemove}
                 disabled={uploading}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#2A2A3A] text-[#5A5A72] hover:border-red-500/40 hover:text-red-400 disabled:opacity-50 text-[11px] font-medium transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#2A2A3A] text-[#7A7A96] hover:border-red-500/40 hover:text-red-400 disabled:opacity-50 text-[11px] font-medium transition-colors"
               >
                 <Trash2 size={11} />
                 Remove

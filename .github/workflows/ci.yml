@@ -71,3 +71,41 @@ jobs:
           name: build-${{ matrix.node-version }}
           path: auramind-gemini/dist
           retention-days: 7
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+          cache-dependency-path: auramind-gemini/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd auramind-gemini
+          npm ci
+
+      - name: Install Playwright browsers
+        run: |
+          cd auramind-gemini
+          npx playwright install --with-deps chromium
+
+      - name: Run Playwright e2e
+        run: |
+          cd auramind-gemini
+          npx playwright test
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: auramind-gemini/test-results
+          retention-days: 7

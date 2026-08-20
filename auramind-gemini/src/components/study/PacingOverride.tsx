@@ -138,7 +138,7 @@ export const PacingOverride: React.FC<PacingOverrideProps> = ({
             className="absolute right-0 top-full mt-1.5 z-50 w-[220px] rounded-lg border border-[#2A2A3A] bg-[#0E0E15] shadow-xl shadow-black/40 p-1"
             role="menu"
           >
-            <div className="px-2 py-1.5 text-[9px] uppercase tracking-widest text-[#5A5A72] font-bold">
+            <div className="px-2 py-1.5 text-[9px] uppercase tracking-widest text-[#7A7A96] font-bold">
               Pacing for this session
             </div>
             {(Object.keys(MODE_META) as PacingMode[]).map(m => {
@@ -159,9 +159,9 @@ export const PacingOverride: React.FC<PacingOverrideProps> = ({
                 >
                   <div className="flex flex-col">
                     <span className="font-medium">{MODE_META[m].label}</span>
-                    <span className="text-[9px] text-[#5A5A72]">{MODE_META[m].tip}</span>
+                    <span className="text-[9px] text-[#7A7A96]">{MODE_META[m].tip}</span>
                   </div>
-                  <span className="font-mono text-[9px] text-[#5A5A72]">
+                  <span className="font-mono text-[9px] text-[#7A7A96]">
                     {mTarget !== null ? `d=${mTarget.toFixed(1)}` : 'auto'}
                   </span>
                 </button>

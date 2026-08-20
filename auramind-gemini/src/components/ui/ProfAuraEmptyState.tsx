@@ -184,7 +184,7 @@ function ProfAuraEmptyState({
 
       {/* Eyebrow + title + description */}
       {eyebrow && (
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5A5A72] mb-2">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7A7A96] mb-2">
           {eyebrow}
         </p>
       )}
@@ -260,7 +260,7 @@ function ProfAuraEmptyState({
           {badges.map((b) => (
             <span
               key={b}
-              className="px-1.5 py-0.5 rounded-full bg-[#111118] border border-[#2A2A3A] text-[9px] text-[#5A5A72] uppercase tracking-widest font-semibold"
+              className="px-1.5 py-0.5 rounded-full bg-[#111118] border border-[#2A2A3A] text-[9px] text-[#7A7A96] uppercase tracking-widest font-semibold"
             >
               {b}
             </span>

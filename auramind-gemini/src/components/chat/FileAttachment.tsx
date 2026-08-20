@@ -161,7 +161,7 @@ export default function FileAttachment({ attachments, setAttachments }: Props) {
             <div className="rounded-2xl border-2 border-dashed border-[#7C3AED]/60 px-10 py-8 bg-[#0A0A0F]/80 text-center">
               <Paperclip className="mx-auto text-[#A78BFA] mb-3" size={28} />
               <p className="text-sm font-medium text-[#F0EFFE]">Drop to attach to your next message</p>
-              <p className="text-[10px] text-[#5A5A72] mt-1">Up to 5MB · images / PDF / text / markdown</p>
+              <p className="text-[10px] text-[#7A7A96] mt-1">Up to 5MB · images / PDF / text / markdown</p>
             </div>
           </motion.div>
         )}
@@ -186,7 +186,7 @@ export default function FileAttachment({ attachments, setAttachments }: Props) {
               )}
               <div className="flex flex-col min-w-0">
                 <span className="text-[10px] text-[#F0EFFE] max-w-[160px] truncate">{a.name}</span>
-                <span className="text-[9px] text-[#5A5A72]">{formatBytes(a.sizeBytes)}</span>
+                <span className="text-[9px] text-[#7A7A96]">{formatBytes(a.sizeBytes)}</span>
               </div>
               <button
                 type="button"

@@ -17,7 +17,7 @@ function getStatusColor(status: OnlineUser['status']) {
     case 'studying': return 'bg-emerald-500';
     case 'browsing': return 'bg-violet-500';
     case 'idle': return 'bg-amber-500';
-    default: return 'bg-[#5A5A72]';
+    default: return 'bg-[#7A7A96]';
   }
 }
 
@@ -27,8 +27,8 @@ export default function AuraHubWidget({ userId, displayName, avatarUrl }: AuraHu
   return (
     <div className="px-3 py-2">
       <div className="flex items-center gap-2 px-2 mb-2">
-        <Globe size={11} className="text-[#5A5A72]" />
-        <span className="text-[9px] font-bold uppercase tracking-widest text-[#5A5A72]">
+        <Globe size={11} className="text-[#7A7A96]" />
+        <span className="text-[9px] font-bold uppercase tracking-widest text-[#7A7A96]">
           AuraHub
         </span>
         <div className="ml-auto flex items-center gap-1">
@@ -52,7 +52,7 @@ export default function AuraHubWidget({ userId, displayName, avatarUrl }: AuraHu
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[10px] text-[#C4B5FD] font-medium truncate">{displayName}</p>
-            <p className="text-[8px] text-[#5A5A72]">you</p>
+            <p className="text-[8px] text-[#7A7A96]">you</p>
           </div>
         </div>
 

@@ -169,7 +169,7 @@ export const RetentionCurvePlot: React.FC<RetentionCurvePlotProps> = ({ points, 
           </span>
         </div>
         {hoverPoint && (
-          <div className="font-mono text-[#5A5A72] tabular-nums">
+          <div className="font-mono text-[#7A7A96] tabular-nums">
             day {hoverPoint.day} · {labels.current} {(hoverPoint.current * 100).toFixed(0)}% ·{' '}
             {labels.alt} {(hoverPoint.alt * 100).toFixed(0)}%
           </div>

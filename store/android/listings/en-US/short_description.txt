@@ -1,1 +1,1 @@
-AI flashcards with FSRS spaced repetition — study smarter, remember longer.
+An AI tutor on your phone — private, offline flashcards with FSRS spaced repetition.

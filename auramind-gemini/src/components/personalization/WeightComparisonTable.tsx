@@ -48,7 +48,7 @@ export const WeightComparisonTable: React.FC<WeightComparisonTableProps> = ({
     || userWeights.length !== 20
   ) {
     return (
-      <div className="p-4 rounded-lg bg-[#111118] border border-[#2A2A3A] text-xs text-[#5A5A72]">
+      <div className="p-4 rounded-lg bg-[#111118] border border-[#2A2A3A] text-xs text-[#7A7A96]">
         Weight vectors aren't aligned — defaults have {defaultWeights.length}, user has {userWeights.length}.
       </div>
     );
@@ -56,7 +56,7 @@ export const WeightComparisonTable: React.FC<WeightComparisonTableProps> = ({
 
   return (
     <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl overflow-hidden">
-      <div className="grid grid-cols-[64px_1fr_88px_88px_72px] gap-2 px-4 py-2 border-b border-[#2A2A3A] text-[10px] uppercase tracking-widest font-bold text-[#5A5A72]">
+      <div className="grid grid-cols-[64px_1fr_88px_88px_72px] gap-2 px-4 py-2 border-b border-[#2A2A3A] text-[10px] uppercase tracking-widest font-bold text-[#7A7A96]">
         <span>w#</span>
         <span>Purpose</span>
         <span className="text-right">Default</span>
@@ -74,11 +74,11 @@ export const WeightComparisonTable: React.FC<WeightComparisonTableProps> = ({
               key={i}
               className="grid grid-cols-[64px_1fr_88px_88px_72px] gap-2 px-4 py-1.5 items-center text-xs font-mono tabular-nums"
             >
-              <span className="text-[#5A5A72]">{`W${String(i).padStart(2, '0')}`}</span>
+              <span className="text-[#7A7A96]">{`W${String(i).padStart(2, '0')}`}</span>
               <span className="text-[#F0EFFE] font-sans" title={WEIGHT_PURPOSE[i]?.[1] ?? ''}>
                 {short}
               </span>
-              <span className="text-right text-[#5A5A72]">{def.toFixed(4)}</span>
+              <span className="text-right text-[#7A7A96]">{def.toFixed(4)}</span>
               <span className="text-right text-[#F0EFFE]">{user.toFixed(4)}</span>
               <DeltaBadge delta={delta} pct={deltaPct} />
             </div>
@@ -91,7 +91,7 @@ export const WeightComparisonTable: React.FC<WeightComparisonTableProps> = ({
 
 function DeltaBadge({ delta, pct }: { delta: number; pct: number }) {
   if (Math.abs(delta) < 0.0001) {
-    return <span className="text-right text-[#5A5A72] text-[10px]">—</span>;
+    return <span className="text-right text-[#7A7A96] text-[10px]">—</span>;
   }
   const positive = delta > 0;
   const tone = positive ? 'text-emerald-400' : 'text-rose-400';

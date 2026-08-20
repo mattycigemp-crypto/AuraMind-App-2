@@ -93,13 +93,13 @@ function TypewriterDemo({
         <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
         <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/80" />
         <span className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
-        <span className="mx-auto text-xs text-[#5A5A72]">
+        <span className="mx-auto text-xs text-[#7A7A96]">
           AuraMind — AI Deck Generator
         </span>
       </div>
 
       <div className="pt-6">
-        <div className="text-xs uppercase tracking-widest text-[#5A5A72]">
+        <div className="text-xs uppercase tracking-widest text-[#7A7A96]">
           What do you want to learn?
         </div>
         <div className="mt-2 rounded-xl border border-[#2A2A3A] bg-[#1A1A24] px-4 py-3 text-sm text-[#F0EFFE]">

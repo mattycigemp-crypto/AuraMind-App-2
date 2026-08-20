@@ -50,7 +50,7 @@ const ForgettingCurve = () => (
       fill="none" stroke="#7C3AED" strokeWidth="2" />
     <path d="M0 140 L0 20 Q60 18 100 22 Q160 25 220 28 Q300 32 400 35 L400 140 Z"
       fill="url(#curveGrad)" opacity="0.15" />
-    <text x="320" y="24" fill="#5A5A72" fontSize="9" fontFamily="sans-serif">With AuraMind</text>
+    <text x="320" y="24" fill="#7A7A96" fontSize="9" fontFamily="sans-serif">With AuraMind</text>
     <text x="320" y="98" fill="#3A3A4F" fontSize="9" fontFamily="sans-serif">Without review</text>
   </svg>
 );
@@ -73,7 +73,7 @@ function FeatureCard({ icon, title, desc, index }: { icon: React.ReactNode; titl
         />
         <motion.div className="text-lg mb-3 group-hover:scale-110 transition-transform duration-300">{icon}</motion.div>
         <h3 className="text-[#F0EFFE] text-sm font-medium mb-1.5">{title}</h3>
-        <p className="text-[#5A5A72] text-xs leading-relaxed">{desc}</p>
+        <p className="text-[#7A7A96] text-xs leading-relaxed">{desc}</p>
       </motion.div>
     </BorderBeam>
   );
@@ -135,7 +135,7 @@ const Navbar = () => {
             <a
               key={item}
               href={`#${item.toLowerCase()}`}
-              className="text-[#5A5A72] hover:text-[#F0EFFE] text-xs transition-colors"
+              className="text-[#7A7A96] hover:text-[#F0EFFE] text-xs transition-colors"
             >
               {item}
             </a>
@@ -144,7 +144,7 @@ const Navbar = () => {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate("/auth")}
-            className="text-[#5A5A72] hover:text-[#F0EFFE] text-xs transition-colors"
+            className="text-[#7A7A96] hover:text-[#F0EFFE] text-xs transition-colors"
           >
             Sign in
           </button>
@@ -298,7 +298,7 @@ export default function ModernLandingPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-[#5A5A72] text-sm leading-relaxed mb-8 max-w-md"
+              className="text-[#7A7A96] text-sm leading-relaxed mb-8 max-w-md"
             >
               <TextScramble duration={1800} autoplay>
                 Drop in a PDF, a video, or a topic. Aura builds your course — then quizzes you, schedules your reviews, and remembers exactly what you struggle with.
@@ -342,7 +342,7 @@ export default function ModernLandingPage() {
                 and is a stronger reason to click than borrowed credibility.
               */}
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-4 border-t border-[#2A2A3A]/30">
-                <span className="inline-flex items-center gap-2 text-[#5A5A72] text-xs">
+                <span className="inline-flex items-center gap-2 text-[#7A7A96] text-xs">
                   <Check size={13} className="shrink-0 text-[#7C3AED]" />
                   Free to start — no card required
                 </span>
@@ -351,7 +351,7 @@ export default function ModernLandingPage() {
                     StudyModePage + offlineStudyService with tests. Do not add
                     a third bullet here unless it is equally verifiable —
                     Anki export, for instance, has a service but no UI yet. */}
-                <span className="inline-flex items-center gap-2 text-[#5A5A72] text-xs">
+                <span className="inline-flex items-center gap-2 text-[#7A7A96] text-xs">
                   <Check size={13} className="shrink-0 text-[#7C3AED]" />
                   Works offline — reviews sync later
                 </span>
@@ -422,11 +422,11 @@ export default function ModernLandingPage() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
           >
-            <span className="text-[#5A5A72] text-[10px] font-medium tracking-[0.2em] uppercase mb-3 block">THE SCIENCE</span>
+            <span className="text-[#7A7A96] text-[10px] font-medium tracking-[0.2em] uppercase mb-3 block">THE SCIENCE</span>
             <h2 className="text-[#F0EFFE] text-2xl md:text-3xl font-light tracking-tight mb-3">
               Your brain forgets on a <TextGlitch text="schedule" as="span" className="font-serif italic text-[#8B5CF6]" glitchOnHover autoGlitch autoGlitchInterval={8000} />
             </h2>
-            <p className="text-[#5A5A72] text-xs leading-relaxed mb-4">
+            <p className="text-[#7A7A96] text-xs leading-relaxed mb-4">
               AuraMind schedules each card right before you would forget it. You retain more in less time.
             </p>
             <a
@@ -456,7 +456,7 @@ export default function ModernLandingPage() {
             <h2 className="text-[#F0EFFE] text-2xl md:text-3xl font-light tracking-tight mb-2">
               Everything you need to actually <TextGlitch text="learn" as="span" className="font-serif italic text-[#8B5CF6]" glitchOnHover autoGlitch autoGlitchInterval={6000} autoGlitchDuration={150} />
             </h2>
-            <p className="text-[#5A5A72] text-xs">No fluff. Just the tools that move the needle.</p>
+            <p className="text-[#7A7A96] text-xs">No fluff. Just the tools that move the needle.</p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -479,7 +479,7 @@ export default function ModernLandingPage() {
             style={{ willChange: 'opacity, transform' }}
             className="text-center md:text-left"
           >
-            <span className="text-[#5A5A72] text-[10px] font-medium tracking-[0.2em] uppercase mb-3 block">THE STUDY SESSION</span>
+            <span className="text-[#7A7A96] text-[10px] font-medium tracking-[0.2em] uppercase mb-3 block">THE STUDY SESSION</span>
             <h2 className="text-[#F0EFFE] text-2xl md:text-3xl font-light tracking-tight">
               <TextSplit as="words" wrapperTag="span" stagger={45} duration={420}>
                 Space to flip.
@@ -490,7 +490,7 @@ export default function ModernLandingPage() {
               <kbd className="px-2 py-0.5 rounded bg-[#111118] border border-[#2A2A3A] text-[#F0EFFE] text-sm font-mono">3</kbd> good,{" "}
               <kbd className="px-2 py-0.5 rounded bg-[#111118] border border-[#2A2A3A] text-[#F0EFFE] text-sm font-mono">4</kbd> easy.
             </h2>
-            <p className="text-[#5A5A72] text-xs mt-3">Full keyboard control. Never touch your mouse during a study session.</p>
+            <p className="text-[#7A7A96] text-xs mt-3">Full keyboard control. Never touch your mouse during a study session.</p>
           </div>
           <div
             className="shrink-0"
@@ -514,7 +514,7 @@ export default function ModernLandingPage() {
           <div
             className="text-center mb-12"
           >
-            <span className="text-[#5A5A72] text-[10px] font-medium tracking-[0.2em] uppercase mb-3 block">Pricing</span>
+            <span className="text-[#7A7A96] text-[10px] font-medium tracking-[0.2em] uppercase mb-3 block">Pricing</span>
             <h2 className="text-[#F0EFFE] text-2xl md:text-3xl font-light tracking-tight">
               <TextGlitch text="Simple" as="span" className="font-serif italic text-[#8B5CF6]" glitchOnHover autoGlitch autoGlitchInterval={7000} /> pricing
             </h2>
@@ -536,7 +536,7 @@ export default function ModernLandingPage() {
                 <h3 className="text-[#F0EFFE] text-sm font-medium mb-1">Free</h3>
                 <div className="flex items-baseline gap-1 mb-4">
                   <span className="text-2xl font-semibold text-[#F0EFFE]">$0</span>
-                  <span className="text-[#5A5A72] text-xs">forever</span>
+                  <span className="text-[#7A7A96] text-xs">forever</span>
                 </div>
                 <ul className="space-y-2 mb-6">
                   {["5 decks", "20 cards per deck", "Basic SRS", "Web access"].map((f, i) => (
@@ -573,9 +573,9 @@ export default function ModernLandingPage() {
                   <h3 className="text-[#F0EFFE] text-sm font-medium mb-1">Pro</h3>
                   <div className="flex items-baseline gap-1 mb-1">
                     <span className="text-2xl font-semibold text-[#F0EFFE]">$8</span>
-                    <span className="text-[#5A5A72] text-xs">/month</span>
+                    <span className="text-[#7A7A96] text-xs">/month</span>
                   </div>
-                  <p className="text-[10px] text-[#5A5A72] mb-4">or $3.99/mo billed annually ($47.88/yr)</p>
+                  <p className="text-[10px] text-[#7A7A96] mb-4">or $3.99/mo billed annually ($47.88/yr)</p>
                   <ul className="space-y-2 mb-6">
                     {["Unlimited decks & cards", "AI deck generation", "Advanced FSRS v5", "Priority support"].map((f, i) => (
                       <li key={i} className="text-[#9090A8] text-xs flex items-center gap-2">
@@ -607,8 +607,8 @@ export default function ModernLandingPage() {
           </div>
           <p className="text-[#3A3A4F] text-xs">Built by one person. Powered by real science.</p>
           <div className="flex items-center gap-6">
-            <a href="/privacy" className="text-[#5A5A72] hover:text-[#F0EFFE] text-xs transition-colors">Privacy</a>
-            <a href="/terms" className="text-[#5A5A72] hover:text-[#F0EFFE] text-xs transition-colors">Terms</a>
+            <a href="/privacy" className="text-[#7A7A96] hover:text-[#F0EFFE] text-xs transition-colors">Privacy</a>
+            <a href="/terms" className="text-[#7A7A96] hover:text-[#F0EFFE] text-xs transition-colors">Terms</a>
           </div>
         </div>
       </footer>

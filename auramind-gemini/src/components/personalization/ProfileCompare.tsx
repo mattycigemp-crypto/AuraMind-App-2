@@ -70,10 +70,10 @@ function formatInterval(days: number): string {
 }
 
 function toneForDelta(currentVal: number, altVal: number, lowerIsHarder: boolean): { color: string; arrow: string } {
-  if (!Number.isFinite(currentVal) || !Number.isFinite(altVal)) return { color: 'text-[#5A5A72]', arrow: '' };
+  if (!Number.isFinite(currentVal) || !Number.isFinite(altVal)) return { color: 'text-[#7A7A96]', arrow: '' };
   const diff = altVal - currentVal;
   const magnitude = Math.abs(diff) / Math.max(1, currentVal);
-  if (magnitude < 0.05) return { color: 'text-[#5A5A72]', arrow: '·' };
+  if (magnitude < 0.05) return { color: 'text-[#7A7A96]', arrow: '·' };
   const positive = lowerIsHarder ? diff < 0 : diff > 0;
   return {
     color: positive ? 'text-emerald-300' : 'text-rose-300',
@@ -177,14 +177,14 @@ export const ProfileCompare: React.FC<ProfileCompareProps> = ({
 
   // Empty / not-ready states
   if (userId === null) {
-    return <div className="text-xs text-[#5A5A72] py-8 text-center">Sign in to compare profiles.</div>;
+    return <div className="text-xs text-[#7A7A96] py-8 text-center">Sign in to compare profiles.</div>;
   }
   if (!currentWeights) {
     return (
       <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-8 text-center space-y-2">
         <Sparkles size={28} className="text-[#3A3A4F] mx-auto" />
         <p className="text-[#F0EFFE] text-sm font-medium">No tuned shape yet</p>
-        <p className="text-[#5A5A72] text-xs">
+        <p className="text-[#7A7A96] text-xs">
           Once you cross 50 reviews, AuraMind learns your recall curve. Then you can
           preview any catalog profile against your own cards here.
         </p>
@@ -195,21 +195,21 @@ export const ProfileCompare: React.FC<ProfileCompareProps> = ({
     return (
       <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-8 text-center">
         <p className="text-[#F0EFFE] text-sm font-medium">No cards to compare against</p>
-        <p className="text-[#5A5A72] text-xs mt-2">
+        <p className="text-[#7A7A96] text-xs mt-2">
           Create at least one deck with cards for A/B comparisons to be meaningful.
         </p>
       </div>
     );
   }
   if (!compare) {
-    return <div className="text-xs text-[#5A5A72] py-6 text-center">Pick a profile to compare…</div>;
+    return <div className="text-xs text-[#7A7A96] py-6 text-center">Pick a profile to compare…</div>;
   }
 
   return (
     <section className="space-y-5">
       {/* Picker */}
       <div className="flex flex-wrap items-center gap-3">
-        <label className="text-[10px] uppercase tracking-widest font-bold text-[#5A5A72]">
+        <label className="text-[10px] uppercase tracking-widest font-bold text-[#7A7A96]">
           Compare against
         </label>
         <select
@@ -236,7 +236,7 @@ export const ProfileCompare: React.FC<ProfileCompareProps> = ({
           center={currentCenter}
         />
         <div className="flex items-center justify-center px-2">
-          <ArrowLeftRight className="text-[#5A5A72]" size={16} />
+          <ArrowLeftRight className="text-[#7A7A96]" size={16} />
         </div>
         <ProfileHeader
           title="Candidate shape"
@@ -248,7 +248,7 @@ export const ProfileCompare: React.FC<ProfileCompareProps> = ({
 
       {/* Per-grade interval comparison */}
       <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl overflow-hidden">
-        <div className="grid grid-cols-[1fr_1fr_1fr_1fr] gap-2 px-4 py-2 border-b border-[#2A2A3A] text-[10px] uppercase tracking-widest font-bold text-[#5A5A72]">
+        <div className="grid grid-cols-[1fr_1fr_1fr_1fr] gap-2 px-4 py-2 border-b border-[#2A2A3A] text-[10px] uppercase tracking-widest font-bold text-[#7A7A96]">
           <span>Grade</span>
           <span className="text-right">Yours</span>
           <span className="text-right">Alt</span>
@@ -278,7 +278,7 @@ export const ProfileCompare: React.FC<ProfileCompareProps> = ({
           <h3 className="text-sm font-medium text-[#F0EFFE]">
             Predicted 30-day retrievability
           </h3>
-          <span className="text-[10px] text-[#5A5A72]">
+          <span className="text-[10px] text-[#7A7A96]">
             averaged across {sampleCards.length} sampled {sampleCards.length === 1 ? 'card' : 'cards'}
           </span>
         </div>
@@ -294,12 +294,12 @@ export const ProfileCompare: React.FC<ProfileCompareProps> = ({
       {/* Simulated loss badge */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="bg-[#111118] border border-[#2A2A3A] rounded-lg px-3 py-2">
-          <span className="text-[10px] uppercase tracking-widest font-bold text-[#5A5A72] block">
+          <span className="text-[10px] uppercase tracking-widest font-bold text-[#7A7A96] block">
             Simulated log-loss
           </span>
           <span className="text-sm font-mono tabular-nums text-[#F0EFFE]">
             {Number.isFinite(compare.currentLoss) ? compare.currentLoss.toFixed(3) : '—'}
-            <ArrowRight size={12} className="inline mx-1 text-[#5A5A72]" />
+            <ArrowRight size={12} className="inline mx-1 text-[#7A7A96]" />
             <span className={
               compare.recommendation === 'switch' ? 'text-emerald-300'
               : compare.recommendation === 'stay' ? 'text-[#F0EFFE]'
@@ -329,7 +329,7 @@ export const ProfileCompare: React.FC<ProfileCompareProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {compare.cards.map((c, i) => (
             <div key={c.id} className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-3 space-y-2">
-              <div className="text-[10px] uppercase tracking-widest text-[#5A5A72]">
+              <div className="text-[10px] uppercase tracking-widest text-[#7A7A96]">
                 Card {i + 1}
               </div>
               <div className="text-xs text-[#F0EFFE] line-clamp-2">
@@ -339,11 +339,11 @@ export const ProfileCompare: React.FC<ProfileCompareProps> = ({
                 {GRADES.map(g => {
                   const cur = c.currentGradeIntervals[g];
                   const alt = c.altGradeIntervals[g];
-                  const curClr = Math.abs(cur - alt) < Math.max(1, cur) * 0.05 ? 'text-[#5A5A72]' : 'text-[#9090A8]';
+                  const curClr = Math.abs(cur - alt) < Math.max(1, cur) * 0.05 ? 'text-[#7A7A96]' : 'text-[#9090A8]';
                   const altClr = alt > cur ? 'text-emerald-300' : alt < cur ? 'text-rose-300' : 'text-[#9090A8]';
                   return (
                     <div key={g} className="text-center">
-                      <div className="text-[#5A5A72]">{GRADE_LABELS[g]}</div>
+                      <div className="text-[#7A7A96]">{GRADE_LABELS[g]}</div>
                       <div className={curClr}>{formatInterval(cur)}</div>
                       <div className={altClr}>{formatInterval(alt)}</div>
                     </div>
@@ -374,7 +374,7 @@ export const ProfileCompare: React.FC<ProfileCompareProps> = ({
           <Sparkles size={12} />
           Switch to {altLabel}
         </button>
-        <span className="text-[10px] text-[#5A5A72]">
+        <span className="text-[10px] text-[#7A7A96]">
           Only writes if the candidate beats your current shape by &gt;0.5% loss.
         </span>
       </div>
@@ -401,13 +401,13 @@ export const ProfileCompare: React.FC<ProfileCompareProps> = ({
               <h3 className="text-[#F0EFFE] text-base font-medium mb-2">
                 Switch to {altLabel}?
               </h3>
-              <p className="text-[#5A5A72] text-xs mb-4 leading-relaxed">
+              <p className="text-[#7A7A96] text-xs mb-4 leading-relaxed">
                 Your tuned row will be replaced with the candidate profile weights.
                 Existing cards keep their current difficulty — only new tuning and
                 the next Rerun cycle use the new shape.
               </p>
               <div className="bg-[#0E0E15] border border-[#2A2A3A] rounded-lg p-3 mb-4">
-                <div className="text-[10px] uppercase tracking-widest text-[#5A5A72] font-bold mb-1">
+                <div className="text-[10px] uppercase tracking-widest text-[#7A7A96] font-bold mb-1">
                   Simulated change
                 </div>
                 <div className="text-xs font-mono tabular-nums text-[#F0EFFE]">
@@ -427,7 +427,7 @@ export const ProfileCompare: React.FC<ProfileCompareProps> = ({
                 <button
                   onClick={() => setConfirmOpen(false)}
                   disabled={switching}
-                  className="px-3 py-2 text-[#5A5A72] text-xs hover:text-[#F0EFFE] disabled:opacity-50 transition-colors"
+                  className="px-3 py-2 text-[#7A7A96] text-xs hover:text-[#F0EFFE] disabled:opacity-50 transition-colors"
                 >
                   Cancel
                 </button>
@@ -453,7 +453,7 @@ function ProfileHeader({
   const stripe = tone === 'current' ? 'border-l-[#7C3AED]' : 'border-l-[#10B981]';
   return (
     <div className={`bg-[#111118] border border-[#2A2A3A] border-l-2 ${stripe} rounded-xl p-4`}>
-      <div className="text-[10px] uppercase tracking-widest font-bold text-[#5A5A72]">{title}</div>
+      <div className="text-[10px] uppercase tracking-widest font-bold text-[#7A7A96]">{title}</div>
       <div className="text-base text-[#F0EFFE] font-serif italic mt-1">{label}</div>
       {center !== null && (
         <div className="text-[10px] text-[#9090A8] mt-1">

@@ -203,7 +203,7 @@ export const FlowMode: React.FC<FlowModeProps> = ({
     <div className="fixed inset-0 bg-[#0A0A0F] z-50 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-[#2A2A3A] bg-[#111118]/80 backdrop-blur">
-        <button onClick={onExit} className="p-2 hover:bg-[#1A1A24] rounded-full text-[#5A5A72] hover:text-[#F0EFFE]">
+        <button onClick={onExit} className="p-2 hover:bg-[#1A1A24] rounded-full text-[#7A7A96] hover:text-[#F0EFFE]">
           <X className="w-5 h-5" />
         </button>
 
@@ -212,20 +212,20 @@ export const FlowMode: React.FC<FlowModeProps> = ({
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex items-center gap-1.5 text-[10px] text-[#5A5A72] uppercase tracking-widest"
+              className="flex items-center gap-1.5 text-[10px] text-[#7A7A96] uppercase tracking-widest"
             >
               <Users size={12} className="text-[#7C3AED]" />
               <span className="text-[#F0EFFE] font-mono">{studyBuddies}</span>
               <span>studying now</span>
             </motion.div>
           )}
-          <div className="flex items-center gap-2 text-[#5A5A72] text-xs">
+          <div className="flex items-center gap-2 text-[#7A7A96] text-xs">
             <ClockIcon className="w-3 h-3" />
             <span className="font-mono text-[#F0EFFE]">{formatTime(elapsed)}</span>
           </div>
           <button
             onClick={() => setIsMuted(!isMuted)}
-            className="p-2 hover:bg-[#1A1A24] rounded-full text-[#5A5A72]"
+            className="p-2 hover:bg-[#1A1A24] rounded-full text-[#7A7A96]"
           >
             {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
@@ -239,7 +239,7 @@ export const FlowMode: React.FC<FlowModeProps> = ({
         <>
           <div className="px-4 py-2 max-w-2xl mx-auto w-full">
             <Progress value={(currentIndex / cards.length) * 100} className="h-1" />
-            <div className="flex items-center justify-between text-[10px] text-[#5A5A72] mt-1.5 uppercase tracking-widest">
+            <div className="flex items-center justify-between text-[10px] text-[#7A7A96] mt-1.5 uppercase tracking-widest">
               <span>Card {currentIndex + 1} / {cards.length}</span>
               <span className="flex items-center gap-1">
                 <Heart size={10} className="text-pink-400" />
@@ -266,7 +266,7 @@ export const FlowMode: React.FC<FlowModeProps> = ({
                     <p className="text-base sm:text-lg md:text-xl text-[#F0EFFE] leading-relaxed">
                       {isFlipped ? currentCard.answer : currentCard.question}
                     </p>
-                    <p className="text-xs text-[#5A5A72]">
+                    <p className="text-xs text-[#7A7A96]">
                       {isFlipped ? 'Tap to see question' : 'Tap to reveal answer'}
                     </p>
                   </div>
@@ -334,7 +334,7 @@ function SessionReward({
         </motion.div>
         <div>
           <h2 className="text-2xl font-bold text-[#F0EFFE]">Flow State Captured</h2>
-          <p className="text-xs text-[#5A5A72] uppercase tracking-widest mt-1">{flowGrade}</p>
+          <p className="text-xs text-[#7A7A96] uppercase tracking-widest mt-1">{flowGrade}</p>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Stat label="Cards" value={cardsCount.toString()} />
@@ -365,7 +365,7 @@ function Stat({ label, value, accent }: { label: string; value: string; accent?:
   return (
     <div className={`p-3 rounded-lg border ${accent ? 'bg-[#7C3AED]/10 border-[#7C3AED]/30' : 'bg-[#1A1A24] border-[#2A2A3A]'}`}>
       <div className={`text-xl font-bold tabular-nums ${accent ? 'text-[#8B5CF6]' : 'text-[#F0EFFE]'}`}>{value}</div>
-      <div className="text-[10px] text-[#5A5A72] uppercase tracking-widest">{label}</div>
+      <div className="text-[10px] text-[#7A7A96] uppercase tracking-widest">{label}</div>
     </div>
   );
 }
@@ -381,12 +381,12 @@ function BreathingPhase({ onSkip }: { onSkip: () => void }) {
         <Wind size={48} className="text-[#8B5CF6]" />
       </motion.div>
       <h2 className="text-2xl font-light text-[#F0EFFE] tracking-tight mb-2">Take a breath.</h2>
-      <p className="text-[#5A5A72] text-sm max-w-sm text-center">
+      <p className="text-[#7A7A96] text-sm max-w-sm text-center">
         Inhale 4 · Hold 4 · Exhale 4. Centre yourself before diving in.
       </p>
       <button
         onClick={onSkip}
-        className="mt-8 text-[10px] text-[#5A5A72] hover:text-[#8B5CF6] uppercase tracking-widest"
+        className="mt-8 text-[10px] text-[#7A7A96] hover:text-[#8B5CF6] uppercase tracking-widest"
       >
         skip
       </button>

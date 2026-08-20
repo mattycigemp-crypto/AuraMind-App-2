@@ -42,18 +42,18 @@ async function apiCall(path: string, init?: RequestInit): Promise<{ ok: boolean;
 const planColor = (p: string) =>
   p === 'Pro' || p === 'pro' ? 'bg-[#7C3AED]/10 text-[#8B5CF6] border border-[#7C3AED]/20'
   : p === 'Scholar' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-  : 'bg-[#2A2A3A] text-[#5A5A72]';
+  : 'bg-[#2A2A3A] text-[#7A7A96]';
 
 const statusColor = (s: string) =>
   s === 'active' || s === 'trialing' ? 'bg-emerald-500/10 text-emerald-400'
   : s === 'past_due' ? 'bg-orange-500/10 text-orange-400'
   : s === 'canceled' ? 'bg-red-500/10 text-red-400'
-  : 'bg-[#2A2A3A] text-[#5A5A72]';
+  : 'bg-[#2A2A3A] text-[#7A7A96]';
 
 const roleColor = (r: string) =>
   r === 'owner' || r === 'ceo' ? 'bg-[#8B5CF6]/10 text-[#A78BFA] border border-[#8B5CF6]/20'
   : r === 'admin' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-  : 'bg-[#2A2A3A] text-[#5A5A72]';
+  : 'bg-[#2A2A3A] text-[#7A7A96]';
 
 const fmt = (iso?: string) => {
   if (!iso) return 'N/A';

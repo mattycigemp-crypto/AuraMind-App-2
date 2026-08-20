@@ -193,7 +193,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ versionOverride }) => {
                 <p className="text-[13px] text-rose-300 mt-3">{checkState.message}</p>
               )}
               {checkState.status === 'idle' && (
-                <p className="text-[12px] text-[#5A5A72] mt-3">
+                <p className="text-[12px] text-[#7A7A96] mt-3">
                   Tap the check button on the right.
                 </p>
               )}
@@ -216,7 +216,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ versionOverride }) => {
         {/* Footer copy */}
         <section className="text-[12px] text-[#7A7A93] space-y-2">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[10px] text-[#5A5A72]">/{PARENT_BRAND_SLUG}</span>
+            <span className="font-mono text-[10px] text-[#7A7A96]">/{PARENT_BRAND_SLUG}</span>
             <span className="text-[#3A3A4F]">·</span>
             <span>{LEGAL_COPYRIGHT_LINE}</span>
           </div>

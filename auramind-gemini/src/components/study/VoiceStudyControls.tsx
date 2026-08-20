@@ -149,7 +149,7 @@ export function VoiceStudyControls({
           orbState === "blocked"
             ? "text-red-400/80"
             : orbState === "idle"
-              ? "text-[#5A5A72]"
+              ? "text-[#7A7A96]"
               : "text-[#8B5CF6]"
         }
       />
@@ -162,7 +162,7 @@ export function VoiceStudyControls({
           className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border text-[11px] font-medium transition-colors ${
             handsFree
               ? "bg-[#7C3AED]/20 border-[#7C3AED]/40 text-[#8B5CF6]"
-              : "bg-[#111118] border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40"
+              : "bg-[#111118] border-[#2A2A3A] text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40"
           }`}
         >
           <Headphones size={13} className={handsFree ? "animate-pulse" : ""} />
@@ -174,7 +174,7 @@ export function VoiceStudyControls({
           onClick={speakQuestion}
           disabled={voice.speaking || !textToSpeech}
           title={textToSpeech ? "Read the question aloud" : "Turn on Read cards aloud in Settings"}
-          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[#2A2A3A] bg-[#111118] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-colors text-[11px] font-medium disabled:opacity-40"
+          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[#2A2A3A] bg-[#111118] text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-colors text-[11px] font-medium disabled:opacity-40"
         >
           <Volume2 size={13} className={voice.speaking ? "animate-pulse text-[#8B5CF6]" : ""} />
           {voice.speaking ? "Speaking…" : "Speak Question"}
@@ -187,7 +187,7 @@ export function VoiceStudyControls({
           className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border text-[11px] font-medium transition-colors ${
             voice.listening
               ? "bg-red-500/15 border-red-500/40 text-red-400"
-              : "bg-[#111118] border-[#2A2A3A] text-[#5A5A72] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40"
+              : "bg-[#111118] border-[#2A2A3A] text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40"
           }`}
         >
           {voice.listening ? <MicOff size={13} className="animate-pulse" /> : <Mic size={13} />}
@@ -249,7 +249,7 @@ export function VoiceStudyControls({
       )}
 
       {!voice.sttSupported && !voice.error && (
-        <p className="text-[10px] text-[#5A5A72]">
+        <p className="text-[10px] text-[#7A7A96]">
           Spoken answers need Chrome or Edge. You can still play questions aloud here.
         </p>
       )}

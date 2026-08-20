@@ -128,7 +128,7 @@ export default function AuthPage() {
       <div className="px-6 py-4">
         <button
           onClick={() => navigate("/")}
-          className="flex items-center gap-2 text-[#5A5A72] hover:text-[#F0EFFE] text-xs transition-colors"
+          className="flex items-center gap-2 text-[#7A7A96] hover:text-[#F0EFFE] text-xs transition-colors"
         >
           <span>←</span>
           <span>{isNativeApp ? "Back" : "Back to home"}</span>
@@ -165,7 +165,7 @@ export default function AuthPage() {
             <h1 className="text-[#F0EFFE] text-lg font-light tracking-tight mb-1">
               {mode === "signup" ? "Create your account" : "Welcome back"}
             </h1>
-            <p className="text-[#5A5A72] text-xs">
+            <p className="text-[#7A7A96] text-xs">
               {mode === "signup"
                 ? "Start with one topic. You can change everything else later."
                 : "Your queue is waiting where you left it."}
@@ -213,7 +213,7 @@ export default function AuthPage() {
                 <div className="w-full border-t border-[#2A2A3A]" />
               </div>
               <div className="relative flex justify-center">
-                <span className="bg-[#111118] px-3 text-[#5A5A72] text-xs">or</span>
+                <span className="bg-[#111118] px-3 text-[#7A7A96] text-xs">or</span>
               </div>
             </div>
 
@@ -240,7 +240,7 @@ export default function AuthPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#1A1A24] border border-[#2A2A3A] rounded-lg px-3 py-2.5 text-[#F0EFFE] text-sm placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50 focus:ring-1 focus:ring-[#7C3AED]/20 transition-all"
+                  className="w-full bg-[#1A1A24] border border-[#2A2A3A] rounded-lg px-3 py-2.5 text-[#F0EFFE] text-sm placeholder-[#7A7A96] outline-none focus:border-[#7C3AED]/50 focus:ring-1 focus:ring-[#7C3AED]/20 transition-all"
                   placeholder="you@example.com"
                   required
                 />
@@ -259,7 +259,7 @@ export default function AuthPage() {
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-[#1A1A24] border border-[#2A2A3A] rounded-lg px-3 py-2.5 text-[#F0EFFE] text-sm placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50 focus:ring-1 focus:ring-[#7C3AED]/20 transition-all pr-10"
+                    className="w-full bg-[#1A1A24] border border-[#2A2A3A] rounded-lg px-3 py-2.5 text-[#F0EFFE] text-sm placeholder-[#7A7A96] outline-none focus:border-[#7C3AED]/50 focus:ring-1 focus:ring-[#7C3AED]/20 transition-all pr-10"
                     placeholder={mode === "signup" ? "Create a password" : "Enter your password"}
                     required
                   />
@@ -270,7 +270,7 @@ export default function AuthPage() {
                     // unlabelled button.
                     aria-label={showPassword ? "Hide password" : "Show password"}
                     aria-pressed={showPassword}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5A5A72] hover:text-[#F0EFFE] text-sm transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7A7A96] hover:text-[#F0EFFE] text-sm transition-colors"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -288,7 +288,7 @@ export default function AuthPage() {
                     type={showPassword ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full bg-[#1A1A24] border border-[#2A2A3A] rounded-lg px-3 py-2.5 text-[#F0EFFE] text-sm placeholder-[#5A5A72] outline-none focus:border-[#7C3AED]/50 focus:ring-1 focus:ring-[#7C3AED]/20 transition-all"
+                    className="w-full bg-[#1A1A24] border border-[#2A2A3A] rounded-lg px-3 py-2.5 text-[#F0EFFE] text-sm placeholder-[#7A7A96] outline-none focus:border-[#7C3AED]/50 focus:ring-1 focus:ring-[#7C3AED]/20 transition-all"
                     placeholder="Confirm your password"
                     required
                   />
@@ -329,7 +329,7 @@ export default function AuthPage() {
           </BorderBeam>
 
           {/* Toggle */}
-          <p className="text-center mt-6 text-[#5A5A72] text-xs">
+          <p className="text-center mt-6 text-[#7A7A96] text-xs">
             {mode === "signup" ? "Already have an account?" : "Don't have an account?"}{" "}
             <button
               onClick={() => { setMode(mode === "signup" ? "login" : "signup"); setError(null); }}

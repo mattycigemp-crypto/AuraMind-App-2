@@ -90,7 +90,7 @@ export const CogniWordmark: React.FC<CogniWordmarkProps> = ({
 
   return (
     <span
-      className={`flex items-center gap-1.5 text-[#5A5A72] ${className}`}
+      className={`flex items-center gap-1.5 text-[#7A7A96] ${className}`}
       data-brand-parent="cogniavect"
       data-variant={variant}
     >

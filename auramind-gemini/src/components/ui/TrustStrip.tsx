@@ -37,7 +37,7 @@ export function TrustStrip() {
           <div className="font-serif text-4xl italic text-[#F0EFFE] md:text-5xl">
             FSRS v5
           </div>
-          <div className="mt-1 text-xs uppercase tracking-widest text-[#5A5A72]">
+          <div className="mt-1 text-xs uppercase tracking-widest text-[#7A7A96]">
             Scheduling algorithm
           </div>
         </div>
@@ -46,7 +46,7 @@ export function TrustStrip() {
           <div className="font-serif text-4xl italic text-[#F0EFFE] md:text-5xl tabular-nums">
             {retentionPct}%
           </div>
-          <div className="mt-1 text-xs uppercase tracking-widest text-[#5A5A72]">
+          <div className="mt-1 text-xs uppercase tracking-widest text-[#7A7A96]">
             Target retention
           </div>
         </div>
@@ -55,7 +55,7 @@ export function TrustStrip() {
           <div className="font-serif text-4xl italic text-[#F0EFFE] md:text-5xl">
             Hands-free
           </div>
-          <div className="mt-1 text-xs uppercase tracking-widest text-[#5A5A72]">
+          <div className="mt-1 text-xs uppercase tracking-widest text-[#7A7A96]">
             Voice study mode
           </div>
         </div>

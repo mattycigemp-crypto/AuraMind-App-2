@@ -138,7 +138,7 @@ const sections = [
         <p>Speed up your study sessions with these keyboard shortcuts:</p>
         <div className="overflow-x-auto mt-3">
           <table className="w-full text-xs text-left">
-            <thead className="text-[#5A5A72] border-b border-[#2A2A3A]">
+            <thead className="text-[#7A7A96] border-b border-[#2A2A3A]">
               <tr>
                 <th className="py-2 pr-4">Shortcut</th>
                 <th className="py-2">Action</th>
@@ -229,12 +229,12 @@ export default function DocsPage(): React.ReactElement {
     <div className="min-h-screen bg-[#0A0A0F]">
       <div className="sticky top-0 z-10 bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-[#2A2A3A]/50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-4">
-          <Link to="/" className="p-2 -ml-2 text-[#5A5A72] hover:text-[#F0EFFE] rounded-lg transition-colors">
+          <Link to="/" className="p-2 -ml-2 text-[#7A7A96] hover:text-[#F0EFFE] rounded-lg transition-colors">
             <ArrowLeft size={18} />
           </Link>
           <div>
             <h1 className="text-base font-medium text-[#F0EFFE]">Documentation</h1>
-            <p className="text-[10px] text-[#5A5A72]">Learn how to use AuraMind effectively</p>
+            <p className="text-[10px] text-[#7A7A96]">Learn how to use AuraMind effectively</p>
           </div>
         </div>
       </div>

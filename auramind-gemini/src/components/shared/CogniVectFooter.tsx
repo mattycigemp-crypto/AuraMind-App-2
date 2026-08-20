@@ -46,21 +46,21 @@ export const CogniVectFooter: React.FC<CogniVectFooterProps> = ({
   return (
     <div className="mt-10 pt-6 border-t border-[#2A2A3A]/30">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="text-[11px] text-[#5A5A72] leading-relaxed">
+        <div className="text-[11px] text-[#7A7A96] leading-relaxed">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[#9090A8]">{PRODUCT_BYLINE}</span>
-            <span className="text-[#5A5A72]">·</span>
-            <span className="text-[#5A5A72]">{PARENT_BYLINE_SHORT}</span>
-            <span className="text-[#5A5A72] opacity-60">·</span>
+            <span className="text-[#7A7A96]">·</span>
+            <span className="text-[#7A7A96]">{PARENT_BYLINE_SHORT}</span>
+            <span className="text-[#7A7A96] opacity-60">·</span>
             <a
               href={`mailto:${CONTACT_EMAIL}`}
-              className="text-[#5A5A72] hover:text-[#9090A8] underline-offset-2 hover:underline"
+              className="text-[#7A7A96] hover:text-[#9090A8] underline-offset-2 hover:underline"
             >
               {CONTACT_EMAIL}
             </a>
           </div>
           {!compact && (
-            <div className="text-[#5A5A72] mt-0.5">
+            <div className="text-[#7A7A96] mt-0.5">
               <Link
                 to={aboutHref}
                 className="inline-flex items-center gap-1 underline-offset-2 hover:text-[#9090A8] hover:underline"

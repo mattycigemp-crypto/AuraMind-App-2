@@ -109,7 +109,7 @@ export const LiveCompareBadge: React.FC<LiveCompareBadgeProps> = ({
           aria-label="Hide the live-compare suggestion for this session"
           // Stop propagation so the dismiss doesn't double-fire the navigate.
           onClick={(e) => { e.stopPropagation(); dismiss(); }}
-          className="ml-0.5 text-[#5A5A72] hover:text-[#F0EFFE] flex items-center justify-center cursor-pointer"
+          className="ml-0.5 text-[#7A7A96] hover:text-[#F0EFFE] flex items-center justify-center cursor-pointer"
         >
           <X size={10} aria-hidden="true" />
         </button>

@@ -233,6 +233,16 @@ export class AuraAiClient {
       return localInference.chatCompletion({ messages, temperature, max_tokens, ...extraOptions });
     }
 
+    // Offline → don't waste 3 retries on a doomed fetch. Either the user
+    // opted into on-device AI (handled above) or we surface a clear next
+    // step instead of a cryptic network failure.
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      throw new GroqUnavailableError(
+        "You're offline. Turn on the on-device AI engine (Settings → AI engine → On-device) to keep studying without a connection.",
+        { status: 0, groqMessage: 'offline', isAuthFailure: false, isQuotaExhausted: false },
+      );
+    }
+
     // Signed-in → route through the server proxy so the Groq key never ships
     // in the client bundle. No session (dev/tests) → direct Groq fallback.
     const token = await this.getAuthToken();
