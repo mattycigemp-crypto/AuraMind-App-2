@@ -3,7 +3,10 @@ import { motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { requireSupabase } from '../../services/database/supabase';
 
-const SSE_BASE = import.meta.env.VITE_SSE_BASE || 'http://localhost:3001';
+// Empty string makes the stream URL relative (/api/chat/stream), which the
+// production server rewrites to the API function. The old
+// 'http://localhost:3001' default silently hit the visitor's own machine.
+const SSE_BASE = import.meta.env.VITE_SSE_BASE || '';
 
 interface ChatInterfaceProps {
   className?: string;
