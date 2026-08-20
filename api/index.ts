@@ -182,6 +182,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const endpoint = segments[0];
   const action = segments.slice(1).join('/');
 
+  // Public liveness probe — respond before middleware so uptime monitors and
+  // CI health checks are never rate-limited or blocked by auth.
+  if (endpoint === 'health') {
+    if (req.method !== 'GET') {
+      return json(res, 405, { error: 'Method not allowed' });
+    }
+    return json(res, 200, {
+      status: 'ok',
+      service: 'auramind-api',
+      version: '2.0.0',
+      timestamp: Date.now(),
+    });
+  }
+
   // Apply security headers and rate limiting. Returns false if already responded.
   if (!applyMiddleware(req, res, {
     rateLimitType: endpoint === 'ai' ? 'ai' : endpoint === 'stripe' ? 'auth' : 'default',
