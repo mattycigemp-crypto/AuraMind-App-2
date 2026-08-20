@@ -153,6 +153,16 @@ export class GroqUnavailableError extends Error {
 /** HTTP status codes indicating "Groq rejected your credentials / config" — never retry. */
 const AUTH_STATUSES = new Set([401, 403]);
 
+/** Blob → data-URL → bare base64 string (for the /api/ai/transcribe proxy). */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result ?? '').split(',')[1] ?? '');
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read audio blob'));
+    reader.readAsDataURL(blob);
+  });
+}
+
 /**
  * One-time console flag so we don't spam the dev console when the user
  * retries a generation 12 times with the same broken key. Logs the FIRST
@@ -341,6 +351,11 @@ export async function groqChat(opts: GroqChatOptions): Promise<GroqChatResult> {
  * on the same classification as chat (401/403 never retry, 429 quota,
  * 5xx upstream).
  *
+ * Routing mirrors `groqChat`: when a Supabase session exists the audio goes
+ * through the `/api/ai/transcribe` proxy (base64 JSON) so the API key stays
+ * server-side; without a session (dev/tests) it falls back to the direct
+ * Groq endpoint with the client key.
+ *
  * Usage:
  *   const text = await groqTranscribe(audioBlob, 'recording.webm');
  */
@@ -349,10 +364,41 @@ export async function groqTranscribe(
   filename = 'recording.webm',
   model = 'whisper-large-v3',
 ): Promise<string> {
+  const sessionToken = await getSessionToken();
+
+  if (sessionToken) {
+    // Server-side key via the proxy — the client never holds the key.
+    const audioBase64 = await blobToBase64(audio);
+    const res = await fetch(`${PROXY_BASE_URL}/transcribe`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionToken}`,
+      },
+      body: JSON.stringify({ audioBase64, filename, model, language: 'en' }),
+    });
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({} as any));
+      const upstreamMessage: string =
+        errBody?.error?.message ?? `HTTP ${res.status} ${res.statusText}`;
+      throw new GroqUnavailableError(
+        `Groq transcription error (${res.status}): ${upstreamMessage}`,
+        {
+          status: res.status,
+          groqMessage: upstreamMessage,
+          isAuthFailure: AUTH_STATUSES.has(res.status),
+          isQuotaExhausted: res.status === 429,
+        },
+      );
+    }
+    const json = await res.json();
+    return json?.text ?? '';
+  }
+
   const key = getGroqKey();
   if (!key) {
     throw new GroqUnavailableError(
-      'groqTranscribe: no API key. Set VITE_GROQ_API_KEY in .env.',
+      'groqTranscribe: no API key. Sign in to use AI transcription (or set VITE_GROQ_API_KEY in .env for local dev).',
       {},
     );
   }

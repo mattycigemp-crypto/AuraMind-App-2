@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { applyMiddleware } from './_middleware.js';
 import { handleChatStream } from './_chatHandler.js';
-import { handleAI } from './_aiHandler.js';
+import { handleAI, handleAITranscribe } from './_aiHandler.js';
 import { z } from 'zod';
 import { sendEmail as sendEmailViaResend } from './_lib/emails.js';
 
@@ -201,6 +201,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'chat':
         return await handleChat(req, res, action);
       case 'ai':
+        if (action === 'transcribe') {
+          return await handleAITranscribe(req, res);
+        }
         return await handleAI(req, res, action);
       case 'stripe':
         return await handleStripe(req, res, action);

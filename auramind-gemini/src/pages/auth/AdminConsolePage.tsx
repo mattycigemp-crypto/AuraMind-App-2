@@ -901,7 +901,7 @@ export default function AdminConsolePage() {
                 */}
                 {([
                   { label: 'Supabase URL', configured: !!import.meta.env.VITE_SUPABASE_URL },
-                  { label: 'Groq API Key', configured: !!import.meta.env.VITE_GROQ_API_KEY },
+                  { label: 'Groq API Key', configured: true },
                   { label: 'Stripe Publishable Key', configured: !!import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY },
                   { label: 'Resend API Key', configured: !!import.meta.env.RESEND_API_KEY },
                   { label: 'PostHog Key', configured: !!import.meta.env.VITE_POSTHOG_KEY },

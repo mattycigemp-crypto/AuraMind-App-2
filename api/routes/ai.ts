@@ -1,5 +1,5 @@
 import { Router, type Request, type Response } from 'express';
-import { handleAI } from '../_aiHandler.js';
+import { handleAI, handleAITranscribe } from '../_aiHandler.js';
 
 const router = Router();
 
@@ -12,6 +12,10 @@ router.post('/chat', async (req: Request, res: Response) => {
 
 router.post('/chat/stream', async (req: Request, res: Response) => {
   await handleAI(req, res, 'chat/stream');
+});
+
+router.post('/transcribe', async (req: Request, res: Response) => {
+  await handleAITranscribe(req, res);
 });
 
 export default router;

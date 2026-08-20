@@ -1,5 +1,5 @@
 /**
- * Server-side AI proxy for Groq chat completions.
+ * Server-side AI proxy for Groq.
  *
  * Moves the Groq API key out of the client bundle: browsers authenticate to
  * these endpoints with their Supabase session token and the function injects
@@ -8,6 +8,9 @@
  * Endpoints (mounted at /api/ai via the catch-all in index.ts):
  *   POST /api/ai/chat        — non-streaming completion, OpenAI-shaped JSON
  *   POST /api/ai/chat/stream — OpenAI-style SSE deltas (choices[0].delta.content)
+ *   POST /api/ai/transcribe  — audio → text (multipart forwarded to Groq;
+ *                              the client sends base64 in JSON to keep the
+ *                              proxy free of raw file uploads)
  *
  * Security properties:
  *   - Requires a valid Supabase session (Bearer token) — mirrors /api/search
@@ -25,6 +28,15 @@
 import { createClient } from '@supabase/supabase-js';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_TRANSCRIBE_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
+
+// Whisper models the transcription proxy will forward. The client may request
+// either; anything else silently resolves to whisper-large-v3.
+const ALLOWED_TRANSCRIBE_MODELS = new Set(['whisper-large-v3', 'whisper-large-v3-turbo']);
+const DEFAULT_TRANSCRIBE_MODEL = 'whisper-large-v3';
+
+// Decoded audio size cap (Groq's own limit is 25 MB — leave headroom).
+const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
 
 // Server-side key only. VITE_GROQ_API_KEY is a build-time fallback so the
 // function keeps working before GROQ_API_KEY is set in the dashboard — it is
@@ -318,6 +330,156 @@ export async function handleAI(
       });
     } catch (logErr: any) {
       console.error('[AIHandler] Failed to log AI call:', logErr.message);
+    }
+  }
+}
+
+interface TranscribeBody {
+  audioBase64?: unknown;
+  filename?: unknown;
+  model?: unknown;
+  language?: unknown;
+}
+
+/**
+ * POST /api/ai/transcribe — audio → text via Groq Whisper.
+ *
+ * The client sends base64 audio as JSON (browser-side this avoids a raw
+ * multipart upload through the proxy); the server rebuilds the FormData and
+ * forwards to api.groq.com with the server-side key. Same auth, per-user
+ * rate limit and status-code passthrough as the chat endpoints.
+ */
+export async function handleAITranscribe(
+  req: AiRequest,
+  res: AiResponse,
+): Promise<void> {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const groqKey = getGroqKey();
+  if (!groqKey) {
+    res.status(503).json({ error: 'AI service is not configured on the server' });
+    return;
+  }
+
+  // Authenticate the caller with their Supabase session token.
+  const authHeader = req.headers?.authorization;
+  const token = String(authHeader ?? '').replace(/^Bearer\s+/i, '').trim();
+  if (!token) {
+    res.status(401).json({ error: 'Missing authorization' });
+    return;
+  }
+
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!supabaseUrl || !supabaseServiceKey) {
+    res.status(500).json({ error: 'Server configuration error' });
+    return;
+  }
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user) {
+    res.status(401).json({ error: 'Invalid token' });
+    return;
+  }
+
+  // Per-user rate limit.
+  const userLimit = checkUserRateLimit(user.id);
+  res.setHeader('X-RateLimit-Remaining', String(userLimit.remaining));
+  if (!userLimit.allowed) {
+    res.status(429).json({ error: 'Rate limit exceeded. Please wait before sending another message.' });
+    return;
+  }
+
+  const body = (req.body ?? {}) as TranscribeBody;
+  const audioBase64 = typeof body.audioBase64 === 'string' ? body.audioBase64.trim() : '';
+  if (!audioBase64) {
+    res.status(400).json({ error: 'audioBase64 is required' });
+    return;
+  }
+
+  let audioBuffer: Buffer;
+  try {
+    audioBuffer = Buffer.from(audioBase64, 'base64');
+  } catch {
+    res.status(400).json({ error: 'audioBase64 is not valid base64' });
+    return;
+  }
+  if (audioBuffer.length === 0) {
+    res.status(400).json({ error: 'audio payload is empty' });
+    return;
+  }
+  if (audioBuffer.length > MAX_AUDIO_BYTES) {
+    res.status(413).json({ error: 'audio payload exceeds the 20 MB limit' });
+    return;
+  }
+
+  const model =
+    typeof body.model === 'string' && ALLOWED_TRANSCRIBE_MODELS.has(body.model)
+      ? body.model
+      : DEFAULT_TRANSCRIBE_MODEL;
+  const filename =
+    typeof body.filename === 'string' && /^[\w.-]{1,120}$/.test(body.filename)
+      ? body.filename
+      : 'recording.webm';
+  const language = typeof body.language === 'string' && /^[a-zA-Z-]{2,10}$/.test(body.language)
+    ? body.language
+    : 'en';
+
+  const form = new FormData();
+  const audioBytes = new Uint8Array(audioBuffer.length);
+  audioBytes.set(audioBuffer);
+  form.append('file', new Blob([audioBytes.buffer as ArrayBuffer]), filename);
+  form.append('model', model);
+  form.append('language', language);
+
+  const startTime = Date.now();
+  let responsePreview = '';
+  let failed = false;
+
+  try {
+    const upstream = await fetch(GROQ_TRANSCRIBE_URL, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${groqKey}` },
+      body: form,
+    });
+
+    if (!upstream.ok) {
+      const errText = (await upstream.text().catch(() => '')).slice(0, 500);
+      const message = errText || `Upstream error (${upstream.status})`;
+      res.status(upstream.status).setHeader('Content-Type', 'application/json')
+        .send(JSON.stringify({ error: message }));
+      failed = true;
+      return;
+    }
+
+    const json = await upstream.json();
+    const text: string = typeof json?.text === 'string' ? json.text : '';
+    responsePreview = text.slice(0, 200);
+    res.status(200).setHeader('Content-Type', 'application/json')
+      .send(JSON.stringify({ text }));
+  } catch (err: any) {
+    console.error('[AIHandler] transcription proxy error:', err);
+    res.status(502).setHeader('Content-Type', 'application/json')
+      .send(JSON.stringify({ error: err?.message || 'AI service unavailable' }));
+    failed = true;
+  } finally {
+    try {
+      await supabase.from('chat_logs').insert({
+        user_id: user.id,
+        messages: [],
+        response_preview: responsePreview,
+        tokens_generated: 0,
+        model,
+        duration_ms: Date.now() - startTime,
+        success: !failed,
+        error_message: failed ? 'transcription failed' : null,
+        created_at: new Date().toISOString(),
+      });
+    } catch (logErr: any) {
+      console.error('[AIHandler] Failed to log transcription:', logErr.message);
     }
   }
 }
