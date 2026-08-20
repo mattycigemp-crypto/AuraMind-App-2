@@ -8,7 +8,10 @@ class TranslationService {
   private apiUrl: string;
 
   constructor() {
-    this.apiUrl = import.meta.env.VITE_TRANSLATION_API_URL || 'http://localhost:3001';
+    // Empty string makes requests relative (e.g. /api/translate), which the
+    // production server rewrites to the translation backend. The old
+    // 'http://localhost:3001' default silently hit the visitor's own machine.
+    this.apiUrl = import.meta.env.VITE_TRANSLATION_API_URL || '';
   }
 
   /**

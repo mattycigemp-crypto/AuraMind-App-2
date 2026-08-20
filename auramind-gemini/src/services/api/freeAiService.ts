@@ -45,13 +45,16 @@ export class FreeAIClient {
   private readonly defaultModel = 'llama3-8b-8192'; // Free model
 
   constructor(apiKey: string) {
-    if (!apiKey) {
-      throw new Error('API key is required for FreeAIClient');
-    }
+    // No throw here: this client is instantiated at module scope and a
+    // missing key used to crash the entire app before React mounted.
+    // Callers get a clear error from chatCompletion() instead.
     this.apiKey = apiKey;
   }
 
   async chatCompletion(options: ChatCompletionOptions): Promise<ChatCompletionResponse> {
+    if (!this.apiKey) {
+      throw new Error('Groq API key is not configured. Set VITE_GROQ_API_KEY to use free AI.');
+    }
     const {
       model = this.defaultModel,
       messages,

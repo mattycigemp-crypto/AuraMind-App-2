@@ -30,6 +30,12 @@ auramind-gemini/src-tauri/
 auramind-gemini/android/
 auramind-gemini/ios/
 
+# Frontend dependencies and build output (installed/built remotely;
+# excluding them cuts CLI deploys from ~1.3GB to a few MB)
+node_modules/
+auramind-gemini/node_modules/
+auramind-gemini/dist/
+
 # Database migrations (applied via Supabase CLI)
 supabase/
 
