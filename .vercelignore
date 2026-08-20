@@ -25,6 +25,17 @@ api/node_modules/
 content/
 model-service/
 
+# Local env files (Vite bakes every VITE_ var into the client bundle —
+# uploading these leaked real credentials into the public JS)
+.env
+.env.local
+.env.production
+.env.development
+auramind-gemini/.env
+auramind-gemini/.env.local
+auramind-gemini/.env.production
+auramind-gemini/.env.development
+
 # Native app builds and source
 auramind-gemini/src-tauri/
 auramind-gemini/android/
