@@ -5,6 +5,16 @@ const screens = ["home", "library", "study", "generator", "settings"] as const;
 test.describe("Android Prism shell", () => {
   test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1 });
 
+  // The app loads webfonts from Google Fonts. Their arrival is network-timed
+  // and racy, so a screenshot can catch text in a fallback font or a loaded
+  // webfont — the baselines must render deterministically or every run races.
+  // Block the font requests so every run (baseline capture included) renders
+  // the same fallback layout. This is a shell-contract regression test, not a
+  // font rendering test.
+  test.beforeEach(async ({ page }) => {
+    await page.route(/fonts\.(googleapis|gstatic)\.com/, (route) => route.abort());
+  });
+
   for (const screen of screens) {
     test(`${screen} surface keeps the Android shell contract`, async ({ page }) => {
       await page.goto(`/__e2e/android?screen=${screen}`);
