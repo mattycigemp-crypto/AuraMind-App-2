@@ -29,10 +29,10 @@ jobs:
         working-directory: auramind-gemini
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: '20'
           cache: 'npm'
@@ -104,7 +104,7 @@ jobs:
           keytool -printcert -jarfile android/app/build/outputs/bundle/release/app-release.aab | grep -E '(SHA1|SHA256):' || true
 
       - name: Upload AAB artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: android-release-aab
           path: android/app/build/outputs/bundle/release/app-release.aab
