@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- AuraMind prism mark: a violet diamond on a dark field -->
+    <path
+        android:fillColor="#7c3aed"
+        android:pathData="M54,30 L74,54 L54,78 L34,54 Z" />
+    <path
+        android:fillColor="#ede9fe"
+        android:pathData="M54,42 L62,54 L54,66 L46,54 Z" />
+</vector>
