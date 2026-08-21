@@ -149,3 +149,8 @@ jobs:
         run: |
           cd auramind-gemini/android
           ./gradlew assembleDebug
+
+      - name: Compile Wear OS app + unit tests
+        run: |
+          cd auramind-gemini/android
+          ./gradlew :wear:testDebugUnitTest :wear:assembleDebug

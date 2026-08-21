@@ -31,6 +31,8 @@
 
 - [x] Android AAB signed with the **production upload keystore**
       (`auramind-gemini/android/keystore/release.keystore`).
+- [ ] Wear OS companion AAB signed with the **same upload keystore**
+      (`com.auramind.app.wear` — `./gradlew :wear:bundleRelease`).
 - [x] Android `versionCode` increments by 1 every release (currently `1`).
 - [ ] iOS IPA signed with **Apple Distribution** identity (not Ad Hoc,
       not Development).
@@ -98,6 +100,8 @@
 - [ ] App name "AuraMind" entered.
 - [ ] Short + long description from `store/android/listing.md` pasted.
 - [x] Phone screenshots generated (7) — `store/graphics/android/screenshots/`.
+- [ ] Wear OS companion app build tested on a Wear OS emulator/device (review
+      flow + Tile + complication) and uploaded to Internal Testing.
 - [ ] Tablet screenshots captured (2+).
 - [x] Feature graphic generated — `store/graphics/android/feature-1024x500.png`.
 - [x] App icon generated — `store/graphics/android/icon-512.png`
