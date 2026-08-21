@@ -29,6 +29,31 @@
                     android:pathPrefix="/auramind" />
             </intent-filter>
         </service>
+
+        <service
+            android:name=".AuraMindTileService"
+            android:exported="true"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.ACTION_BIND_TILE" />
+            </intent-filter>
+        </service>
+
+        <service
+            android:name=".DueCountComplicationService"
+            android:exported="true"
+            android:icon="@drawable/ic_complication"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="androidx.wear.watchface.complications.ACTION_UPDATE_COMPLICATION" />
+            </intent-filter>
+            <meta-data
+                android:name="androidx.wear.watchface.complications.SUPPORTED_TYPES"
+                android:value="SHORT_TEXT" />
+            <meta-data
+                android:name="androidx.wear.watchface.complications.UPDATE_PERIOD_SECONDS"
+                android:value="3600" />
+        </service>
     </application>
 
     <uses-permission android:name="android.permission.INTERNET" />
