@@ -16,6 +16,16 @@ without turning the watch into a miniature clone of the phone app.
 still easy to figure out." → A polished, animated, 3-screen review flow plus a
 watch-face Tile/complication. Nothing more in v1.
 
+**Platform-native principle (maintainer directive):** platforms must NOT look
+the same. The **only thing identical across the whole project is the
+flashcards** (their content, and the review/grading semantics). Every surface —
+phone, (future) desktop, web, watch — gets a UI in its platform's own design
+language. The Wear OS app is *Wear-native*, not a scaled-down phone screen:
+different layout rhythm, glance-first hierarchy, Wear OS Material theming,
+Wear interactions (rotary input, swipe, complications). The shared, invariant
+core is the flashcard interaction contract (front/back, Again/Hard/Good/Easy,
+FSRS behavior), never the pixels.
+
 ## 2. Scope
 
 ### In v1
@@ -100,11 +110,17 @@ A module (`src/services/wear/`) in the existing React app that:
   duplicate from the data layer can't double-apply FSRS.
 
 ### 5.3 Watch side — Compose for Wear UI (NEW)
+- **Not a clone.** This is Wear-native, not the phone UI shrunk down. Uses Wear
+  OS design language: glance-first hierarchy, large type, `ScalingLazyColumn`
+  with rotary-scroll, Wear Material theme, swipe/tap/rotary interactions,
+  complication-friendly layouts. The brand (AuraMind dark/violet) carries
+  through, but the layout rhythm is the watch's own.
 - **Home screen**: due-count + streak hero, "Start review" button. Reuses the
   AuraMind dark/violet brand (radial violet aura motif, large type).
 - **Review screen**: card front (large, scrollable for long text) → tap →
   back → grade buttons (Again/Hard/Good/Easy) → next card. Completion state
-  ("All caught up ✨").
+  ("All caught up ✨"). Grading interaction and card semantics are identical to
+  the phone (the shared flashcard core); the presentation is Wear-native.
 - **Tile**: due-count + streak glance; tap deep-links into the review.
 - **Complication**: due-count numeric/ring on supported watch faces.
 - **Sync status**: small indicator (sent / queued offline).
@@ -188,3 +204,5 @@ A module (`src/services/wear/`) in the existing React app that:
 - **Architecture:** companion-through-phone (Approach A); standalone
   (Approach C) and WebView reuse (Approach B) ruled out for v1.
 - **Reuse:** FSRS/Supabase/auth stay on the phone; nothing duplicated.
+- **Visual identity:** platform-native everywhere; only the flashcards (content
+  + grading semantics) are identical across platforms.
