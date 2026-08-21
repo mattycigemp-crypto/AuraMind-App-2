@@ -18,6 +18,7 @@ import { AndroidLibrary, AndroidOverview, AndroidStudy } from "../../components/
 import AndroidGeneratorScreen from "../../components/native/AndroidGeneratorScreen";
 import AndroidSettingsScreen from "../../components/native/AndroidSettingsScreen";
 import { resolveDashboardSurface } from "../../components/native/androidSurface";
+import WearSyncWiring from "../../components/wear/WearSyncWiring";
 import { Capacitor } from "../../lib/nativeShim";
 
 const AIChatPage = React.lazy(() => import("../../components/chat/AIChatPage"));
@@ -73,6 +74,7 @@ const NovaHub: React.FC<NovaHubProps> = (props) => {
       updateProfile={updateProfile}
       onLogout={onLogout}
     >
+      <WearSyncWiring />
       <NovaDashboardShell>
         <Suspense fallback={<LazyFallback />}>
           <Routes>
