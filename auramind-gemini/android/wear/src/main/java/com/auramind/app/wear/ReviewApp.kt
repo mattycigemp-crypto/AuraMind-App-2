@@ -9,9 +9,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,17 +45,42 @@ fun ReviewApp() {
         return
     }
 
-    var started by remember(p) { mutableStateOf(false) }
-    var index by remember(p) { mutableIntStateOf(0) }
-    var showBack by remember(p) { mutableStateOf(false) }
-    var finished by remember(p) { mutableStateOf(false) }
+    // Review state is tracked by cardId, NOT keyed on the payload object: the
+    // phone pushes a refreshed payload after every grade, so keying state on
+    // the payload would bounce the user back to Home mid-review.
+    var started by remember { mutableStateOf(false) }
+    var currentCardId by remember { mutableStateOf<String?>(null) }
+    var showBack by remember { mutableStateOf(false) }
+    var finished by remember { mutableStateOf(false) }
+
+    // Reconcile with payload refreshes: keep the current card when it still
+    // exists; advance to the first available card when it was just graded and
+    // removed; start fresh when a new payload arrives after completion.
+    LaunchedEffect(p) {
+        if (finished) {
+            if (p.cards.isNotEmpty()) {
+                finished = false
+                started = false
+                currentCardId = null
+            }
+        } else {
+            val stillThere = p.cards.any { it.cardId == currentCardId }
+            if (!stillThere) {
+                currentCardId = p.cards.firstOrNull()?.cardId
+                showBack = false
+            }
+        }
+    }
 
     if (!started) {
-        HomeScreen(dueCount = p.dueCount, streak = p.streak, onStart = { started = true })
+        HomeScreen(dueCount = p.dueCount, streak = p.streak, onStart = {
+            started = true
+            if (currentCardId == null) currentCardId = p.cards.firstOrNull()?.cardId
+        })
         return
     }
 
-    val card = p.cards.getOrNull(index)
+    val card = p.cards.firstOrNull { it.cardId == currentCardId }
     if (finished || card == null) {
         AllCaughtUp(streak = p.streak)
         return
@@ -65,11 +90,13 @@ fun ReviewApp() {
         val g = GradeResult(p.sessionId, card.cardId, rating, System.currentTimeMillis())
         GradeQueue.enqueue(context, g)
         Thread { GradeQueue.flush(context) }.start()
-        if (index + 1 >= p.cards.size) {
-            finished = true
-        } else {
-            index += 1
+        val idx = p.cards.indexOfFirst { it.cardId == currentCardId }
+        val next = p.cards.getOrNull(idx + 1)
+        if (next != null) {
+            currentCardId = next.cardId
             showBack = false
+        } else {
+            finished = true
         }
     }
 

@@ -19,6 +19,8 @@ function startOfToday(): number {
 export default function WearSyncWiring() {
   const workspace = useDashboardWorkspace();
   const user = workspace?.user ?? null;
+  const userRef = useRef(user);
+  userRef.current = user;
   const cardsRef = useRef<Card[]>(workspace?.cards ?? []);
   cardsRef.current = workspace?.cards ?? [];
   const initedRef = useRef(false);
@@ -34,7 +36,9 @@ export default function WearSyncWiring() {
           cardsRef.current.filter((c) => (c.lastReviewed ?? 0) >= startOfToday()).length,
         getDueCount: () =>
           cardsRef.current.filter((c) => (c.nextReview ?? 0) <= Date.now()).length,
-        getUserId: () => user?.id ?? null,
+        // Read via ref so an account switch mid-session never applies grades
+        // to the previous user.
+        getUserId: () => userRef.current?.id ?? null,
       });
     }
     void pushNow();

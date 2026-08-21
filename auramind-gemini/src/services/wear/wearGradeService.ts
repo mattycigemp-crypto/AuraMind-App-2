@@ -6,6 +6,18 @@ import { cardReviewsService } from '../../services/database/modules/cardReviewsS
 import { wireRatingToAppRating, type GradeResult } from './wearPayload';
 
 const appliedKeys = new Set<string>();
+// Bound the dedupe set — keys are only needed while a watch session is in
+// flight; old sessions' keys never matter again. Prevents unbounded growth
+// during a very long app session.
+const APPLIED_KEYS_MAX = 5000;
+
+function rememberApplied(sessionId: string, cardId: string): boolean {
+  const key = `${sessionId}:${cardId}`;
+  if (appliedKeys.has(key)) return false;
+  if (appliedKeys.size >= APPLIED_KEYS_MAX) appliedKeys.clear();
+  appliedKeys.add(key);
+  return true;
+}
 
 export async function applyWatchGrade(args: {
   grade: GradeResult;
@@ -15,12 +27,10 @@ export async function applyWatchGrade(args: {
   targetRetention?: number;
 }): Promise<{ applied: boolean }> {
   const { grade, cards, userId } = args;
-  const key = `${grade.sessionId}:${grade.cardId}`;
-  if (appliedKeys.has(key)) return { applied: false };
+  if (!rememberApplied(grade.sessionId, grade.cardId)) return { applied: false };
 
   const card = cards.find((c) => c.id === grade.cardId);
   if (!card) return { applied: false };
-  appliedKeys.add(key);
 
   const rating = wireRatingToAppRating(grade.rating);
   const res = calculateSRS(card, rating, args.weights ?? [], args.targetRetention ?? 0.85);
