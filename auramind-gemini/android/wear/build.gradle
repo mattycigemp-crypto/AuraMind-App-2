@@ -84,4 +84,6 @@ dependencies {
     implementation "com.google.guava:guava:33.2.0-jre"
     implementation "androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.1"
     testImplementation "junit:junit:4.13.2"
+    // Real org.json for local unit tests (android.jar stubs throw "not mocked")
+    testImplementation "org.json:json:20240303"
 }

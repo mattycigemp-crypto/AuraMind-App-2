@@ -62,7 +62,9 @@ fun ReviewApp() {
     }
 
     val grade = { rating: Int ->
-        sendGrade(context, GradeResult(p.sessionId, card.cardId, rating, System.currentTimeMillis()))
+        val g = GradeResult(p.sessionId, card.cardId, rating, System.currentTimeMillis())
+        GradeQueue.enqueue(context, g)
+        Thread { GradeQueue.flush(context) }.start()
         if (index + 1 >= p.cards.size) {
             finished = true
         } else {

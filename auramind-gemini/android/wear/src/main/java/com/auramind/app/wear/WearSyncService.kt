@@ -1,8 +1,10 @@
 package com.auramind.app.wear
 
 import android.content.Context
+import com.google.android.gms.tasks.Task
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
+import com.google.android.gms.wearable.DataItem
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
@@ -34,11 +36,11 @@ class WearSyncService : WearableListenerService() {
 }
 
 /** Sends a grade result back to the phone app over the data layer. */
-fun sendGrade(context: Context, grade: GradeResult) {
+fun sendGrade(context: Context, grade: GradeResult): Task<DataItem> {
     val req = PutDataMapRequest.create(GRADE_PATH)
     req.dataMap.putString("sessionId", grade.sessionId)
     req.dataMap.putString("cardId", grade.cardId)
     req.dataMap.putInt("rating", grade.rating)
     req.dataMap.putLong("timestamp", grade.timestamp)
-    Wearable.getDataClient(context).putDataItem(req.asPutDataRequest())
+    return Wearable.getDataClient(context).putDataItem(req.asPutDataRequest())
 }
