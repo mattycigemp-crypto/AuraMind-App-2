@@ -109,3 +109,43 @@ jobs:
           name: playwright-report
           path: auramind-gemini/test-results
           retention-days: 7
+
+  android-build:
+    # Smoke check that the Capacitor Android project still compiles. Runs on
+    # every push/PR so a breakage in the mobile web bundle or native shell is
+    # caught immediately — the full signed-release + Play upload pipeline lives
+    # in mobile-android.yml (tag/manual gated, needs store secrets).
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22.x'
+          cache: 'npm'
+          cache-dependency-path: auramind-gemini/package-lock.json
+
+      - name: Setup Java JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Install dependencies
+        run: |
+          cd auramind-gemini
+          npm ci
+
+      - name: Build mobile web bundle + sync Capacitor
+        run: |
+          cd auramind-gemini
+          npm run build:android
+
+      - name: Compile debug APK (no release secrets required)
+        run: |
+          cd auramind-gemini/android
+          ./gradlew assembleDebug
