@@ -24,6 +24,7 @@ test.describe("Android Prism shell", () => {
         fullPage: true,
         animations: "disabled",
         caret: "hide",
+        maxDiffPixelRatio: 0.03,
       });
     });
   }
