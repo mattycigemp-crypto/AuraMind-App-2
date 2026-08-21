@@ -15,11 +15,18 @@ describe('buildReviewPayload', () => {
     expect(p.dueCount).toBe(60);
   });
 
-  it('truncates long front/back to 200 chars', () => {
+  it('does not truncate realistic card text (identical flashcards)', () => {
     const long = 'x'.repeat(500);
     const p = buildReviewPayload({ cards: [card('c1', long, long)], streak: 0, reviewedToday: 0, dueCount: 1 });
-    expect(p.cards[0].front).toHaveLength(200);
-    expect(p.cards[0].back).toHaveLength(200);
+    expect(p.cards[0].front).toHaveLength(500);
+    expect(p.cards[0].back).toHaveLength(500);
+  });
+
+  it('truncates only at the 1000-char safety ceiling', () => {
+    const huge = 'x'.repeat(1500);
+    const p = buildReviewPayload({ cards: [card('c1', huge, huge)], streak: 0, reviewedToday: 0, dueCount: 1 });
+    expect(p.cards[0].front).toHaveLength(1000);
+    expect(p.cards[0].back).toHaveLength(1000);
   });
 
   it('sets version and a non-empty sessionId', () => {
