@@ -109,33 +109,42 @@ fun ReviewApp() {
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colors.background)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
     ) {
-        Text(
-            text = if (showBack) card.back else card.front,
-            color = MaterialTheme.colors.onBackground,
-            fontSize = 18.sp,
-            textAlign = TextAlign.Center,
-        )
+        // Card text scrolls inside its own flexible area so the action
+        // buttons stay pinned and visible on round displays.
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = if (showBack) card.back else card.front,
+                color = MaterialTheme.colors.onBackground,
+                fontSize = 18.sp,
+                textAlign = TextAlign.Center,
+            )
+        }
         Button(
             onClick = { showBack = !showBack },
-            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
         ) {
             Text(if (showBack) "Back to question" else "Reveal answer")
         }
         if (showBack) {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
                 GradeButton("Again", Modifier.weight(1f)) { grade(0) }
                 GradeButton("Hard", Modifier.weight(1f)) { grade(1) }
             }
             Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 4.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
                 GradeButton("Good", Modifier.weight(1f)) { grade(2) }
