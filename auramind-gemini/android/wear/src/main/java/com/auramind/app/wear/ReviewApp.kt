@@ -38,7 +38,11 @@ fun ReviewApp() {
 
     val p = payload
     if (p == null) {
-        IdleScreen()
+        IdleScreen(
+            onLoadSample = if (DebugSample.isDebuggable(context)) {
+                { WearState.payload.value = DebugSample.buildSamplePayload() }
+            } else null,
+        )
         return
     }
     if (p.cards.isEmpty()) {
@@ -213,7 +217,7 @@ private fun AllCaughtUp(streak: Int) {
 }
 
 @Composable
-private fun IdleScreen() {
+private fun IdleScreen(onLoadSample: (() -> Unit)? = null) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -228,5 +232,13 @@ private fun IdleScreen() {
             color = MaterialTheme.colors.onBackground,
             textAlign = TextAlign.Center,
         )
+        if (onLoadSample != null) {
+            Button(
+                onClick = onLoadSample,
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+            ) {
+                Text("Dev: Load sample deck", fontSize = 12.sp)
+            }
+        }
     }
 }
