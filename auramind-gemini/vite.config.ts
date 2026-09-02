@@ -17,6 +17,9 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: Number(process.env.PORT) || 3000,
+      // Fail loudly if 3000 is taken instead of silently drifting to another
+      // port (which collided with the API's fixed 3001 and crashed it).
+      strictPort: true,
       host: isProd ? '0.0.0.0' : 'localhost',
       allowedHosts: true,
       hmr: {
@@ -54,7 +57,7 @@ export default defineConfig(({ mode }) => {
 
     build: {
       rollupOptions: {
-        plugins: [...(isProd ? [visualizer({
+        plugins: [...(isProd && process.env.ANALYZE ? [visualizer({
           filename: 'dist/stats.html',
           open: false,
           gzipSize: true,

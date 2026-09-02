@@ -3,20 +3,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, BookOpen, Brain, Settings, GraduationCap, Sparkles,
   Search, Bell, Menu, X, Flame,
-  Sliders,
-  Shield, Users, CreditCard, UserPlus, FileText,
-  Database, ScrollText, Activity, Monitor, Radio,
-  DollarSign, Wrench, Key, Globe, Play, LogOut,
+  Shield, Users, Activity, Play, LogOut,
 } from '@/components/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDashboardWorkspace } from '../../../contexts/DashboardWorkspaceContext';
 import { UserRole } from '../../../types';
-import { isAdminOrHigher, isCeoOrHigher, isOwnerOnly } from '../../../utils/permissions';
 import { AnimatedBrandMark, PulsingDot } from './icons';
 import { PageTransition, Shimmer } from './motion';
 import OnboardingTutorial from '../../shared/OnboardingTutorial';
 import AndroidBottomNav from '../../native/AndroidBottomNav';
 import AndroidMobileTopBar from '../../native/AndroidMobileTopBar';
+import { MobileWebBottomNav } from './MobileWebBottomNav';
 import { Capacitor } from '../../../lib/nativeShim';
 
 // ─── Navigation config ──────────────────────────────────────────────────────
@@ -52,56 +49,22 @@ const USER_NAV_SECTIONS: NavSection[] = [
   },
 ];
 
+// Admin nav links are limited to routes that actually exist in App.tsx —
+// advertising unbuilt pages just produces 404s for admins. Extend this list
+// when new admin routes ship (currently: /admin, /admin/users, /admin/check).
 const ADMIN_VAULT_SECTION: NavSection = {
-  title: 'Vault',
+  title: 'Admin',
   badge: 'ADMIN',
   items: [
-    { label: 'Overview', icon: Shield, path: '/admin/vault' },
-    { label: 'Health', icon: Activity, path: '/admin/health' },
-    { label: 'Realtime', icon: Radio, path: '/admin/realtime' },
-  ],
-};
-
-const ADMIN_OPERATIONS_SECTION: NavSection = {
-  title: 'Operations',
-  badge: 'ADMIN',
-  items: [
+    { label: 'Overview', icon: Shield, path: '/admin' },
     { label: 'Users', icon: Users, path: '/admin/users' },
-    { label: 'Subscriptions', icon: CreditCard, path: '/admin/subscriptions' },
-    { label: 'Test Users', icon: UserPlus, path: '/admin/test-users' },
-    { label: 'Content', icon: FileText, path: '/admin/content' },
-    { label: 'Feature Flags', icon: Sliders, path: '/admin/flags' },
-    { label: 'Database', icon: Database, path: '/admin/database' },
-    { label: 'Audit', icon: ScrollText, path: '/admin/audit' },
-    { label: 'Device Lab', icon: Monitor, path: '/admin/preview' },
+    { label: 'App Check', icon: Activity, path: '/admin/check' },
   ],
 };
 
-const ADMIN_CEO_SECTION: NavSection = {
-  title: 'Strategic',
-  badge: 'CEO+',
-  items: [
-    { label: 'Revenue', icon: DollarSign, path: '/admin/revenue' },
-    { label: 'System Config', icon: Wrench, path: '/admin/config' },
-    { label: 'Nexus Command', icon: Globe, path: '/admin/nexus', badge: 'WIP' },
-  ],
-};
-
-const ADMIN_OWNER_SECTION: NavSection = {
-  title: 'Owner',
-  badge: 'OWNER',
-  items: [
-    { label: 'Role Manager', icon: Key, path: '/admin/roles' },
-  ],
-};
-
-function buildAdminNavSections(role: UserRole | undefined): NavSection[] {
-  const sections: NavSection[] = [];
-  sections.push(ADMIN_VAULT_SECTION);
-  if (isAdminOrHigher(role)) sections.push(ADMIN_OPERATIONS_SECTION);
-  if (isCeoOrHigher(role)) sections.push(ADMIN_CEO_SECTION);
-  if (isOwnerOnly(role)) sections.push(ADMIN_OWNER_SECTION);
-  return sections;
+function buildAdminNavSections(_role: UserRole | undefined): NavSection[] {
+  // Single real section today; role gating returns when tiered admin pages ship.
+  return [ADMIN_VAULT_SECTION];
 }
 
 // ─── Background layers ──────────────────────────────────────────────────────
@@ -237,7 +200,7 @@ function Sidebar({
   const totalDue = cards.filter(c => (c.nextReview ?? 0) <= Date.now()).length;
 
   const isActive = (path: string) => {
-    if (path === '/dashboard' || path === '/admin/vault') return location.pathname === path;
+    if (path === '/dashboard' || path === '/admin') return location.pathname === path;
     return location.pathname.startsWith(path);
   };
 
@@ -593,6 +556,7 @@ export function NovaDashboardShell({ children }: NovaDashboardShellProps) {
   const isAndroidApp = Capacitor.getPlatform() === 'android';
   const isAndroidMobile = isAndroidApp && !isOnAdminRoute && !immersive;
   const showAndroidBottomNav = isAndroidMobile;
+  const showMobileWebNav = !isAndroidApp && !isOnAdminRoute && !immersive;
 
   const sections = useMemo<NavSection[]>(
     () => (isOnAdminRoute ? buildAdminNavSections(user?.role) : USER_NAV_SECTIONS),
@@ -676,7 +640,7 @@ export function NovaDashboardShell({ children }: NovaDashboardShellProps) {
           id="nova-main-content"
           role="main"
           aria-label="Main content"
-          className={`scrollbar-thin flex-1 ${bleed ? 'overflow-hidden' : 'overflow-y-auto'} ${showAndroidBottomNav ? 'android-mobile-main pb-24' : ''}`}
+          className={`scrollbar-thin flex-1 ${bleed ? 'overflow-hidden' : 'overflow-y-auto'} ${showAndroidBottomNav ? 'android-mobile-main pb-24' : ''} ${showMobileWebNav ? 'pb-20' : ''}`}
         >
           <div
             className={
@@ -696,6 +660,7 @@ export function NovaDashboardShell({ children }: NovaDashboardShellProps) {
         </main>
       </div>
       {isAndroidMobile && <AndroidBottomNav />}
+      {showMobileWebNav && <MobileWebBottomNav />}
       <FirstRunGate />
     </div>
   );

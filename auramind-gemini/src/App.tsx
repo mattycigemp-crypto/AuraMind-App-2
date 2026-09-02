@@ -49,7 +49,7 @@ import { KeyboardAware } from "./components/shared/KeyboardAware";
 import NativeRuntime from "./components/native/NativeRuntime";
 import { Capacitor } from "./lib/nativeShim";
 import QuizGenerationNotifier from "./components/notifications/QuizGenerationNotifier";
-import { Toaster } from "./components/ui/sonner";
+import { Toaster, toast } from "./components/ui/sonner";
 import { ThemeProvider } from "./hooks/useTheme";
 import { supabase, requireSupabase } from "./services/database/supabase";
 import { CommandPalette } from "./components/auramind/CommandPalette";
@@ -123,6 +123,8 @@ const DocsPage = React.lazy(() => import("./pages/legal/DocsPage"));
 const PrivacyPolicyPage = React.lazy(() => import("./pages/legal/PrivacyPolicyPage"));
 const TermsOfServicePage = React.lazy(() => import("./pages/legal/TermsOfServicePage"));
 const AboutPage = React.lazy(() => import("./pages/system/AboutPage"));
+const StatusPage = React.lazy(() => import("./pages/system/StatusPage"));
+const BrainPreview = React.lazy(() => import("./pages/debug/BrainPreview"));
 const ResetPasswordPage = React.lazy(() => import("./pages/auth/ResetPasswordPage"));
 const RestoreAccountPage = React.lazy(() => import("./pages/auth/RestoreAccountPage"));
 const CallbackPage = React.lazy(() => import("./pages/auth/CallbackPage"));
@@ -385,9 +387,16 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
      * "loading" — which held LoadingOverlay on every protected route forever. */
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || "";
+      // The API now authenticates this call: the bearer token identifies the
+      // caller server-side, so the body userId is only informational.
+      const { data: { session } } = await supabase!.auth.getSession();
+      const token = session?.access_token;
       const response = await fetch(`${apiBase}/api/subscription`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ userId, email }),
         signal: AbortSignal.timeout(8000),
       });
@@ -408,7 +417,10 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
           await new Promise((r) => setTimeout(r, 2000));
           const retryRes = await fetch(`${apiBase}/api/subscription`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
             body: JSON.stringify({ userId, email }),
           });
           if (retryRes.ok) {
@@ -428,7 +440,18 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
         url.searchParams.delete("payment");
         window.history.replaceState({}, "", url.toString());
       }
-      const resolvedStatus = data.status || "none";
+      // Grace-period dunning: `past_due` keeps full access while Stripe
+      // smart-retries the card, but the user must see the payment warning.
+      if (data.status === "past_due") {
+        toast.error("Payment failed — your card couldn't be charged. Please update your payment method to keep access.", {
+          id: "dunning-past-due",
+          duration: 10000,
+        });
+      }
+      const resolvedStatus =
+        data.status === "past_due" || data.status === "active" || data.status === "trialing"
+          ? "active"
+          : data.status || "none";
       storeSubscriptionStatus(resolvedStatus);
       setSubscriptionStatus(resolvedStatus);
     } catch (err) {
@@ -833,6 +856,24 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
                   </PageTransition>
                 }
               />
+              <Route
+                path="/status"
+                element={
+                  <PageTransition>
+                    <StatusPage />
+                  </PageTransition>
+                }
+              />
+              {import.meta.env.DEV && (
+                <Route
+                  path="/brain-preview"
+                  element={
+                    <React.Suspense fallback={null}>
+                      <BrainPreview />
+                    </React.Suspense>
+                  }
+                />
+              )}
 
               {/* ───── Deck detail (standalone) ───────────────────────────── */}
               <Route

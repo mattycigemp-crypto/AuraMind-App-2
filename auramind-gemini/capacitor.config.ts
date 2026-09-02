@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 /**
- * Capacitor configuration for the AuraMind Android (and future iOS) app.
+ * Capacitor configuration for the AuraMind Android app.
  *
  * - appId is fixed forever: `com.auramind.app`. Changing it after the first
  *   Play Store upload makes the store treat the app as a brand-new package.

@@ -1,10 +1,8 @@
-import { isTauri } from './nativeShim';
-
-/** Web-only motion helpers — native apps (Tauri/Capacitor) are unchanged elsewhere. */
+/** Web-only motion helpers — native apps (Capacitor) are unchanged elsewhere. */
 
 export function isNativeShell(): boolean {
   if (typeof window === "undefined") return false;
-  return Boolean(isTauri() || window.Capacitor);
+  return Boolean(window.Capacitor);
 }
 
 export function prefersReducedMotion(): boolean {

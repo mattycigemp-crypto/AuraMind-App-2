@@ -47,16 +47,22 @@ app.use('/api', async (req, res) => {
   try {
     const fullPath = req.url.startsWith('/') ? req.url.substring(1) : req.url; // Remove leading slash if present
 
+    // Split "endpoint?query" so the path stays clean and extra query params
+    // (e.g. /api/health?probe=db) survive the proxy into req.query.
+    const [pathOnly, queryString = ''] = fullPath.split('?');
+    const extraQuery = Object.fromEntries(new URLSearchParams(queryString));
+
     // Sanitized logging — never log body (may contain tokens/PII) or auth headers
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[API] ${req.method} /api/${fullPath}`);
+      console.log(`[API] ${req.method} /api/${pathOnly}`);
     }
 
     // Simulate Vercel request/response
     const vercelReq = {
       ...req,
       query: {
-        path: fullPath
+        path: pathOnly,
+        ...extraQuery,
       },
       headers: req.headers,
       body: req.body,
@@ -85,7 +91,8 @@ app.use('/api', async (req, res) => {
     await handler(vercelReq, vercelRes);
   } catch (error) {
     console.error('API Error:', error);
-    res.status(500).json({ error: error.message || 'Internal server error' });
+    const isProd = process.env.NODE_ENV === 'production';
+    res.status(500).json({ error: isProd ? 'Internal server error' : (error.message || 'Internal server error') });
   }
 });
 
@@ -107,11 +114,20 @@ if (hasStaticBuild) {
   });
 }
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   const mode = hasStaticBuild ? 'production' : 'development';
   console.log(`AuraMind API server (${mode}) running on http://localhost:${PORT}`);
   console.log(`API endpoints available at http://localhost:${PORT}/api/*`);
   if (hasStaticBuild) {
     console.log(`Frontend being served from ${distDir}`);
   }
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`\n[FATAL] Port ${PORT} is already in use — another AuraMind process may be running.`);
+    console.error(`        Stop it (or set PORT to a free port) and restart the API. Exiting.`);
+    process.exit(1);
+  }
+  throw err;
 });

@@ -98,3 +98,8 @@ opencode.json
 auramind-gemini/dist-verify/
 .vercel
 .env*
+
+# Root-level design reference media (screenshots/video of the landing page)
+/landing-*.png
+/landing-video.mp4
+/video-frame-*.png

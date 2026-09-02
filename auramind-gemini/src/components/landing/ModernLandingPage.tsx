@@ -9,6 +9,7 @@ import { AIGenerationDemoSection } from "../ui/AIGenerationDemoSection";
 import { TrustStrip } from "../ui/TrustStrip";
 import { VideoBackground } from "../ui/VideoBackground";
 import { ComparisonSection } from "./ComparisonSection";
+import NeuralBrainSection from "./NeuralBrainSection";
 import { TextAnimate } from "../ui/TextAnimate";
 import { TextGlitch } from "../ui/TextGlitch";
 import { ChromaticAberration } from "../ui/ChromaticAberration";
@@ -441,6 +442,9 @@ export default function ModernLandingPage() {
         </div>
       </section>
 
+      {/* Neural Core — interactive 3D brain */}
+      <NeuralBrainSection />
+
       {/* AI Generation Demo */}
       <AIGenerationDemoSection />
 
@@ -609,6 +613,7 @@ export default function ModernLandingPage() {
           <div className="flex items-center gap-6">
             <a href="/privacy" className="text-[#7A7A96] hover:text-[#F0EFFE] text-xs transition-colors">Privacy</a>
             <a href="/terms" className="text-[#7A7A96] hover:text-[#F0EFFE] text-xs transition-colors">Terms</a>
+            <a href="/status" className="text-[#7A7A96] hover:text-[#F0EFFE] text-xs transition-colors">Status</a>
           </div>
         </div>
       </footer>

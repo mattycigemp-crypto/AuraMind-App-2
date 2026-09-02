@@ -4,7 +4,6 @@
   "framework": null,
   "devCommand": "cd auramind-gemini && npm run dev",
   "rewrites": [
-    { "source": "/local-ai/(.*)", "destination": "http://localhost:1234/$1" },
     { "source": "/api/admin/(.*)", "destination": "/api?path=admin/$1" },
     { "source": "/api/(.*)", "destination": "/api?path=$1" },
     { "source": "/((?!@vite|@react-refresh|src/|node_modules/).*)", "destination": "/index.html" }
@@ -41,11 +40,17 @@
       ]
     },
     {
-      "source": "/manifest.json",
+      "source": "/manifest.webmanifest",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=3600" },
         { "key": "Content-Type", "value": "application/manifest+json" }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/dunning",
+      "schedule": "0 14 * * *"
     }
   ],
   "trailingSlash": false

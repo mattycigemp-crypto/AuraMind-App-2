@@ -40,10 +40,6 @@ export {
   Style,
 };
 
-export function isTauri(): boolean {
-  return typeof window !== 'undefined' && Boolean(window.__TAURI_INTERNALS__);
-}
-
 /** Push is intentionally opt-in until Firebase credentials are configured. */
 export const PushNotifications = {
   requestPermissions: async (..._args: unknown[]) => ({ receive: 'denied' as 'granted' | 'denied' | 'prompt' }),

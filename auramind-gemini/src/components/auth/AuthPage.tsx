@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2 } from "@/components/icons";
 import { supabase } from "../../services/database/supabase";
 import { analyticsService } from "../../services/analytics/analyticsService";
+import { needsMfaChallenge, listFactors, completeMfaChallenge } from "../../services/auth/mfaService";
 import { FrostGlass } from "../ui/FrostGlass";
 import { BorderBeam } from "../ui/BorderBeam";
 import { Capacitor } from "../../lib/nativeShim";
@@ -24,6 +25,25 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   // Set when signup needs email confirmation before the account activates.
   const [confirmEmail, setConfirmEmail] = useState<string | null>(null);
+  // Two-factor challenge state — entered after a successful password sign-in
+  // when the account has TOTP factors enrolled (session is aal1 until then).
+  const [mfaPending, setMfaPending] = useState(false);
+  const [mfaFactorId, setMfaFactorId] = useState<string>("");
+  const [mfaCode, setMfaCode] = useState("");
+
+  const handleMfaSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await completeMfaChallenge(mfaFactorId, mfaCode.replace(/\s+/g, ""));
+      navigate("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Invalid verification code");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,6 +94,16 @@ export default function AuthPage() {
           password,
         });
         if (signInError) throw signInError;
+        // 2FA: if the account has TOTP factors the session is untrusted (aal1)
+        // until the user completes a challenge. Swap the form for the code step.
+        if (await needsMfaChallenge()) {
+          const factors = await listFactors();
+          if (factors.length > 0) {
+            setMfaFactorId(factors[0].id);
+            setMfaPending(true);
+            return;
+          }
+        }
         navigate("/dashboard");
       }
     } catch (err: any) {
@@ -182,6 +212,9 @@ export default function AuthPage() {
           <BorderBeam duration={5} colorFrom="#7c3aed" colorTo="#3b82f6">
             <FrostGlass blur="xl" opacity={0.08} className="p-6">
             {/* SSO Buttons */}
+            {/* SSO buttons — hidden during the 2FA challenge */}
+            {!mfaPending && (
+            <>
             <button
               onClick={handleGoogleSSO}
               disabled={loading}
@@ -216,6 +249,8 @@ export default function AuthPage() {
                 <span className="bg-[#111118] px-3 text-[#7A7A96] text-xs">or</span>
               </div>
             </div>
+            </>
+            )}
 
             {/* Error */}
             {error && (
@@ -224,6 +259,53 @@ export default function AuthPage() {
               </div>
             )}
 
+            {/* Two-factor challenge — shown instead of the password form */}
+            {mfaPending ? (
+              <form onSubmit={handleMfaSubmit} className="space-y-3">
+                <div className="text-center mb-2">
+                  <h2 className="text-[#F0EFFE] text-sm font-medium">Two-factor authentication</h2>
+                  <p className="text-[#7A7A96] text-xs mt-1">
+                    Enter the 6-digit code from your authenticator app
+                  </p>
+                </div>
+                <input
+                  id="mfa-code"
+                  name="mfaCode"
+                  autoComplete="one-time-code"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9 ]*"
+                  maxLength={7}
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value)}
+                  className="w-full bg-[#1A1A24] border border-[#2A2A3A] rounded-lg px-3 py-2.5 text-[#F0EFFE] text-lg text-center tracking-[0.4em] outline-none focus:border-[#7C3AED]/50 focus:ring-1 focus:ring-[#7C3AED]/20 transition-all"
+                  placeholder="000000"
+                  required
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  disabled={loading || mfaCode.replace(/\s/g, "").length !== 6}
+                  className="w-full py-2.5 bg-[#7C3AED] text-white text-sm font-medium rounded-lg hover:bg-[#6D28D9] transition-all duration-300 shadow-[0_0_20px_rgba(124,58,237,0.2)] disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {loading && <Loader2 size={14} className="animate-spin" />}
+                  Verify →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMfaPending(false);
+                    setMfaCode("");
+                    setError(null);
+                    void supabase?.auth.signOut();
+                  }}
+                  className="w-full text-center text-[#7A7A96] hover:text-[#9090A8] text-xs transition-colors"
+                >
+                  Use a different account
+                </button>
+              </form>
+            ) : (
+            <>
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
@@ -304,6 +386,8 @@ export default function AuthPage() {
                 {mode === "signup" ? "Start learning" : "Sign in"} →
               </button>
             </form>
+            </>
+            )}
 
             {/* Confirmation required (email confirmations enabled) */}
             {confirmEmail && (

@@ -15,7 +15,7 @@ import { SplashScreen } from "../lib/nativeShim";
 import { Keyboard } from "../lib/nativeShim";
 import { NativeBiometric } from "../lib/nativeShim";
 
-export type PlatformType = "ios" | "android" | "web" | "desktop";
+export type PlatformType = "android" | "web" | "desktop";
 
 export interface NativeDeviceInfo {
   platform: PlatformType;
@@ -36,9 +36,8 @@ export function usePlatform(): PlatformType {
   useEffect(() => {
     const initPlatform = async () => {
       const platform = Capacitor.getPlatform();
-      if (platform === "ios") setPlatform("ios");
-      else if (platform === "android") setPlatform("android");
-      else if (platform === "web") setPlatform("web");
+      if (platform === "android") setPlatform("android");
+      else setPlatform("web");
     };
     initPlatform();
   }, []);
@@ -66,7 +65,7 @@ export function useNativeDeviceInfo(): NativeDeviceInfo | null {
       try {
         const [device, appInfo] = await Promise.all([Device.getInfo(), App.getInfo()]);
         setDeviceInfo({
-          platform: platform === "ios" ? "ios" : platform === "android" ? "android" : "web",
+          platform: platform === "android" ? "android" : "web",
           model: device.model,
           osVersion: device.osVersion,
           appVersion: appInfo.version,

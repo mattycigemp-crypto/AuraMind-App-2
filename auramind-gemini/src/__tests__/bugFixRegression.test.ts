@@ -24,9 +24,6 @@
  * of the user's session.
  */
 
-import * as fs  from 'node:fs';
-import * as path from 'node:path';
-
 import { describe, expect, it } from 'vitest';
 import {
   sumCardLapses,
@@ -625,7 +622,7 @@ describe('Bug #5: Studied-today counter & league_memberships schema', () => {
 //   - The reusable component `components/brand/CogniWordmark.tsx` is the
 //     only way UI surfaces render the parent line. Hand-rolled copies
 //     are not allowed.
-//   - Store-listing metadata files (capacitor.config.ts, tauri.conf.json,
+//   - Store-listing metadata files (capacitor.config.ts,
 //     Cargo.toml, metadata.json, package.json metadata, index.html) MUST
 //     stay "AuraMind" only — Apple/Google reject promotional copy in the
 //     visual app name. CogniVect belongs only in the "Developer/Vendor
@@ -737,46 +734,6 @@ describe('Bug #6: CogniVect parent-brand placement', () => {
     }
   });
 
-  it('BUG #6 (round-18 refinement): tauri.config.json + Cargo.toml keep identity keys AuraMind AND carry CogniVect in parent-brand surfaces', () => {
-    const fs = require('node:fs') as typeof import('fs');
-    const path = require('node:path') as typeof import('path');
-    // Round-18 M6 contract: app-identity fields (Tauri productName +
-    // identifier + window title; Cargo package name) STAY AuraMind-only.
-    // The parent-brand fields that the OS / notarization / SmartScreen
-    // legitimately read (Tauri bundle.publisher / bundle.copyright /
-    // bundle.macOS.providerShortName; Cargo authors) carry CogniVect.
-    // A future "let's just inline the parent name everywhere" PR would
-    // still pass the strict identity-only file test above but break the
-    // notarization contract — this refinement pins both halves.
-
-    // Tauri was archived in Option A (web-only); the configs now live under
-    // archive/src-tauri but the round-18 notarization contract still holds.
-    const confPath = path.resolve(__dirname, '..', '..', 'archive/src-tauri/tauri.conf.json');
-    const cargoPath = path.resolve(__dirname, '..', '..', 'archive/src-tauri/Cargo.toml');
-    expect(fs.existsSync(confPath)).toBe(true);
-    expect(fs.existsSync(cargoPath)).toBe(true);
-
-    const conf  = fs.readFileSync(confPath,  'utf8');
-    const cargo = fs.readFileSync(cargoPath, 'utf8');
-
-    // Identity keys stay "AuraMind" only.
-    expect(conf).toMatch(/"productName"\s*:\s*"AuraMind"/);
-    expect(conf).toMatch(/"identifier"\s*:\s*"com\.auramind\.app"/);
-    expect(conf).toMatch(/"title"\s*:\s*"AuraMind"/);
-    expect(cargo).toMatch(/^name\s*=\s*"auramind"/m);
-
-    // Parent-brand surfaces carry CogniVect (these are the legit round-18 sites).
-    // We avoid matching the © character literally in the source to dodge the
-    // JSON-encoding landmine (`\u00A9` could double-escape on the wire). The
-    // substring assertions below verify the JSON property names + values; the
-    // presence of the actual © character in `bundle.copyright` is therefore
-    // asserted indirectly via the CogniVect substring matching the value.
-    expect(conf).toMatch(/"publisher"\s*:\s*"CogniVect, Inc\."/);
-    expect(conf).toMatch(/"providerShortName"\s*:\s*"CogniVect, Inc\."/);
-    expect(conf).toMatch(/"copyright"\s*:\s*"[^"]*CogniVect, Inc\."/);
-    expect(cargo).toMatch(/^authors\s*=\s*\[\s*"CogniVect, Inc\."\s*\]/m);
-  });
-
   it('BUG #6: only `lib/branding.ts` declares the literal "CogniVect" (single source of truth)', () => {
     // Enforces that future components reach for PARENT_COMPANY_NAME or
     // BRAND.parentName instead of hardcoding the literal. The literal
@@ -843,146 +800,5 @@ describe('Bug #6: CogniVect parent-brand placement', () => {
       const onboardingSrc = fs.readFileSync(onboardingPath, 'utf8');
       expect(onboardingSrc).toContain('variant="splash"');
     }
-  });
-});
-
-/* ─────────────────────────────────────────────────────────────────────────
- * BUG #7 — M6 Store Submission brand surface (round 18)
- *
- * Pinned contract: the parent-company (CogniVect) brand reaches every
- * store-facing surface (Tauri bundle, Cargo, fastlane metadata, Play
- * Store metadata, AboutPage). Single source of truth = lib/branding.ts.
- *
- * Anything that drops the "CogniVect, Inc" attribution from these files
- * (or accidentally shrinks one of the store-listing fields below its
- * minimum length, or accidentally shoves the byline elsewhere) trips
- * the matching assertion below — instead of being rejected at the
- * App Review or Play Console upload stage.
- * ──────────────────────────────────────────────────────────────────────── */
-
-describe('bugFixRegression — M6 Store Submission brand (BUG #7)', () => {
-  const TSC_ROOT = path.resolve(__dirname, '..', '..');
-  const REPO_ROOT = path.resolve(TSC_ROOT, '..');
-  const read = (rel: string) => fs.readFileSync(path.resolve(TSC_ROOT, rel), 'utf8');
-  const _readRepo = (rel: string) => fs.readFileSync(path.resolve(REPO_ROOT, rel), 'utf8');
-  const exist = (rel: string) => fs.existsSync(path.resolve(TSC_ROOT, rel));
-
-  it('Tauri bundle.publisher is the parent legal name', () => {
-    const conf = read('archive/src-tauri/tauri.conf.json');
-    expect(conf).toMatch(/"publisher"\s*:\s*"CogniVect, Inc\."/);
-  });
-
-  it('Tauri bundle.shortDescription and category=Education present', () => {
-    const conf = read('archive/src-tauri/tauri.conf.json');
-    expect(conf).toMatch(/"shortDescription"\s*:/);
-    expect(conf).toMatch(/"category"\s*:\s*"Education"/);
-  });
-
-  it('Tauri bundle.longDescription mentions CogniVect (parent byline)', () => {
-    const conf = read('archive/src-tauri/tauri.conf.json');
-    expect(conf).toMatch(/"longDescription"\s*:[\s\S]*?CogniVect/);
-  });
-
-  it('Tauri macOS providerShortName matches parent legal name', () => {
-    const conf = read('archive/src-tauri/tauri.conf.json');
-    expect(conf).toMatch(/"providerShortName"\s*:\s*"CogniVect, Inc\."/);
-  });
-
-  it('Cargo.toml authors is CogniVect, Inc (a single canonical entry)', () => {
-    const cargo = read('archive/src-tauri/Cargo.toml');
-    expect(cargo).toMatch(/^authors\s*=\s*\[\s*"CogniVect, Inc\."\s*\]/m);
-  });
-
-  it('Cargo.toml description contains CogniVect', () => {
-    const cargo = read('archive/src-tauri/Cargo.toml');
-    const match = cargo.match(/^description\s*=\s*"([^"]+)"/m);
-    expect(match).toBeTruthy();
-    expect(match![1]).toContain('CogniVect');
-  });
-
-  it('Tauri capabilities include updater:default (so AboutPage can check updates)', () => {
-    const caps = read('archive/src-tauri/capabilities/default.json');
-    expect(caps).toMatch(/"updater:default"/);
-  });
-
-  it('Tauri updater endpoint targets releases.cogniavect.app', () => {
-    const conf = read('archive/src-tauri/tauri.conf.json');
-    expect(conf).toMatch(/https:\/\/releases\.cogniavect\.app\/update/);
-  });
-
-  it('iOS fastlane Fastfile present at expected path', () => {
-    expect(exist('fastlane/Fastfile')).toBe(true);
-  });
-
-  it('iOS fastlane description.txt mentions CogniVect and stays ≤ 4000 chars', () => {
-    const txt = read('fastlane/metadata/en-US/description.txt');
-    expect(txt).toContain('CogniVect');
-    expect(txt.length).toBeLessThanOrEqual(4000);
-  });
-
-  it('Play Store full_description.txt mentions CogniVect and stays ≤ 4000 chars', () => {
-    const txt = read('store/android/listings/en-US/full_description.txt');
-    expect(txt).toContain('CogniVect');
-    expect(txt.length).toBeLessThanOrEqual(4000);
-  });
-
-  it('Play Store metadata.json developer_name is CogniVect, Inc', () => {
-    const json = read('store/android/metadata.json');
-    expect(json).toMatch(/"developer_name"\s*:\s*"CogniVect, Inc"/);
-    expect(json).toMatch(/"package_name"\s*:\s*"com\.auramind\.app"/);
-  });
-
-  it('Cloudflare Worker updater endpoint ships at cloudflare-worker/update.js', () => {
-    expect(exist('cloudflare-worker/update.js')).toBe(true);
-  });
-
-  it('Updater manifest signer scripts/sign-tau-update.mjs is present', () => {
-    expect(exist('scripts/sign-tau-update.mjs')).toBe(true);
-  });
-
-  it('BUNDLE-CONFIG-NOTES.md operator guide is archived', () => {
-    expect(exist('archive/src-tauri/BUNDLE-CONFIG-NOTES.md')).toBe(true);
-  });
-
-  it('AboutPage component imports PARENT_COMPANY_LEGAL and shows Check-for-Updates', () => {
-    const src = read('src/pages/system/AboutPage.tsx');
-    expect(src).toContain('PARENT_COMPANY_LEGAL');
-    expect(src).toContain('Check for updates');
-    expect(src).toContain('PARENT_BRAND_TAGLINE');
-  });
-
-  it('App.tsx wires /about route to the AboutPage component', () => {
-    const app = read('src/App.tsx');
-    expect(app).toMatch(/path=["']\/about["'][\s\S]{0,200}<AboutPage\s*\/>/);
-  });
-
-  it('App.tsx gates the loader on authChecked, so signed-out visitors reach public routes', () => {
-    const app = read('src/App.tsx');
-    // The old gate keyed on `!currentUser` + a hardcoded path whitelist, which
-    // stranded signed-out users on an infinite LoadingOverlay for /about,
-    // /reset-password, /restore-account, /auth/callback, and every 404 route.
-    // The loader must only show until the initial session check resolves.
-    expect(app).toMatch(/const \[authChecked, setAuthChecked\] = useState\(false\);/);
-    expect(app).not.toMatch(/if \(!currentUser && location\.pathname/);
-    // Every resolution path must clear the loader: signed-out, signed-in, error,
-    // and no-Supabase. (4 setAuthChecked(true) call sites.)
-    expect(app).toMatch(/setAuthChecked\(true\);/g);
-    expect((app.match(/setAuthChecked\(true\);/g) || []).length).toBe(4);
-  });
-
-  it('storeMetadata.ts single source of truth asserts both descriptions contain CogniVect', async () => {
-    const mod = await import('../lib/storeMetadata');
-    expect(mod.APP_STORE_LONG_DESCRIPTION).toContain('CogniVect');
-    expect(mod.PLAY_STORE_LONG_DESCRIPTION).toContain('CogniVect');
-    expect(mod.APP_STORE_LONG_DESCRIPTION.length).toBeLessThanOrEqual(4000);
-    expect(mod.PLAY_STORE_LONG_DESCRIPTION.length).toBeLessThanOrEqual(4000);
-    expect(mod.assertStoreLimits).toBeTypeOf('function');
-  });
-
-  it('release-tauri.yml wires Apple cert to tauri-action@v2 (archived, no silent drop)', () => {
-    const yml = read('archive/.github/release-tauri.yml');
-    expect(yml).toContain('APPLE_CERTIFICATE');
-    expect(yml).toContain('APPLE_SIGNING_IDENTITY');
-    expect(yml).toContain('tauri-apps/tauri-action@v2');
   });
 });

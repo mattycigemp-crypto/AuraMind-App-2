@@ -14,6 +14,7 @@ export default defineConfig({
       STRIPE_SECRET_KEY: 'sk_test_dummy',
       STRIPE_WEBHOOK_SECRET: 'whsec_test_dummy',
       RESEND_API_KEY: 're_test_dummy',
+      CRON_SECRET: 'test-cron-secret',
     },
   },
 });

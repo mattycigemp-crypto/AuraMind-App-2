@@ -79,10 +79,12 @@ export async function loadService<T = unknown>(name: string): Promise<T> {
       .then((mod) => {
         entry.loaded = true;
         entry.loadTimeMs = performance.now() - t0;
-        // eslint-disable-next-line no-console -- loader diagnostics
-        console.log(
-          `[ServiceLoader] "${name}" loaded in ${entry.loadTimeMs.toFixed(0)}ms`,
-        );
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console -- loader diagnostics
+          console.log(
+            `[ServiceLoader] "${name}" loaded in ${entry.loadTimeMs.toFixed(0)}ms`,
+          );
+        }
         return mod;
       })
       .catch((err) => {

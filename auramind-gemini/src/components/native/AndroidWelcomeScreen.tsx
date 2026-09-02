@@ -1,110 +1,124 @@
-import { useNavigate } from "react-router-dom";
-import { ArrowRight, BookOpen, Check, Clock3, ShieldCheck, Sparkles } from "@/components/icons";
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
-const PRINCIPLES = [
-  {
-    label: "Bring one thing",
-    detail: "A topic, document, video, or voice memo.",
-    icon: BookOpen,
-  },
-  {
-    label: "Review at the right time",
-    detail: "A short queue shaped around your memory.",
-    icon: Clock3,
-  },
-  {
-    label: "Keep your attention",
-    detail: "No feed, no noisy dashboard, no busywork.",
-    icon: ShieldCheck,
-  },
-] as const;
-
-/**
- * The installed app's entry point. This is a product invitation rather than
- * a shrunken marketing landing page: one promise, a concrete three-step model,
- * and an explicit route into authentication.
- */
 export default function AndroidWelcomeScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isPreview = location.pathname.includes("__e2e");
+  const [phase, setPhase] = useState<"welcome" | "out">("welcome");
+
+  useEffect(() => {
+    if (isPreview) {
+      const interval = setInterval(() => {
+        setPhase((p) => (p === "welcome" ? "out" : "welcome"));
+      }, 1900);
+      const outTimeout = setTimeout(() => setPhase("out"), 1900);
+      return () => {
+        clearInterval(interval);
+        clearTimeout(outTimeout);
+      };
+    }
+    const t1 = setTimeout(() => setPhase("out"), 1900);
+    const t2 = setTimeout(() => navigate("/auth"), 2500);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [navigate, isPreview]);
 
   return (
-    <main className="android-welcome-screen" data-testid="android-welcome-screen">
-      <div className="android-welcome-content">
-        <header className="android-welcome-brand">
-          <span className="android-welcome-brand-mark">
-            <img src="/favicons,logos/favicon.svg" alt="" aria-hidden="true" />
-          </span>
-          <span>
-            <strong>AuraMind</strong>
-            <small>PRISM STUDY SYSTEM</small>
-          </span>
-        </header>
-
-        <section className="android-welcome-hero" aria-labelledby="android-welcome-title">
-          <div className="android-welcome-visual" aria-label="The AuraMind Prism mark">
-            <span className="android-welcome-visual-label">A QUIET PLACE TO RECALL</span>
-            <div className="android-welcome-prism" aria-hidden="true">
-              <img src="/favicons,logos/favicon.svg" alt="" />
-              <span />
-            </div>
-            <div className="android-welcome-visual-meta">
-              <span>FOCUS</span>
-              <span>RECALL</span>
-              <span>MOMENTUM</span>
-            </div>
-          </div>
-
-          <div className="android-welcome-copy">
-            <p className="android-welcome-eyebrow">START WITH ONE SMALL SESSION</p>
-            <h1 id="android-welcome-title">
-              Remember what matters, <span>without the noise.</span>
-            </h1>
-            <p>
-              AuraMind turns the material you already have into a focused review queue, then gets
-              out of the way so you can think.
-            </p>
-          </div>
-        </section>
-
-        <section className="android-welcome-benefits" aria-label="How AuraMind works">
-          {PRINCIPLES.map(({ label, detail, icon: Icon }, index) => (
-            <div key={label} className="android-welcome-benefit">
-              <span className="android-welcome-step">0{index + 1}</span>
-              <span className="android-welcome-benefit-icon">
-                <Icon className="h-4 w-4" aria-hidden />
-              </span>
-              <span>
-                <strong>{label}</strong>
-                <small>{detail}</small>
-              </span>
-              <Check className="android-welcome-check" aria-hidden />
-            </div>
-          ))}
-        </section>
-
-        <div className="android-welcome-actions">
-          <button
-            type="button"
-            className="android-welcome-primary"
-            onClick={() => navigate("/auth")}
-          >
-            <Sparkles className="h-4 w-4" aria-hidden />
-            Start with a free account
-            <ArrowRight className="h-4 w-4" aria-hidden />
-          </button>
-          <button
-            type="button"
-            className="android-welcome-secondary"
-            onClick={() => navigate("/auth?mode=login")}
-          >
-            Already have an account <span>Sign in</span>
-          </button>
-        </div>
-
-        <p className="android-welcome-footnote">
-          Your preferences can change later · No credit card to begin
-        </p>
+    <main
+      className="android-welcome-screen relative overflow-hidden bg-[#0a0a0a] min-h-screen flex flex-col"
+      data-testid="android-welcome-screen"
+      onClick={() => navigate("/auth")}
+    >
+      {/* Warm expressive blobs */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-28 -left-24 h-[420px] w-[420px] rounded-full opacity-[0.18]" style={{ background: "radial-gradient(circle, #6750A4 0%, transparent 70%)", filter: "blur(48px)" }} />
+        <div className="absolute -bottom-32 -right-24 h-[520px] w-[520px] rounded-full opacity-[0.12]" style={{ background: "radial-gradient(circle, #7C62B8 0%, transparent 70%)", filter: "blur(60px)" }} />
+        <div className="absolute top-1/2 left-1/2 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.06]" style={{ background: "radial-gradient(circle, #E8DEF8 0%, transparent 70%)", filter: "blur(80px)" }} />
       </div>
+
+      <AnimatePresence>
+        {phase === "welcome" && (
+          <motion.div
+            key="welcome"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -10, filter: "blur(10px)" }}
+            transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+            className="relative flex flex-1 flex-col items-center justify-center px-8 text-center"
+          >
+            <motion.div
+              initial={{ scale: 0.85, rotate: -4, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              transition={{ duration: 0.85, ease: [0.34, 1.56, 0.64, 1] }}
+              className="relative"
+            >
+              <div className="absolute inset-0 rounded-[28px] bg-[#6750A4] blur-[22px] opacity-30" />
+              <div className="relative grid h-[88px] w-[88px] place-items-center rounded-[26px] bg-[#6750A4] shadow-[0_10px_32px_rgba(103,80,164,0.4)]">
+                <img src="/favicons,logos/favicon.svg" alt="" className="h-11 w-11" />
+              </div>
+            </motion.div>
+
+            <motion.p
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.28, duration: 0.5 }}
+              className="mt-8 text-[12px] font-bold tracking-[0.22em] text-[#E8DEF8]/60 uppercase"
+              style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}
+            >
+              Welcome to
+            </motion.p>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 16, letterSpacing: "0.06em" }}
+              animate={{ opacity: 1, y: 0, letterSpacing: "-0.01em" }}
+              transition={{ delay: 0.45, duration: 0.65, ease: [0.4, 0, 0.2, 1] }}
+              className="mt-1 text-[42px] font-bold leading-none tracking-tight text-white"
+              style={{ fontFamily: "'Google Sans', Inter, sans-serif" }}
+            >
+              AuraMind
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.78, duration: 0.5 }}
+              className="mt-3 max-w-[300px] text-[14px] leading-5 text-white/45"
+            >
+              A quiet place to recall — expressive, focused, yours.
+            </motion.p>
+
+            {/* Material tonal divider — pill */}
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 1.08, duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
+              className="mt-8 h-1 w-20 origin-center rounded-full bg-[#6750A4]"
+            />
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.25, duration: 0.4 }}
+              className="mt-3 text-[11px] font-medium tracking-wide text-white/25"
+            >
+              Tap to continue →
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: phase === "out" ? 1 : 0 }}
+        transition={{ duration: 0.5 }}
+        className="pointer-events-none absolute inset-0 bg-[#0a0a0a]"
+      />
+
+      <div className="relative pb-[max(14px,env(safe-area-inset-bottom))] pt-2 text-center text-[11px] tracking-wide text-white/20">AuraMind for Android · Material 3 Expressive</div>
     </main>
   );
 }

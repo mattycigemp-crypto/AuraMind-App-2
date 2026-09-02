@@ -258,8 +258,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return json(res, 400, { error: 'Webhook signature verification failed.' });
     }
   } else {
-    // In dev/test, accept events without signature verification
+    // Unsigned events are accepted ONLY outside production (local dev without
+    // a configured webhook secret). In production an unsigned webhook would
+    // let anyone forge subscriptions, so fail closed instead.
+    if (process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production') {
+      console.error('STRIPE_WEBHOOK_SECRET is not configured — refusing unsigned webhook in production.');
+      return json(res, 500, { error: 'Webhook secret not configured.' });
+    }
     event = req.body as Stripe.Event;
+  }
+
+  // Idempotency: Stripe retries deliveries (network blips, manual replays).
+  // Without this ledger a retried checkout.session.completed would re-provision
+  // and re-email. Best-effort: if the ledger is unavailable we process anyway
+  // (the handlers themselves are metadata writes, which are idempotent).
+  try {
+    const { data: seen } = await supabase
+      .from('processed_webhook_events')
+      .select('event_id')
+      .eq('event_id', event.id)
+      .maybeSingle();
+    if (seen) {
+      return json(res, 200, { received: true, duplicate: true });
+    }
+  } catch (ledgerErr: any) {
+    console.warn('Webhook idempotency ledger unavailable:', ledgerErr?.message);
   }
 
   const relevantEvents = [
@@ -294,6 +317,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               stripe_subscription_id: subscription.id,
               subscription_status: subscription.status,
               plan: 'Pro',
+              payment_failure_count: 0,
+              last_payment_failure_at: null,
               trial_end: subscription.trial_end
                 ? new Date(subscription.trial_end * 1000).toISOString()
                 : null,
@@ -333,6 +358,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               trial_end: subscription.trial_end
                 ? new Date(subscription.trial_end * 1000).toISOString()
                 : null,
+              // A (re)activation supersedes any dunning state.
+              ...(subscription.status === 'active' || subscription.status === 'trialing'
+                ? { payment_failure_count: 0, last_payment_failure_at: null }
+                : {}),
             },
           });
         }
@@ -401,6 +430,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               user_metadata: {
                 subscription_status: subscription.status,
                 plan: 'Pro',
+                // Dunning recovery — clear the failure trail so the grace
+                // period starts fresh on any future failure.
+                payment_failure_count: 0,
+                last_payment_failure_at: null,
               },
             });
 
@@ -433,10 +466,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const userId = subscription.metadata?.supabase_user_id;
 
           if (userId) {
+            // Dunning: mark past_due but DO NOT downgrade yet — Stripe smart
+            // retries the card several times over the next ~2-4 weeks. The
+            // grace-period logic in handleSubscription and the daily cron
+            // decide when access actually stops.
+            const { data: currentUser } = await supabase.auth.admin.getUserById(userId);
+            const priorFailures = Number(currentUser?.user?.user_metadata?.payment_failure_count || 0);
+
             await supabase.auth.admin.updateUserById(userId, {
               user_metadata: {
                 subscription_status: 'past_due',
-                plan: 'Starter',
+                payment_failure_count: priorFailures + 1,
+                last_payment_failure_at: new Date().toISOString(),
               },
             });
 
@@ -456,6 +497,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         break;
       }
+    }
+
+    // Record the event in the idempotency ledger AFTER successful processing
+    // so a processing failure still allows Stripe's retry to re-run it.
+    try {
+      await supabase.from('processed_webhook_events').insert({
+        event_id: event.id,
+        event_type: event.type,
+      });
+    } catch (ledgerErr: any) {
+      console.warn('Failed to record webhook idempotency entry:', ledgerErr?.message);
     }
 
     return json(res, 200, { received: true });

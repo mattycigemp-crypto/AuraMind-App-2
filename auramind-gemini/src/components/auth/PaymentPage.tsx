@@ -51,9 +51,17 @@ const PaymentPage: React.FC<PaymentPageProps> = ({ user, cancelled = false }) =>
     setError('');
 
     try {
+      // The API authenticates checkout: identity is derived from the bearer
+      // token server-side, never from the body.
+      const { supabase } = await import('../../services/database/supabase');
+      const { data: { session } } = await supabase!.auth.getSession();
+      const token = session?.access_token;
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/api/stripe/checkout`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           priceId: plan.priceId,
           userId: user.id,

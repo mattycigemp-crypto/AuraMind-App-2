@@ -623,9 +623,9 @@ export default function AndroidSettingsScreen() {
         <AndroidSettingRow label="Theme" detail="Apply instantly across the app">
           <AndroidSelect
             label="Theme"
-            value={theme.toLowerCase()}
+            value={theme.toLowerCase() === "light" ? "dark" : theme.toLowerCase()}
             onChange={setTheme}
-            options={["dark", "light", "system"]}
+            options={["dark", "system"]}
           />
         </AndroidSettingRow>
         <AndroidSettingRow label="Reduce motion">

@@ -7,10 +7,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <title>AuraMind - Your AI Learning System</title>
     <meta name="description" content="AuraMind turns any PDF, video, or topic into a personalized course — AI flashcards, quizzes, FSRS v5 spaced repetition, and a tutor that remembers exactly what you struggle with." />
-    <script>
-      // Synchronous platform detection — runs BEFORE paint to prevent FOUC
-      (function(){var d=document.documentElement,c=window.Capacitor,t=window.__TAURI_OS_PLUGIN_INTERNALS__;if(t){d.classList.add('tauri-app','platform-'+t.platform)}else if(c){d.classList.add('platform-'+c.getPlatform())}else{var u=navigator.userAgent;if(/iPad|iPhone|iPod/.test(u))d.classList.add('platform-ios');else if(/android/i.test(u))d.classList.add('platform-android');else if(/Macintosh|MacIntel/.test(u)&&!/iPhone|iPad/.test(u))d.classList.add('platform-macos');else if(/Windows NT/.test(u))d.classList.add('platform-windows');else if(/Linux/.test(u))d.classList.add('platform-linux');else d.classList.add('platform-web')}})();
-    </script>
+    <script src="/platform-detect.js"></script>
     <link rel="stylesheet" href="/src/index.css">
     <!-- Favicons & Logos -->
     <link rel="icon" type="image/svg+xml" sizes="any" href="/favicons,logos/favicon.svg" />
@@ -18,8 +15,9 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicons,logos/favicon-16.png" />
     <link rel="icon" type="image/x-icon" href="/favicons,logos/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/favicons,logos/apple-touch-icon.png" />
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#6366f1" />
+    <!-- The web app manifest is injected by vite-plugin-pwa at build time
+         (manifest.webmanifest) — keep a single manifest source. -->
+    <meta name="theme-color" content="#0a0a0a" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />

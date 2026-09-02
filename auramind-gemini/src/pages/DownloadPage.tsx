@@ -22,7 +22,7 @@ const features: Feature[] = [
   {
     icon: <Monitor size={24} className="text-primary" />,
     title: 'Native Performance',
-    description: 'Built with Tauri v2 + Rust for lightning-fast startup and minimal memory usage.',
+    description: 'Built with Capacitor for lightning-fast startup and minimal memory usage on Android.',
   },
   {
     icon: <Smartphone size={24} className="text-primary" />,
@@ -78,18 +78,6 @@ const platformButtons = [
 ];
 
 const mobilePlatforms = [
-  {
-    label: 'iOS',
-    subtitle: 'App Store — submit for review',
-    icon: (
-      <svg width={22} height="22" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-      </svg>
-    ),
-    href: 'https://apps.apple.com',
-    external: true,
-    disabled: true,
-  },
   {
     label: 'Android',
     subtitle: 'Google Play — submit for review',
@@ -160,8 +148,8 @@ const DownloadPage: React.FC = () => {
                 Desktop Apps
               </h2>
               <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
-                Native Windows, macOS, and Linux apps built with Tauri v2 — 
-                smaller, faster, and more secure than Electron.
+                Native desktop apps for Windows, macOS, and Linux — 
+                faster startup, offline study, and platform integrations.
               </p>
             </div>
 
@@ -242,7 +230,7 @@ const DownloadPage: React.FC = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            <div className="grid grid-cols-1 gap-6 max-w-xl mx-auto">
               {mobilePlatforms.map((platform, index) => (
                 <motion.div
                   key={platform.label}
@@ -285,9 +273,9 @@ const DownloadPage: React.FC = () => {
                       </li>
                     </ul>
 
-                    {platform.disabled ? (
+                     {platform.disabled ? (
                       <a
-                        href="mailto:auramind-app@googlegroups.com?subject=Notify me when AuraMind mobile launches&body=I want to be notified when the AuraMind native mobile app is available on iOS/Android."
+                        href="mailto:auramind-app@googlegroups.com?subject=Notify me when AuraMind mobile launches&body=I want to be notified when the AuraMind native mobile app is available on Android."
                         className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-zinc-800 border border-zinc-700 text-zinc-300 font-medium rounded-xl hover:bg-primary hover:text-black transition-colors"
                       >
                         <Mail size={18} />
@@ -322,7 +310,7 @@ const DownloadPage: React.FC = () => {
                 <p className="text-zinc-300">
                   The Android build is available for internal testing.{' '}
                   <a
-                    href="mailto:auramind-app@googlegroups.com?subject=Notify me when AuraMind mobile launches&body=I want to be notified when the AuraMind native mobile app is available on iOS/Android."
+                    href="mailto:auramind-app@googlegroups.com?subject=Notify me when AuraMind mobile launches&body=I want to be notified when the AuraMind native mobile app is available on Android."
                     className="text-primary hover:underline font-medium"
                   >
                     Join the waitlist to get notified.
@@ -348,45 +336,11 @@ const DownloadPage: React.FC = () => {
                 Publishing Checklist
               </h2>
               <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
-                What&apos;s needed before native mobile apps go live on the App Store and Google Play.
+                What&apos;s needed before the Android app goes live on Google Play.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* iOS Checklist */}
-              <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 md:p-10">
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <svg width={22} height="22" viewBox="0 0 24 24" fill="currentColor" className="text-primary">
-                      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold">iOS — App Store</h3>
-                    <p className="text-zinc-500">Apple Developer Program ($99/yr)</p>
-                  </div>
-                </div>
-                <ul className="space-y-4">
-                  {[
-                    'Apple Developer account enrollment ($99/year)',
-                    'App Store Connect setup & team invite',
-                    'App icon (all sizes: 1024×1024 + device-specific)',
-                    'Screenshots: 6.7″ (iPhone 15 Pro Max) & 12.9″ (iPad Pro)',
-                    'App preview video (optional, recommended)',
-                    'Privacy policy URL (hosted on auramind.app/privacy)',
-                    'App description, keywords, and support URL',
-                    'Export Compliance (Crypto: YES — uses encryption)',
-                    'TestFlight internal & external testing (1–3 days)',
-                    'App Review submission (24–48 hours typical)',
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-3 text-zinc-300">
-                      <CheckCircle2 size={18} className="text-emerald-500 shrink-0 mt-0.5" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
+            <div className="grid grid-cols-1 gap-8 max-w-xl mx-auto">
               {/* Android Checklist */}
               <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-8 md:p-10">
                 <div className="flex items-center gap-4 mb-8">

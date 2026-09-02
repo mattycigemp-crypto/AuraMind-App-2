@@ -41,9 +41,8 @@ describe("chat tutorial anchors", () => {
   });
 
   it("keeps the generic tutorial spotlight responsive too", () => {
-    const tutorial = readSource("components/shared/TutorialSystem.tsx");
-    expect(tutorial).toContain('window.addEventListener("scroll", schedule, true)');
-    expect(tutorial).toContain("new ResizeObserver(schedule)");
-    expect(tutorial).toContain("const clamp =");
+    const tour = readSource("components/chat/ChatTour.tsx");
+    expect(tour).toContain('window.addEventListener("scroll", schedule, true)');
+    expect(tour).toContain("new ResizeObserver(schedule)");
   });
 });

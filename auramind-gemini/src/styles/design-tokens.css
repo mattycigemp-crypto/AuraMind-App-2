@@ -43,39 +43,7 @@
 }
 
 /* ========================================
-   iOS — Liquid Glass (Apple HIG)
-   Rounded, translucent, vibrant
-   ======================================== */
-.platform-ios {
-  --platform-accent-hue: 211;
-  --platform-accent-sat: 100%;
-  --platform-accent-lit: 50%;
-  --platform-primary: #007AFF;
-  --platform-primary-tint: #0066D6;
-  --platform-secondary: #5856D6;
-  --platform-tertiary: #AF52DE;
-  --platform-primary-text: #FFFFFF;
-  --platform-on-primary: #FFFFFF;
-  --platform-primary-container: rgba(0, 122, 255, 0.12);
-  --platform-surface-elevated: rgba(0, 122, 255, 0.08);
-  --platform-glass: rgba(30, 30, 35, 0.72);
-  --platform-glass-border: rgba(255, 255, 255, 0.12);
-  --platform-nav-bg: rgba(10, 10, 12, 0.8);
-  --platform-card-radius: 1rem;
-  --platform-button-radius: 0.75rem;
-  --platform-font-ui: -apple-system, 'Inter', system-ui, sans-serif;
-  --platform-font-display: -apple-system, 'Space Grotesk', sans-serif;
-  --platform-border-width: 0.5px;
-  --platform-nav-height: 3.5rem;
-  --platform-blur-strength: 30px;
-  --platform-shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
-  --platform-shadow-md: 0 4px 14px rgba(0,0,0,0.25);
-  --platform-shadow-lg: 0 8px 40px rgba(0,0,0,0.3);
-  --platform-elevation: drop-shadow(0 2px 8px rgba(0,0,0,0.2));
-}
-
-/* ========================================
-   Android — Material Design 3 Expressive
+    Android — Material Design 3 Expressive
    Dynamic color, tonal surfaces, motion springs
    ======================================== */
 .platform-android {
@@ -104,38 +72,6 @@
   --platform-shadow-md: 0 4px 8px rgba(0,0,0,0.2);
   --platform-shadow-lg: 0 8px 24px rgba(0,0,0,0.25);
   --platform-elevation: drop-shadow(0 1px 3px rgba(0,0,0,0.15));
-}
-
-/* ========================================
-   macOS — Liquid Glass Desktop
-   Edge-to-edge, uniform toolbars, colored icons
-   ======================================== */
-.platform-macos {
-  --platform-accent-hue: 211;
-  --platform-accent-sat: 100%;
-  --platform-accent-lit: 50%;
-  --platform-primary: #007AFF;
-  --platform-primary-tint: #0066D6;
-  --platform-secondary: #6366f1;
-  --platform-tertiary: #AF52DE;
-  --platform-primary-text: #FFFFFF;
-  --platform-on-primary: #FFFFFF;
-  --platform-primary-container: rgba(0, 122, 255, 0.1);
-  --platform-surface-elevated: rgba(255, 255, 255, 0.06);
-  --platform-glass: rgba(30, 30, 35, 0.65);
-  --platform-glass-border: rgba(255, 255, 255, 0.1);
-  --platform-nav-bg: rgba(20, 20, 22, 0.75);
-  --platform-card-radius: 0.625rem;
-  --platform-button-radius: 0.375rem;
-  --platform-font-ui: -apple-system, 'Inter', system-ui, sans-serif;
-  --platform-font-display: -apple-system, 'Space Grotesk', sans-serif;
-  --platform-border-width: 0.5px;
-  --platform-nav-height: 2.75rem;
-  --platform-blur-strength: 24px;
-  --platform-shadow-sm: 0 1px 2px rgba(0,0,0,0.25);
-  --platform-shadow-md: 0 4px 12px rgba(0,0,0,0.3);
-  --platform-shadow-lg: 0 8px 32px rgba(0,0,0,0.35);
-  --platform-elevation: drop-shadow(0 2px 6px rgba(0,0,0,0.2));
 }
 
 /* ========================================

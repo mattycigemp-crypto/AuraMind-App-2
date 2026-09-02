@@ -11,10 +11,9 @@
  *   - AuraMind is the PRIMARY mark everywhere it's seen.
  *   - CogniVect parent line appears BENEATH or BESIDE the AuraMind mark,
  *     never inside it, never replacing it. See `CogniWordmark.tsx`.
- *   - Store-listing metadata (capacitor.config appName, tauri.conf.json
- *     productName, Cargo.toml package.name, package.json metadata,
- *     index.html <title>) MUST stay "AuraMind" only — Apple/Google
- *     reject anything that looks like a tagline in the visual app name,
+ *   - Store-listing metadata (capacitor.config appName, package.json
+ *     metadata, index.html <title>) MUST stay "AuraMind" only — Google
+ *     rejects anything that looks like a tagline in the visual app name,
  *     and only the "Developer/Vendor Name" field accepts the parent
  *     brand. CogniVect leaves that field at the storefront console.
  *   - Mobile chrome (TopAppBar, MobileTabBar) is intentionally too

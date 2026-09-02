@@ -15,7 +15,184 @@ import { useAppPreference } from '../../lib/appPreferences';
 import { analyticsService } from '../../services/analytics/analyticsService';
 import { buildReminderNotifications, REMINDER_IDS } from '../../lib/reminderSchedule';
 import { getAIProvider, setAIProvider, type AIProvider } from '../../lib/aiProvider';
+import {
+  listFactors, beginEnrollment, verifyEnrollment, unenroll,
+  type MfaFactor,
+} from '../../services/auth/mfaService';
 import type { UserProfile } from '../../types';
+
+type MfaStep =
+  | { step: 'idle' }
+  | { step: 'qr'; factorId: string; qrSvg: string; secret: string }
+  | { step: 'verify'; factorId: string };
+
+/**
+ * Two-factor authentication (TOTP) management.
+ *
+ * Enroll: begin → scan QR (or type the secret) → confirm with the first
+ * 6-digit code. Unenroll: remove a factor with confirmation. The login flow
+ * itself lives in AuthPage's MFA challenge step.
+ */
+function TwoFactorSection() {
+  const [factors, setFactors] = useState<MfaFactor[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [mfaStep, setMfaStep] = useState<MfaStep>({ step: 'idle' });
+  const [code, setCode] = useState('');
+
+  const refresh = useCallback(async () => {
+    try {
+      setFactors(await listFactors());
+    } catch {
+      setFactors([]);
+    } finally {
+      setLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => { void refresh(); }, [refresh]);
+
+  const handleBegin = async () => {
+    setBusy(true);
+    try {
+      const enroll = await beginEnrollment();
+      setMfaStep({ step: 'qr', factorId: enroll.factorId, qrSvg: enroll.qrSvg, secret: enroll.secret });
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not start 2FA setup');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    if (mfaStep.step !== 'qr' && mfaStep.step !== 'verify') return;
+    setBusy(true);
+    try {
+      await verifyEnrollment(mfaStep.factorId, code.replace(/\s+/g, ''));
+      toast.success('Two-factor authentication enabled');
+      setMfaStep({ step: 'idle' });
+      setCode('');
+      await refresh();
+    } catch (err: any) {
+      toast.error(err?.message || 'Invalid code — try again');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleRemove = async (factor: MfaFactor) => {
+    setBusy(true);
+    try {
+      await unenroll(factor.id);
+      toast.success('Two-factor authentication disabled');
+      await refresh();
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not remove the authenticator');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const enabled = loaded && factors.length > 0;
+
+  return (
+    <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">
+      <SectionHeader icon={Shield} title="Two-factor authentication" subtitle="Require a 6-digit code from an authenticator app at sign-in." />
+      <div className="space-y-3">
+        <div className="flex items-center justify-between py-1">
+          <div>
+            <div className="text-[#F0EFFE] text-xs">
+              Status: <span className={enabled ? 'text-emerald-400' : 'text-[#7A7A96]'}>
+                {loaded ? (enabled ? 'Enabled' : 'Off') : '…'}
+              </span>
+            </div>
+            {enabled && (
+              <div className="text-[#7A7A96] text-[10px] mt-0.5">
+                {factors.length} authenticator{factors.length > 1 ? 's' : ''} linked
+              </div>
+            )}
+          </div>
+          {!enabled ? (
+            <button
+              onClick={handleBegin}
+              disabled={busy || !loaded}
+              className="px-4 py-1.5 bg-[#7C3AED] text-white text-[11px] font-medium rounded-lg hover:bg-[#6D28D9] transition-all disabled:opacity-50"
+            >
+              Enable
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              {factors.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => handleRemove(f)}
+                  disabled={busy}
+                  className="px-3 py-1.5 border border-red-500/30 text-red-400 text-[11px] font-medium rounded-lg hover:bg-red-500/10 transition-all disabled:opacity-50"
+                >
+                  Remove
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Enroll flow */}
+        {mfaStep.step === 'qr' && (
+          <div className="border-t border-[#2A2A3A]/30 pt-4">
+            <p className="text-[#9090A8] text-xs mb-3">
+              1. Scan this QR code with Google Authenticator, 1Password, or Authy.
+            </p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-3">
+              {mfaStep.qrSvg ? (
+                <div
+                  className="w-40 h-40 p-2 bg-white rounded-lg shrink-0 [&>svg]:w-full [&>svg]:h-full"
+                  // Supabase returns the QR as a trusted inline SVG document.
+                  dangerouslySetInnerHTML={{ __html: mfaStep.qrSvg }}
+                />
+              ) : (
+                <div className="w-40 h-40 bg-[#1A1A24] rounded-lg shrink-0" />
+              )}
+              <div className="min-w-0">
+                <p className="text-[#9090A8] text-xs mb-1">Can't scan? Enter this key instead:</p>
+                <code className="block bg-[#1A1A24] border border-[#2A2A3A] rounded-lg px-3 py-2 text-[#F0EFFE] text-xs break-all select-all">
+                  {mfaStep.secret}
+                </code>
+              </div>
+            </div>
+            <p className="text-[#9090A8] text-xs mb-2">2. Enter the 6-digit code to confirm.</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="000000"
+                className="w-32 bg-[#1A1A24] border border-[#2A2A3A] rounded-lg px-3 py-2 text-[#F0EFFE] text-sm tracking-[0.3em] outline-none focus:border-[#7C3AED]/50"
+              />
+              <button
+                onClick={handleVerify}
+                disabled={busy || code.replace(/\s/g, '').length !== 6}
+                className="px-4 py-2 bg-[#7C3AED] text-white text-xs font-medium rounded-lg hover:bg-[#6D28D9] transition-all disabled:opacity-50"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => { setMfaStep({ step: 'idle' }); setCode(''); }}
+                className="px-3 py-2 text-[#7A7A96] hover:text-[#9090A8] text-xs transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+            <p className="text-[#7A7A96] text-[10px] mt-3">
+              Keep a backup of the secret key — a lost authenticator without it means contacting support to regain access.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function useLocalStorage<T>(key: string, defaultValue: T): [T, (v: T | ((prev: T) => T)) => void] {
   return useAppPreference(key, defaultValue);
@@ -38,7 +215,7 @@ const Select = ({ value, onChange, options }: { value: string; onChange: (v: str
   <select
     value={value}
     onChange={e => onChange(e.target.value)}
-    className="bg-[#1A1A24] border border-[#2A2A3A] rounded-lg px-3 py-1.5 text-[#F0EFFE] text-xs outline-none focus:border-[#7C3AED]/50 min-w-[120px]"
+    className="bg-[#1A1A24] border border-[#2A2A3A] rounded-lg px-3 py-1.5 text-[#F0EFFE] text-xs outline-none focus:border-[#7C3AED]/50 min-w-[120px] max-w-full shrink-0"
   >
     {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
   </select>
@@ -303,7 +480,7 @@ export default function SettingsPage() {
   }, []);
 
   return (
-      <div className={`android-settings-page space-y-8 ${Capacitor.getPlatform() === 'android' ? 'android-native-page' : ''}`}>
+      <div className={`space-y-8 ${Capacitor.getPlatform() === 'android' ? 'android-settings-page android-native-page' : ''}`}>
         {/* Header */}
         <div>
           <p className="nova-label text-violet-200/80">You</p>
@@ -502,9 +679,12 @@ export default function SettingsPage() {
           <SectionHeader icon={Palette} title="Appearance" subtitle="How AuraMind looks and feels on this device." />
           <div className="space-y-1">
             <SettingRow label="Theme">
-              <Select value={theme.toLowerCase()} onChange={setTheme} options={[
+              {/* Light is intentionally not offered yet: the product is
+                  dark-first and surfaces use fixed dark palettes, so a light
+                  setting would be a silent no-op. Re-add once a light token
+                  set ships across components. */}
+              <Select value={theme.toLowerCase() === 'light' ? 'dark' : theme.toLowerCase()} onChange={setTheme} options={[
                 { label: 'Dark', value: 'dark' },
-                { label: 'Light', value: 'light' },
                 { label: 'System', value: 'system' },
               ]} />
             </SettingRow>
@@ -532,6 +712,9 @@ export default function SettingsPage() {
             </SettingRow>
           </div>
         </div>
+
+        {/* Security — two-factor authentication */}
+        <TwoFactorSection />
 
         {/* Audio */}
         <div className="bg-[#111118] border border-[#2A2A3A] rounded-xl p-6">

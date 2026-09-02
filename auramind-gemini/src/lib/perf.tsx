@@ -23,7 +23,7 @@ const marks = new Map<string, number>();
 export function mark(name: string, options?: { log?: boolean }): number {
   const ts = performance.now();
   marks.set(name, ts);
-  if (options?.log !== false) {
+  if (options?.log !== false && import.meta.env.DEV) {
     // eslint-disable-next-line no-console -- profiling utility
     console.log('[Perf]', name + ':', ts.toFixed(1), 'ms');
   }
@@ -41,7 +41,7 @@ export function measure(
     return null;
   }
   const elapsed = performance.now() - (start || performance.timing?.navigationStart || 0);
-  if (options?.log !== false) {
+  if (options?.log !== false && import.meta.env.DEV) {
     // eslint-disable-next-line no-console -- profiling utility
     console.log('[Perf]', name + ':', elapsed.toFixed(1), 'ms');
   }
@@ -71,7 +71,7 @@ export function PerfBoundary({ label, children, log = true }: PerfBoundaryProps)
   useEffect(() => {
     if (contentRendered.current) return;
     contentRendered.current = true;
-    if (log) {
+    if (log && import.meta.env.DEV) {
       const end = performance.now();
       // eslint-disable-next-line no-console -- profiling utility
       console.log('[Perf]', label, 'skeleton-content swap:', end.toFixed(1), 'ms');

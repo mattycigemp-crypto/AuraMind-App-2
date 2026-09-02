@@ -282,7 +282,7 @@ export class AuraAiClient {
           headers: {
             'Authorization': `Bearer ${authValue}`,
             'Content-Type': 'application/json',
-            'HTTP-Referer': typeof window !== 'undefined' ? window.location.href : 'http://localhost:3000',
+            'HTTP-Referer': typeof window !== 'undefined' ? window.location.href : 'https://auramind.app',
             'X-Title': typeof document !== 'undefined' ? (document.title || 'AuraMind') : 'AuraMind App',
           },
           body: JSON.stringify({
@@ -533,7 +533,7 @@ export class AuraAiClient {
         headers: {
           'Authorization': `Bearer ${authValue}`,
           'Content-Type': 'application/json',
-          'HTTP-Referer': typeof window !== 'undefined' ? window.location.href : 'http://localhost:3000',
+          'HTTP-Referer': typeof window !== 'undefined' ? window.location.href : 'https://auramind.app',
           'X-Title': typeof window !== 'undefined' ? (document.title || 'AuraMind') : 'AuraMind App',
         },
         body: JSON.stringify({
@@ -603,30 +603,6 @@ export const auraAiClient = new AuraAiClient();
 
 // Export types for use in other components
 export type { Message, ChatCompletionOptions, ChatCompletionResponse };
-
-// Example usage:
-// import { groqClient } from './groqService';
-//
-// // Simple Q&A
-// const answer = await deepseekClient.ask('What is the meaning of life?');
-// console.log(answer);
-//
-// // Advanced usage
-// const response = await deepseekClient.chatCompletion({
-//   messages: [
-//     { role: 'system', content: 'You are a helpful assistant.' },
-//     { role: 'user', content: 'Tell me a joke' }
-//   ],
-//   temperature: 0.7
-// });
-// console.log(response.choices[0].message.content);
-//
-// // Streaming usage
-// for await (const chunk of deepseekClient.streamChatCompletion({
-//   messages: [{ role: 'user', content: 'Write a story' }]
-// })) {
-//   console.log(chunk);
-// }
 
 
 

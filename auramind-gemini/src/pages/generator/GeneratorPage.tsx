@@ -534,7 +534,7 @@ const GeneratorPage: React.FC = () => {
   ];
 
   return (
-      <div className={`android-generator-page space-y-8 ${isAndroidApp ? 'android-native-page' : ''}`}>
+      <div className={`space-y-8 ${isAndroidApp ? 'android-generator-page android-native-page' : ''}`}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

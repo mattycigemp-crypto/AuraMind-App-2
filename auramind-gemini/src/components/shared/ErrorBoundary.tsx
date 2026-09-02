@@ -185,6 +185,13 @@ export function AsyncErrorFallback({ error }: { error?: Error }): ReactNode {
 export function setupGlobalErrorHandler(): void {
   // Uncaught errors
   window.addEventListener('error', (event: ErrorEvent) => {
+    // ResizeObserver loop errors fire with event.error = null in Chromium —
+    // these are benign layout cascades, not real bugs. Suppress them.
+    if (
+      event.error === null &&
+      event.message?.includes('ResizeObserver')
+    ) return;
+
     console.error('[GlobalErrorHandler] Uncaught error:', event.error);
     
     import('../../services/analytics/analyticsService').then(m => m.getPostHog()).then(posthog => {

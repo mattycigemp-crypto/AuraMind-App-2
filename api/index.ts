@@ -28,8 +28,11 @@ const json = (res: VercelResponse, status: number, body: Record<string, unknown>
 
 const StripeCheckoutSchema = z.object({
   priceId: z.string().min(1, 'priceId is required'),
-  userId: z.string().uuid('userId must be a valid UUID'),
-  email: z.string().email('email must be valid'),
+  // Deprecated: kept for client backward-compat. The server always derives
+  // identity from the bearer token so a caller can never provision checkout
+  // (or the immediate trialing flag) for someone else's account.
+  userId: z.string().uuid('userId must be a valid UUID').optional(),
+  email: z.string().email('email must be valid').optional(),
 });
 
 const StripePortalSchema = z.object({
@@ -79,7 +82,9 @@ const CouponDeleteSchema = z.object({
 });
 
 const SubscriptionVerifySchema = z.object({
-  userId: z.string().uuid('userId must be a valid UUID'),
+  // Deprecated: the server derives the user from the bearer token. Kept
+  // optional so older clients keep validating while we roll out auth.
+  userId: z.string().uuid('userId must be a valid UUID').optional(),
 });
 
 const AdminQuerySchema = z.object({
@@ -168,6 +173,49 @@ function validateBody<T extends z.ZodTypeAny>(
   return { ok: true, data: result.data };
 }
 
+/**
+ * Resolves the caller from the Authorization bearer token via Supabase Auth.
+ * Returns null after sending a 401 when the token is missing or invalid.
+ * Every billing/entitlement route MUST use this instead of trusting body
+ * fields — userId/email in a request body is attacker-controlled input.
+ */
+async function authenticateUser(
+  req: VercelRequest,
+  res: VercelResponse
+): Promise<{ id: string; email?: string; user_metadata: Record<string, unknown>; app_metadata?: Record<string, unknown> } | null> {
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!supabaseUrl || !supabaseServiceKey) {
+    json(res, 500, { error: 'Server configuration error' });
+    return null;
+  }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    json(res, 401, { error: 'Missing authorization' });
+    return null;
+  }
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  if (!token) {
+    json(res, 401, { error: 'Missing authorization' });
+    return null;
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data?.user) {
+    json(res, 401, { error: 'Invalid token' });
+    return null;
+  }
+  return {
+    id: data.user.id,
+    email: data.user.email ?? undefined,
+    user_metadata: (data.user.user_metadata as Record<string, unknown>) || {},
+    app_metadata: data.user.app_metadata as Record<string, unknown> | undefined,
+  };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { path } = req.query;
   
@@ -183,17 +231,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const action = segments.slice(1).join('/');
 
   // Public liveness probe — respond before middleware so uptime monitors and
-  // CI health checks are never rate-limited or blocked by auth.
+  // CI health checks are never rate-limited or blocked by auth. `probe=db`
+  // additionally verifies the Supabase connection (used by the status page).
   if (endpoint === 'health') {
     if (req.method !== 'GET') {
       return json(res, 405, { error: 'Method not allowed' });
     }
-    return json(res, 200, {
+    const body: Record<string, unknown> = {
       status: 'ok',
       service: 'auramind-api',
       version: '2.0.0',
       timestamp: Date.now(),
-    });
+    };
+    if (req.query.probe === 'db') {
+      const dbStart = Date.now();
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(
+          process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '',
+          process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+        );
+        // Cheap authenticated round trip — verifies URL + key + network.
+        const { error } = await supabase.auth.getUser('probe-invalid-token');
+        // An invalid token is EXPECTED to error — reaching a Supabase response
+        // at all proves connectivity. A network failure throws instead.
+        body.database = { status: 'reachable', latencyMs: Date.now() - dbStart, authResponded: !!error };
+      } catch (dbErr: any) {
+        body.database = { status: 'unreachable', latencyMs: Date.now() - dbStart };
+        body.status = 'degraded';
+        return json(res, 503, body);
+      }
+    }
+    return json(res, 200, body);
   }
 
   // Apply security headers and rate limiting. Returns false if already responded.
@@ -235,12 +304,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return await handleFetchUrl(req, res);
       case 'fetch-youtube-transcript':
         return await handleFetchYouTubeTranscript(req, res);
+      case 'cron':
+        return await handleCron(req, res, action);
       default:
         return json(res, 404, { error: 'Endpoint not found' });
     }
   } catch (err: any) {
     console.error('API Error:', err);
-    return json(res, 500, { error: err.message || 'Internal server error' });
+    // Never leak internal error text to clients in production; log it instead.
+    const isProd = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
+    return json(res, 500, { error: isProd ? 'Internal server error' : (err.message || 'Internal server error') });
   }
 }
 
@@ -694,8 +767,12 @@ async function handleAdminTest(req: VercelRequest, res: VercelResponse, supabase
 
 // Coupon endpoints
 async function handleCoupons(req: VercelRequest, res: VercelResponse, action?: string) {
+  const secretKey = process.env.STRIPE_SECRET_KEY || '';
+  if (!secretKey) {
+    return json(res, 500, { error: 'Stripe secret key not configured. Add STRIPE_SECRET_KEY to environment variables.' });
+  }
   const Stripe = (await import('stripe')).default;
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+  const stripe = new Stripe(secretKey);
 
   const authHeader = req.headers.authorization;
   if (!authHeader) return json(res, 401, { error: 'Missing authorization' });
@@ -743,6 +820,21 @@ async function handleCoupons(req: VercelRequest, res: VercelResponse, action?: s
 }
 
 // Subscription endpoints
+
+// Dunning grace window: how long a `past_due` user keeps full access while
+// Stripe smart-retries their card. After it elapses the entitlement is
+// treated as expired (the cron downgrades the metadata itself).
+const DUNNING_GRACE_DAYS = Number(process.env.DUNNING_GRACE_DAYS || 7);
+
+export function isPastDueExpired(metadata: Record<string, unknown>, now = Date.now()): boolean {
+  if (metadata.subscription_status !== 'past_due') return false;
+  const failedAt = typeof metadata.last_payment_failure_at === 'string'
+    ? Date.parse(metadata.last_payment_failure_at)
+    : NaN;
+  if (Number.isNaN(failedAt)) return true; // past_due with no timestamp — treat as expired
+  return now - failedAt > DUNNING_GRACE_DAYS * 24 * 60 * 60 * 1000;
+}
+
 async function handleSubscription(req: VercelRequest, res: VercelResponse, action?: string) {
   const { createClient } = await import('@supabase/supabase-js');
   const supabase = createClient(
@@ -752,17 +844,40 @@ async function handleSubscription(req: VercelRequest, res: VercelResponse, actio
 
   if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed' });
 
-  const parsed = validateBody(res, SubscriptionVerifySchema, req.body);
-  if (!parsed.ok) return;
-  const { userId } = parsed.data;
+  // Auth required: subscription status is entitlement data. Without this gate
+  // anyone could enumerate plan/status for arbitrary user UUIDs.
+  const caller = await authenticateUser(req, res);
+  if (!caller) return;
 
-  const { data: userData } = await supabase.auth.admin.getUserById(userId);
+  const parsed = validateBody(res, SubscriptionVerifySchema, req.body ?? {});
+  if (!parsed.ok) return;
+
+  // Self-lookup only — a body userId that disagrees with the token is rejected
+  // rather than silently honored (prevents cross-account probing).
+  if (parsed.data.userId && parsed.data.userId !== caller.id) {
+    return json(res, 403, { error: 'Forbidden' });
+  }
+
+  const { data: userData } = await supabase.auth.admin.getUserById(caller.id);
   if (!userData?.user) return json(res, 404, { error: 'User not found' });
 
   const metadata = userData.user.user_metadata || {};
+  const rawStatus = metadata.subscription_status || 'none';
+
+  // Grace-period enforcement: a past_due user keeps access during the dunning
+  // window, then reads as expired here even before the cron downgrades them.
+  if (isPastDueExpired(metadata)) {
+    return json(res, 200, {
+      subscribed: false,
+      status: 'expired',
+      plan: metadata.plan || 'Starter',
+      graceEndedAt: metadata.last_payment_failure_at || null,
+    });
+  }
+
   return json(res, 200, {
-    subscribed: metadata.subscription_status === 'active' || metadata.subscription_status === 'trialing',
-    status: metadata.subscription_status || 'none',
+    subscribed: rawStatus === 'active' || rawStatus === 'trialing' || rawStatus === 'past_due',
+    status: rawStatus,
     plan: metadata.plan || 'Starter'
   });
 }
@@ -792,9 +907,18 @@ async function handleStripe(req: VercelRequest, res: VercelResponse, action?: st
 
   switch (action) {
     case 'checkout': {
+      // Auth required: the caller's identity always comes from the token.
+      // Trusting body userId/email would let anyone mark another account as
+      // trialing (this handler writes subscription metadata on success) or
+      // attach a victim's email to the Stripe session.
+      const caller = await authenticateUser(req, res);
+      if (!caller) return;
+
       const parsed = validateBody(res, StripeCheckoutSchema, req.body);
       if (!parsed.ok) return;
-      const { priceId, userId, email } = parsed.data;
+      const { priceId } = parsed.data;
+      const userId = caller.id;
+      const email = caller.email || '';
 
       // Mode guard — never mix a live key with test prices (or vice versa). A
       // live key cannot even retrieve a test price, so a mismatch would
@@ -867,9 +991,33 @@ async function handleStripe(req: VercelRequest, res: VercelResponse, action?: st
       }
     }
     case 'portal': {
+      // Auth required + customer ownership check: without this, anyone could
+      // mint a billing-portal session for an arbitrary Stripe customer id and
+      // take over their billing management.
+      const caller = await authenticateUser(req, res);
+      if (!caller) return;
+
       const parsed = validateBody(res, StripePortalSchema, req.body);
       if (!parsed.ok) return;
       const { customerId } = parsed.data;
+
+      // Ownership: the requested customer must match the Stripe customer id
+      // recorded on the caller's auth metadata (written by the webhook), or a
+      // Stripe customer whose email matches the caller.
+      const metadataCustomerId =
+        typeof caller.user_metadata?.stripe_customer_id === 'string'
+          ? (caller.user_metadata.stripe_customer_id as string)
+          : undefined;
+      if (customerId !== metadataCustomerId) {
+        try {
+          const customer = await stripe.customers.retrieve(customerId);
+          if (customer.deleted || !('email' in customer) || customer.email?.toLowerCase() !== caller.email?.toLowerCase()) {
+            return json(res, 403, { error: 'Forbidden' });
+          }
+        } catch {
+          return json(res, 403, { error: 'Forbidden' });
+        }
+      }
 
       try {
         const session = await stripe.billingPortal.sessions.create({
@@ -1563,20 +1711,272 @@ async function handleAdminBulk(req: VercelRequest, res: VercelResponse, supabase
       return json(res, 400, { error: 'Invalid bulk action. Use: role, email, or export' });
   }
 }
+
+// --- Scheduled maintenance (Vercel Cron) -------------------------------------
+//
+// GET /api/cron/dunning — invoked daily by the Vercel cron configured in
+// vercel.json. Vercel sends `Authorization: Bearer $CRON_SECRET` automatically
+// when CRON_SECRET is set on the project; manual calls must present the same
+// bearer. Jobs:
+//   1. Dunning escalation — past_due users past the grace window lose access
+//      (downgraded + cancellation email).
+//   2. Trial reminders — trialing users get a nudge 3 days and 1 day before
+//      their trial ends (each sent at most once, guarded by metadata flags).
+//   3. Ledger pruning — webhook idempotency entries older than 90 days.
+
+async function* paginateUsers(supabase: any) {
+  const perPage = 500;
+  let page = 1;
+  for (;;) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+    const users = data?.users || [];
+    for (const u of users) yield u;
+    if (users.length < perPage) return;
+    page++;
+    if (page > 40) return; // hard cap: 20k users per run — plenty for now
+  }
+}
+
+async function handleCron(req: VercelRequest, res: VercelResponse, action?: string) {
+  if (req.method !== 'GET') return json(res, 405, { error: 'Method not allowed' });
+  if (action !== 'dunning') return json(res, 404, { error: 'Unknown cron job' });
+
+  const secret = process.env.CRON_SECRET || '';
+  const provided = (req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim();
+  if (!secret || provided !== secret) {
+    return json(res, 401, { error: 'Unauthorized' });
+  }
+
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabase = createClient(
+    process.env.SUPABASE_URL || '',
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  );
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return json(res, 500, { error: 'Server configuration error' });
+  }
+
+  const now = Date.now();
+  const graceMs = DUNNING_GRACE_DAYS * 24 * 60 * 60 * 1000;
+  const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+  const oneDayMs = 24 * 60 * 60 * 1000;
+
+  const summary = {
+    scanned: 0,
+    dunningExpired: 0,
+    dunningErrors: 0,
+    trialReminders3d: 0,
+    trialReminders1d: 0,
+    emailErrors: 0,
+  };
+
+  try {
+    for await (const user of paginateUsers(supabase)) {
+      summary.scanned++;
+      const meta = (user.user_metadata || {}) as Record<string, unknown>;
+      const email = user.email || '';
+      const name = (meta.full_name as string) || email.split('@')[0] || 'there';
+
+      // --- Job 1: dunning escalation ---
+      if (meta.subscription_status === 'past_due') {
+        const failedAt = typeof meta.last_payment_failure_at === 'string' ? Date.parse(meta.last_payment_failure_at) : NaN;
+        if (Number.isNaN(failedAt) || now - failedAt > graceMs) {
+          try {
+            await supabase.auth.admin.updateUserById(user.id, {
+              user_metadata: { ...meta, subscription_status: 'expired', plan: 'Starter' },
+            });
+            summary.dunningExpired++;
+            if (email) {
+              const sent = await sendEmailViaResend('subscriptionCancelled', email, {
+                name,
+                plan: 'Pro',
+                effectiveDate: new Date().toLocaleDateString(),
+              });
+              if (!sent.success) summary.emailErrors++;
+            }
+          } catch {
+            summary.dunningErrors++;
+          }
+        }
+        continue;
+      }
+
+      // --- Job 2: trial reminders ---
+      if (meta.subscription_status === 'trialing' && email) {
+        const trialEnd = typeof meta.trial_end === 'string' ? Date.parse(meta.trial_end) : NaN;
+        if (!Number.isNaN(trialEnd) && trialEnd > now) {
+          const remaining = trialEnd - now;
+          if (remaining <= oneDayMs && !meta.trial_final_reminder_sent) {
+            const sent = await sendEmailViaResend('trialEnding', email, {
+              name,
+              daysRemaining: 1,
+              trialEnds: new Date(trialEnd).toLocaleDateString(),
+            });
+            if (sent.success) {
+              summary.trialReminders1d++;
+              await supabase.auth.admin.updateUserById(user.id, {
+                user_metadata: { ...meta, trial_final_reminder_sent: true },
+              }).catch(() => {});
+            } else {
+              summary.emailErrors++;
+            }
+          } else if (remaining <= threeDaysMs && !meta.trial_reminder_sent) {
+            const sent = await sendEmailViaResend('trialEnding', email, {
+              name,
+              daysRemaining: 3,
+              trialEnds: new Date(trialEnd).toLocaleDateString(),
+            });
+            if (sent.success) {
+              summary.trialReminders3d++;
+              await supabase.auth.admin.updateUserById(user.id, {
+                user_metadata: { ...meta, trial_reminder_sent: true },
+              }).catch(() => {});
+            } else {
+              summary.emailErrors++;
+            }
+          }
+        }
+      }
+    }
+
+    // --- Job 3: prune the webhook idempotency ledger ---
+    let pruned = false;
+    try {
+      await supabase.rpc('prune_processed_webhook_events');
+      pruned = true;
+    } catch {
+      // Migration may not be applied yet — non-fatal.
+    }
+
+    return json(res, 200, { ok: true, ...summary, ledgerPruned: pruned });
+  } catch (err: any) {
+    console.error('Cron dunning failed:', err);
+    return json(res, 500, { error: isProdLike() ? 'Cron job failed' : (err.message || 'Cron job failed') });
+  }
+}
+
+function isProdLike(): boolean {
+  return process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
+}
+
 // --- URL extraction endpoints (used by GeneratorPage) ---
 
-// Fetch a URL server-side and extract readable text (SSRF-safe: outbound only,
-// no auth token required beyond rate limiting).
+/**
+ * SSRF guard for user-supplied URLs. Only public http(s) origins may be
+ * fetched server-side: block non-http(s) schemes, credentials in the URL,
+ * localhost/*.local hostnames, and IP-literal hosts in private, link-local,
+ * loopback, or otherwise reserved ranges. After DNS resolution the resolved
+ * addresses are re-checked so hostnames that resolve to internal space
+ * (e.g. via DNS rebinding or /etc/hosts tricks) are rejected too.
+ */
+function isPrivateIPv4(ip: string): boolean {
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some((p) => Number.isNaN(p) || p < 0 || p > 255)) return true;
+  const [a, b] = parts;
+  return (
+    a === 0 || // "this network"
+    a === 10 || // private
+    a === 127 || // loopback
+    (a === 100 && b >= 64 && b <= 127) || // CGNAT
+    (a === 169 && b === 254) || // link-local (cloud metadata: 169.254.169.254)
+    (a === 172 && b >= 16 && b <= 31) || // private
+    (a === 192 && b === 168) || // private
+    (a === 192 && b === 0) || // protocol assignments
+    (a === 198 && (b === 18 || b === 19)) || // benchmarking
+    a >= 224 // multicast + reserved
+  );
+}
+
+function isPrivateIPv6(ip: string): boolean {
+  const addr = ip.toLowerCase().replace(/^\[|\]$/g, '').split('%')[0];
+  return (
+    addr === '::' ||
+    addr === '::1' ||
+    addr.startsWith('fe8') ||
+    addr.startsWith('fe9') ||
+    addr.startsWith('fea') ||
+    addr.startsWith('feb') || // link-local
+    addr.startsWith('fc') ||
+    addr.startsWith('fd') || // unique local
+    addr.startsWith('ff') || // multicast
+    addr.startsWith('::ffff:') && isPrivateIPv4(addr.slice(7))
+  );
+}
+
+async function assertPublicHttpUrl(rawUrl: string): Promise<{ ok: true; url: URL } | { ok: false; reason: string }> {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    return { ok: false, reason: 'Invalid URL' };
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return { ok: false, reason: 'Only http and https URLs are supported' };
+  }
+  if (url.username || url.password) {
+    return { ok: false, reason: 'URLs with embedded credentials are not allowed' };
+  }
+  const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (
+    host === 'localhost' ||
+    host.endsWith('.localhost') ||
+    host.endsWith('.local') ||
+    host.endsWith('.internal') ||
+    host === 'metadata.google.internal' ||
+    host === 'metadata'
+  ) {
+    return { ok: false, reason: 'Internal hosts are not allowed' };
+  }
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) && isPrivateIPv4(host)) {
+    return { ok: false, reason: 'Private IP addresses are not allowed' };
+  }
+  if (host.includes(':') && isPrivateIPv6(host)) {
+    return { ok: false, reason: 'Private IP addresses are not allowed' };
+  }
+
+  // Resolve DNS and verify every resolved address is public. Best-effort:
+  // if resolution fails the subsequent fetch will surface the error.
+  try {
+    const dns = await import('dns');
+    const lookup = dns.promises.lookup(host, { all: true, verbatim: true });
+    const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error('dns-timeout')), 5000));
+    const addresses = await Promise.race([lookup, timeout]);
+    for (const entry of addresses as { address: string; family: number }[]) {
+      if (entry.family === 4 && isPrivateIPv4(entry.address)) {
+        return { ok: false, reason: 'Host resolves to a private address' };
+      }
+      if (entry.family === 6 && isPrivateIPv6(entry.address)) {
+        return { ok: false, reason: 'Host resolves to a private address' };
+      }
+    }
+  } catch (err: any) {
+    if (err?.message === 'dns-timeout') {
+      return { ok: false, reason: 'DNS resolution timed out' };
+    }
+    // Unknown TLD / resolution failure — let fetch produce the real error.
+  }
+  return { ok: true, url };
+}
+
+// Fetch a URL server-side and extract readable text (SSRF-guarded: public
+// http(s) origins only, DNS re-validated before the outbound fetch).
 async function handleFetchUrl(req: VercelRequest, res: VercelResponse) {
   const parsed = validateBody(res, z.object({ url: z.string().url() }), req.body);
   if (!parsed.ok) return;
   const { url } = parsed.data;
 
+  const guard = await assertPublicHttpUrl(url);
+  if (guard.ok === false) {
+    return json(res, 400, { error: guard.reason });
+  }
+
   let response: Response;
   try {
-    response = await fetch(url, {
+    response = await fetch(guard.url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AuraMind/1.0)' },
       signal: AbortSignal.timeout(15000),
+      redirect: 'follow',
     });
   } catch (err: any) {
     return json(res, 502, { error: err?.message || 'Failed to fetch URL' });
@@ -1584,6 +1984,15 @@ async function handleFetchUrl(req: VercelRequest, res: VercelResponse) {
 
   if (!response.ok) {
     return json(res, 502, { error: `Failed to fetch URL: ${response.status} ${response.statusText}` });
+  }
+
+  // Redirects are followed by fetch; make sure the FINAL origin is still
+  // public before consuming the body.
+  if (response.url && response.url !== guard.url.toString()) {
+    const finalGuard = await assertPublicHttpUrl(response.url);
+    if (finalGuard.ok === false) {
+      return json(res, 400, { error: 'Redirected to a disallowed host' });
+    }
   }
 
   const html = await response.text();

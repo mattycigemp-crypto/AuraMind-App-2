@@ -5,6 +5,7 @@
  */
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { checkRateLimit, getClientIp } from './_rateLimit.js';
 
 // Security headers to apply to all responses
 const SECURITY_HEADERS = {
@@ -64,54 +65,16 @@ const RATE_LIMITS = {
   auth: { max: 10, window: 60 * 1000 }, // 10 auth requests per minute
 };
 
-// In-memory rate limit store (use Redis in production)
-const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
-
-function getClientIp(req: VercelRequest): string {
-  return (
-    (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ||
-    (req.headers['x-real-ip'] as string) ||
-    req.socket?.remoteAddress ||
-    'unknown'
-  );
-}
-
-function checkRateLimit(key: string, max: number, window: number): { allowed: boolean; remaining: number; resetAt: number } {
-  const now = Date.now();
-  let entry = rateLimitStore.get(key);
-
-  if (!entry || now > entry.resetAt) {
-    entry = { count: 0, resetAt: now + window };
-    rateLimitStore.set(key, entry);
-  }
-
-  entry.count++;
-
-  // Clean up old entries periodically
-  if (rateLimitStore.size > 10000) {
-    const cutoff = now - window;
-    for (const [k, v] of rateLimitStore) {
-      if (v.resetAt < cutoff) rateLimitStore.delete(k);
-    }
-  }
-
-  return {
-    allowed: entry.count <= max,
-    remaining: Math.max(0, max - entry.count),
-    resetAt: entry.resetAt,
-  };
-}
-
 /**
  * Apply security headers and rate limiting. Returns true if the request
  * should continue to the handler. Returns false if a response was already
  * sent (OPTIONS preflight or 429 rate limit).
  */
-export function applyMiddleware(
+export async function applyMiddleware(
   req: VercelRequest,
   res: VercelResponse,
   options?: { rateLimitType?: 'default' | 'ai' | 'auth' }
-): boolean {
+): Promise<boolean> {
   // Apply security headers (skip CSP/CORS in Vercel production — vercel.json handles those)
   const isVercel = !!process.env.VERCEL;
   if (!isVercel) {
@@ -131,12 +94,12 @@ export function applyMiddleware(
     return false;
   }
 
-  // Rate limiting
+  // Rate limiting — distributed via Upstash when configured, per-instance
+  // in-memory otherwise (see _rateLimit.ts).
   const rateLimitType = options?.rateLimitType || 'default';
   const config = RATE_LIMITS[rateLimitType];
   const clientIp = getClientIp(req);
-  const rateLimitKey = `${rateLimitType}:${clientIp}`;
-  const rateLimit = checkRateLimit(rateLimitKey, config.max, config.window);
+  const rateLimit = await checkRateLimit(`${rateLimitType}:${clientIp}`, config.max, config.window);
 
   res.setHeader('X-RateLimit-Limit', config.max);
   res.setHeader('X-RateLimit-Remaining', rateLimit.remaining);

@@ -35,8 +35,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@variant dark (&:where(.dark, .dark *));
-
 @theme {
   --font-ui: "Aura Sans", "Outfit", "Inter", system-ui, sans-serif;
   --font-display: "Aura Sans", "Instrument Serif", Georgia, serif;
@@ -102,10 +100,10 @@ body {
   background-attachment: fixed;
   color: #F0EFFE;
 }
-/* iOS Safari + touch devices: background-attachment: fixed janks or
-   silently gets ignored. Drop to scroll on hover:none (touch). The
-   dashboard's scrolling panes are mostly covered by chrome/cards, so a
-   scroll-tied gradient repeats cleanly without visual disruption. */
+/* Touch devices: background-attachment: fixed janks or silently gets
+   ignored. Drop to scroll on hover:none (touch). The dashboard's
+   scrolling panes are mostly covered by chrome/cards, so a scroll-tied
+   gradient repeats cleanly without visual disruption. */
 @media (hover: none) {
   body {
     background-attachment: scroll;
@@ -562,6 +560,24 @@ body::after {
   filter: blur(80px);
   pointer-events: none;
   will-change: transform, opacity;
+}
+
+/* =======================================================
+   NEURAL BRAIN — CSS-only brain visual animations
+   ======================================================= */
+@keyframes brain-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.03); opacity: 1; }
+}
+
+@keyframes synapse-pulse {
+  0%, 100% { opacity: 0.15; stroke-width: 0.3; }
+  50% { opacity: 0.5; stroke-width: 0.6; }
+}
+
+@keyframes ring-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* =======================================================

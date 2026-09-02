@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   PRODUCT_NAME,
   PARENT_COMPANY_NAME,
@@ -16,19 +16,14 @@ import { VectorMark } from '../../components/brand/CogniWordmark';
  *
  * Lives at /about. Visible from:
  *   - the sidebar Settings row's "About AuraMind" entry;
- *   - Tauri desktop's native Help → About AuraMind menu (renders this
- *     same component in the About subwindow once round-19 wires the
- *     menu API);
  *   - mobile Settings → scroll-to-bottom → "About" link.
  *
  * Shows: product line, VectorMark glyph, parent-company byline,
  * build version, build channel, copyright, contact mailto, vendor URL,
- * and a "Check for Updates" button (Tauri only — falls back to the
- * download page on web).
+ * and a "Check for Updates" button that links to the download page.
  *
  * The page is intentionally read-only. It never opens external links
- * without a confirm — Tauri apps launched from a desktop App Store
- * listing need to be predictable when reviewers evaluate the binary.
+ * without a confirm.
  */
 
 interface AboutPageProps {
@@ -44,75 +39,20 @@ type CheckState =
   | { status: 'error'; message: string };
 
 const AboutPage: React.FC<AboutPageProps> = ({ versionOverride }) => {
-  const [version, setVersion] = useState<string>(versionOverride ?? '2.0.0');
-  const [channel, setChannel] = useState<string>('production');
+  const version = versionOverride ?? '2.0.0';
+  const channel = 'production';
   const [checkState, setCheckState] = useState<CheckState>({ status: 'idle' });
-
-  // Try to read real version/build from the Tauri runtime if present.
-  // Web builds keep the placeholder 2.0.0 hard-coded.
-  useEffect(() => {
-    if (versionOverride) return;
-    const w = typeof window !== 'undefined' ? (window as any) : undefined;
-    const maybeTauri = w?.__TAURI_INTERNALS__ || w?.__TAURI__;
-    if (!maybeTauri) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const [{ getVersion }, { getName }] = await Promise.all([
-          import('../../lib/nativeShim'),
-          import('../../lib/nativeShim'),
-        ]);
-        const v = await getVersion();
-        const n = await getName();
-        if (!cancelled) {
-          setVersion(v);
-          if (n) setChannel('tauri');
-        }
-      } catch {
-        /* ignore — web build, no-op */
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [versionOverride]);
 
   const runCheck = useCallback(async () => {
     setCheckState({ status: 'checking' });
 
-    const w = (typeof window !== 'undefined' ? (window as any) : undefined);
-    if (!w?.__TAURI_INTERNALS__ && !w?.__TAURI__) {
-      setCheckState({
-        status: 'error',
-        message: 'Update checks run inside the AuraMind desktop app. On web, visit the Download page (https://auramind.app/download) for the latest release.',
-      });
-      return;
-    }
-
-    try {
-      // Lazy-import so the updater isn't bundled into the web build.
-      const { check } = await import('../../lib/nativeShim');
-      const result = await check();
-      if (!result) {
-        setCheckState({
-          status: 'uptodate',
-          currentVersion: version,
-          latestVersion:  version,
-        });
-        return;
-      }
-      const latestVersion = result.version ?? 'unknown';
-      const isNewer = compareSemver(latestVersion, version) > 0;
-      setCheckState({
-        status: isNewer ? 'available' : 'uptodate',
-        currentVersion: version,
-        latestVersion,
-        releaseNotes: result.body ?? undefined,
-      });
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Update check failed with an unknown error.';
-      setCheckState({ status: 'error', message });
-    }
-  }, [version]);
+    // Update checks are only available in native apps.
+    // On web, direct users to the download page.
+    setCheckState({
+      status: 'error',
+      message: 'Visit the Download page (https://auramind.app/download) for the latest release.',
+    });
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#09090b] text-white antialiased px-6 py-12 sm:py-20">
@@ -245,15 +185,5 @@ const AboutPage: React.FC<AboutPageProps> = ({ versionOverride }) => {
     </div>
   );
 };
-
-function compareSemver(a: string, b: string): number {
-  const ap = (a || '0.0.0').split('.').map((n) => parseInt(n, 10) || 0);
-  const bp = (b || '0.0.0').split('.').map((n) => parseInt(n, 10) || 0);
-  for (let i = 0; i < Math.max(ap.length, bp.length); i++) {
-    const d = (ap[i] || 0) - (bp[i] || 0);
-    if (d) return d;
-  }
-  return 0;
-}
 
 export default AboutPage;

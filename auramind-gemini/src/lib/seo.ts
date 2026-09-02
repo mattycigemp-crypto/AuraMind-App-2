@@ -132,7 +132,7 @@ export function setDefaultJsonLd(): void {
     description: DEFAULT_DESCRIPTION,
     url: SITE_URL,
     applicationCategory: 'EducationalApplication',
-    operatingSystem: 'Web, iOS, Android',
+    operatingSystem: 'Web, Android',
     offers: {
       '@type': 'Offer',
       price: '0',
