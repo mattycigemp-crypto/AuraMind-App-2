@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, ArrowLeft, Store } from '@/components/icons';
+import { Home, ArrowLeft, BookOpen } from '@/components/icons';
 import ProfAuraEmptyState from '../components/ui/ProfAuraEmptyState';
 
 // NotFoundPage: Prof. Aura rescues the user from a dead route. Three concrete
@@ -20,7 +20,7 @@ export default function NotFoundPage(): React.ReactElement {
           description="Prof. Aura doesn’t see a route at this address. Pick a place to dock and we’ll take it from there."
           actions={[
             { label: 'Back to Dashboard', icon: Home, onClick: () => navigate('/dashboard'), primary: true, href: '/dashboard' },
-            { label: 'Open Marketplace', icon: Store, onClick: () => navigate('/dashboard/marketplace'), href: '/dashboard/marketplace' },
+            { label: 'Open Library', icon: BookOpen, onClick: () => navigate('/dashboard/decks'), href: '/dashboard/decks' },
             { label: 'Back a step', icon: ArrowLeft, onClick: () => window.history.back() },
           ]}
           badges={['Routes reset on next visit', 'Your sessions are saved', 'Prof. Aura is patient']}
