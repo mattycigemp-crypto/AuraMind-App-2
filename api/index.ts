@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { applyMiddleware } from './_middleware.js';
+import { distributedLimiterConfigured } from './_rateLimit.js';
 import { handleChatStream } from './_chatHandler.js';
 import { handleAI, handleAITranscribe } from './_aiHandler.js';
 import { z } from 'zod';
@@ -19,6 +20,19 @@ function isAdminUser(user: { email?: string | null; app_metadata?: Record<string
   const role = user.app_metadata?.role;
   return typeof role === 'string' && ADMIN_ROLES.has(role);
 }
+
+// Rate-limit bucket per endpoint. Anything that spends money on an
+// outbound call (model inference, transcription, web search, URL and
+// transcript fetching) belongs in the tighter `ai` bucket; `default` is
+// only for endpoints that just touch our own database.
+const RATE_LIMIT_BUCKETS: Record<string, 'default' | 'ai' | 'auth'> = {
+  ai: 'ai',
+  chat: 'ai',
+  search: 'ai',
+  'fetch-url': 'ai',
+  'fetch-youtube-transcript': 'ai',
+  stripe: 'auth',
+};
 
 const json = (res: VercelResponse, status: number, body: Record<string, unknown>) => {
   res.status(status).setHeader('Content-Type', 'application/json').send(JSON.stringify(body));
@@ -242,7 +256,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       service: 'auramind-api',
       version: '2.0.0',
       timestamp: Date.now(),
+      // Surfaced so uptime monitoring can catch the silent-degradation case:
+      // without Upstash the limiter falls back to per-instance memory, so on
+      // Vercel the effective limit multiplies by the number of warm instances.
+      rateLimiter: distributedLimiterConfigured ? 'distributed' : 'in-memory',
     };
+    const isProdEnv =
+      process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production';
+    if (isProdEnv && !distributedLimiterConfigured) {
+      body.status = 'degraded';
+      body.warning =
+        'Rate limiting is per-instance: set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.';
+    }
     if (req.query.probe === 'db') {
       const dbStart = Date.now();
       try {
@@ -266,9 +291,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Apply security headers and rate limiting. Returns false if already responded.
-  if (!applyMiddleware(req, res, {
-    rateLimitType: endpoint === 'ai' ? 'ai' : endpoint === 'stripe' ? 'auth' : 'default',
-  })) {
+  if (!(await applyMiddleware(req, res, {
+    rateLimitType: RATE_LIMIT_BUCKETS[endpoint] ?? 'default',
+  }))) {
     return;
   }
 
@@ -949,6 +974,9 @@ async function handleStripe(req: VercelRequest, res: VercelResponse, action?: st
         const session = await stripe.checkout.sessions.create({
           mode: 'subscription',
           payment_method_collection: 'always',
+          // Launch/win-back codes have to be enabled at session-creation time —
+          // it cannot be applied to sessions that already exist.
+          allow_promotion_codes: true,
           line_items: [{ price: priceId, quantity: 1 }],
           subscription_data: {
             trial_period_days: 7,
