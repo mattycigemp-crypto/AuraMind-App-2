@@ -5,11 +5,16 @@ must provision *outside* the codebase before the first production cut of
 AuraMind. Pair it with the M5 platform hardening + the brand surface
 shipped in `lib/branding.ts`.
 
-The release pipeline is fully wired and `npm run mobile:check-env
---with-play --with-asc --with-match` will tell you at a glance what
-secret is missing. The pieces marked **🟠 MUST provision** will block
-upload to the respective store. Items marked **🟡 optional** unlock
-better UX but a non-signed/missing-config build still works.
+**Android is the only wired release pipeline.** `mobile-android.yml`
+builds and signs the AAB; `deploy.yml` ships the web app to Vercel.
+There is no iOS or desktop workflow in `.github/workflows/` — the iOS
+sections below describe work that still has to be built, not a pipeline
+you can run today.
+
+Run `node scripts/check-mobile-env.js` (from `auramind-gemini/`) to see
+which secrets are missing. Items marked **🟠 MUST provision** block the
+store upload they name; **🟡 optional** items unlock better UX but a
+build still works without them.
 
 ---
 
@@ -19,44 +24,47 @@ All secrets are encrypted at rest and only exposed to jobs that
 declare `secrets:` access. None of these values should land in this
 repo, in commit history, or in a notes tool.
 
-| Secret                                       | Used by                                  | Required for             |
-|----------------------------------------------|------------------------------------------|--------------------------|
-| 🟠 `TAURI_PRIVATE_KEY`                       | release.yml, release-tauri.yml           | Tauri updater signing key (.key base64) |
-| 🟠 `TAURI_KEY_PASSWORD`                      | release.yml, release-tauri.yml           | Tauri updater key password |
-| 🟠 `ANDROID_KEYSTORE_B64`                    | mobile-android.yml                       | Android release keystore (base64) |
-| 🟠 `ANDROID_KEYSTORE_PASSWORD`               | mobile-android.yml                       | Android keystore password |
-| 🟠 `ANDROID_KEY_ALIAS`                       | mobile-android.yml                       | Android key alias (e.g. `auramind-release`) |
-| 🟠 `ANDROID_KEY_PASSWORD`                    | mobile-android.yml                       | Android key password |
-| 🟠 `PLAY_STORE_SERVICE_ACCOUNT_JSON`         | mobile-android.yml                       | Google Play API service-account JSON |
-| 🟠 `APPLE_CERTIFICATE`                       | release.yml, release-tauri.yml           | Apple Developer ID .p12 (base64) |
-| 🟠 `APPLE_CERTIFICATE_PASSWORD`              | release.yml, release-tauri.yml           | Apple .p12 export password |
-| 🟠 `APPLE_SIGNING_IDENTITY`                  | release.yml, release-tauri.yml           | `Developer ID Application: CogniVect, Inc. (TEAMID)` |
-| 🟠 `APPLE_ID`                                | mobile-ios.yml                           | Apple ID email owner of App Store Connect |
-| 🟠 `APPLE_TEAM_ID`                           | mobile-ios.yml                           | Apple Developer 10-char team ID |
-| 🟠 `APPLE_ITC_TEAM_ID`                       | mobile-ios.yml                           | Apple App Store Connect team ID |
-| 🟠 `ASC_API_KEY_PATH`                        | mobile-ios.yml                           | Path to .p8 API key inside the macOS-14 runner (workspace-cached) |
-| 🟠 `MATCH_GIT_URL`                           | mobile-ios.yml                           | git URL of your `match` cert repo (private) |
-| 🟠 `MATCH_PASSWORD`                          | mobile-ios.yml                           | `match` repo encryption password |
-| 🟠 `MATCH_GIT_BASIC_AUTHORIZATION`            | mobile-ios.yml                           | base64 "user:token" for HTTPS access to the match repo |
-| 🟡 `WINDOWS_CERTIFICATE`                     | release.yml, release-tauri.yml           | Windows code-signing .pfx (base64) — required only for Windows |
-| 🟡 `WINDOWS_CERTIFICATE_PASSWORD`            | release.yml, release-tauri.yml           | Windows .pfx password |
+### Wired today
+
+These are consumed by workflows that exist in `.github/workflows/`.
+
+| Secret                               | Used by            | Required for |
+|--------------------------------------|--------------------|--------------|
+| 🟠 `ANDROID_KEYSTORE_B64`            | mobile-android.yml | Android release keystore (base64) |
+| 🟠 `ANDROID_KEYSTORE_PASSWORD`       | mobile-android.yml | Android keystore password |
+| 🟠 `ANDROID_KEY_ALIAS`               | mobile-android.yml | Android key alias (e.g. `auramind-release`) |
+| 🟠 `ANDROID_KEY_PASSWORD`            | mobile-android.yml | Android key password |
+| 🟠 `PLAY_STORE_SERVICE_ACCOUNT_JSON` | mobile-android.yml | Google Play API service-account JSON |
+| 🟠 `VERCEL_TOKEN`                    | deploy.yml         | Web deploy to Vercel |
+| 🟠 `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` | deploy.yml | Client Supabase config (public) |
+| 🟠 `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`   | migration-drift.yml | Server-side schema checks |
+| 🟠 `VITE_STRIPE_PUBLISHABLE_KEY`     | deploy.yml         | Client Stripe config (public) |
+| 🟡 `VITE_POSTHOG_KEY`                | deploy.yml         | Product analytics |
+
+### Not wired yet
+
+The iOS lanes exist in `auramind-gemini/fastlane/` but **no workflow
+calls them**, so none of these secrets are read by CI today. Provision
+them only alongside building the iOS workflow — setting them now buys
+nothing and widens the blast radius if the repo leaks.
+
+| Secret | Needed by | Purpose |
+|--------|-----------|---------|
+| `APPLE_ID`, `APPLE_TEAM_ID`, `APPLE_ITC_TEAM_ID` | a future iOS workflow | App Store Connect identity |
+| `ASC_API_KEY_PATH` | a future iOS workflow | Path to the .p8 API key on the runner |
+| `MATCH_GIT_URL`, `MATCH_PASSWORD`, `MATCH_GIT_BASIC_AUTHORIZATION` | a future iOS workflow | fastlane `match` cert repo |
 
 Provisioning order:
-1. Generate the local Tauri keypair first (`npx @tauri-apps/cli signer
-   generate --write`). Add the printed pubkey to `tauri.conf.json →
-   plugins.updater.pubkey`. Base64-encode the .key file. Store both
-   values in a password manager (1Password, Bitwarden) AND set the
-   corresponding GitHub secrets.
-2. Generate the Android release keystore. **Backup is irreplaceable**;
+1. Generate the Android release keystore. **Backup is irreplaceable**;
    losing the keystore means you cannot upload updates to the existing
    Play listing. Keep two offline copies.
-3. Generate the Apple Developer ID Application .p12. Export from
+2. Generate the Apple Developer ID Application .p12. Export from
    Keychain Access → Developer ID Application → Export. .p12 is
    password-protected; both are secrets.
-4. Generate the Apple App Store Connect API key (.p8 + Key ID +
+3. Generate the Apple App Store Connect API key (.p8 + Key ID +
    Issuer ID). The API key file itself goes in a separate private
    storage; ASC_API_KEY_PATH points to its location on the CI runner.
-5. Stand up the `match` repo: a separate *private* git repo named
+4. Stand up the `match` repo: a separate *private* git repo named
    `auramind-ios-certs` (or similar). Push with a single commit so
    `match nuke match_appstore` can wipe + re-install cleanly.
 6. Optional: stand up Azure Trusted Signing or purchase a Windows EV
@@ -66,6 +74,10 @@ Provisioning order:
 ---
 
 ## 2. Apple App Store Connect
+
+> **Not wired.** No iOS workflow exists in `.github/workflows/`, and the
+> Capacitor iOS project was removed along with the archived stacks. This
+> section is the plan for adding iOS, not a runbook you can execute now.
 
 ### 2.1 Create the app record
 
@@ -155,37 +167,7 @@ build. The values map (Play → mint → asciidoc):
 
 ---
 
-## 4. Tauri Updater service (releases.cogniavect.app)
-
-The Cloudflare Worker at `cloudflare-worker/update.js` proxies GitHub
-Releases into the Tauri updater protocol.
-
-### 4.1 DNS
-
-Point `releases.cogniavect.app` CNAME to the Worker's default
-`*.workers.dev` subdomain (Cloudflare auto-creates this).
-
-### 4.2 Worker secrets
-
-None required for public GitHub releases. If you later bump past the
-60 req/hr/IP public-API rate, add:
-
-```bash
-cd cloudflare-worker
-wrangler secret put GITHUB_TOKEN
-# paste a GitHub PAT with `public_repo` scope
-```
-
-### 4.3 Regenerating the Tauri updater keypair
-
-See `src-tauri/BUNDLE-CONFIG-NOTES.md` §1. The maintenance burden is
-lowest if the keypair is regenerated in a single, documented event and
-stored in the password manager. The corresponding pubkey in
-`tauri.conf.json → plugins.updater.pubkey` MUST match.
-
----
-
-## 5. Pre-flight check (everything in one place)
+## 4. Pre-flight check (everything in one place)
 
 From `auramind-gemini/scripts/check-mobile-env.js`:
 
@@ -206,13 +188,11 @@ required items are present.
 
 ---
 
-## 6. Routine cadence after launch
+## 5. Routine cadence after launch
 
 | Action                                           | Cadence      |
 |--------------------------------------------------|--------------|
 | Upload a maintenance AAB to Play Internal         | Every release |
-| Run `fastlane ios metadata_only` after copy edits | Whenever      |
-| Audit the match repo for cert expiry             | Quarterly     |
-| Check reviewer response time on App Store        | Per release  |
-| Renew Apple Developer Program membership          | Annually ($99) |
+| Verify the Play listing still renders correctly   | Per release  |
+| Rotate the Play service-account key               | Annually     |
 | Regenerate supabase JWT signing keys              | Quarterly    |

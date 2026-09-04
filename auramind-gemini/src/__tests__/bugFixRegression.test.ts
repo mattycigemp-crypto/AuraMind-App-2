@@ -715,7 +715,7 @@ describe('Bug #6: CogniVect parent-brand placement', () => {
     // Two `..` segments lift back to auramind-gemini/.
     const identityFiles: ReadonlyArray<readonly [string, string, ReadonlyArray<string>]> = [
       // [rel path readable from __dirname, human label, key=value substrings that MUST stay "AuraMind" only]
-      ['../../archive/capacitor.config.ts',  'auramind-gemini/capacitor.config.ts',          ['appId:', "appName: 'AuraMind'"]],
+      ['../../capacitor.config.ts',          'auramind-gemini/capacitor.config.ts',          ['appId:', "appName: 'AuraMind'"]],
       ['../../metadata.json',              'auramind-gemini/metadata.json',               ['"name": "AuraMind"']],
       ['../../package.json',               'auramind-gemini/package.json',                ['"name": "auramind"']],
       ['../../index.html',                 'auramind-gemini/index.html',                  ['<title>AuraMind']],
@@ -749,7 +749,7 @@ describe('Bug #6: CogniVect parent-brand placement', () => {
     expect(brandingSrc).toMatch(/PARENT_COMPANY_NAME\s*=\s*['"]CogniVect['"]/);
     // The BRAND aggregate mirrors via identifier reference (NOT a quoted
     // literal in the aggregate body). This pins the architecture: ONE
-    // string literal in the file, mirroed everywhere via PARENT_COMPANY_NAME.
+    // string literal in the file, mirrored everywhere via PARENT_COMPANY_NAME.
     expect(brandingSrc).toMatch(/parentName:\s*PARENT_COMPANY_NAME/);
 
     // Every consumer component reaches for the named constant rather than
