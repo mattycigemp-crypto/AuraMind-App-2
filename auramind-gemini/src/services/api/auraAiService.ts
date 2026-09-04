@@ -151,19 +151,6 @@ interface ChatCompletionResponse {
 }
 
 // Create and export a singleton instance
-const getEnv = (key: string): string => {
-  try {
-    // Check process.env first: it's mutable at runtime and tests
-    // (and Node.js serverless functions) can control it. Fall back to
-    // import.meta.env which Vite inlines at transform time — accurate
-    // in the browser but not overridable at runtime.
-    const procVal = typeof process !== 'undefined' ? process.env?.[key] : '';
-    if (procVal) return procVal;
-    return (import.meta as any).env?.[key] || '';
-  } catch {
-    return '';
-  }
-};
 
 // Read env lazily at construction time, not at module scope, so that
 // vi.stubEnv / test-time overrides take effect before the singleton
@@ -179,7 +166,12 @@ export class AuraAiClient {
   private readonly useLocalAI: boolean;
 
   constructor(apiKey?: string, baseUrl?: string, model?: string) {
-    const groqKey = apiKey || getEnv('VITE_GROQ_API_KEY');
+    // The client holds no Groq key — VITE_GROQ_API_KEY is not in CLIENT_ENV
+    // (see lib/env.ts), because Vite publishes VITE_ vars to the browser.
+    // Callers route through the /api/ai proxy, which holds GROQ_API_KEY
+    // server-side. An explicit apiKey argument is still honoured, which is
+    // how tests and any future BYOK flow supply one.
+    const groqKey = apiKey || '';
     this.useLocalAI = usesLocalAI();
 
     if (this.useLocalAI) {
@@ -200,11 +192,16 @@ export class AuraAiClient {
 
   private checkApiKey() {
     if (!this.apiKey && !this.baseUrl.includes('local-ai')) {
-      throw new Error('API key is missing. Please set VITE_GROQ_API_KEY in your .env file.');
+      throw new Error(
+        'No AI key on this client. Sign in so requests are proxied through ' +
+        '/api/ai (server-side GROQ_API_KEY), or set VITE_USE_LOCAL_AI=true.',
+      );
     }
     
     if (this.apiKey && (this.apiKey.includes('your_') || this.apiKey.includes('placeholder'))) {
-      throw new Error(`Invalid API key. Please replace the placeholder VITE_GROQ_API_KEY in your .env file with a real API key from https://groq.com/.`);
+      throw new Error(
+        'Invalid AI key: a placeholder value was supplied to AuraAiService.',
+      );
     }
   }
 

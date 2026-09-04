@@ -1,3 +1,4 @@
+import { readClientEnv } from '../../lib/env';
 /**
  * puterProvider — Puter.js as a free, user-pays fallback AI provider.
  *
@@ -45,7 +46,9 @@
 // automatically.
 
 function readEnv(key: string, fallback = ''): string {
-  return ((import.meta as any).env ?? {})[key] ?? fallback;
+// Allowlisted read — see CLIENT_ENV in lib/env.ts. Dynamic indexing of
+// import.meta.env makes Vite inline every VITE_ var into the bundle.
+  return readClientEnv(key) ?? fallback;
 }
 
 function isPuterEnabled(): boolean {

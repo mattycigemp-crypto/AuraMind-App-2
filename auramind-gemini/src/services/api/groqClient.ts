@@ -47,20 +47,40 @@
 
 import { requireSupabase } from '../database/supabase';
 import { usesLocalAI } from '../../lib/aiProvider';
+import { readClientEnv } from '../../lib/env';
 
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 const PROXY_BASE_URL = '/api/ai';
 const LOCAL_BASE_URL = '/local-ai/v1';
 
+// Reads go through the allowlist in lib/env.ts. Indexing import.meta.env
+// dynamically here would make Vite inline the whole env object into the
+// bundle — see the CLIENT_ENV comment for why that is a security boundary.
 function readEnv(key: string, fallback = ''): string {
-  return ((import.meta as any).env ?? {})[key] ?? fallback;
+  return readClientEnv(key) ?? fallback;
 }
 
 function isLocalAI(): boolean {
   return usesLocalAI();
 }
 
+/**
+ * Local-dev escape hatch ONLY.
+ *
+ * `VITE_GROQ_API_KEY` is inlined into the browser bundle by Vite at build
+ * time, so anything it returns is public: a production build that used it
+ * would hand every visitor a working Groq credential to spend. Signed-in
+ * users already go through `/api/ai`, which holds the real key server-side
+ * (see api/_aiHandler.ts).
+ *
+ * Gating on `import.meta.env.DEV` means the production branch is statically
+ * false, so the bundler drops the direct-to-Groq path entirely and the key
+ * cannot be used client-side even if it is set in the deploy environment.
+ * Do not remove this guard to "fix" a signed-out AI call — the correct fix
+ * for that is a session, not a shipped credential.
+ */
 function getGroqKey(): string {
+  if (!import.meta.env.DEV) return '';
   return readEnv('VITE_GROQ_API_KEY');
 }
 
@@ -254,7 +274,9 @@ export async function groqChat(opts: GroqChatOptions): Promise<GroqChatResult> {
   } else {
     if (!key) {
       throw new GroqUnavailableError(
-        'groqChat: no API key. Set VITE_GROQ_API_KEY in .env or enable VITE_USE_LOCAL_AI=true.',
+        import.meta.env.DEV
+          ? 'groqChat: no API key. Set VITE_GROQ_API_KEY in .env or enable VITE_USE_LOCAL_AI=true.'
+          : 'groqChat: AI requires a signed-in session — requests are proxied server-side.',
         {},
       );
     }
@@ -398,7 +420,9 @@ export async function groqTranscribe(
   const key = getGroqKey();
   if (!key) {
     throw new GroqUnavailableError(
-      'groqTranscribe: no API key. Sign in to use AI transcription (or set VITE_GROQ_API_KEY in .env for local dev).',
+      import.meta.env.DEV
+        ? 'groqTranscribe: no API key. Set VITE_GROQ_API_KEY in .env for local dev, or sign in to use the server proxy.'
+        : 'groqTranscribe: AI transcription requires a signed-in session — requests are proxied server-side.',
       {},
     );
   }

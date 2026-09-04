@@ -1,23 +1,24 @@
 import { describe, expect, it, vi, beforeEach, afterEach, beforeAll } from 'vitest';
 
-// The module builds its singleton at import time and THROWS when
-// VITE_GROQ_API_KEY is absent, so the key must be stubbed before the
-// dynamic import below. Previously this file imported the module at the
-// top level and made live calls to api.groq.com — that made the suite
-// depend on a real key and on network reachability.
-vi.stubEnv('VITE_GROQ_API_KEY', 'test-key-not-real');
+// The client no longer reads a Groq key from the environment at all —
+// VITE_GROQ_API_KEY is deliberately absent from CLIENT_ENV so it cannot be
+// published in the browser bundle (see lib/env.ts and
+// clientSecretExposure.test.ts). The constructor still accepts an explicit
+// key, which is how these tests drive the direct-Groq code path without a
+// session and without touching the network.
 vi.stubEnv('VITE_USE_LOCAL_AI', 'false');
-// getEnv() checks process.env first because Vite statically inlines
-// import.meta.env.VITE_* at transform time — vi.stubEnv alone cannot
-// override those inlined values at runtime.
-process.env.VITE_GROQ_API_KEY = 'test-key-not-real';
 process.env.VITE_USE_LOCAL_AI = 'false';
+
+const TEST_KEY = 'test-key-not-real';
 
 type AuraAiModule = typeof import('../services/api/auraAiService');
 let mod: AuraAiModule;
 
+let client: InstanceType<AuraAiModule['AuraAiClient']>;
+
 beforeAll(async () => {
   mod = await import('../services/api/auraAiService');
+  client = new mod.AuraAiClient(TEST_KEY);
 });
 
 /** Minimal OpenAI-shaped success payload. */
@@ -54,21 +55,20 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
-  delete process.env.VITE_GROQ_API_KEY;
   delete process.env.VITE_USE_LOCAL_AI;
 });
 
 describe('auraAiService', () => {
   it('exposes the expected client surface', () => {
     expect(mod.auraAiClient).toBeDefined();
-    expect(typeof mod.auraAiClient.ask).toBe('function');
-    expect(typeof mod.auraAiClient.chatCompletion).toBe('function');
+    expect(typeof client.ask).toBe('function');
+    expect(typeof client.chatCompletion).toBe('function');
   });
 
   it('chatCompletion returns a parsed assistant message', async () => {
     mockFetchOnce(okBody('Hello'));
 
-    const response = await mod.auraAiClient.chatCompletion(
+    const response = await client.chatCompletion(
       {
         messages: [
           { role: 'system', content: 'You are a helpful assistant.' },
@@ -88,7 +88,7 @@ describe('auraAiService', () => {
   it('chatCompletion posts to the Groq chat-completions endpoint', async () => {
     const fetchMock = mockFetchOnce(okBody('ok'));
 
-    await mod.auraAiClient.chatCompletion(
+    await client.chatCompletion(
       { messages: [{ role: 'user', content: 'ping' }] },
       false,
     );
@@ -106,7 +106,7 @@ describe('auraAiService', () => {
     mockFetchOnce({ error: { message: 'Invalid API Key' } }, 401);
 
     await expect(
-      mod.auraAiClient.chatCompletion(
+      client.chatCompletion(
         { messages: [{ role: 'user', content: 'unauthorized' }] },
         false,
       ),
@@ -115,7 +115,7 @@ describe('auraAiService', () => {
 
   it('ask returns model content on success', async () => {
     mockFetchOnce(okBody('4'));
-    const reply = await mod.auraAiClient.ask('What is 2+2?');
+    const reply = await client.ask('What is 2+2?');
     expect(typeof reply).toBe('string');
     expect(reply).toContain('4');
   });
@@ -123,7 +123,7 @@ describe('auraAiService', () => {
   it('ask degrades to a fallback string instead of throwing when the API fails', async () => {
     mockFetchOnce({ error: { message: 'Invalid API Key' } }, 401);
 
-    const reply = await mod.auraAiClient.ask('Explain recursion in one sentence.');
+    const reply = await client.ask('Explain recursion in one sentence.');
     expect(typeof reply).toBe('string');
     expect(reply.length).toBeGreaterThan(0);
   });
