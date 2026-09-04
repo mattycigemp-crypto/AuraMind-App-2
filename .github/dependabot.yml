@@ -109,6 +109,6 @@ updates:
 
   # ── Ignore noisy ecosystems ──────────────────────────────────────
   # - docker: skipped — no Dockerfiles in the repo.
-  # - cargo: skipped — Tauri internals auto-bump with tauri-action.
+  # - cargo: skipped — no Rust in the repo.
   # - gradle: skipped — Capacitor pin releases to a known-good set
   #   per the M6 store-submission playbook.

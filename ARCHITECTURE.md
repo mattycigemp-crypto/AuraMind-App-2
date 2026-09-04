@@ -13,7 +13,6 @@ AuraMind is a full-stack adaptive AI learning system — it turns any input (PDF
 | Web SPA | `auramind-gemini/` | React 19 + Vite 6 + Tailwind 4 | Main application (PWA) |
 | Android app | `auramind-gemini/android/` | Capacitor 8 | Active native build |
 | Backend API | `api/` | Express + Vercel Serverless | Auth, Stripe, admin, chat |
-| Desktop (archived) | `auramind-gemini/archive/src-tauri/` | Tauri 2 | Not in the build pipeline |
 
 **Key dependencies:** Supabase (auth + DB), Stripe (payments), Resend (email), PostHog (analytics). AI providers: Groq, OpenRouter, local (Ollama/LM Studio).
 
@@ -169,9 +168,8 @@ Enrollment: localStorage-first with best-effort Supabase sync. Lessons open as p
 - **Android** — active Capacitor 8 app at `auramind-gemini/android/`, built
   from the same React source with a native bottom nav, status-bar/back
   handling, haptics, local reminders, and system sharing.
-- **Desktop** — the Tauri 2 stack is archived under
-  `auramind-gemini/archive/src-tauri/` and is not part of the current
-  build/release pipeline.
+- **Desktop** — no desktop build. An earlier Tauri 2 stack was removed;
+  recover it from git history if it is ever revived.
 
 ---
 
