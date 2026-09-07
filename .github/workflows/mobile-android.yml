@@ -142,7 +142,11 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: android-release-aab
-          path: android/app/build/outputs/bundle/release/app-release.aab
+          # Repo-root relative on purpose: defaults.run.working-directory
+          # applies to `run:` steps only, never to `uses:` actions, so this
+          # needs the auramind-gemini/ prefix that the Play upload step below
+          # already has.
+          path: auramind-gemini/android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
           if-no-files-found: error
 
