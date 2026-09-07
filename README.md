@@ -293,7 +293,7 @@ ORDER  BY applied_at DESC;
 - **Voice study** — text-to-speech cards and hands-free review.
 - **Gamification** — streaks, mastery stats, and progress analytics.
 - **Freemium via Stripe** — subscription checks, webhooks, and entitlement fallback.
-- **Multiple AI providers** — Groq, OpenRouter, and local (Ollama/LM Studio), with a user-pays Puter fallback.
+- **Multiple AI providers** — server-side failover across Groq, Cerebras, Gemini and OpenRouter (any one key is enough), with a user-pays Puter fallback, optional local Ollama/LM Studio, and deterministic offline generation as the floor.
 
 ## 📊 Tech Stack
 
@@ -304,7 +304,7 @@ ORDER  BY applied_at DESC;
 - **Database**: Supabase (PostgreSQL, RLS)
 - **Payments**: Stripe
 - **Email**: Resend
-- **AI**: Groq, OpenRouter, local AI (Ollama/LM Studio), Puter fallback
+- **AI**: Groq / Cerebras / Gemini / OpenRouter with automatic failover, Puter (user-pays) fallback, optional local AI (Ollama/LM Studio)
 
 ## 🐛 Troubleshooting
 

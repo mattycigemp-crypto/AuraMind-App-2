@@ -14,7 +14,7 @@ AuraMind is a full-stack adaptive AI learning system — it turns any input (PDF
 | Android app | `auramind-gemini/android/` | Capacitor 8 | Active native build |
 | Backend API | `api/` | Express + Vercel Serverless | Auth, Stripe, admin, chat |
 
-**Key dependencies:** Supabase (auth + DB), Stripe (payments), Resend (email), PostHog (analytics). AI providers: Groq, OpenRouter, local (Ollama/LM Studio).
+**Key dependencies:** Supabase (auth + DB), Stripe (payments), Resend (email), PostHog (analytics). AI providers: Groq, Cerebras, Gemini, OpenRouter (server-side failover), plus Puter (user-pays) and local Ollama/LM Studio.
 
 ---
 
@@ -53,18 +53,46 @@ Role is read from `app_metadata.role` (synced into `user_profiles.role` by `sync
 
 ## AI Integration
 
-### Provider priority: Local AI → Groq → OpenRouter (BYOK)
-- **Local**: LM Studio / Ollama on port 1234, proxied via Vite (`/local-ai`)
-- **Groq**: Fastest free tier, model `llama-3.3-70b-versatile`
-- **OpenRouter**: Multiple models, model `deepseek/deepseek-r1-0528:free`
-- **Model service**: Python FastAPI at `MODEL_SERVICE_URL` (default `http://127.0.0.1:8000`)
+### Provider chain
+
+Client AI never holds a provider key. Requests go to `/api/ai`, which fails
+over server-side across every provider that has a key configured:
+
+1. **Groq** — `openai/gpt-oss-120b` (default; fastest)
+2. **Cerebras** — `llama-3.3-70b`
+3. **Gemini** — `gemini-2.0-flash`, via Google's OpenAI-compatible endpoint
+4. **OpenRouter** — a `:free` model; broadest choice, easiest to swap
+
+All four speak the OpenAI chat-completions shape, so there is one request
+path and no per-provider adapter. A provider with no key is skipped; on
+429 / 401 / 403 / 5xx the next one takes over. The response carries
+`x-ai-provider` naming whichever one answered. Model IDs are overridable per
+provider (`GROQ_MODEL`, `CEREBRAS_MODEL`, …) so a renamed model is a config
+change, not a deploy.
+
+When all of them return 429, the client offers **Puter** — a user-pays
+fallback that bills the user's own account, so it costs the developer
+nothing. Puter's sign-in is a popup and needs a real user gesture, so it is
+surfaced as a banner rather than an automatic retry. Last resort after that
+is deterministic offline template generation.
+
+**Local AI** (LM Studio / Ollama on port 1234, proxied via Vite at
+`/local-ai`) is a separate opt-in path enabled with `VITE_USE_LOCAL_AI=true`.
+
+Audio transcription still goes to Groq Whisper specifically and does not
+participate in the failover chain.
 
 ### Key AI services
-- `groqService.ts` — Flashcard/quiz generation from topics
-- `auraAiService.ts` — Multi-provider unified chat
-- `freeAiService.ts` — Ollama-based chat
-- `factCheckService.ts` — AI content verification
-- `_chatHandler.ts` (API) — SSE streaming chat via model-service
+- `api/_providers.ts` — provider registry + failover policy
+- `api/_aiHandler.ts` — the proxy: auth, allowlisting, failover, usage logging
+- `groqClient.ts` — client entry point; talks to `/api/ai`, Puter rescue on 429
+- `auraAiService.ts` — multi-provider unified chat
+- `puterProvider.ts` — user-pays Puter fallback (SDK loaded from its CDN)
+- `templateDeckGenerator.ts` — deterministic offline generation
+- `_chatHandler.ts` (API) — SSE streaming chat
+
+> `model-service/` (Python FastAPI) is gitignored and local-only — it is not
+> part of a fresh clone or the deployed app.
 
 ### Chat streaming flow
 Client → `/api/chat/stream?message=...&token=...` → Express router → `_chatHandler.ts` → SSE stream from model-service → token-by-token to client. Rate limited: 30 req/min per IP. Responses logged to `chat_logs`.
