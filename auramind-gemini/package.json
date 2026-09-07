@@ -34,10 +34,10 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
-    "@capacitor/android": "^8.5.0",
+    "@capacitor/android": "^8.5.1",
     "@capacitor/app": "^8.1.1",
     "@capacitor/clipboard": "^8.0.1",
-    "@capacitor/core": "^8.5.0",
+    "@capacitor/core": "^8.5.1",
     "@capacitor/device": "^8.0.3",
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/haptics": "^8.0.2",
@@ -141,7 +141,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.12.1",
-    "@capacitor/cli": "^8.5.0",
+    "@capacitor/cli": "^8.5.1",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.61.1",
     "@sentry/vite-plugin": "^5.4.0",
