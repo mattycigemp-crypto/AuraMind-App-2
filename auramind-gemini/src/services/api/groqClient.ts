@@ -47,20 +47,41 @@
 
 import { requireSupabase } from '../database/supabase';
 import { usesLocalAI } from '../../lib/aiProvider';
+import { readClientEnv } from '../../lib/env';
+import { notifyAiQuotaExhausted } from '../../lib/aiQuotaSignal';
 
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 const PROXY_BASE_URL = '/api/ai';
 const LOCAL_BASE_URL = '/local-ai/v1';
 
+// Reads go through the allowlist in lib/env.ts. Indexing import.meta.env
+// dynamically here would make Vite inline the whole env object into the
+// bundle — see the CLIENT_ENV comment for why that is a security boundary.
 function readEnv(key: string, fallback = ''): string {
-  return ((import.meta as any).env ?? {})[key] ?? fallback;
+  return readClientEnv(key) ?? fallback;
 }
 
 function isLocalAI(): boolean {
   return usesLocalAI();
 }
 
+/**
+ * Local-dev escape hatch ONLY.
+ *
+ * `VITE_GROQ_API_KEY` is inlined into the browser bundle by Vite at build
+ * time, so anything it returns is public: a production build that used it
+ * would hand every visitor a working Groq credential to spend. Signed-in
+ * users already go through `/api/ai`, which holds the real key server-side
+ * (see api/_aiHandler.ts).
+ *
+ * Gating on `import.meta.env.DEV` means the production branch is statically
+ * false, so the bundler drops the direct-to-Groq path entirely and the key
+ * cannot be used client-side even if it is set in the deploy environment.
+ * Do not remove this guard to "fix" a signed-out AI call — the correct fix
+ * for that is a session, not a shipped credential.
+ */
 function getGroqKey(): string {
+  if (!import.meta.env.DEV) return '';
   return readEnv('VITE_GROQ_API_KEY');
 }
 
@@ -254,7 +275,9 @@ export async function groqChat(opts: GroqChatOptions): Promise<GroqChatResult> {
   } else {
     if (!key) {
       throw new GroqUnavailableError(
-        'groqChat: no API key. Set VITE_GROQ_API_KEY in .env or enable VITE_USE_LOCAL_AI=true.',
+        import.meta.env.DEV
+          ? 'groqChat: no API key. Set VITE_GROQ_API_KEY in .env or enable VITE_USE_LOCAL_AI=true.'
+          : 'groqChat: AI requires a signed-in session — requests are proxied server-side.',
         {},
       );
     }
@@ -311,6 +334,38 @@ export async function groqChat(opts: GroqChatOptions): Promise<GroqChatResult> {
         `Groq rejected the API key (HTTP ${res.status}): ${upstreamMessage}`,
         { status: res.status, groqMessage: upstreamMessage, isAuthFailure: true },
       );
+    }
+
+    // A 429 here means the server already failed over across every free
+    // provider it has keys for and all of them refused. Puter is the one
+    // remaining option that costs us nothing, because it bills the user's
+    // own account — so try it before giving up.
+    if (res.status === 429) {
+      try {
+        const { puterChat, isPuterAuthedSync, loadPuterModule } =
+          await import('./puterProvider');
+        // Load first: the sync check reads a cache that is only populated by a
+        // load round-trip, so without this it always reports "signed out" on
+        // the first 429 of a session.
+        await loadPuterModule();
+        if (isPuterAuthedSync()) {
+          const puterResult = await puterChat({
+            messages: finalMessages,
+            maxTokens,
+            temperature,
+          });
+          return { content: puterResult.content, raw: puterResult.raw };
+        }
+      } catch (puterErr) {
+        // Puter is a bonus path, never a hard dependency: if it is not
+        // signed in, blocked, or failing, fall through to the error below
+        // so the caller still reaches its offline template fallback.
+        console.warn('[AuraMind/groqClient] Puter rescue unavailable:', puterErr);
+      }
+      // Not signed in (or Puter failed) — surface the banner so the user can
+      // choose to connect Puter. The popup needs a real click, so this can
+      // only prompt; it cannot recover on its own.
+      notifyAiQuotaExhausted();
     }
 
     // 429 → quota / rate limit; 5xx → upstream outage; otherwise → generic
@@ -398,7 +453,9 @@ export async function groqTranscribe(
   const key = getGroqKey();
   if (!key) {
     throw new GroqUnavailableError(
-      'groqTranscribe: no API key. Sign in to use AI transcription (or set VITE_GROQ_API_KEY in .env for local dev).',
+      import.meta.env.DEV
+        ? 'groqTranscribe: no API key. Set VITE_GROQ_API_KEY in .env for local dev, or sign in to use the server proxy.'
+        : 'groqTranscribe: AI transcription requires a signed-in session — requests are proxied server-side.',
       {},
     );
   }

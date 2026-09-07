@@ -1,3 +1,4 @@
+import { readClientEnv } from '../../lib/env';
 /**
  * puterProvider — Puter.js as a free, user-pays fallback AI provider.
  *
@@ -45,7 +46,9 @@
 // automatically.
 
 function readEnv(key: string, fallback = ''): string {
-  return ((import.meta as any).env ?? {})[key] ?? fallback;
+// Allowlisted read — see CLIENT_ENV in lib/env.ts. Dynamic indexing of
+// import.meta.env makes Vite inline every VITE_ var into the bundle.
+  return readClientEnv(key) ?? fallback;
 }
 
 function isPuterEnabled(): boolean {
@@ -228,40 +231,98 @@ function cacheAuthedState(value: boolean | null): void {
   authedCache = value;
 }
 
+/** Official Puter.js browser bundle. Sets `window.puter` on load. */
+const PUTER_CDN_URL = 'https://js.puter.com/v2/';
+
+/**
+ * Load the Puter SDK.
+ *
+ * Loaded from Puter's CDN rather than the `@heyputer/puter.js` npm package,
+ * because the package ships raw ESM source that pulls Node polyfills
+ * (path-browserify, an XHR shim, a localStorage shim). Rollup does not carry
+ * that through a production build: the SDK silently ends up absent from
+ * `dist/` even though the dev server serves it fine — so Puter worked in dev
+ * and failed in production.
+ *
+ * History worth keeping: before that, the import was wrapped in
+ * `new Function('s', 'return import(s)')` to hide the specifier from Vite's
+ * resolver. That also stopped Vite from REWRITING it, so the browser received
+ * the bare string '@heyputer/puter.js' and threw "Failed to resolve module
+ * specifier" on every single call. Puter never once loaded.
+ *
+ * The script tag is injected on first use, so it costs nothing until someone
+ * actually falls through to Puter. `https://js.puter.com` must stay in the
+ * CSP `script-src` (vercel.json and api/_middleware.ts) or the browser blocks
+ * it silently.
+ */
 export async function loadPuterModule(): Promise<any> {
   if (!puterModulePromise) {
     puterModulePromise = (async () => {
-      try {
-        // Defensive dynamic import — `new Function(...)` evaluates the
-        // import expression at runtime so Vite's static analyzer never
-        // sees the bare specifier. This avoids the dev-server 500 that
-        // happens when @heyputer/puter.js is missing or renamed but a
-        // top-level `import('@heyputer/puter.js')` would still trip
-        // Vite's resolver despite @vite-ignore.
-        const dynImport = new Function(
-          's',
-          'return import(s).then((m) => m.default ?? m)',
-        ) as (s: string) => Promise<any>;
-        const sdk = await dynImport('@heyputer/puter.js');
-        // Eagerly sample the auth state so subsequent `isPuterAuthed()` calls
-        // can return synchronously. The auth methods on Puter are documented
-        // as synchronous; the try/catch absorbs any SDK variations.
-        try {
-          authedCache = Boolean(sdk?.auth?.isSignedIn?.());
-        } catch {
-          authedCache = false;
-        }
-        return sdk;
-      } catch (e: any) {
-        const msg = e?.message || String(e);
+      if (typeof window === 'undefined' || typeof document === 'undefined') {
         throw new PuterUnavailableError(
-          `Puter.js SDK failed to load: ${msg}. The package may be missing or the build may have skipped it. Run \`npm install @heyputer/puter.js\` to install.`,
-          { puterMessage: msg },
+          'Puter.js needs a browser environment (window/document).',
+          {},
         );
       }
+
+      // Already present (a previous load, or a host page that included it).
+      const existing = (window as any).puter;
+      if (existing?.ai) return sampleAuth(existing);
+
+      await new Promise<void>((resolve, reject) => {
+        const done = (el: HTMLScriptElement) => {
+          el.dataset.puterLoaded = 'true';
+          resolve();
+        };
+
+        const prior = document.querySelector<HTMLScriptElement>(
+          `script[src="${PUTER_CDN_URL}"]`,
+        );
+        if (prior) {
+          if (prior.dataset.puterLoaded === 'true') return resolve();
+          prior.addEventListener('load', () => done(prior), { once: true });
+          prior.addEventListener('error', () => reject(new Error('script error')), { once: true });
+          return;
+        }
+
+        const el = document.createElement('script');
+        el.src = PUTER_CDN_URL;
+        el.async = true;
+        el.addEventListener('load', () => done(el), { once: true });
+        el.addEventListener('error', () => reject(new Error('script error')), { once: true });
+        document.head.appendChild(el);
+      }).catch((e: any) => {
+        throw new PuterUnavailableError(
+          `Puter.js failed to load from ${PUTER_CDN_URL}. Most likely the CSP ` +
+          `script-src is missing https://js.puter.com, or the device is offline.`,
+          { puterMessage: e?.message || String(e) },
+        );
+      });
+
+      const sdk = (window as any).puter;
+      if (!sdk?.ai) {
+        throw new PuterUnavailableError(
+          'Puter.js loaded but window.puter.ai is missing — the CDN bundle may have changed shape.',
+          {},
+        );
+      }
+      return sampleAuth(sdk);
     })();
   }
   return puterModulePromise;
+}
+
+/**
+ * Sample auth state once at load so `isPuterAuthed()` can answer
+ * synchronously afterwards.
+ */
+function sampleAuth(sdk: any): any {
+  try {
+    authedCache = Boolean(sdk?.auth?.isSignedIn?.());
+  } catch {
+    authedCache = false;
+  }
+  return sdk;
 }
 
 /**

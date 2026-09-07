@@ -94,56 +94,59 @@ test.describe('Layout regression tests', () => {
     });
   });
 
-  test.describe('Pricing cards responsive layout', () => {
-    test('pricing cards stack vertically on mobile (375px)', async ({ page }) => {
-      await page.setViewportSize({ width: 375, height: 812 });
-      await page.goto('/#pricing');
-      await page.waitForLoadState('networkidle');
+  test.describe('Pricing layout', () => {
+    // AuraMind sells one plan. These tests previously asserted a two-card
+    // grid, which encoded a "$0 forever" tier the app could never grant —
+    // App.tsx gates on active/trialing only. The tier was removed; what
+    // these still protect is the real contract: the plan renders, stays
+    // inside the viewport, and stays centred at both widths.
+    for (const { label, width, height } of [
+      { label: 'mobile (375px)', width: 375, height: 812 },
+      { label: 'desktop (1280px)', width: 1280, height: 800 },
+    ]) {
+      test(`pricing plan renders without overflow on ${label}`, async ({ page }) => {
+        await page.setViewportSize({ width, height });
+        await page.goto('/#pricing');
+        await page.waitForLoadState('networkidle');
 
-      await page.evaluate(() => {
-        document.getElementById('pricing')?.scrollIntoView({ behavior: 'instant' });
+        await page.evaluate(() => {
+          document.getElementById('pricing')?.scrollIntoView({ behavior: 'instant' });
+        });
+        await page.waitForTimeout(500);
+
+        const pricingGrid = page.locator('#pricing .grid').first();
+        await expect(pricingGrid).toBeVisible({ timeout: 10_000 });
+
+        const cards = pricingGrid.locator('> div');
+        await expect(cards).toHaveCount(1);
+
+        const box = await cards.first().boundingBox();
+        expect(box).not.toBeNull();
+        expect(box!.width).toBeGreaterThan(0);
+        expect(box!.height).toBeGreaterThan(0);
+
+        // Never bleeds outside the viewport at either width.
+        expect(box!.x).toBeGreaterThanOrEqual(0);
+        expect(box!.x + box!.width).toBeLessThanOrEqual(width + 1);
+
+        // Centred within the section.
+        const section = await page.locator('#pricing').boundingBox();
+        expect(section).not.toBeNull();
+        const cardCentre = box!.x + box!.width / 2;
+        const sectionCentre = section!.x + section!.width / 2;
+        expect(Math.abs(cardCentre - sectionCentre)).toBeLessThan(20);
       });
-      await page.waitForTimeout(500);
+    }
 
-      const pricingGrid = page.locator('#pricing .grid').first();
-      await expect(pricingGrid).toBeVisible({ timeout: 10_000 });
-
-      const cards = pricingGrid.locator('> div');
-      const count = await cards.count();
-      expect(count).toBe(2);
-
-      const firstBox = await cards.nth(0).boundingBox();
-      const secondBox = await cards.nth(1).boundingBox();
-      expect(firstBox).not.toBeNull();
-      expect(secondBox).not.toBeNull();
-
-      expect(secondBox!.y).toBeGreaterThan(firstBox!.y + firstBox!.height - 10);
-    });
-
-    test('pricing cards display side-by-side on desktop (1280px)', async ({ page }) => {
+    test('pricing states the trial instead of a free tier', async ({ page }) => {
       await page.setViewportSize({ width: 1280, height: 800 });
       await page.goto('/#pricing');
       await page.waitForLoadState('networkidle');
 
-      await page.evaluate(() => {
-        document.getElementById('pricing')?.scrollIntoView({ behavior: 'instant' });
-      });
-      await page.waitForTimeout(500);
-
-      const pricingGrid = page.locator('#pricing .grid').first();
-      await expect(pricingGrid).toBeVisible({ timeout: 10_000 });
-
-      const cards = pricingGrid.locator('> div');
-      const count = await cards.count();
-      expect(count).toBe(2);
-
-      const firstBox = await cards.nth(0).boundingBox();
-      const secondBox = await cards.nth(1).boundingBox();
-      expect(firstBox).not.toBeNull();
-      expect(secondBox).not.toBeNull();
-
-      expect(Math.abs(firstBox!.y - secondBox!.y)).toBeLessThan(20);
-      expect(secondBox!.x).toBeGreaterThan(firstBox!.x + firstBox!.width - 10);
+      const pricing = page.locator('#pricing');
+      await expect(pricing).toContainText('7 days free');
+      await expect(pricing).toContainText('$7.99');
+      await expect(pricing).not.toContainText('forever');
     });
   });
 });

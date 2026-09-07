@@ -20,7 +20,6 @@ Canonical docs (read these first, not this file):
 | Android app | `auramind-gemini/android/` | Active Capacitor 8 build, generated from the same React source |
 | Backend | `api/` | Vercel serverless (`index.ts` + `stripe-webhook.ts`) with an Express dev server (`server.js`, port 3001) |
 | Database | `supabase/migrations/` | Append-only, idempotent SQL migrations (source of truth for schema) |
-| Desktop | `auramind-gemini/archive/src-tauri/` | Archived Tauri 2 (not built) |
 
 ## Commands (run inside `auramind-gemini/` unless noted)
 
@@ -50,7 +49,13 @@ From the repo root, `npm run dev` starts web (3000) + API (3001) together.
   trust `user_metadata` for authorization.
 - **Env** — `VITE_`-prefixed vars ship to the browser (public). Server-only
   keys (`RESEND_API_KEY`, `STRIPE_*`, `SUPABASE_SERVICE_ROLE_KEY`,
-  `GOOGLE_SEARCH_API_KEY`) must never be `VITE_`-prefixed.
+  `GOOGLE_SEARCH_API_KEY`, `GROQ_API_KEY`) must never be `VITE_`-prefixed.
+  Client reads go through `readClientEnv()` and the `CLIENT_ENV` allowlist in
+  `src/lib/env.ts` — never `import.meta.env[name]`, which defeats Vite's
+  per-variable substitution and inlines the whole env object (publishing
+  every `VITE_` var). An `import.meta.env.DEV` guard does not prevent this;
+  omission from the allowlist is the control. Enforced by
+  `src/__tests__/clientSecretExposure.test.ts`.
 
 ## Author
 

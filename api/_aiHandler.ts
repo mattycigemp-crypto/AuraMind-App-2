@@ -26,6 +26,13 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import {
+  availableProviders,
+  providerKey,
+  resolveModel,
+  shouldFailover,
+  type Provider,
+} from './_providers.js';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const GROQ_TRANSCRIBE_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
@@ -122,8 +129,10 @@ export async function handleAI(
     return;
   }
 
-  const groqKey = getGroqKey();
-  if (!groqKey) {
+  // Any configured provider is enough — Groq is the preferred first hop, not
+  // a requirement. Gating on GROQ_API_KEY here would have taken the whole
+  // endpoint down even with Cerebras/Gemini/OpenRouter keys present.
+  if (availableProviders().length === 0) {
     res.status(503).json({ error: 'AI service is not configured on the server' });
     return;
   }
@@ -163,9 +172,6 @@ export async function handleAI(
 
   // Validate + clamp the payload (never forward unknown fields).
   const body = (req.body ?? {}) as AiBody;
-  const model =
-    typeof body.model === 'string' && ALLOWED_MODELS.has(body.model) ? body.model : DEFAULT_MODEL;
-
   let candidates: any[] = Array.isArray(body.messages) ? body.messages : [];
   if (candidates.length === 0) {
     res.status(400).json({ error: 'messages array is required' });
@@ -201,44 +207,110 @@ export async function handleAI(
     : 2000;
   const stream = action === 'chat/stream';
 
-  const upstreamBody = JSON.stringify({
-    model,
-    messages,
-    temperature,
-    max_tokens,
-    ...(stream ? { stream: true } : {}),
-  });
-
   const startTime = Date.now();
   let tokensGenerated = 0;
   let responsePreview = '';
   let streamFailed = false;
+  // Which model actually answered. Set when a provider succeeds so the
+  // chat_logs row reflects what ran, not what was requested — with failover
+  // those can differ. (A `provider` column would sharpen cost attribution
+  // further, but that needs a migration.)
+  let servedModel = '';
 
   try {
-    const upstream = await fetch(GROQ_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${groqKey}`,
-      },
-      body: upstreamBody,
-    });
-
-    if (!upstream.ok) {
-      const errText = (await upstream.text().catch(() => '')).slice(0, 500);
-      const message = errText || `Upstream error (${upstream.status})`;
-      // Pass the status through so the client's typed error classification
-      // (auth / 429 / 5xx) keeps working unchanged.
+    // Failover across every provider that has a key configured. On
+    // 429 / 401 / 403 / 5xx the next provider takes over, so a spent free
+    // quota degrades to a different free tier instead of an outage.
+    //
+    // Nothing is written to `res` until a provider answers OK, which is what
+    // keeps the retry invisible to the client: streaming headers are only
+    // sent once we hold a live upstream body.
+    const providers = availableProviders();
+    if (providers.length === 0) {
+      const message =
+        'No AI provider configured. Set at least one of GROQ_API_KEY, ' +
+        'CEREBRAS_API_KEY, GEMINI_API_KEY, or OPENROUTER_API_KEY.';
       if (stream) {
         res.write(`data: ${JSON.stringify({ error: message })}\n\n`);
         res.write('data: [DONE]\n\n');
         res.end();
       } else {
-        res.status(upstream.status).setHeader('Content-Type', 'application/json').send(JSON.stringify({ error: message }));
+        res.status(503).setHeader('Content-Type', 'application/json').send(JSON.stringify({ error: message }));
       }
       streamFailed = true;
       return;
     }
+
+    let upstream: Response | null = null;
+    let served: Provider | null = null;
+    let lastStatus = 502;
+    let lastMessage = 'All AI providers failed.';
+
+    for (const provider of providers) {
+      const attemptModel = resolveModel(provider, body.model);
+      const attemptBody = JSON.stringify({
+        model: attemptModel,
+        messages,
+        temperature,
+        max_tokens,
+        ...(stream ? { stream: true } : {}),
+      });
+
+      let attempt: Response;
+      try {
+        attempt = await fetch(provider.url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${providerKey(provider)}`,
+            ...(provider.extraHeaders ?? {}),
+          },
+          body: attemptBody,
+        });
+      } catch (netErr: any) {
+        // A network-level failure is exactly what the next provider is for.
+        lastStatus = 502;
+        lastMessage = `${provider.name} unreachable: ${netErr?.message || 'network error'}`;
+        console.warn(`[ai] ${provider.name} unreachable, trying next provider`);
+        continue;
+      }
+
+      if (attempt.ok) {
+        upstream = attempt;
+        served = provider;
+        servedModel = attemptModel;
+        break;
+      }
+
+      lastStatus = attempt.status;
+      lastMessage = (await attempt.text().catch(() => '')).slice(0, 500)
+        || `Upstream error (${attempt.status})`;
+
+      if (!shouldFailover(attempt.status)) {
+        // A 400 is our own malformed request: it fails identically everywhere,
+        // so stop rather than burn the other providers' free quota.
+        break;
+      }
+      console.warn(`[ai] ${provider.name} returned ${attempt.status}, failing over`);
+    }
+
+    if (!upstream || !served) {
+      // Preserve the last upstream status so the client's typed error
+      // classification (auth / 429 / 5xx) keeps working unchanged.
+      if (stream) {
+        res.write(`data: ${JSON.stringify({ error: lastMessage })}\n\n`);
+        res.write('data: [DONE]\n\n');
+        res.end();
+      } else {
+        res.status(lastStatus).setHeader('Content-Type', 'application/json').send(JSON.stringify({ error: lastMessage }));
+      }
+      streamFailed = true;
+      return;
+    }
+
+    // Lets the client tell the user which free tier answered, and makes
+    // failover visible in logs and devtools instead of silent.
+    res.setHeader('x-ai-provider', served.name);
 
     if (!stream) {
       const jsonBody = await upstream.json();
@@ -322,7 +394,7 @@ export async function handleAI(
         messages: messages as any,
         response_preview: responsePreview.slice(0, 500),
         tokens_generated: tokensGenerated,
-        model,
+        model: servedModel,
         duration_ms: Date.now() - startTime,
         success: !streamFailed,
         error_message: streamFailed ? 'AI proxy failed' : null,

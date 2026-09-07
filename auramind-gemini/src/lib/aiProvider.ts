@@ -1,3 +1,4 @@
+import { readClientEnv } from './env';
 /**
  * Single source of truth for AI provider selection (cloud vs on-device).
  *
@@ -13,7 +14,9 @@ export type AIProvider = 'cloud' | 'local';
 const STORAGE_KEY = 'auramind_ai_provider';
 
 function readEnv(key: string): string | undefined {
-  return (import.meta as any).env?.[key];
+// Allowlisted read — see CLIENT_ENV in lib/env.ts. Dynamic indexing of
+// import.meta.env makes Vite inline every VITE_ var into the bundle.
+  return readClientEnv(key);
 }
 
 /** The provider the user has chosen for this session. */

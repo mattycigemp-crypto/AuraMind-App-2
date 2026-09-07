@@ -5,6 +5,66 @@
  * Fails fast with clear error messages if required variables are missing.
  */
 
+/**
+ * Static allowlist of client-visible env vars.
+ *
+ * WHY THIS EXISTS — this is a security boundary, not a convenience wrapper.
+ *
+ * Vite replaces `import.meta.env.VITE_FOO` (a static property access) with
+ * that one value. But indexing the object dynamically — `import.meta.env[name]`
+ * — cannot be statically analysed, so Vite gives up and inlines the ENTIRE
+ * env object as a literal. That published every VITE_-prefixed variable to
+ * the browser, including provider API keys, whether or not any code read
+ * them. A `import.meta.env.DEV` guard does not help: the value is embedded
+ * at build time regardless of which branch runs.
+ *
+ * So every read goes through this map, and every entry below is a static
+ * property access. A variable that is not listed here cannot reach the
+ * bundle — which is the point.
+ *
+ * DO NOT add a secret to this map, and DO NOT reintroduce `import.meta.env[x]`
+ * dynamic indexing anywhere in src/. `clientSecretExposure.test.ts` enforces
+ * both, and a canary build asserts the bundle stays clean.
+ */
+const CLIENT_ENV: Readonly<Record<string, string | undefined>> = {
+  // Public config — safe by design to ship to the browser.
+  VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+  VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
+  VITE_STRIPE_PUBLISHABLE_KEY: import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY,
+  VITE_STRIPE_PRICE_ID_MONTHLY: import.meta.env.VITE_STRIPE_PRICE_ID_MONTHLY,
+  VITE_STRIPE_PRICE_ID_ANNUAL: import.meta.env.VITE_STRIPE_PRICE_ID_ANNUAL,
+  VITE_POSTHOG_KEY: import.meta.env.VITE_POSTHOG_KEY,
+  VITE_POSTHOG_HOST: import.meta.env.VITE_POSTHOG_HOST,
+  VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
+  VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+  VITE_OWNER_EMAIL: import.meta.env.VITE_OWNER_EMAIL,
+
+  // Non-secret behaviour flags and model names.
+  VITE_AI_MODEL: import.meta.env.VITE_AI_MODEL,
+  VITE_GROQ_MODEL: import.meta.env.VITE_GROQ_MODEL,
+  VITE_PUTER_MODEL: import.meta.env.VITE_PUTER_MODEL,
+  VITE_USE_LOCAL_AI: import.meta.env.VITE_USE_LOCAL_AI,
+  VITE_USE_PUTER: import.meta.env.VITE_USE_PUTER,
+  VITE_RQ_DEVTOOLS: import.meta.env.VITE_RQ_DEVTOOLS,
+
+  // Deliberately absent, and must stay absent — these are provider
+  // credentials that were never safe behind a VITE_ prefix. The client holds
+  // no provider key at all; AI goes through /api/ai, which uses the
+  // server-side GROQ_API_KEY.
+  //
+  //   VITE_GROQ_API_KEY, VITE_GEMINI_API_KEY,
+  //   VITE_SCHOOLOGY_CONSUMER_KEY, VITE_SCHOOLOGY_CONSUMER_SECRET
+  //
+  // A `import.meta.env.DEV ? ... : ''` guard was tried here first and did NOT
+  // work — the literal still reached the bundle. Omission is the only
+  // reliable control, so keep these out of the map.
+};
+
+/** Read one allowlisted client env var. Unlisted names return undefined. */
+export function readClientEnv(name: string): string | undefined {
+  return CLIENT_ENV[name];
+}
+
 interface EnvVarConfig {
   name: string;
   required: boolean;
@@ -25,11 +85,6 @@ const ENV_CONFIG: EnvVarConfig[] = [
     required: true,
     description: 'Supabase anonymous key',
     validate: (v) => v.length > 20,
-  },
-  {
-    name: 'VITE_GROQ_API_KEY',
-    required: false,
-    description: 'Groq AI API key (optional, for faster AI responses)',
   },
   {
     name: 'VITE_USE_PUTER',
@@ -66,7 +121,7 @@ export function validateEnv(): EnvValidationResult {
   const missingRequired: string[] = [];
 
   for (const config of ENV_CONFIG) {
-    const value = import.meta.env[config.name];
+    const value = readClientEnv(config.name);
 
     if (!value) {
       if (config.required) {
@@ -97,7 +152,10 @@ export function validateEnv(): EnvValidationResult {
   }
 
   // Check for AI provider configuration
-  const hasGroq = !!import.meta.env.VITE_GROQ_API_KEY && !import.meta.env.VITE_GROQ_API_KEY.includes('your_');
+  // The client holds no Groq key (see CLIENT_ENV), so this is always false.
+  // Reading import.meta.env.VITE_GROQ_API_KEY directly here would inline the
+  // key into the bundle even though nothing uses the value.
+  const hasGroq = hasValidGroqKey();
   const hasLocalAI = import.meta.env.VITE_USE_LOCAL_AI === 'true';
   const puterEnabled = (import.meta.env.VITE_USE_PUTER ?? 'true') !== 'false';
 
@@ -143,18 +201,20 @@ export function logEnvValidation(result: EnvValidationResult): void {
  * Get a typed environment variable with fallback
  */
 export function getEnvVar(name: string, defaultValue?: string): string {
-  const value = import.meta.env[name];
+  const value = readClientEnv(name);
   if (!value && defaultValue !== undefined) {
     return defaultValue;
   }
-  return value;
+  // Previously `import.meta.env[name]` was typed `any`, so an unset var
+  // returned undefined through a `: string` signature. Normalise to ''.
+  return value ?? '';
 }
 
 /**
  * Get a boolean environment variable
  */
 export function getEnvBool(name: string, defaultValue = false): boolean {
-  const value = import.meta.env[name];
+  const value = readClientEnv(name);
   if (value === undefined) return defaultValue;
   return value === 'true' || value === '1' || value === 'yes';
 }
@@ -163,33 +223,26 @@ export function getEnvBool(name: string, defaultValue = false): boolean {
  * Get a number environment variable
  */
 export function getEnvNumber(name: string, defaultValue?: number): number | undefined {
-  const value = import.meta.env[name];
+  const value = readClientEnv(name);
   if (!value) return defaultValue;
   const num = parseInt(value, 10);
   return isNaN(num) ? defaultValue : num;
 }
 
 /**
- * hasValidGroqKey — single-source-of-truth the free-AI router uses to
- * decide whether to count `VITE_GROQ_API_KEY` as a usable BYOK fallback
- * (so users without their own key still get AI through the env-level
- * Groq key the app ships with in some deployments).
+ * hasValidGroqKey — whether a *client-held* Groq key is available.
  *
- * Treats undefined, empty strings, and obvious placeholders (`xxx`,
- * strings containing "your_") as "not valid".
+ * Always false. The client no longer holds a provider key: `VITE_GROQ_API_KEY`
+ * is not in CLIENT_ENV, because Vite inlines VITE_ vars into the public bundle
+ * and a shipped key is a spendable credential handed to every visitor. AI runs
+ * through /api/ai using the server-side GROQ_API_KEY instead.
+ *
+ * Kept as a named function so the free-AI router keeps one obvious place to
+ * ask the question, and so callers keep falling back to Puter / offline
+ * exactly as they did before.
  */
 export function hasValidGroqKey(): boolean {
-  const value = import.meta.env.VITE_GROQ_API_KEY;
-  if (!value) return false;
-  if (value.length < 20) return false;
-  if (
-    value.includes("your_") ||
-    value.includes("PLACEHOLDER") ||
-    value === "xxx"
-  ) {
-    return false;
-  }
-  return true;
+  return false;
 }
 
 

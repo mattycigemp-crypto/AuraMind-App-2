@@ -62,9 +62,7 @@ body:
       label: Where did the bug surface?
       options:
         - Web (auramind.app)
-        - Desktop (Tauri build)
         - Android (Play Store build)
-        - iOS (App Store build)
         - Supabase API / RPC layer
         - Not sure
     validations:

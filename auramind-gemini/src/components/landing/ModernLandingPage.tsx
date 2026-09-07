@@ -15,7 +15,6 @@ import { TextGlitch } from "../ui/TextGlitch";
 import { ChromaticAberration } from "../ui/ChromaticAberration";
 import { BorderBeam } from "../ui/BorderBeam";
 import { ShineBorder } from "../ui/ShineBorder";
-import { FrostGlass } from "../ui/FrostGlass";
 import { useSoundDesign } from "@/hooks/useSoundDesign";
 import { analyticsService } from "@/services/analytics/analyticsService";
 import type { FlashcardData } from "@/lib/auramind/types";
@@ -339,19 +338,26 @@ export default function ModernLandingPage() {
                 people who are not users.
 
                 Pre-launch, the honest version of this slot is the offer, not
-                a crowd. "Free, no card" is checkable against the signup form
-                and is a stronger reason to click than borrowed credibility.
+                a crowd — a checkable claim beats borrowed credibility.
+
+                An earlier version of this slot claimed signup took no
+                payment details. That was untrue: the checkout session sets
+                payment_method_collection: 'always' alongside
+                trial_period_days: 7, so Stripe does take a card up front. The
+                claim below states the trial that actually exists, and
+                pricingConsistency.test.ts pins it to the Stripe config.
               */}
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-4 border-t border-[#2A2A3A]/30">
                 <span className="inline-flex items-center gap-2 text-[#7A7A96] text-xs">
                   <Check size={13} className="shrink-0 text-[#7C3AED]" />
-                  Free to start — no card required
+                  7 days free — cancel anytime
                 </span>
-                {/* Both claims are checkable: the signup form states the free
-                    tier, and offline review queueing is implemented in
-                    StudyModePage + offlineStudyService with tests. Do not add
-                    a third bullet here unless it is equally verifiable —
-                    Anki export, for instance, has a service but no UI yet. */}
+                {/* Both claims are checkable: the trial length is set by
+                    trial_period_days in the Stripe checkout session, and
+                    offline review queueing is implemented in StudyModePage +
+                    offlineStudyService with tests. Do not add a third bullet
+                    here unless it is equally verifiable — Anki export, for
+                    instance, has a service but no UI yet. */}
                 <span className="inline-flex items-center gap-2 text-[#7A7A96] text-xs">
                   <Check size={13} className="shrink-0 text-[#7C3AED]" />
                   Works offline — reviews sync later
@@ -520,44 +526,15 @@ export default function ModernLandingPage() {
           >
             <span className="text-[#7A7A96] text-[10px] font-medium tracking-[0.2em] uppercase mb-3 block">Pricing</span>
             <h2 className="text-[#F0EFFE] text-2xl md:text-3xl font-light tracking-tight">
-              <TextGlitch text="Simple" as="span" className="font-serif italic text-[#8B5CF6]" glitchOnHover autoGlitch autoGlitchInterval={7000} /> pricing
+              <TextGlitch text="One" as="span" className="font-serif italic text-[#8B5CF6]" glitchOnHover autoGlitch autoGlitchInterval={7000} /> plan
             </h2>
           </div>
 
           <div
             ref={featuresGridReveal.ref}
-            className="grid md:grid-cols-2 gap-4 max-w-lg mx-auto"
+            className="grid gap-4 max-w-xs mx-auto"
             style={{ willChange: 'opacity, transform' }}
           >
-            {/* Free */}
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
-            >
-              <FrostGlass blur="lg" opacity={0.06} className="p-6">
-                <h3 className="text-[#F0EFFE] text-sm font-medium mb-1">Free</h3>
-                <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-2xl font-semibold text-[#F0EFFE]">$0</span>
-                  <span className="text-[#7A7A96] text-xs">forever</span>
-                </div>
-                <ul className="space-y-2 mb-6">
-                  {["5 decks", "20 cards per deck", "Basic SRS", "Web access"].map((f, i) => (
-                    <li key={i} className="text-[#9090A8] text-xs flex items-center gap-2">
-                      <Check size={14} className="shrink-0 text-[#7C3AED]" /> {f}
-                    </li>
-                  ))}
-                </ul>
-                <MagneticButton
-                  onClick={() => { playClick(); goToAuth("pricing-free"); }}
-                  className="w-full py-2.5 min-h-[44px] rounded-lg border border-[#2A2A3A] text-[#F0EFFE] text-xs font-medium hover:border-[#7C3AED]/40 transition-all"
-                >
-                  Get Started
-                </MagneticButton>
-              </FrostGlass>
-            </motion.div>
-
             {/* Pro */}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
@@ -576,10 +553,11 @@ export default function ModernLandingPage() {
                   </div>
                   <h3 className="text-[#F0EFFE] text-sm font-medium mb-1">Pro</h3>
                   <div className="flex items-baseline gap-1 mb-1">
-                    <span className="text-2xl font-semibold text-[#F0EFFE]">$8</span>
+                    <span className="text-2xl font-semibold text-[#F0EFFE]">$7.99</span>
                     <span className="text-[#7A7A96] text-xs">/month</span>
                   </div>
-                  <p className="text-[10px] text-[#7A7A96] mb-4">or $3.99/mo billed annually ($47.88/yr)</p>
+                  <p className="text-[10px] text-[#7A7A96] mb-1">or $3.99/mo billed annually ($47.88/yr)</p>
+                  <p className="text-[10px] text-[#9090A8] mb-4">7 days free, then billed. Cancel anytime.</p>
                   <ul className="space-y-2 mb-6">
                     {["Unlimited decks & cards", "AI deck generation", "Advanced FSRS v5", "Priority support"].map((f, i) => (
                       <li key={i} className="text-[#9090A8] text-xs flex items-center gap-2">

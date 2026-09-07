@@ -33,7 +33,6 @@ An **adaptive AI learning system** — turn anything you're studying (a PDF, a v
 - **Android app** — a first-class Capacitor 8 build (`auramind-gemini/android/`) generated from the same React source, with a native bottom nav, status-bar/back-button handling, haptics, local reminders, and system sharing.
 - **Backend** — Vercel serverless functions under `/api`.
 - **Database** — Supabase (Postgres) with append-only migrations in `./supabase/migrations/`.
-- **Desktop** — the Tauri 2 stack is archived under `auramind-gemini/archive/src-tauri/`.
 
 ## 🚀 Quick Start
 
@@ -81,13 +80,24 @@ An **adaptive AI learning system** — turn anything you're studying (a PDF, a v
    > Custom Search and email calls go through the API proxy so no third-
    > party key leaves the server.
    >
-   > **Groq BYOK fallback (intentional).** `VITE_GROQ_API_KEY` deliberately
-   > ships in the bundle: it's a developer-funded fallback so users without
-   > their own key still get free AI (falls back to Ollama otherwise). To
-   > ship a production build *without* that key, create
-   > `auramind-gemini/.env.production` with `VITE_GROQ_API_KEY=` (empty) —
-   > Vite gives it priority over `.env`, and AI then requires each user's
-   > own key (or Puter).
+   > **The client holds no provider key.** `VITE_GROQ_API_KEY` is *not* read
+   > by the app and is absent from the `CLIENT_ENV` allowlist in
+   > `src/lib/env.ts`. Vite inlines every `VITE_`-prefixed var into the public
+   > bundle, so a key there is a spendable credential handed to every visitor.
+   >
+   > Developer-funded AI still works exactly as before — signed-in users are
+   > proxied through `/api/ai`, which injects the server-side `GROQ_API_KEY`.
+   > Users without a session fall back to Puter or offline generation.
+   >
+   > Two rules keep this true, both enforced by
+   > `src/__tests__/clientSecretExposure.test.ts`:
+   >
+   > 1. Never add a provider key to `CLIENT_ENV`. An
+   >    `import.meta.env.DEV` guard is **not** sufficient — it was tried, and
+   >    the literal still reached the bundle.
+   > 2. Never index `import.meta.env[name]` dynamically. Vite cannot analyse
+   >    it, so it inlines the *entire* env object and publishes every `VITE_`
+   >    var at once. Use `readClientEnv()` instead.
 
 4. **Start the development server**
    ```bash
@@ -119,7 +129,6 @@ AuraMind-App-2/
 │   │   ├── types/            # TypeScript type definitions
 │   │   └── __tests__/        # Vitest suite
 │   ├── android/              # Capacitor 8 Android project
-│   ├── archive/              # Archived Tauri 2 / old Capacitor stacks
 │   ├── public/               # Static assets (PWA manifest, icons)
 │   └── package.json
 ├── supabase/
@@ -147,7 +156,6 @@ AuraMind-App-2/
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `VITE_GROQ_API_KEY` | Groq AI API key (fastest free tier) | - |
 | `VITE_USE_LOCAL_AI` | Enable local AI server (LM Studio/Ollama) | `false` |
 | `VITE_AI_MODEL` | Custom AI model selection | `deepseek/deepseek-r1-0528:free` |
 | `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key | - |
@@ -285,7 +293,7 @@ ORDER  BY applied_at DESC;
 - **Voice study** — text-to-speech cards and hands-free review.
 - **Gamification** — streaks, mastery stats, and progress analytics.
 - **Freemium via Stripe** — subscription checks, webhooks, and entitlement fallback.
-- **Multiple AI providers** — Groq, OpenRouter, and local (Ollama/LM Studio), with a user-pays Puter fallback.
+- **Multiple AI providers** — server-side failover across Groq, Cerebras, Gemini and OpenRouter (any one key is enough), with a user-pays Puter fallback, optional local Ollama/LM Studio, and deterministic offline generation as the floor.
 
 ## 📊 Tech Stack
 
@@ -296,7 +304,7 @@ ORDER  BY applied_at DESC;
 - **Database**: Supabase (PostgreSQL, RLS)
 - **Payments**: Stripe
 - **Email**: Resend
-- **AI**: Groq, OpenRouter, local AI (Ollama/LM Studio), Puter fallback
+- **AI**: Groq / Cerebras / Gemini / OpenRouter with automatic failover, Puter (user-pays) fallback, optional local AI (Ollama/LM Studio)
 
 ## 🐛 Troubleshooting
 
