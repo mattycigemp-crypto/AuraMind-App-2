@@ -48,6 +48,7 @@
 import { requireSupabase } from '../database/supabase';
 import { usesLocalAI } from '../../lib/aiProvider';
 import { readClientEnv } from '../../lib/env';
+import { notifyAiQuotaExhausted } from '../../lib/aiQuotaSignal';
 
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 const PROXY_BASE_URL = '/api/ai';
@@ -333,6 +334,38 @@ export async function groqChat(opts: GroqChatOptions): Promise<GroqChatResult> {
         `Groq rejected the API key (HTTP ${res.status}): ${upstreamMessage}`,
         { status: res.status, groqMessage: upstreamMessage, isAuthFailure: true },
       );
+    }
+
+    // A 429 here means the server already failed over across every free
+    // provider it has keys for and all of them refused. Puter is the one
+    // remaining option that costs us nothing, because it bills the user's
+    // own account — so try it before giving up.
+    if (res.status === 429) {
+      try {
+        const { puterChat, isPuterAuthedSync, loadPuterModule } =
+          await import('./puterProvider');
+        // Load first: the sync check reads a cache that is only populated by a
+        // load round-trip, so without this it always reports "signed out" on
+        // the first 429 of a session.
+        await loadPuterModule();
+        if (isPuterAuthedSync()) {
+          const puterResult = await puterChat({
+            messages: finalMessages,
+            maxTokens,
+            temperature,
+          });
+          return { content: puterResult.content, raw: puterResult.raw };
+        }
+      } catch (puterErr) {
+        // Puter is a bonus path, never a hard dependency: if it is not
+        // signed in, blocked, or failing, fall through to the error below
+        // so the caller still reaches its offline template fallback.
+        console.warn('[AuraMind/groqClient] Puter rescue unavailable:', puterErr);
+      }
+      // Not signed in (or Puter failed) — surface the banner so the user can
+      // choose to connect Puter. The popup needs a real click, so this can
+      // only prompt; it cannot recover on its own.
+      notifyAiQuotaExhausted();
     }
 
     // 429 → quota / rate limit; 5xx → upstream outage; otherwise → generic
