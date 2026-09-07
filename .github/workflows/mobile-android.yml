@@ -57,20 +57,39 @@ jobs:
       # them from repo secrets; `.env.mobile` (committed) supplies the
       # production API/SSE/translation endpoints for the Capacitor build.
       - name: Write build env from secrets
+        # Secrets arrive as real environment variables rather than being
+        # interpolated into the script body. The previous version substituted
+        # ${{ }} straight into a quoted heredoc and then tested "$VITE_SUPABASE_URL"
+        # as a SHELL variable that was never exported — under `set -u` that
+        # aborted the step every time, whether or not the secrets existed.
+        # Passing them through `env:` also keeps secret values out of the
+        # rendered script, so they cannot break quoting or be injected.
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
         run: |
           set -euo pipefail
-          cat > .env <<'EOF'
-          VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
-          VITE_POSTHOG_KEY=${{ secrets.VITE_POSTHOG_KEY }}
-          EOF
-          # Fail fast if the two required vars are empty (Vite would otherwise
-          # inline placeholder strings and env.ts validation would catch it late).
-          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
-            echo "::error::VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY secrets are required."
+
+          # Check before writing, so a misconfigured run fails loudly instead
+          # of producing a .env full of empty values that Vite happily inlines.
+          missing=""
+          [ -n "${VITE_SUPABASE_URL:-}" ]      || missing="$missing VITE_SUPABASE_URL"
+          [ -n "${VITE_SUPABASE_ANON_KEY:-}" ] || missing="$missing VITE_SUPABASE_ANON_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required repository secret(s):$missing"
             exit 1
           fi
+
+          {
+            printf 'VITE_SUPABASE_URL=%s\n'           "$VITE_SUPABASE_URL"
+            printf 'VITE_SUPABASE_ANON_KEY=%s\n'      "$VITE_SUPABASE_ANON_KEY"
+            printf 'VITE_STRIPE_PUBLISHABLE_KEY=%s\n' "${VITE_STRIPE_PUBLISHABLE_KEY:-}"
+            printf 'VITE_POSTHOG_KEY=%s\n'            "${VITE_POSTHOG_KEY:-}"
+          } > .env
+
+          echo "Wrote .env with $(grep -c '=' .env) entries (values not echoed)."
 
       - name: Install npm dependencies
         run: npm ci
