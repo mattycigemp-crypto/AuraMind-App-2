@@ -7,12 +7,21 @@ on:
   workflow_dispatch:
     inputs:
       track:
-        description: 'Play Store track to upload to (internal | beta | production)'
+        # Play track names as the Publishing API expects them:
+        #   internal   - Internal testing (up to 100 testers, instant)
+        #   alpha      - CLOSED testing. The only track that counts toward the
+        #                12-testers-for-14-continuous-days requirement that
+        #                gates production access for personal developer
+        #                accounts created after 2023-11-13.
+        #   beta       - Open testing (public opt-in)
+        #   production - Live on the Play Store
+        description: 'Play track (internal | alpha=closed | beta=open | production)'
         required: true
         type: choice
         default: 'internal'
         options:
           - internal
+          - alpha
           - beta
           - production
 
