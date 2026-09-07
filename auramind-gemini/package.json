@@ -104,7 +104,7 @@
     "d3-array": "^3.2.4",
     "d3-shape": "^3.2.0",
     "embla-carousel-react": "^8.6.0",
-    "framer-motion": "^12.27.1",
+    "framer-motion": "^13.2.0",
     "gsap": "^3.15.0",
     "i18next": "^26.3.0",
     "i18next-browser-languagedetector": "^8.2.1",
