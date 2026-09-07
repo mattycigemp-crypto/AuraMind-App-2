@@ -88,7 +88,12 @@ describe('client bundle does not ship provider credentials', () => {
 
   it('routes signed-in AI traffic through the server proxy, not api.groq.com', () => {
     const src = read('services', 'api', 'groqClient.ts');
-    expect(src).toContain("const PROXY_BASE_URL = '/api/ai'");
+    // The proxy base is origin-aware rather than a bare '/api/ai': inside the
+    // Capacitor webview the origin is https://localhost, so a relative path
+    // would send every AI request to the device. Assert the shape, not a
+    // literal, so the path stays checked without pinning the exact string.
+    expect(src).toMatch(/PROXY_BASE_URL = `\$\{[^}]*\}\/api\/ai`/);
+    expect(src).toContain("VITE_API_BASE_URL");
     expect(src).toMatch(/if \(localAI\)[\s\S]{0,400}else if \(token\)[\s\S]{0,160}PROXY_BASE_URL/);
   });
 

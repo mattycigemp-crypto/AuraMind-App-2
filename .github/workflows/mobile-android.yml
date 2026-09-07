@@ -91,6 +91,22 @@ jobs:
             printf 'VITE_SUPABASE_ANON_KEY=%s\n'      "$VITE_SUPABASE_ANON_KEY"
             printf 'VITE_STRIPE_PUBLISHABLE_KEY=%s\n' "${VITE_STRIPE_PUBLISHABLE_KEY:-}"
             printf 'VITE_POSTHOG_KEY=%s\n'            "${VITE_POSTHOG_KEY:-}"
+            #
+            # Mobile-only origins. In the browser an empty VITE_API_BASE_URL
+            # means same-origin, which is correct. Inside the Capacitor
+            # webview the origin is https://localhost, so an empty value
+            # points every /api call at the device itself and silently
+            # breaks AI, chat, Stripe and account operations — the app still
+            # launches and looks fine.
+            #
+            # These live in .env.mobile locally, which is gitignored and
+            # therefore absent on the runner. They are public URLs, not
+            # secrets, so they are written literally here rather than
+            # carried as repository secrets.
+            printf 'VITE_API_BASE_URL=%s\n'         'https://auramind.app'
+            printf 'VITE_SSE_BASE=%s\n'             'https://auramind.app'
+            printf 'VITE_APP_URL=%s\n'              'https://auramind.app'
+            printf 'VITE_USE_PUTER=%s\n'            'true'
           } > .env
 
           echo "Wrote .env with $(grep -c '=' .env) entries (values not echoed)."

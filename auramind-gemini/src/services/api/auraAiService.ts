@@ -6,6 +6,7 @@ import { localInference } from './localInferenceService';
 import { GroqUnavailableError } from './groqClient';
 import { requireSupabase } from '../database/supabase';
 import { usesLocalAI } from '../../lib/aiProvider';
+import { readClientEnv } from '../../lib/env';
 // Re-export so callers that imported the typed error from this barrel
 // (the legacy location) keep working without an import-path rewrite.
 export { GroqUnavailableError } from './groqClient';
@@ -156,7 +157,14 @@ interface ChatCompletionResponse {
 // vi.stubEnv / test-time overrides take effect before the singleton
 // reads them.
 const localBaseUrl = '/local-ai/v1';
-const PROXY_BASE_URL = '/api/ai';
+// Absolute when VITE_API_BASE_URL is set, same-origin when it is not.
+//
+// On the web the app is served from the same origin as /api, so an empty
+// base is correct. Inside the Capacitor webview the origin is
+// https://localhost, so a bare '/api/ai' resolves to the device itself and
+// every AI request fails — the app looks fine and simply never answers.
+// .env.mobile sets VITE_API_BASE_URL for exactly this reason.
+const PROXY_BASE_URL = `${readClientEnv('VITE_API_BASE_URL') ?? ''}/api/ai`;
 
 export class AuraAiClient {
   private readonly apiKey: string;
