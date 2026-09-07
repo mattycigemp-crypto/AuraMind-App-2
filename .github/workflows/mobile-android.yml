@@ -43,7 +43,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          # Capacitor CLI 8.x hard-requires Node >= 22 and exits fatally on 20,
+          # after the Vite build has already succeeded — so the failure looked
+          # like a web build problem rather than a runner version one. ci.yml's
+          # android-build job already uses 22.x; this keeps them aligned.
+          node-version: '22.x'
           cache: 'npm'
           cache-dependency-path: auramind-gemini/package-lock.json
 
