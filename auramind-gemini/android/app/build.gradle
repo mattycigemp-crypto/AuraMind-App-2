@@ -1,5 +1,16 @@
 apply plugin: 'com.android.application'
 
+// Play permanently burns a versionCode on upload — it can never be reused,
+// even if the release is deleted. A hardcoded value therefore works exactly
+// once: every later upload is rejected with "Version code N has already been
+// used" until someone hand-edits this file. CI supplies a monotonically
+// increasing run number instead; local builds fall back to 1.
+//
+// Computed here rather than inline in defaultConfig: Groovy parses
+// `versionCode (expr).toInteger()` as `versionCode(expr).toInteger()`, which
+// passes a String to the DSL and fails at configuration time.
+def ciVersionCode = Integer.parseInt(System.getenv("ANDROID_VERSION_CODE") ?: "1")
+
 android {
     namespace = "com.auramind.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,7 +18,7 @@ android {
         applicationId "com.auramind.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        versionCode ciVersionCode
         versionName "2.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

@@ -90,6 +90,9 @@ jobs:
 
       - name: Assemble signed release AAB
         env:
+          # Monotonic and never reused, so repeat releases are not rejected.
+          # github.run_number only ever increases for this workflow.
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
           ANDROID_KEYSTORE_PATH: android/keystore/release.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
