@@ -1,0 +1,42 @@
+# TEMPORARY - delete this file after 2026-09-09.
+#
+# The Play upload key activates ~04:45 UTC on 2026-09-09. This fires at
+# 05:00 UTC that day and dispatches the real Android workflow at the alpha
+# (closed testing) track, so the first upload on the new key happens without
+# anyone needing to be awake for it.
+#
+# Why a workflow rather than a scheduled cloud agent: a cloud routine needs a
+# connected GitHub account, which is not set up for this repo. GITHUB_TOKEN
+# with `actions: write` can dispatch a sibling workflow with no external auth.
+#
+# Two things to know:
+#   * Scheduled workflows only run on the default branch, which is main. Fine here.
+#   * GitHub can delay scheduled runs by 15+ minutes under load. The 15-minute
+#     buffer after key activation absorbs the normal case; a longer delay only
+#     makes the upload later, never wrong.
+#
+# The cron is day-of-month 9, month 9, so if this file is still here in
+# September 2027 it fires again. That is why it says delete after the date.
+
+name: One-shot alpha dispatch (temporary)
+
+on:
+  schedule:
+    - cron: '0 5 9 9 *'
+  workflow_dispatch:
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Dispatch Mobile Android at the alpha track
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run mobile-android.yml \
+            --repo "${GITHUB_REPOSITORY}" \
+            --ref main \
+            -f track=alpha
+          echo "Dispatched mobile-android.yml with track=alpha"
