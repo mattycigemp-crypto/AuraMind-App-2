@@ -46,6 +46,9 @@ const CLIENT_ENV: Readonly<Record<string, string | undefined>> = {
   VITE_USE_LOCAL_AI: import.meta.env.VITE_USE_LOCAL_AI,
   VITE_USE_PUTER: import.meta.env.VITE_USE_PUTER,
   VITE_RQ_DEVTOOLS: import.meta.env.VITE_RQ_DEVTOOLS,
+  // Cloudflare Turnstile site key. Public by design — it identifies the
+  // widget in the browser. The matching SECRET lives only in Supabase.
+  VITE_TURNSTILE_SITE_KEY: import.meta.env.VITE_TURNSTILE_SITE_KEY,
 
   // Deliberately absent, and must stay absent — these are provider
   // credentials that were never safe behind a VITE_ prefix. The client holds

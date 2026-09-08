@@ -14,8 +14,10 @@ import { VideoBackground } from "./VideoBackground";
  * (Pattern popularized by premium editorial landing pages; adapted from the
  * MotionSites "Mindloop" motion design.)
  *
- * The section is intentionally tall (180vh) with a sticky viewport so the
- * whole passage plays out before the next section arrives.
+ * The section is intentionally tall with a sticky viewport so the whole
+ * passage plays out before the next section arrives. overflow is clipped on
+ * the sticky pane — not the section — because overflow on the section would
+ * disable sticky and the last words would still be fading in as it left.
  */
 
 interface WordSpec {
@@ -50,12 +52,12 @@ const MANIFESTO_LINES: WordSpec[][] = [
 
 const TOTAL_WORDS = MANIFESTO_LINES.reduce((n, line) => n + line.length, 0);
 
-// Scroll window the whole passage plays across (fraction of section progress).
-const REVEAL_START = 0.12;
+// Progress is the pin window (section start-start → end-end). Finish the
+// passage before the pane unsticks so the last line is fully lit, not mid-fade.
+const REVEAL_START = 0.08;
 const REVEAL_END = 0.78;
 const STEP = (REVEAL_END - REVEAL_START) / TOTAL_WORDS;
-// Each word brightens over this much scroll, overlapping its neighbours.
-const WORD_SPAN = STEP * 6;
+const WORD_SPAN = STEP * 4;
 
 /** One word. Its own component so useTransform hooks stay per-word. */
 function RevealWord({
@@ -85,11 +87,11 @@ export function ManifestoSection() {
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ["start end", "end start"],
+    offset: ["start start", "end end"],
   });
 
-  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.95, 1, 1.05]);
-  const outroOpacity = useTransform(scrollYProgress, [0.78, 0.88], [0, 1]);
+  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.98, 1, 1]);
+  const outroOpacity = useTransform(scrollYProgress, [0.78, 0.9], [0, 1]);
 
   // Running word index across all lines.
   let wordIndex = -1;
@@ -97,14 +99,15 @@ export function ManifestoSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative flex min-h-[120vh] items-center justify-center overflow-hidden border-t border-[#2A2A3A] bg-[#0A0A0F] px-6"
+      className="relative h-[220vh] border-t border-[#2A2A3A] bg-[#0A0A0F]"
     >
-      <VideoBackground name="manifesto" opacity={0.25} lazy />
+      <div className="sticky top-0 flex h-screen items-center justify-center overflow-hidden px-6">
+        <VideoBackground name="manifesto" opacity={0.25} lazy />
 
-      <motion.div
-        style={{ scale }}
-        className="sticky top-0 flex min-h-screen max-w-4xl flex-col items-center justify-center py-32 text-center"
-      >
+        <motion.div
+          style={{ scale }}
+          className="relative z-10 flex max-w-4xl flex-col items-center justify-center text-center"
+        >
         <div className="mb-8 text-xs uppercase tracking-[0.3em] text-violet-400">
           <span className="aurora-text">The Manifesto</span>
         </div>
@@ -134,7 +137,8 @@ export function ManifestoSection() {
           <Star className="h-4 w-4 text-violet-400" />
           <span>That&apos;s it. That&apos;s the whole product.</span>
         </motion.div>
-      </motion.div>
+        </motion.div>
+      </div>
     </section>
   );
 }

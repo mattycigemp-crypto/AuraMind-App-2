@@ -312,6 +312,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const subscription = sub as any;
 
           await supabase.auth.admin.updateUserById(userId, {
+            // Authoritative entitlement. app_metadata is service-role only;
+            // user_metadata below is client-writable and is display data.
+            app_metadata: { subscription_status: subscription.status },
             user_metadata: {
               stripe_customer_id: session.customer as string,
               stripe_subscription_id: subscription.id,
@@ -351,6 +354,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             ? 'Pro' : 'Starter';
 
           await supabase.auth.admin.updateUserById(userId, {
+            // Authoritative entitlement. app_metadata is service-role only;
+            // user_metadata below is client-writable and is display data.
+            app_metadata: { subscription_status: subscription.status },
             user_metadata: {
               stripe_subscription_id: subscription.id,
               subscription_status: subscription.status,
@@ -374,6 +380,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (userId) {
           await supabase.auth.admin.updateUserById(userId, {
+            // Authoritative entitlement. app_metadata is service-role only;
+            // user_metadata below is client-writable and is display data.
+            app_metadata: { subscription_status: 'canceled' },
             user_metadata: {
               subscription_status: 'canceled',
               plan: 'Starter',
@@ -427,6 +436,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
           if (userId) {
             await supabase.auth.admin.updateUserById(userId, {
+              // Authoritative entitlement. app_metadata is service-role only;
+              // user_metadata below is client-writable and is display data.
+              app_metadata: { subscription_status: subscription.status },
               user_metadata: {
                 subscription_status: subscription.status,
                 plan: 'Pro',
@@ -474,6 +486,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const priorFailures = Number(currentUser?.user?.user_metadata?.payment_failure_count || 0);
 
             await supabase.auth.admin.updateUserById(userId, {
+              // Authoritative entitlement. app_metadata is service-role only;
+              // user_metadata below is client-writable and is display data.
+              app_metadata: { subscription_status: 'past_due' },
               user_metadata: {
                 subscription_status: 'past_due',
                 payment_failure_count: priorFailures + 1,

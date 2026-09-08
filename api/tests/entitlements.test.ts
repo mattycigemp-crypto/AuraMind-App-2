@@ -64,7 +64,11 @@ describe('POST /api/subscription (entitlement lookup)', () => {
       error: null,
     });
     supabase.auth.admin.getUserById.mockResolvedValue({
-      data: { user: { id: USER_ID, user_metadata: { subscription_status: 'active', plan: 'Pro' } } },
+      data: { user: { id: USER_ID,
+        // Entitlement lives in app_metadata now — user_metadata is
+        // client-writable and is display data only.
+        app_metadata: { subscription_status: 'active' },
+        user_metadata: { subscription_status: 'active', plan: 'Pro' } } },
       error: null,
     });
 
@@ -99,6 +103,7 @@ describe('POST /api/subscription (entitlement lookup)', () => {
       data: {
         user: {
           id: USER_ID,
+          app_metadata: { subscription_status: 'past_due' },
           user_metadata: {
             subscription_status: 'past_due',
             plan: 'Pro',
@@ -124,6 +129,7 @@ describe('POST /api/subscription (entitlement lookup)', () => {
       data: {
         user: {
           id: USER_ID,
+          app_metadata: { subscription_status: 'past_due' },
           user_metadata: {
             subscription_status: 'past_due',
             plan: 'Pro',

@@ -58,7 +58,8 @@ function mockUpstreams(handlers: Array<{ status: number; body: unknown }>) {
 
 beforeEach(() => {
   supabase.auth.getUser.mockResolvedValue({
-    data: { user: { id: 'u1', email: 'a@b.co', app_metadata: {} } },
+    // /api/ai now requires an entitled user, so the fixture carries one.
+    data: { user: { id: 'u1', email: 'a@b.co', app_metadata: { subscription_status: 'active' } } },
     error: null,
   });
 });

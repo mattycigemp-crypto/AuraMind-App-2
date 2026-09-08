@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, ArrowLeft, CheckCircle, Loader2, Lock } from '@/components/icons';
 import { supabase } from '../../services/database/supabase';
+import TurnstileWidget, { isTurnstileEnabled, type TurnstileHandle } from '../../components/auth/TurnstileWidget';
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -9,6 +10,12 @@ export default function ResetPasswordPage() {
   const mode = searchParams.get('mode');
 
   const [email, setEmail] = useState('');
+  // Only the "send reset link" form is captcha-gated: resetPasswordForEmail
+  // is an unauthenticated endpoint Supabase protects. The update-password
+  // form runs inside a recovery session and is not gated.
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle | null>(null);
+  const handleCaptchaToken = useCallback((t: string | null) => setCaptchaToken(t), []);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
@@ -35,16 +42,24 @@ export default function ResetPasswordPage() {
     try {
       if (!supabase) { setError('Not connected'); return; }
       const { error: sendError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        ...(captchaToken ? { captchaToken } : {}),
         redirectTo: `${window.location.origin}/auth/callback`,
       });
-      if (sendError) { setError(sendError.message); return; }
+      if (sendError) {
+        setError(sendError.message);
+        // The token was consumed by the attempt; reset so a retry gets a
+        // fresh one instead of failing as captcha_failed.
+        turnstileRef.current?.reset();
+        return;
+      }
       setSent(true);
     } catch {
       setError('Something went wrong');
+      turnstileRef.current?.reset();
     } finally {
       setSending(false);
     }
-  }, [email]);
+  }, [email, captchaToken]);
 
   const handleUpdatePassword = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,9 +190,15 @@ export default function ResetPasswordPage() {
 
           {error && <p className="text-red-400 text-[11px]">{error}</p>}
 
+          <TurnstileWidget
+            onToken={handleCaptchaToken}
+            handleRef={turnstileRef}
+            className="flex justify-center"
+          />
+
           <button
             type="submit"
-            disabled={sending}
+            disabled={sending || (isTurnstileEnabled() && !captchaToken)}
             className="w-full py-3 bg-[#7C3AED] text-white text-sm font-medium rounded-xl hover:bg-[#6D28D9] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {sending && <Loader2 size={14} className="animate-spin" />}
