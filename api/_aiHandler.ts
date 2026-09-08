@@ -26,6 +26,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { isEntitled } from './_lib/entitlement.js';
 import {
   availableProviders,
   providerKey,
@@ -159,6 +160,21 @@ export async function handleAI(
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   if (authError || !user) {
     res.status(401).json({ error: 'Invalid token' });
+    return;
+  }
+
+  // Entitlement. A valid session alone used to be enough to reach the model
+  // proxy, so any free signup could spend the AI budget at 60 req/min without
+  // ever paying — the UI gates on subscription state but a scripted caller
+  // holding a session token does not go through the UI.
+  //
+  // Read from app_metadata via the shared helper: it is service-role only,
+  // unlike user_metadata which the user can write themselves.
+  if (!isEntitled(user)) {
+    res.status(402).json({
+      error: 'A subscription is required to use AI features.',
+      code: 'subscription_required',
+    });
     return;
   }
 

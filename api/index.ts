@@ -5,6 +5,7 @@ import { handleChatStream } from './_chatHandler.js';
 import { handleAI, handleAITranscribe } from './_aiHandler.js';
 import { z } from 'zod';
 import { sendEmail as sendEmailViaResend } from './_lib/emails.js';
+import { readSubscriptionStatus } from './_lib/entitlement.js';
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || '';
 
@@ -486,6 +487,8 @@ async function handleAdminUtility(req: VercelRequest, res: VercelResponse, supab
       if (!userData?.user) return json(res, 404, { error: 'User not found' });
 
       await supabase.auth.admin.updateUserById(targetUserId, {
+        // Authoritative copy — service-role only.
+        app_metadata: { subscription_status: status || 'active' },
         user_metadata: {
           ...userData.user.user_metadata,
           subscription_status: status || 'active',
@@ -887,7 +890,11 @@ async function handleSubscription(req: VercelRequest, res: VercelResponse, actio
   if (!userData?.user) return json(res, 404, { error: 'User not found' });
 
   const metadata = userData.user.user_metadata || {};
-  const rawStatus = metadata.subscription_status || 'none';
+  // Entitlement comes from app_metadata, which only the service-role key can
+  // write. user_metadata is client-writable — reading status from there let
+  // any user grant themselves a subscription with a single updateUser call.
+  // Display fields (plan, trial_end, failure counts) stay in user_metadata.
+  const rawStatus = readSubscriptionStatus(userData.user);
 
   // Grace-period enforcement: a past_due user keeps access during the dunning
   // window, then reads as expired here even before the cron downgrades them.
@@ -999,6 +1006,8 @@ async function handleStripe(req: VercelRequest, res: VercelResponse, action?: st
             const { data: userData } = await supabaseAdmin.auth.admin.getUserById(userId);
             if (userData?.user) {
               await supabaseAdmin.auth.admin.updateUserById(userId, {
+                // Authoritative copy — service-role only.
+                app_metadata: { subscription_status: 'trialing' },
                 user_metadata: {
                   ...userData.user.user_metadata,
                   subscription_status: 'trialing',
@@ -1812,6 +1821,7 @@ async function handleCron(req: VercelRequest, res: VercelResponse, action?: stri
         if (Number.isNaN(failedAt) || now - failedAt > graceMs) {
           try {
             await supabase.auth.admin.updateUserById(user.id, {
+              app_metadata: { subscription_status: 'expired' },
               user_metadata: { ...meta, subscription_status: 'expired', plan: 'Starter' },
             });
             summary.dunningExpired++;
