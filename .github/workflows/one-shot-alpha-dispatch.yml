@@ -1,9 +1,20 @@
 # TEMPORARY - delete this file after 2026-09-09.
 #
-# The Play upload key activates ~04:45 UTC on 2026-09-09. This fires at
-# 05:00 UTC that day and dispatches the real Android workflow at the alpha
-# (closed testing) track, so the first upload on the new key happens without
+# Dispatches the real Android workflow at the alpha (closed testing) track on
+# 2026-09-09, so the first upload on the new Play upload key happens without
 # anyone needing to be awake for it.
+#
+# WHY 09:30 UTC AND NOT 05:00
+#
+# The key's activation time was recorded as "~04:45 on 2026-09-09" without a
+# timezone that was ever confirmed. The repo owner is US Eastern (UTC-4 in
+# September), so that could mean 04:45 UTC or 08:45 UTC. Firing at 05:00 UTC
+# is only correct under the first reading; under the second it hits the old
+# key and fails overnight with nobody watching.
+#
+# 09:30 UTC (05:30 Eastern) is after both candidate activation times, so it is
+# correct either way. The cost is a few hours of delay while the owner is
+# asleep, against the risk of a silent overnight failure - an easy trade.
 #
 # Why a workflow rather than a scheduled cloud agent: a cloud routine needs a
 # connected GitHub account, which is not set up for this repo. GITHUB_TOKEN
@@ -22,7 +33,7 @@ name: One-shot alpha dispatch (temporary)
 
 on:
   schedule:
-    - cron: '0 5 9 9 *'
+    - cron: '30 9 9 9 *'
   workflow_dispatch:
 
 jobs:
