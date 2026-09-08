@@ -1,8 +1,9 @@
-import React, { useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Loader2 } from "@/components/icons";
 import { supabase } from "../../services/database/supabase";
+import TurnstileWidget, { isTurnstileEnabled, type TurnstileHandle } from './TurnstileWidget';
 import { analyticsService } from "../../services/analytics/analyticsService";
 import { needsMfaChallenge, listFactors, completeMfaChallenge } from "../../services/auth/mfaService";
 import { FrostGlass } from "../ui/FrostGlass";
@@ -23,6 +24,12 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Turnstile. Tokens are single-use and expire, so the widget is reset
+  // after every failed attempt — otherwise the retry fails as
+  // "captcha_failed" instead of showing the real error.
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle | null>(null);
+  const handleCaptchaToken = useCallback((t: string | null) => setCaptchaToken(t), []);
   // Set when signup needs email confirmation before the account activates.
   const [confirmEmail, setConfirmEmail] = useState<string | null>(null);
   // Two-factor challenge state — entered after a successful password sign-in
@@ -76,6 +83,7 @@ export default function AuthPage() {
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
+          options: captchaToken ? { captchaToken } : undefined,
         });
         if (signUpError) throw signUpError;
         if (!data.session) {
@@ -92,6 +100,7 @@ export default function AuthPage() {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
+          options: captchaToken ? { captchaToken } : undefined,
         });
         if (signInError) throw signInError;
         // 2FA: if the account has TOTP factors the session is untrusted (aal1)
@@ -108,6 +117,9 @@ export default function AuthPage() {
       }
     } catch (err: any) {
       setError(err.message || "An error occurred");
+      // The token was consumed by the attempt. Without this reset the retry
+      // fails as "captcha_failed" and hides the real error.
+      turnstileRef.current?.reset();
     } finally {
       setLoading(false);
     }
@@ -377,9 +389,15 @@ export default function AuthPage() {
                 </div>
               )}
 
+              <TurnstileWidget
+                onToken={handleCaptchaToken}
+                handleRef={turnstileRef}
+                className="flex justify-center"
+              />
+
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || (isTurnstileEnabled() && !captchaToken)}
                 className="w-full py-2.5 bg-[#7C3AED] text-white text-sm font-medium rounded-lg hover:bg-[#6D28D9] transition-all duration-300 shadow-[0_0_20px_rgba(124,58,237,0.2)] disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading && <Loader2 size={14} className="animate-spin" />}

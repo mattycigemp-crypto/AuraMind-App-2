@@ -107,6 +107,7 @@ jobs:
             printf 'VITE_SSE_BASE=%s\n'             'https://auramind.app'
             printf 'VITE_APP_URL=%s\n'              'https://auramind.app'
             printf 'VITE_USE_PUTER=%s\n'            'true'
+            printf 'VITE_TURNSTILE_SITE_KEY=%s\n'  '0x4AAAAAAAEsHm7dsqEhBi3Nr'
           } > .env
 
           echo "Wrote .env with $(grep -c '=' .env) entries (values not echoed)."
