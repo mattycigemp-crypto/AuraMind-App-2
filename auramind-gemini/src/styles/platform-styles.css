@@ -2526,6 +2526,16 @@ html.android-app #root {
   gap: 11px;
 }
 
+/* The inner wrapper holds the section heading and its subtitle, which must
+   stack. It was picking up `display: flex` from the rule above with no
+   direction, so it inherited `row` and laid the two out side by side --
+   "Choose your source" ran straight into "Start wherever the idea lives."
+   and "Set the feel" into its own subtitle. Only the outer wrapper (step
+   badge beside the text block) is meant to be a row. */
+.android-native-panel-heading > div > div {
+  flex-direction: column;
+}
+
 .android-native-step {
   display: inline-flex;
   width: 27px;
