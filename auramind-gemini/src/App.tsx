@@ -503,6 +503,14 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
           return;
         }
         let profile = mapAuthUserToProfile(session.user);
+        // Hydrate the user into app state IMMEDIATELY, before any awaited
+        // round-trip below. The auth page navigates straight to /dashboard
+        // after signInWithPassword resolves; if `user` is still null here,
+        // ProtectedRoute bounces the user straight back to /auth (the
+        // "sign in twice before it works" bug). The DB role upgrade below is
+        // applied in place afterwards and does not block the guard.
+        setUser(profile);
+        setAuthChecked(true);
         try {
           const { data: dbProfile } = await requireSupabase()
             .from("user_profiles")
@@ -515,13 +523,12 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
             const memPerms = getPermissions(profile.role || UserRole.USER);
             if (dbPerms.canAccessAdminPanel && !memPerms.canAccessAdminPanel) {
               profile = { ...profile, role: dbRole, isAdmin: true };
+              setUser(profile);
             }
           }
         } catch {
           // user_profiles not yet created — safe to ignore
         }
-        setUser(profile);
-        setAuthChecked(true);
         analyticsService
           .identify(profile.id, { email: profile.email, plan: profile.plan })
           .catch(() => {});
