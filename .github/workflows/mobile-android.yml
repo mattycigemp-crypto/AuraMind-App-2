@@ -7,12 +7,21 @@ on:
   workflow_dispatch:
     inputs:
       track:
-        description: 'Play Store track to upload to (internal | beta | production)'
+        # Play track names as the Publishing API expects them:
+        #   internal   - Internal testing (up to 100 testers, instant)
+        #   alpha      - CLOSED testing. The only track that counts toward the
+        #                12-testers-for-14-continuous-days requirement that
+        #                gates production access for personal developer
+        #                accounts created after 2023-11-13.
+        #   beta       - Open testing (public opt-in)
+        #   production - Live on the Play Store
+        description: 'Play track (internal | alpha=closed | beta=open | production)'
         required: true
         type: choice
         default: 'internal'
         options:
           - internal
+          - alpha
           - beta
           - production
 
@@ -34,7 +43,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          # Capacitor CLI 8.x hard-requires Node >= 22 and exits fatally on 20,
+          # after the Vite build has already succeeded — so the failure looked
+          # like a web build problem rather than a runner version one. ci.yml's
+          # android-build job already uses 22.x; this keeps them aligned.
+          node-version: '22.x'
           cache: 'npm'
           cache-dependency-path: auramind-gemini/package-lock.json
 
@@ -48,20 +61,55 @@ jobs:
       # them from repo secrets; `.env.mobile` (committed) supplies the
       # production API/SSE/translation endpoints for the Capacitor build.
       - name: Write build env from secrets
+        # Secrets arrive as real environment variables rather than being
+        # interpolated into the script body. The previous version substituted
+        # ${{ }} straight into a quoted heredoc and then tested "$VITE_SUPABASE_URL"
+        # as a SHELL variable that was never exported — under `set -u` that
+        # aborted the step every time, whether or not the secrets existed.
+        # Passing them through `env:` also keeps secret values out of the
+        # rendered script, so they cannot break quoting or be injected.
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
         run: |
           set -euo pipefail
-          cat > .env <<'EOF'
-          VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_STRIPE_PUBLISHABLE_KEY=${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
-          VITE_POSTHOG_KEY=${{ secrets.VITE_POSTHOG_KEY }}
-          EOF
-          # Fail fast if the two required vars are empty (Vite would otherwise
-          # inline placeholder strings and env.ts validation would catch it late).
-          if [ -z "$VITE_SUPABASE_URL" ] || [ -z "$VITE_SUPABASE_ANON_KEY" ]; then
-            echo "::error::VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY secrets are required."
+
+          # Check before writing, so a misconfigured run fails loudly instead
+          # of producing a .env full of empty values that Vite happily inlines.
+          missing=""
+          [ -n "${VITE_SUPABASE_URL:-}" ]      || missing="$missing VITE_SUPABASE_URL"
+          [ -n "${VITE_SUPABASE_ANON_KEY:-}" ] || missing="$missing VITE_SUPABASE_ANON_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required repository secret(s):$missing"
             exit 1
           fi
+
+          {
+            printf 'VITE_SUPABASE_URL=%s\n'           "$VITE_SUPABASE_URL"
+            printf 'VITE_SUPABASE_ANON_KEY=%s\n'      "$VITE_SUPABASE_ANON_KEY"
+            printf 'VITE_STRIPE_PUBLISHABLE_KEY=%s\n' "${VITE_STRIPE_PUBLISHABLE_KEY:-}"
+            printf 'VITE_POSTHOG_KEY=%s\n'            "${VITE_POSTHOG_KEY:-}"
+            #
+            # Mobile-only origins. In the browser an empty VITE_API_BASE_URL
+            # means same-origin, which is correct. Inside the Capacitor
+            # webview the origin is https://localhost, so an empty value
+            # points every /api call at the device itself and silently
+            # breaks AI, chat, Stripe and account operations — the app still
+            # launches and looks fine.
+            #
+            # These live in .env.mobile locally, which is gitignored and
+            # therefore absent on the runner. They are public URLs, not
+            # secrets, so they are written literally here rather than
+            # carried as repository secrets.
+            printf 'VITE_API_BASE_URL=%s\n'         'https://auramind.app'
+            printf 'VITE_SSE_BASE=%s\n'             'https://auramind.app'
+            printf 'VITE_APP_URL=%s\n'              'https://auramind.app'
+            printf 'VITE_USE_PUTER=%s\n'            'true'
+          } > .env
+
+          echo "Wrote .env with $(grep -c '=' .env) entries (values not echoed)."
 
       - name: Install npm dependencies
         run: npm ci
@@ -90,6 +138,9 @@ jobs:
 
       - name: Assemble signed release AAB
         env:
+          # Monotonic and never reused, so repeat releases are not rejected.
+          # github.run_number only ever increases for this workflow.
+          ANDROID_VERSION_CODE: ${{ github.run_number }}
           ANDROID_KEYSTORE_PATH: android/keystore/release.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -107,7 +158,11 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: android-release-aab
-          path: android/app/build/outputs/bundle/release/app-release.aab
+          # Repo-root relative on purpose: defaults.run.working-directory
+          # applies to `run:` steps only, never to `uses:` actions, so this
+          # needs the auramind-gemini/ prefix that the Play upload step below
+          # already has.
+          path: auramind-gemini/android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
           if-no-files-found: error
 
