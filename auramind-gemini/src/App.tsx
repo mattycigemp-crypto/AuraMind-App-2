@@ -49,6 +49,7 @@ import PuterQuotaBanner from "./components/shared/PuterQuotaBanner";
 import { KeyboardAware } from "./components/shared/KeyboardAware";
 import NativeRuntime from "./components/native/NativeRuntime";
 import { Capacitor, SplashScreen } from "./lib/nativeShim";
+import { useReminderSync } from "./hooks/useReminderSync";
 import QuizGenerationNotifier from "./components/notifications/QuizGenerationNotifier";
 import { Toaster, toast } from "./components/ui/sonner";
 import { ThemeProvider } from "./hooks/useTheme";
@@ -741,6 +742,11 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
       onLogout,
     ],
   );
+
+  // Repair and maintain the OS reminder schedule on every launch. In
+  // 'maintain' mode this never raises a permission dialog -- it only
+  // reschedules when the user has already granted it. See useReminderSync.
+  useReminderSync('maintain');
 
   /**
    * Hand off from the native splash exactly once, when the app can actually

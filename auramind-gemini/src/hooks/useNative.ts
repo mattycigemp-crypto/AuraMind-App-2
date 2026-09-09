@@ -219,6 +219,19 @@ export function useLocalNotifications() {
     return result.display;
   }, []);
 
+  /**
+   * Read the current permission without prompting.
+   *
+   * Distinct from requestPermissions on purpose: the app-start reminder sync
+   * needs to know whether it may schedule, but must never raise a system
+   * dialog on launch. Only an explicit user action in Settings should ask.
+   */
+  const checkPermissions = useCallback(async (): Promise<string> => {
+    if (!Capacitor.isNativePlatform()) return "denied";
+    const result = await LocalNotifications.checkPermissions();
+    return result.display;
+  }, []);
+
   const schedule = useCallback(
     async (notification: {
       title: string;
@@ -258,7 +271,7 @@ export function useLocalNotifications() {
     return result.notifications;
   }, []);
 
-  return { requestPermissions, schedule, cancel, getPending };
+  return { requestPermissions, checkPermissions, schedule, cancel, getPending };
 }
 
 export function useAppLifecycle() {

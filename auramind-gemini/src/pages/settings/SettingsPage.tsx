@@ -9,11 +9,10 @@ import { userService } from '../../services/user/userService';
 import { uploadAvatar, deleteAvatar } from '../../services/user/avatarService';
 import ProfAuraAvatar from '../../components/auramind/ProfAuraAvatar';
 import { DeleteAccountModal } from '../../components/settings/DeleteAccountModal';
-import { useLocalNotifications } from '../../hooks/useNative';
 import { Capacitor } from '../../lib/nativeShim';
 import { useAppPreference } from '../../lib/appPreferences';
 import { analyticsService } from '../../services/analytics/analyticsService';
-import { buildReminderNotifications, REMINDER_IDS } from '../../lib/reminderSchedule';
+import { useReminderSync } from '../../hooks/useReminderSync';
 import { getAIProvider, setAIProvider, type AIProvider } from '../../lib/aiProvider';
 import {
   listFactors, beginEnrollment, verifyEnrollment, unenroll,
@@ -293,49 +292,12 @@ export default function SettingsPage() {
   const [aiProvider, setAiProviderState] = useState<AIProvider>(getAIProvider());
   const [_showPassword, _setShowPassword] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const {
-    requestPermissions: requestNativeNotificationPermissions,
-    schedule: scheduleNativeNotification,
-    cancel: cancelNativeNotification,
-  } = useLocalNotifications();
 
-  // Reminder controls map to real Android schedules. The browser keeps the
-  // same preferences but does not request permission for background alerts.
-  const syncNativeReminders = useCallback(async () => {
-    if (!Capacitor.isNativePlatform()) return;
-
-    try {
-      await Promise.all(Object.values(REMINDER_IDS).map((id) => cancelNativeNotification(id)));
-      const notifications = buildReminderNotifications({
-        dailyReminder,
-        dueReminder,
-        streakReminder,
-        weeklySummary,
-        reminderTime,
-      });
-      if (notifications.length === 0) return;
-
-      const permission = await requestNativeNotificationPermissions();
-      if (permission !== 'granted') return;
-      await Promise.all(notifications.map((notification) => scheduleNativeNotification(notification)));
-    } catch (error) {
-      // A missing Android notification permission must never block Settings.
-      console.warn('[Native reminders] Could not sync reminders:', error);
-    }
-  }, [
-    dailyReminder,
-    dueReminder,
-    reminderTime,
-    requestNativeNotificationPermissions,
-    scheduleNativeNotification,
-    cancelNativeNotification,
-    streakReminder,
-    weeklySummary,
-  ]);
-
-  useEffect(() => {
-    void syncNativeReminders();
-  }, [syncNativeReminders]);
+  // Reminder controls map to real Android schedules. 'request' because
+  // toggling one here is an explicit user action and may raise the permission
+  // dialog; app start uses 'maintain' and never prompts. Scheduling lives in
+  // useReminderSync so this page and the Android shell cannot drift apart.
+  useReminderSync('request');
 
   useEffect(() => {
     if (usageAnalytics) void analyticsService.init();

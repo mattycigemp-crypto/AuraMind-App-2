@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bell,
@@ -20,12 +20,11 @@ import {
 import { toast } from "sonner";
 import { useDashboardWorkspace } from "../../contexts/DashboardWorkspaceContext";
 import { useCurrentUserId } from "../../hooks/useCurrentUserId";
-import { useLocalNotifications } from "../../hooks/useNative";
 import { useAppPreference } from "../../lib/appPreferences";
 import { hapticSelection, hapticSuccess, hapticTap, hapticWarning } from "./androidHaptics";
 import { userService } from "../../services/user/userService";
 import { analyticsService } from "../../services/analytics/analyticsService";
-import { buildReminderNotifications, REMINDER_IDS } from "../../lib/reminderSchedule";
+import { useReminderSync } from "../../hooks/useReminderSync";
 import { deleteAvatar, uploadAvatar } from "../../services/user/avatarService";
 import ProfAuraAvatar from "../auramind/ProfAuraAvatar";
 import { DeleteAccountModal } from "../settings/DeleteAccountModal";
@@ -211,12 +210,6 @@ export default function AndroidSettingsScreen() {
   const [saveChatHistory, setSaveChatHistory] = useStoredValue("auramind_saveChatHistory", true);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const {
-    requestPermissions,
-    schedule: scheduleNotification,
-    cancel: cancelNotification,
-  } = useLocalNotifications();
-
   const displayName = workspace?.user.name || profile?.name || "Learner";
 
   useEffect(() => {
@@ -235,38 +228,11 @@ export default function AndroidSettingsScreen() {
     };
   }, [userId]);
 
-  const syncReminder = useCallback(async () => {
-    try {
-      await Promise.all(Object.values(REMINDER_IDS).map((id) => cancelNotification(id)));
-      const notifications = buildReminderNotifications({
-        dailyReminder,
-        dueReminder,
-        streakReminder,
-        weeklySummary,
-        reminderTime,
-      });
-      if (notifications.length === 0) return;
-
-      const permission = await requestPermissions();
-      if (permission !== "granted") return;
-      await Promise.all(notifications.map((notification) => scheduleNotification(notification)));
-    } catch {
-      // Android permissions are optional; settings should remain usable.
-    }
-  }, [
-    cancelNotification,
-    dailyReminder,
-    dueReminder,
-    reminderTime,
-    requestPermissions,
-    scheduleNotification,
-    streakReminder,
-    weeklySummary,
-  ]);
-
-  useEffect(() => {
-    void syncReminder();
-  }, [syncReminder]);
+  // 'request' rather than 'maintain': changing a reminder here is an explicit
+  // user action, so this is the one place allowed to raise the permission
+  // dialog. App start uses 'maintain' and never prompts. The scheduling
+  // itself is shared, so the two cannot drift apart.
+  useReminderSync("request");
 
   useEffect(() => {
     if (usageAnalytics) void analyticsService.init();
