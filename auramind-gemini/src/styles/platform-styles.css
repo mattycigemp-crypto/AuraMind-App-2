@@ -2910,16 +2910,43 @@ html.android-app #root {
   object-fit: cover;
 }
 
+/* Change-avatar badge.
+   The button box is 44px for the touch target, but transparent -- the visible
+   ~28px pill is drawn on the icon instead, so the affordance stays a small
+   corner badge while the finger target meets 44px.
+
+   It grows up and left, over the avatar image, rather than right or down: the
+   profile copy (and its full-width name button) sits immediately to the right,
+   and an outward expansion there would swallow taps meant for the name.
+   The avatar image itself is not interactive, so overlapping it costs nothing.
+
+   A ::after hit-area expansion was tried first and does not work -- this
+   WebView does not hit-test pseudo-elements, so elementFromPoint kept
+   returning the ancestor section. The target has to be a real box. */
 .android-native-profile-avatar > button {
   position: absolute;
   right: -6px;
   bottom: -6px;
-  width: 29px;
-  min-width: 29px;
-  min-height: 29px;
-  height: 29px;
-  border-radius: 10px;
+  display: inline-flex;
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  height: 44px;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0;
+  border: none;
+  border-radius: 0;
   color: #15112d;
+  background: transparent;
+}
+
+.android-native-profile-avatar > button > svg {
+  box-sizing: content-box;
+  width: 16px;
+  height: 16px;
+  padding: 6px;
+  border-radius: 10px;
   background: #d8d2ff;
 }
 
@@ -3022,7 +3049,10 @@ html.android-app #root {
 
 .android-settings-select,
 .android-settings-inline input {
-  min-height: 39px;
+  /* 44px is the smallest comfortable touch target; 39px was under it. The
+     control is in a row with plenty of vertical room, so growing it costs
+     nothing visually. */
+  min-height: 44px;
   max-width: 170px;
   padding: 0 10px;
   border: 1px solid rgba(169, 184, 232, 0.18);

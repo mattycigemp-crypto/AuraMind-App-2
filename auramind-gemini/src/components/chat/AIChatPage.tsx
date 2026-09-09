@@ -565,7 +565,7 @@ export default function AIChatPage() {
                   ? "Voice OUT: ON — click to disable"
                   : "Voice OUT: OFF — click to enable"
               }
-              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+              className={`w-10 h-10 shrink-0 rounded-lg flex items-center justify-center transition-all ${
                 tts.isEnabled
                   ? "bg-[#7C3AED]/15 text-[#8B5CF6] border border-[#7C3AED]/30"
                   : "bg-[#111118] text-[#7A7A96] border border-[#2A2A3A] hover:text-[#F0EFFE]"
@@ -583,7 +583,7 @@ export default function AIChatPage() {
               <button
                 onClick={() => setShowPersonalityPicker(!showPersonalityPicker)}
                 title="Change Prof. Aura's personality"
-                className="h-8 px-2.5 rounded-full bg-[#111118] border border-[#2A2A3A] flex items-center gap-1.5 text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-colors"
+                className="h-10 shrink-0 px-3 rounded-full bg-[#111118] border border-[#2A2A3A] flex items-center gap-1.5 text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-colors"
               >
                 <span className="text-sm leading-none">
                   <PersonalityIcon size={16} className="text-[#A78BFA]" />
@@ -657,7 +657,7 @@ export default function AIChatPage() {
               <select
                 value={selectedDeck?.id || ""}
                 onChange={(e) => setSelectedDeckId(e.target.value)}
-                className="bg-[#111118] border border-[#2A2A3A] rounded-lg px-3 py-1.5 text-[#F0EFFE] text-xs outline-none focus:border-[#7C3AED]/50 min-w-0 max-w-[160px] truncate"
+                className="bg-[#111118] border border-[#2A2A3A] rounded-lg px-3 py-1.5 text-[#F0EFFE] text-xs outline-none focus:border-[#7C3AED]/50 min-h-[44px] min-w-0 max-w-[128px] truncate"
               >
                 {decks.map((d) => (
                   <option key={d.id} value={d.id}>
@@ -1021,7 +1021,7 @@ export default function AIChatPage() {
                         : "Speak your question"
                   }
                   aria-pressed={mic.isActive || sr.isListening}
-                  className={`m-2 w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${
+                  className={`m-2 w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all ${
                     mic.isActive || sr.isListening
                       ? "bg-[#7C3AED] text-white shadow-[0_0_15px_rgba(124,58,237,0.4)]"
                       : "bg-[#1A1A24] border border-[#2A2A3A] text-[#A8A8C0] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40"
@@ -1034,7 +1034,7 @@ export default function AIChatPage() {
                 {chat.isStreaming ? (
                   <button
                     onClick={() => chat.abort()}
-                    className="m-2 w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 flex items-center justify-center hover:bg-red-500/20 transition-all shrink-0 animate-[pulse_2.4s_ease-in-out_infinite] shadow-[0_0_14px_rgba(239,68,68,0.18)]"
+                    className="m-2 w-11 h-11 rounded-xl bg-red-500/10 border border-red-500/25 text-red-400 flex items-center justify-center hover:bg-red-500/20 transition-all shrink-0 animate-[pulse_2.4s_ease-in-out_infinite] shadow-[0_0_14px_rgba(239,68,68,0.18)]"
                     title="Stop generating"
                   >
                     <Square size={14} fill="currentColor" />
@@ -1043,7 +1043,7 @@ export default function AIChatPage() {
                   <button
                     onClick={handleSend}
                     disabled={!input.trim()}
-                    className={`m-2 w-9 h-9 rounded-xl flex items-center justify-center transition-all shrink-0 ${
+                    className={`m-2 w-11 h-11 rounded-xl flex items-center justify-center transition-all shrink-0 ${
                       input.trim()
                         ? "bg-[#7C3AED] text-white hover:bg-[#6D28D9] shadow-[0_0_15px_rgba(124,58,237,0.3)]"
                         : "bg-[#1A1A24] text-[#3A3A4F] border border-[#2A2A3A]"

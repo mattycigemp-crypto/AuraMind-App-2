@@ -368,7 +368,7 @@ export default function ConversationHistory({
         onClick={() => setOpen((v) => !v)}
         title="Chat history"
         aria-label="Open chat history"
-        className="relative w-7 h-7 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#8A8AA3] hover:text-[#F0EFFE] hover:border-[#3A3A4F] transition-all"
+        className="relative w-10 h-10 shrink-0 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#8A8AA3] hover:text-[#F0EFFE] hover:border-[#3A3A4F] transition-all"
       >
         <History size={13} />
         {sessions.length > 0 && (

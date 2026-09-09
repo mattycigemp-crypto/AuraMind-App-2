@@ -130,7 +130,7 @@ export default function FileAttachment({ attachments, setAttachments }: Props) {
         onClick={() => inputRef.current?.click()}
         title="Attach an image, PDF, or text file"
         aria-label="Attach file"
-        className="m-2 w-9 h-9 rounded-xl bg-[#1A1A24] border border-[#2A2A3A] text-[#A8A8C0] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 flex items-center justify-center shrink-0 transition-all"
+        className="m-2 w-11 h-11 rounded-xl bg-[#1A1A24] border border-[#2A2A3A] text-[#A8A8C0] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 flex items-center justify-center shrink-0 transition-all"
       >
         <Paperclip size={14} />
       </button>
