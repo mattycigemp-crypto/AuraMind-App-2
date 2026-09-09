@@ -238,3 +238,92 @@
 .platform-android .android-native-panel-heading {
   margin-bottom: var(--ed-4);
 }
+
+/* ============================================================
+   COMPOSITION — stop reading like the website
+   ============================================================
+
+   The Android home was the web dashboard with CSS overrides: a single
+   column of bordered cards, which is a dashboard-widget pattern rather
+   than a phone one. This pass removes box chrome and lets space, type and
+   one full-bleed surface carry the structure instead.
+   ============================================================ */
+
+/* The focus block becomes the one hero surface and runs edge to edge.
+   -16px cancels .android-home-screen's page inset. A website never bleeds
+   a panel past its container; a phone does it constantly, and it is the
+   single clearest signal that this layout was made for the device. */
+.platform-android .android-focus-card {
+  margin-inline: -16px;
+  border: 0;
+  border-radius: 0;
+  padding: var(--ed-6) var(--ed-5) var(--ed-5);
+}
+
+/* Quick actions lose their boxes. Three bordered 112px tiles in a row is
+   the most dashboard-looking thing on the screen; without the chrome the
+   coloured icon anchors each item and the type does the work. */
+.platform-android .android-action {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  gap: var(--ed-2);
+  /* The original rule paired space-between with a fixed 112px height. With
+     the box (and the height) gone, space-between pushed each column's text
+     to the bottom of a different-sized cell, so the three labels no longer
+     shared a baseline. Aligning to the start keeps the icons and labels in
+     register regardless of how long each hint runs. */
+  justify-content: flex-start;
+}
+
+.platform-android .android-action:hover {
+  transform: none;
+}
+
+.platform-android .android-action-grid {
+  gap: var(--ed-4);
+  /* Boxes were doing the work of separating this section from the next.
+     Without them the following heading collided with the hints, so the
+     space has to be declared rather than implied. */
+  margin-bottom: var(--ed-4);
+}
+
+/* Deck list becomes an editorial list: items separated by a single
+   hairline instead of each being wrapped in its own card. */
+.platform-android .android-deck-row {
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.platform-android .android-deck-list {
+  gap: 0;
+}
+
+.platform-android .android-deck-list > * + * {
+  border-top: 1px solid var(--ed-hairline);
+}
+
+.platform-android .android-deck-main {
+  padding-inline: 0;
+}
+
+/* More air between sections than within them. That ratio is what makes a
+   screen read as composed sections rather than an evenly spaced list. */
+.platform-android .android-home-screen {
+  gap: var(--ed-6);
+}
+
+/* Deck titles were single-line with an ellipsis, which on a phone throws
+   away the part of the name that distinguishes one deck from another
+   ("JavaScript Fundamen..."). Two lines cost one line of height and keep
+   the title readable; anything longer still clamps. */
+.platform-android .android-deck-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: unset;
+}
