@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Flame, Settings } from "@/components/icons";
 import { useAppPreference } from "../../lib/appPreferences";
@@ -30,6 +30,12 @@ export function AndroidMobileTopBar({ user }: { user: UserProfile | null | undef
   const location = useLocation();
   const navigate = useNavigate();
   const [offlineMode] = useAppPreference("auramind_offlineMode", false);
+  // Settings already renders the uploaded avatar; the top bar only ever drew
+  // initials, so an account with a picture still showed "MS" on every screen.
+  // If the image 404s (deleted from storage, offline) we fall back to the
+  // initials rather than leaving a broken-image glyph in the header.
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const avatar = !avatarFailed ? user?.avatar : undefined;
 
   return (
     <header className="android-mobile-topbar" role="banner">
@@ -72,7 +78,17 @@ export function AndroidMobileTopBar({ user }: { user: UserProfile | null | undef
           }}
           aria-label={`Open ${user?.name ?? "account"} settings`}
         >
-          {initials(user)}
+          {avatar ? (
+            <img
+              src={avatar}
+              alt=""
+              aria-hidden="true"
+              className="android-avatar-img"
+              onError={() => setAvatarFailed(true)}
+            />
+          ) : (
+            initials(user)
+          )}
         </button>
       </div>
     </header>

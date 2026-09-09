@@ -138,6 +138,27 @@ function AndroidSelect({
   );
 }
 
+/**
+ * Mask the local part of an email, keeping the domain.
+ *
+ * The settings screen shows the signed-in address permanently, which means
+ * it is on screen in every screenshot, screen share and over-the-shoulder
+ * glance. The domain is rarely the identifying part; the local part is. So
+ * the local part is masked by default and the whole address is one tap away
+ * for anyone who genuinely needs to check which account they are in.
+ *
+ * Short local parts (1-2 chars) are masked entirely rather than leaving the
+ * whole thing legible.
+ */
+function maskEmail(email: string): string {
+  const at = email.lastIndexOf("@");
+  if (at < 1) return email;
+  const local = email.slice(0, at);
+  const domain = email.slice(at);
+  if (local.length <= 2) return "•".repeat(Math.max(local.length, 3)) + domain;
+  return local.slice(0, 2) + "•".repeat(Math.max(local.length - 2, 3)) + domain;
+}
+
 export default function AndroidSettingsScreen() {
   const navigate = useNavigate();
   const workspace = useDashboardWorkspace();
@@ -145,6 +166,9 @@ export default function AndroidSettingsScreen() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [editingName, setEditingName] = useState(false);
+  // Masked by default and never persisted: revealing is a per-visit decision,
+  // so leaving the screen re-hides the address.
+  const [emailRevealed, setEmailRevealed] = useState(false);
   const [name, setName] = useState(workspace?.user.name || "");
   const [savingName, setSavingName] = useState(false);
   const [avatarBusy, setAvatarBusy] = useState(false);
@@ -453,7 +477,24 @@ export default function AndroidSettingsScreen() {
               <ChevronRight className="h-4 w-4" aria-hidden />
             </button>
           )}
-          <span>{profile?.email || workspace?.user.email || "Signed-in learner"}</span>
+          {(() => {
+            const address = profile?.email || workspace?.user.email;
+            if (!address) return <span>Signed-in learner</span>;
+            return (
+              <button
+                type="button"
+                className="android-native-email"
+                onClick={() => {
+                  setEmailRevealed((v) => !v);
+                  hapticSelection();
+                }}
+                aria-label={emailRevealed ? "Hide email address" : "Show email address"}
+                title={emailRevealed ? "Tap to hide" : "Tap to reveal"}
+              >
+                {emailRevealed ? address : maskEmail(address)}
+              </button>
+            );
+          })()}
           <small>
             {profile?.plan || workspace?.user.plan || "Starter"} plan ·{" "}
             {workspace?.user.streak ?? 0} day streak

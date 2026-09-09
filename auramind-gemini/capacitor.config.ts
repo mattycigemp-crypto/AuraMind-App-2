@@ -20,8 +20,13 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 1200,
-      launchAutoHide: true,
+      // The app hides this itself once auth has resolved (see App.tsx). With
+      // autoHide the splash vanished at a fixed 1.2s and the in-app
+      // LoadingOverlay took over, so launch showed two different loading
+      // screens back to back. Holding the splash until the app is genuinely
+      // ready collapses that into one.
+      launchShowDuration: 3000,
+      launchAutoHide: false,
       backgroundColor: '#0a0a0a',
       androidSplashResourceName: 'splash',
       androidScaleType: 'CENTER_CROP',

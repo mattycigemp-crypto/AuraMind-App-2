@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { UserProfile, Deck, Card } from '../types';
+import { useStudyStats } from '../hooks/useStudyStats';
 import { analyticsService } from '../services/analytics/analyticsService';
 import { parseIsoToMsOrNow, parseIsoToMsOrUndef } from '../lib/timestamps';
 
@@ -149,9 +150,33 @@ export const DashboardWorkspaceProvider: React.FC<DashboardWorkspaceProviderProp
     navigate(`/dashboard/study/${pick.id}`);
   }, [decks, cards, navigate]);
 
+  /**
+   * The streak shown across the app is derived here rather than read from the
+   * profile.
+   *
+   * There were three competing sources and the UI was wired to the only one
+   * that is never written:
+   *
+   *   - localStorage ('auramind_streak_days'), updated by gamificationService.
+   *     Device-local, so it is wrong the moment you study on a second device
+   *     and invisible to anything server-side.
+   *   - user_profiles.streak / streak_days. Every surface read this, and
+   *     nothing in the codebase ever writes it -- so it was permanently 0
+   *     no matter how much the user studied.
+   *   - study_sessions, the actual record of activity.
+   *
+   * useStudyStats already derives a correct streak from study_sessions (a
+   * study day is any local date with a session, counted backwards from today,
+   * with yesterday allowed as the anchor so it does not break until a full day
+   * is missed). Overriding the profile value here fixes every consumer at once
+   * -- top bar, home, settings, web dashboard -- rather than at each call site,
+   * and needs no new write path or migration.
+   */
+  const studyStats = useStudyStats(user?.id);
+
   const value = useMemo(
     () => ({
-      user,
+      user: { ...user, streak: studyStats.streak },
       decks,
       cards: mergedCards,
       onLogout,
@@ -164,7 +189,7 @@ export const DashboardWorkspaceProvider: React.FC<DashboardWorkspaceProviderProp
       startQuickStudy,
       updateCardOptimistically,
     }),
-    [user, decks, mergedCards, onLogout, createDeck, deleteDeck, addCardsToDeck, updateProfile, goToDeck, startStudyForDeck, startQuickStudy, updateCardOptimistically]
+    [user, studyStats.streak, decks, mergedCards, onLogout, createDeck, deleteDeck, addCardsToDeck, updateProfile, goToDeck, startStudyForDeck, startQuickStudy, updateCardOptimistically]
   );
 
   return (

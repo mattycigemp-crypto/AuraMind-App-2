@@ -728,6 +728,23 @@ export default function StudyModePage() {
               style={{ transform: 'rotate(2.5deg) translateY(7px)', opacity: 0.8, boxShadow: '0 6px 18px rgba(0,0,0,0.25)' }}
             />
 
+            {/* Flip shell.
+                The card itself owns the pointer tilt on a 75ms transition, so
+                the flip cannot live on the same element -- one element cannot
+                run two durations for `transform`. Nesting gives each its own:
+                this shell rotates the card 180deg over 520ms while the child
+                keeps tilting at 75ms underneath.
+
+                The two stacked papers behind are siblings of this shell, so
+                the deck stays put and only the top card turns -- which is what
+                the gesture looks like in the hand. */}
+            <div
+              style={{
+                transformStyle: 'preserve-3d',
+                transform: `rotateY(${flipped ? 180 : 0}deg)`,
+                transition: 'transform 520ms cubic-bezier(0.2, 0.7, 0.2, 1)',
+              }}
+            >
             <div
               ref={cardRef}
               className="android-study-card flashcard-paper relative w-[500px] max-w-[90vw] min-h-[340px] rounded-[8px] cursor-pointer select-none overflow-hidden transition-transform duration-75 ease-out"
@@ -788,6 +805,10 @@ export default function StudyModePage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.2, delay: 0.05 }}
+                    /* Un-mirror: the shell above is at 180deg whenever this
+                       face is showing, so without this the answer renders
+                       backwards. */
+                    style={{ transform: 'rotateY(180deg)' }}
                     className="relative p-8 pt-12 pb-12 min-h-[340px]"
                   >
                     <div className="text-sm text-[#6B6550] border-b border-dashed border-[#D4CFA8] pb-1">
@@ -812,6 +833,7 @@ export default function StudyModePage() {
                   </motion.div>
                 )}
               </AnimatePresence>
+            </div>
             </div>
           </motion.div>
         </AnimatePresence>

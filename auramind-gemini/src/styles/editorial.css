@@ -384,3 +384,41 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/* The email is a reveal toggle rather than static text, but it should read
+   as the quiet line of metadata it replaced -- not as a control competing
+   with the name above it. */
+.platform-android .android-native-email {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+
+/* The header avatar is a button sized for a two-letter monogram; an uploaded
+   picture has to fill it rather than define it.
+
+   The base rule sets only min-width/min-height, which is fine for text but
+   not for an <img width:100%>: the button has no resolved width, so the
+   image's intrinsic size drives the box and a large upload blew the control
+   up to a quarter of the screen. An explicit width and height pins it. */
+.platform-android .android-avatar {
+  width: 44px;
+  height: 44px;
+  max-width: 44px;
+  max-height: 44px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  padding: 0;
+}
+
+.platform-android .android-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}

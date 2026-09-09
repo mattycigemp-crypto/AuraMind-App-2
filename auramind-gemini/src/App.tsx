@@ -48,7 +48,7 @@ import { ErrorBoundary } from "./components/shared/ErrorBoundary";
 import PuterQuotaBanner from "./components/shared/PuterQuotaBanner";
 import { KeyboardAware } from "./components/shared/KeyboardAware";
 import NativeRuntime from "./components/native/NativeRuntime";
-import { Capacitor } from "./lib/nativeShim";
+import { Capacitor, SplashScreen } from "./lib/nativeShim";
 import QuizGenerationNotifier from "./components/notifications/QuizGenerationNotifier";
 import { Toaster, toast } from "./components/ui/sonner";
 import { ThemeProvider } from "./hooks/useTheme";
@@ -741,6 +741,29 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
       onLogout,
     ],
   );
+
+  /**
+   * Hand off from the native splash exactly once, when the app can actually
+   * render something.
+   *
+   * The splash no longer auto-hides, so without this it would stay up
+   * forever. Hiding it here means the user sees one continuous loading
+   * screen instead of the splash giving way to LoadingOverlay and then to
+   * the app. The timeout is a backstop: if auth never resolves, the splash
+   * must still come down rather than trapping the user behind it.
+   */
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let done = false;
+    const drop = () => {
+      if (done) return;
+      done = true;
+      void SplashScreen.hide().catch(() => undefined);
+    };
+    if (authChecked) drop();
+    const bail = setTimeout(drop, 8000);
+    return () => clearTimeout(bail);
+  }, [authChecked]);
 
   if (!authChecked) {
     return <LoadingOverlay />;
