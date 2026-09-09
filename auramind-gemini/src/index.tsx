@@ -4,6 +4,9 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import './styles/platform-styles.css';
+// Loads last so the editorial layer can override platform-styles' drifted
+// values by cascade order rather than !important.
+import './styles/editorial.css';
 
 // Environment validation
 import { validateEnv, logEnvValidation } from './lib/env';

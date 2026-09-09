@@ -1,0 +1,240 @@
+/* ============================================================
+   EDITORIAL LAYER — Android
+   ============================================================
+
+   WHY THIS FILE EXISTS
+
+   platform-styles.css grew organically and its values drifted:
+
+     - 40 of ~76 font-size declarations were 8-10px. Body copy at 9-10px
+       is the single loudest "cheap app" signal on a phone; it reads as
+       a scaled-down desktop layout rather than something designed for
+       the device.
+     - Six near-identical hairline alphas (0.12 / 0.13 / 0.15 / 0.16 /
+       0.18 / 0.2) of the same colour. Every surface got the same border,
+       so nothing had hierarchy and everything read flat.
+     - Eight radii (10 / 13 / 14 / 15 / 16 / 18 / 23 / 99). No rhythm, so
+       nothing felt deliberate.
+
+   Rather than hand-edit 3,477 lines, this layer loads afterwards and is
+   scoped to `.platform-android` — specificity 0,2,0 against the original
+   0,1,0, so it wins without !important.
+
+   THE DIRECTION
+
+   Editorial: hierarchy comes from type and space, not from boxes. Big
+   confident display type, a properly-sized reading scale beneath it, one
+   accent colour, and hairlines used sparingly as punctuation rather than
+   wrapped around every element.
+
+   This pass deliberately fixes the SCALE (type, spacing, radii, contrast)
+   and leaves the box-count alone. De-boxing changes layout and is worth
+   doing against screenshots, one surface at a time, rather than blind.
+   ============================================================ */
+
+:root {
+  /* Type — a real mobile reading scale. Each step is distinguishable at
+     arm's length; nothing below 11px, and 11px only for tracked caps. */
+  --ed-eyebrow: 11px;
+  --ed-meta: 13px;
+  --ed-body: 15px;
+  --ed-body-lg: 17px;
+  --ed-title: 20px;
+  --ed-title-lg: 26px;
+
+  --ed-track-caps: 0.14em;
+  --ed-track-tight: -0.02em;
+  --ed-track-display: -0.045em;
+
+  --ed-leading-tight: 1.15;
+  --ed-leading-body: 1.5;
+
+  /* Space — a 4px rhythm. Editorial layouts breathe; the old padding was
+     8-11px almost everywhere, which is what made it feel cramped. */
+  --ed-1: 4px;
+  --ed-2: 8px;
+  --ed-3: 12px;
+  --ed-4: 16px;
+  --ed-5: 24px;
+  --ed-6: 32px;
+  --ed-7: 48px;
+
+  /* Radii — three values, not eight. */
+  --ed-r-sm: 12px;
+  --ed-r-md: 18px;
+  --ed-r-lg: 28px;
+  --ed-r-pill: 999px;
+
+  /* One hairline. Used as a divider, not as a wrapper. */
+  --ed-hairline: rgba(169, 184, 232, 0.13);
+
+  /* Ink. The old secondary greys (#7886a4, #8190ae) sat near 4:1 on the
+     navy ground — legible in a screenshot, muddy on a real screen in
+     daylight. These lift the mid tones and keep one genuinely quiet tone
+     for true tertiary text. */
+  --ed-ink: #f4f6ff;
+  --ed-ink-2: #c3cde6;
+  --ed-ink-3: #94a1c0;
+  --ed-accent: #b9a4ff;
+}
+
+/* ---------- Type scale ------------------------------------- */
+
+/* Tracked caps. The eyebrow is the editorial signature — small, wide,
+   confident — so it keeps its size but gains tracking and weight. */
+.platform-android .android-eyebrow,
+.platform-android .android-focus-label,
+.platform-android .android-section-eyebrow {
+  font-size: var(--ed-eyebrow);
+  font-weight: 800;
+  letter-spacing: var(--ed-track-caps);
+  text-transform: uppercase;
+  color: var(--ed-accent);
+}
+
+/* Body copy. This is the change that does most of the work: the app's
+   readable text moves from 9-10px to 15px. */
+.platform-android .android-focus-caption,
+.platform-android .android-deck-meta,
+.platform-android .android-hero-copy,
+.platform-android .android-empty-state p,
+.platform-android .android-native-panel p,
+.platform-android .android-settings-row p {
+  font-size: var(--ed-body);
+  line-height: var(--ed-leading-body);
+  color: var(--ed-ink-2);
+  letter-spacing: 0;
+}
+
+/* Secondary meta — timestamps, counts, hints that sit under a title. */
+.platform-android .android-deck-status,
+.platform-android .android-focus-footer {
+  font-size: var(--ed-meta);
+  line-height: 1.4;
+  color: var(--ed-ink-3);
+}
+
+/* Quick-action tiles are a compact grid, so they get their own smaller
+   pairing: the label leads, the hint sits under it and stays subordinate.
+   Sizing the hint at body scale (as the first pass did) inverted the
+   hierarchy and pushed every tile to three lines. */
+.platform-android .android-action-label {
+  font-size: var(--ed-body);
+  font-weight: 800;
+  letter-spacing: var(--ed-track-tight);
+  line-height: 1.2;
+  color: var(--ed-ink);
+}
+
+.platform-android .android-action-hint {
+  font-size: var(--ed-meta);
+  line-height: 1.35;
+  color: var(--ed-ink-3);
+}
+
+/* Titles. Weight and tracking carry these, not size alone. */
+.platform-android .android-deck-title,
+.platform-android .android-native-panel-heading h2,
+.platform-android .android-settings-row h3 {
+  font-size: var(--ed-title);
+  font-weight: 800;
+  letter-spacing: var(--ed-track-tight);
+  line-height: var(--ed-leading-tight);
+  color: var(--ed-ink);
+}
+
+/* The hero already used a fluid clamp and is the best thing on the
+   screen — it only needs tighter tracking to read as set, not scaled. */
+.platform-android .android-hero-title {
+  letter-spacing: var(--ed-track-display);
+  line-height: 0.95;
+}
+
+/* The focus number is the one piece of pure display typography in the
+   app. Give it room and let it dominate. */
+.platform-android .android-focus-number {
+  font-size: 64px;
+  font-weight: 850;
+  letter-spacing: var(--ed-track-display);
+  line-height: 0.9;
+  color: var(--ed-ink);
+}
+
+/* ---------- Hairlines ------------------------------------- */
+
+/* One border colour everywhere it survives. */
+.platform-android .android-native-panel,
+.platform-android .android-focus-card,
+.platform-android .android-deck-row,
+.platform-android .android-action,
+.platform-android .android-settings-row,
+.platform-android .android-empty-card {
+  border-color: var(--ed-hairline);
+}
+
+/* ---------- Radii ----------------------------------------- */
+
+.platform-android .android-action,
+.platform-android .android-deck-icon,
+.platform-android .android-action-icon,
+.platform-android .android-settings-select {
+  border-radius: var(--ed-r-sm);
+}
+
+.platform-android .android-native-panel,
+.platform-android .android-deck-row,
+.platform-android .android-empty-card {
+  border-radius: var(--ed-r-md);
+}
+
+/* Settings rows are list items separated by a single top hairline, not
+   cards. Giving them a radius curved that divider into a stray arc at each
+   row boundary. They stay square; the panel around them carries the radius. */
+.platform-android .android-settings-row {
+  border-radius: 0;
+}
+
+.platform-android .android-focus-card,
+.platform-android .android-create-hero {
+  border-radius: var(--ed-r-lg);
+}
+
+.platform-android .android-due-badge,
+.platform-android .android-live-dot {
+  border-radius: var(--ed-r-pill);
+}
+
+/* ---------- Rhythm ---------------------------------------- */
+
+/* Editorial layouts are mostly space. The old panels used 8-11px padding,
+   which is why the screens felt like a dense settings list rather than
+   something composed. */
+.platform-android .android-native-panel {
+  padding: var(--ed-5);
+}
+
+.platform-android .android-focus-card {
+  padding: var(--ed-5);
+}
+
+.platform-android .android-deck-row {
+  padding: var(--ed-4);
+  gap: var(--ed-4);
+}
+
+.platform-android .android-action {
+  padding: var(--ed-4);
+  gap: var(--ed-2);
+}
+
+.platform-android .android-deck-list,
+.platform-android .android-generated-list {
+  gap: var(--ed-3);
+}
+
+/* Section headings need air above them far more than below — that
+   asymmetry is what makes a page read as composed sections rather than
+   an evenly-spaced list. */
+.platform-android .android-native-panel-heading {
+  margin-bottom: var(--ed-4);
+}
