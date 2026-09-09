@@ -25,6 +25,38 @@ describe("reminder schedule", () => {
     });
   });
 
+  /**
+   * Regression cover for a silent failure.
+   *
+   * Capacitor treats an `on` pattern as one-shot unless `repeats` is set, so
+   * every reminder was scheduled with repeats:false and count:1. Everything
+   * downstream looked healthy -- permission granted, notifications pending on
+   * the device -- but a "daily" reminder fired once and then never again,
+   * which is invisible until a user notices the app stopped nudging them a
+   * week later.
+   *
+   * The prior tests asserted ids and times only, so they passed before and
+   * after the fix. This asserts the property that actually makes a reminder a
+   * reminder.
+   */
+  it("schedules every reminder as recurring", () => {
+    const notifications = buildReminderNotifications({
+      dailyReminder: true,
+      dueReminder: true,
+      streakReminder: true,
+      weeklySummary: true,
+      reminderTime: "09:00",
+    });
+
+    expect(notifications).toHaveLength(4);
+    for (const notification of notifications) {
+      expect(
+        notification.schedule.repeats,
+        `${notification.title} must recur; a one-shot daily reminder fires once and stops`,
+      ).toBe(true);
+    }
+  });
+
   it("returns no schedules for an invalid clock value", () => {
     expect(
       buildReminderNotifications({

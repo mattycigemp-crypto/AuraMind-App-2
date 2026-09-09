@@ -23,6 +23,14 @@ export interface ScheduledReminder {
       hour: number;
       minute: number;
     };
+    /**
+     * Capacitor treats an `on` pattern as one-shot unless this is set.
+     * Without it the OS held each reminder with `repeats: false` and
+     * `count: 1`, so a "daily" reminder fired once and never again -- the
+     * pipeline looked healthy (permission granted, notifications pending)
+     * while quietly doing nothing after day one.
+     */
+    repeats: boolean;
   };
 }
 
@@ -57,7 +65,7 @@ export function buildReminderNotifications({
       id: REMINDER_IDS.daily,
       title: "AuraMind study reminder",
       body: "Your review queue is ready. Keep your memory curve sharp.",
-      schedule: { on: timeWithOffset(hour, minute, 0) },
+      schedule: { on: timeWithOffset(hour, minute, 0), repeats: true },
     });
   }
   if (dueReminder) {
@@ -65,7 +73,7 @@ export function buildReminderNotifications({
       id: REMINDER_IDS.due,
       title: "AuraMind due cards",
       body: "You have cards waiting for a quick review.",
-      schedule: { on: timeWithOffset(hour, minute, 15) },
+      schedule: { on: timeWithOffset(hour, minute, 15), repeats: true },
     });
   }
   if (streakReminder) {
@@ -73,7 +81,7 @@ export function buildReminderNotifications({
       id: REMINDER_IDS.streak,
       title: "Protect your AuraMind streak",
       body: "A short session tonight keeps your rhythm intact.",
-      schedule: { on: timeWithOffset(hour, minute, 30) },
+      schedule: { on: timeWithOffset(hour, minute, 30), repeats: true },
     });
   }
   if (weeklySummary) {
@@ -81,7 +89,7 @@ export function buildReminderNotifications({
       id: REMINDER_IDS.weekly,
       title: "Your AuraMind week",
       body: "Take a minute to see what you strengthened this week.",
-      schedule: { on: { weekday: 2, ...timeWithOffset(hour, minute, 45) } },
+      schedule: { on: { weekday: 2, ...timeWithOffset(hour, minute, 45) }, repeats: true },
     });
   }
   return notifications;
