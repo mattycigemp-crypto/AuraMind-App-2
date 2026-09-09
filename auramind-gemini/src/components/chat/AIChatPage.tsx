@@ -550,7 +550,13 @@ export default function AIChatPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* min-w-0: this control group is a flex item of the header, so it
+              defaults to min-width:auto and refuses to shrink below its
+              contents. On a 412px-wide phone that pushed the group (and the
+              deck selector inside it) 3px past the viewport, clipping the
+              selector's right edge. The header clips rather than scrolls, so
+              it showed as a shaved border instead of a scrollbar. */}
+          <div className="flex items-center gap-2 min-w-0">
             {/* Voice OUT toggle */}
             <button
               onClick={tts.toggle}
@@ -643,10 +649,15 @@ export default function AIChatPage() {
             {/* Deck selector — hidden in companion mode since chats there
                 are decoupled from any specific deck. */}
             {decks.length > 0 && chat.mode !== "companion" && (
+              /* min-w-0 matters here: as a flex item this defaults to
+                 min-width:auto, so it refused to shrink below the widest
+                 option's intrinsic width and pushed ~3px past the viewport on
+                 412px-wide phones, clipping its right edge. max-w and truncate
+                 cap it; min-w-0 is what actually lets it compress. */
               <select
                 value={selectedDeck?.id || ""}
                 onChange={(e) => setSelectedDeckId(e.target.value)}
-                className="bg-[#111118] border border-[#2A2A3A] rounded-lg px-3 py-1.5 text-[#F0EFFE] text-xs outline-none focus:border-[#7C3AED]/50 max-w-[160px] truncate"
+                className="bg-[#111118] border border-[#2A2A3A] rounded-lg px-3 py-1.5 text-[#F0EFFE] text-xs outline-none focus:border-[#7C3AED]/50 min-w-0 max-w-[160px] truncate"
               >
                 {decks.map((d) => (
                   <option key={d.id} value={d.id}>
@@ -796,8 +807,14 @@ export default function AIChatPage() {
                   </h2>
                   <p className="text-[#8A8AA3] text-sm sm:text-base max-w-lg leading-relaxed mb-2">
                     Your AI study coach. I can see your{" "}
-                    <strong className="text-[#F0EFFE]">{decks.length} decks</strong>,{" "}
-                    <strong className="text-[#F0EFFE]">{cards.length} cards</strong>, and your FSRS
+                    <strong className="text-[#F0EFFE]">
+                      {decks.length} {decks.length === 1 ? "deck" : "decks"}
+                    </strong>
+                    ,{" "}
+                    <strong className="text-[#F0EFFE]">
+                      {cards.length} {cards.length === 1 ? "card" : "cards"}
+                    </strong>
+                    , and your FSRS
                     schedule.
                   </p>
                   <p className="text-[#7A7A96] text-xs sm:text-sm mb-10">
