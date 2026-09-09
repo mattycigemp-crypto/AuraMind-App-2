@@ -24,6 +24,22 @@ on:
           - alpha
           - beta
           - production
+      status:
+        # Play refuses any other status while the app is still a "draft app",
+        # i.e. until its first release has been published from the console:
+        #   "Only releases with status draft may be created on draft app."
+        # That is exactly how the 2026-09-09 run failed -- the bundle built,
+        # signed and uploaded fine, and only the final commit was rejected.
+        #
+        # Leave this on draft until one release has been published by hand;
+        # after that, completed makes a dispatch go live on its track.
+        description: 'Release status (draft until the first release is published)'
+        required: true
+        type: choice
+        default: 'draft'
+        options:
+          - draft
+          - completed
 
 jobs:
   android:
@@ -177,7 +193,7 @@ jobs:
           track: ${{ github.event.inputs.track || 'internal' }}
           mappingFile: auramind-gemini/android/app/build/outputs/mapping/release/mapping.txt
           whatsNewDirectory: store/android/changelogs
-          status: completed
+          status: ${{ github.event.inputs.status || 'draft' }}
 
       - name: Cleanup keystore from runner
         if: always()
