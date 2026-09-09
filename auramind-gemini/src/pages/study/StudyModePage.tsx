@@ -801,14 +801,18 @@ export default function StudyModePage() {
                 ) : (
                   <motion.div
                     key="back"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
+                    /* Un-mirror. The shell above sits at 180deg whenever this
+                       face is showing, so the answer would otherwise render
+                       backwards.
+                       rotateY has to be one of framer's own animated values,
+                       not an inline style: framer composes `transform` from
+                       the values it manages, so a style transform here is
+                       overwritten by its translateY and the counter-rotation
+                       silently does nothing. */
+                    initial={{ opacity: 0, y: 8, rotateY: 180 }}
+                    animate={{ opacity: 1, y: 0, rotateY: 180 }}
+                    exit={{ opacity: 0, y: -8, rotateY: 180 }}
                     transition={{ duration: 0.2, delay: 0.05 }}
-                    /* Un-mirror: the shell above is at 180deg whenever this
-                       face is showing, so without this the answer renders
-                       backwards. */
-                    style={{ transform: 'rotateY(180deg)' }}
                     className="relative p-8 pt-12 pb-12 min-h-[340px]"
                   >
                     <div className="text-sm text-[#6B6550] border-b border-dashed border-[#D4CFA8] pb-1">
