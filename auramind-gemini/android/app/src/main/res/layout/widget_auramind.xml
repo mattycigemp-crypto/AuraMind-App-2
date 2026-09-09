@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Widget layout.
+
+  RemoteViews supports only a small set of views, so this is deliberately
+  plain: LinearLayout and TextView, no custom fonts (AuraSans cannot be
+  loaded into a RemoteViews context) and no ConstraintLayout.
+
+  The design follows the app's editorial direction rather than the stock
+  widget look: the count is the display element, the label sits quietly
+  under it, and the accent line carries the brand gradient's violet.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="16dp"
+    android:gravity="center_vertical">
+
+    <TextView
+        android:id="@+id/widget_eyebrow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TODAY'S FOCUS"
+        android:textColor="#B9A4FF"
+        android:textSize="10sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.14"
+        android:maxLines="1" />
+
+    <TextView
+        android:id="@+id/widget_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="0"
+        android:textColor="#F4F6FF"
+        android:textSize="40sp"
+        android:textStyle="bold"
+        android:includeFontPadding="false"
+        android:maxLines="1" />
+
+    <TextView
+        android:id="@+id/widget_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="cards due"
+        android:textColor="#C3CDE6"
+        android:textSize="13sp"
+        android:maxLines="1" />
+
+    <!--
+      ImageView, not View. RemoteViews inflates only a fixed whitelist of
+      classes (FrameLayout, LinearLayout, RelativeLayout, GridLayout,
+      TextView, ImageView, Button, ProgressBar, ...) and a bare <View> is not
+      among them. Using one made the whole layout fail to inflate: the picker
+      showed a grey placeholder and the launcher refused with "Couldn't add
+      widget", with nothing in the app's own logs to explain it.
+    -->
+    <ImageView
+        android:layout_width="36dp"
+        android:layout_height="3dp"
+        android:layout_marginTop="10dp"
+        android:contentDescription="@null"
+        android:background="#8B5CF6" />
+
+    <TextView
+        android:id="@+id/widget_cta"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Start review"
+        android:textColor="#94A1C0"
+        android:textSize="12sp"
+        android:maxLines="1"
+        android:ellipsize="end" />
+</LinearLayout>

@@ -47,7 +47,22 @@
                     android:pathPrefix="/auramind" />
             </intent-filter>
         </service>
-    </application>
+    
+        <!-- Home-screen widget. ACTION_REFRESH is sent by the app whenever the
+             due count changes; APPWIDGET_UPDATE covers add-to-home-screen and
+             the system's own update passes. -->
+        <receiver
+            android:name=".AuraMindWidgetProvider"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.auramind.app.WIDGET_REFRESH" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/auramind_widget_info" />
+        </receiver>
+</application>
 
     <!-- Permissions -->
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowRight,
@@ -20,6 +20,7 @@ import {
 } from "@/components/icons";
 import { useDashboardWorkspace } from "../../contexts/DashboardWorkspaceContext";
 import { hapticSuccess, hapticTap, hapticWarning } from "./androidHaptics";
+import { publishWidgetState } from "../../lib/widgetBridge";
 import AndroidAura from "./AndroidAura";
 import type { Card, Deck } from "../../types";
 import { toast } from "sonner";
@@ -202,6 +203,14 @@ export function AndroidOverview() {
   ).length;
   const firstName = user?.name?.split(" ")[0] || "Learner";
   const firstDueDeck = decks.find((deck) => deckDue(deck, cards) > 0) ?? decks[0];
+  // Keep the home-screen widget in step with what this screen shows. The
+  // widget cannot compute due-ness itself (that is FSRS, and it lives in TS),
+  // so the count is published from the one place that already derives it.
+  // MainActivity broadcasts the redraw when the app backgrounds.
+  useEffect(() => {
+    void publishWidgetState(dueCount, firstDueDeck?.title ?? null);
+  }, [dueCount, firstDueDeck?.title]);
+
   const greeting =
     new Date().getHours() < 12
       ? "Good morning"
