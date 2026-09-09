@@ -5,6 +5,7 @@ import { Sparkles, Zap, Lightbulb, Mic, X, Star, ChevronDown, Wind, Timer as Tim
 import { usePersonalizedFsrs } from '../../hooks/usePersonalizedFsrs';
 import { useCurrentUserId } from '../../hooks/useCurrentUserId';
 import { useHaptics } from '../../hooks/useNative';
+import { ImpactStyle } from '../../lib/nativeShim';
 import { Capacitor } from '../../lib/nativeShim';
 import { PersonalizationIndicator } from '../../components/study/PersonalizationIndicator';
 import { DifficultyChip } from '../../components/study/DifficultyChip';
@@ -254,6 +255,24 @@ export default function StudyModePage() {
     .split(/[.!?]\s+/)[0]
     .slice(0, 120);
 
+  /**
+   * Flip the card and tick.
+   *
+   * The flip is the single most repeated gesture in the product -- a user
+   * doing a 40-card session performs it 40 times -- and it was the one step
+   * of the loop with no tactile response, while rating already had one. A
+   * light impact is deliberate: the answer reveal is not an outcome, so it
+   * should not feel like the success/warning notification that rating gives.
+   *
+   * Errors are swallowed because useHaptics' promises are unguarded; a
+   * missing bridge must never surface as an unhandled rejection mid-session.
+   */
+  const toggleFlip = useCallback(() => {
+    if (!currentCard) return;
+    setFlipped((f) => !f);
+    void Promise.resolve(impact(ImpactStyle.Light)).catch(() => undefined);
+  }, [currentCard, impact]);
+
   const handleRate = useCallback(async (rating: Rating, event?: React.MouseEvent) => {
     if (!currentCard || !userId || isRating) return;
     setIsRating(true);
@@ -419,6 +438,9 @@ export default function StudyModePage() {
         duration: 5000,
       });
       setCompleted(true);
+      // Finishing the queue is the one genuinely celebratory beat in the
+      // session; rating a single card should never feel this emphatic.
+      void Promise.resolve(success()).catch(() => undefined);
     } else {
       setIndex(i => i + 1);
       setFlipped(false);
@@ -465,7 +487,7 @@ export default function StudyModePage() {
     const onKey = (e: KeyboardEvent) => {
       if (completed) return;
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.code === 'Space') { e.preventDefault(); if (currentCard) setFlipped(f => !f); }
+      if (e.code === 'Space') { e.preventDefault(); toggleFlip(); }
       if (flipped && currentCard) {
         const map: Record<string, Rating> = {
           'Digit1': Rating.AGAIN, 'Numpad1': Rating.AGAIN,
@@ -480,7 +502,7 @@ export default function StudyModePage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [flipped, currentCard, handleRate, completed, keyboardShortcuts]);
+  }, [flipped, currentCard, handleRate, completed, keyboardShortcuts, toggleFlip]);
 
   // Replay modal opens from the Session-Complete screen so the user can immediately
   // scrub through what they just studied. We instantiate it here so the modal
@@ -713,7 +735,7 @@ export default function StudyModePage() {
                 transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) rotate(-1.5deg)`,
                 boxShadow: '0 1px 0 0 #E8E4CC, 0 2px 0 0 #F5F0D8, 0 3px 0 0 #EDE8C8, 0 4px 6px rgba(0,0,0,0.2), 0 10px 30px rgba(0,0,0,0.35), 0 0 50px rgba(124,58,237,0.08)',
               }}
-              onClick={() => currentCard && setFlipped(f => !f)}
+              onClick={toggleFlip}
             >
               {/* Red margin line */}
               <div aria-hidden className="absolute top-0 bottom-0" style={{ left: '44px', width: '1px', background: 'rgba(239, 68, 68, 0.28)' }} />
