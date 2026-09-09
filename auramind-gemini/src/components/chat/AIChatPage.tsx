@@ -657,7 +657,7 @@ export default function AIChatPage() {
               <select
                 value={selectedDeck?.id || ""}
                 onChange={(e) => setSelectedDeckId(e.target.value)}
-                className="bg-[#111118] border border-[#2A2A3A] rounded-lg px-3 py-1.5 text-[#F0EFFE] text-xs outline-none focus:border-[#7C3AED]/50 min-h-[44px] min-w-0 max-w-[170px] truncate"
+                className="hidden sm:block bg-[#111118] border border-[#2A2A3A] rounded-lg px-3 py-1.5 text-[#F0EFFE] text-xs outline-none focus:border-[#7C3AED]/50 min-h-[44px] min-w-0 max-w-[170px] truncate"
               >
                 {decks.map((d) => (
                   <option key={d.id} value={d.id}>
@@ -694,6 +694,33 @@ export default function AIChatPage() {
             </div>
           </div>
         </div>
+
+        {/* Deck selector, own row on phones.
+            In the header it competed with three icon buttons for a fixed
+            amount of space, so it could only ever show ~8 characters of a
+            deck title however the pixels were divided. A full-width row of
+            its own fits the whole name and gives a comfortable target
+            without squeezing anything else. The header keeps the compact
+            selector from sm: up, where the row has room for it. */}
+        {decks.length > 0 && chat.mode !== "companion" && (
+          <div className="sm:hidden relative z-10 shrink-0 border-b border-[#2A2A3A]/50 px-6 py-2">
+            <label htmlFor="chat-deck-select" className="sr-only">
+              Active deck
+            </label>
+            <select
+              id="chat-deck-select"
+              value={selectedDeck?.id || ""}
+              onChange={(e) => setSelectedDeckId(e.target.value)}
+              className="w-full min-h-[44px] rounded-lg border border-[#2A2A3A] bg-[#111118] px-3 text-xs text-[#F0EFFE] outline-none focus:border-[#7C3AED]/50"
+            >
+              {decks.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Context strip — hidden in companion mode (no deck to surface). */}
         {selectedDeck && hasMessages && chat.mode !== "companion" && (
