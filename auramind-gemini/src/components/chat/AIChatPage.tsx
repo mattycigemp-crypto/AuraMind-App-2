@@ -565,7 +565,7 @@ export default function AIChatPage() {
                   ? "Voice OUT: ON — click to disable"
                   : "Voice OUT: OFF — click to enable"
               }
-              className={`w-10 h-10 shrink-0 rounded-lg flex items-center justify-center transition-all ${
+              className={`w-9 h-9 shrink-0 rounded-lg flex items-center justify-center transition-all ${
                 tts.isEnabled
                   ? "bg-[#7C3AED]/15 text-[#8B5CF6] border border-[#7C3AED]/30"
                   : "bg-[#111118] text-[#7A7A96] border border-[#2A2A3A] hover:text-[#F0EFFE]"
@@ -583,7 +583,7 @@ export default function AIChatPage() {
               <button
                 onClick={() => setShowPersonalityPicker(!showPersonalityPicker)}
                 title="Change Prof. Aura's personality"
-                className="h-10 shrink-0 px-3 rounded-full bg-[#111118] border border-[#2A2A3A] flex items-center gap-1.5 text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-colors"
+                className="h-9 shrink-0 px-2.5 rounded-full bg-[#111118] border border-[#2A2A3A] flex items-center gap-1.5 text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-colors"
               >
                 <span className="text-sm leading-none">
                   <PersonalityIcon size={16} className="text-[#A78BFA]" />
@@ -657,7 +657,7 @@ export default function AIChatPage() {
               <select
                 value={selectedDeck?.id || ""}
                 onChange={(e) => setSelectedDeckId(e.target.value)}
-                className="bg-[#111118] border border-[#2A2A3A] rounded-lg px-3 py-1.5 text-[#F0EFFE] text-xs outline-none focus:border-[#7C3AED]/50 min-h-[44px] min-w-0 max-w-[128px] truncate"
+                className="bg-[#111118] border border-[#2A2A3A] rounded-lg px-3 py-1.5 text-[#F0EFFE] text-xs outline-none focus:border-[#7C3AED]/50 min-h-[44px] min-w-0 max-w-[170px] truncate"
               >
                 {decks.map((d) => (
                   <option key={d.id} value={d.id}>
