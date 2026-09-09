@@ -47,6 +47,12 @@ From the repo root, `npm run dev` starts web (3000) + API (3001) together.
 - **RLS** — every table is row-level secured via `auth.uid()`; admin gates use
   `is_admin(auth.uid())` / `current_user_is_admin()` (app metadata), never
   trust `user_metadata` for authorization.
+- **Entitlement** — billing follows the same rule and for the same reason:
+  `subscription_status` lives in `app_metadata` and is read through
+  `api/_lib/entitlement.ts`. It once lived in `user_metadata`, which a
+  signed-in user can write with one `auth.updateUser` call, so any account
+  could grant itself a permanent subscription. That reader has **no fallback**
+  to `user_metadata` on purpose — adding one restores the whole hole.
 - **Env** — `VITE_`-prefixed vars ship to the browser (public). Server-only
   keys (`RESEND_API_KEY`, `STRIPE_*`, `SUPABASE_SERVICE_ROLE_KEY`,
   `GOOGLE_SEARCH_API_KEY`, `GROQ_API_KEY`) must never be `VITE_`-prefixed.

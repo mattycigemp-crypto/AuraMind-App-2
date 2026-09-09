@@ -1,6 +1,6 @@
 {
   "name": "auramind",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "description": "AuraMind — adaptive AI learning system for web, PWA, and native Android.",
   "scripts": {

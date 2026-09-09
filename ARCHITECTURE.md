@@ -199,17 +199,77 @@ Enrollment: localStorage-first with best-effort Supabase sync. Lessons open as p
 - **Desktop** — no desktop build. An earlier Tauri 2 stack was removed;
   recover it from git history if it is ever revived.
 
+### Home-screen widget
+
+A 2×2 `RemoteViews` AppWidget (`AuraMindWidgetProvider.java`) showing cards
+due. Not Glance: that needs Kotlin and Compose, and this module is plain Java
+with neither.
+
+The widget never reasons about scheduling. Due-ness is an FSRS question the
+TypeScript already answers, so `AndroidOverview` publishes the count through
+`@capacitor/preferences` (SharedPreferences `CapacitorStorage`) and the
+provider only reads it. `MainActivity.onPause` broadcasts the redraw, since a
+widget is only looked at after leaving the app.
+
+RemoteViews inflates only a whitelist of view classes — a bare `<View>` makes
+the whole layout fail with a grey placeholder and "Couldn't add widget".
+
+### No service worker on native
+
+The PWA service worker is registered on web only, and actively unregistered on
+native.
+
+Capacitor serves from `https://localhost`, a fixed origin that never changes
+between releases, and worker registrations live in `app_webview/Default/`
+which survives app updates. The workbox precache covers `index.html`, so a
+still-registered old worker answered navigations from its own cache and booted
+the *previous* release's JavaScript. Since every asset already ships in the
+APK, that precache could only ever serve an older copy of a local file.
+
+Offline study does not depend on it: that runs on a separate IndexedDB store
+with a sync queue (`services/offline/offlineStudyService.ts`).
+
+### Reminders
+
+`useReminderSync` mounts at the app root, and both Settings screens delegate
+to it. Syncing only from Settings meant a wrong schedule could never be
+repaired for a user who did not open that page.
+
+`'maintain'` (app start) checks the permission and reschedules only if already
+granted; `'request'` (Settings) may raise the dialog. Prompting for
+notifications at launch is the fastest way to be permanently denied.
+
 ---
 
 ## Design System
 
-- **Colors**: Primary purple (#a855f7) → indigo (#6366f1) → cyan (#06b6d4)
-- **Background**: Dark (#0f0f23 / #09090b)
-- **Motion**: cubic-bezier(0.16, 1, 0.3, 1) for most entrances
-- **Components**: Glass morphism cards, neural grid backgrounds, scan line effects
-- **Animation**: Framer Motion + GSAP (ScrollTrigger) + Three.js/R3F + Lenis smooth scroll
-- **Typography**: Space Grotesk for headings, Inter for body
+- **Colors**: violet (#8B5CF6 / #7C3AED) on a deep navy ground (#060a16 /
+  #080d1b). The prism mark's gradient runs cyan (#72F4FF) → violet → pink
+  (#FF9ACD)
+- **Typography**: AuraSans (shipped in `public/fonts/`), with AuraScript for
+  accents. Not Inter or Space Grotesk — those appear in older token files and
+  are not what renders
+- **Motion**: cubic-bezier(0.16, 1, 0.3, 1) for entrances; 90ms/160ms for
+  press feedback
+- **Animation**: Framer Motion + GSAP (ScrollTrigger) + Three.js/R3F + Lenis
 - **Component library**: Radix UI primitives with custom Tailwind styling
+
+### Editorial layer (Android)
+
+`src/styles/editorial.css` loads after `platform-styles.css` and is scoped to
+`.platform-android`, so it overrides by cascade rather than `!important` and
+3,477 lines of platform CSS need no hand-editing.
+
+It exists because those styles had drifted rather than been designed: 40 of
+~76 font sizes were 8–10px, six near-identical hairline alphas, and eight
+radii. The layer imposes a mobile type scale (15px body, 11px tracked caps),
+three radii, one hairline, and a 4px spacing rhythm.
+
+Hierarchy comes from type and space, not boxes — the home focus block runs
+full-bleed past the page inset, and deck rows are separated by a single
+hairline instead of each being a card. That full-bleed is deliberate: a
+website never bleeds a panel past its container, and it is the clearest signal
+the layout was made for the device rather than ported to it.
 
 ---
 

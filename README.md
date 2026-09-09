@@ -163,18 +163,35 @@ AuraMind-App-2/
 | `VITE_STRIPE_PRICE_ID_ANNUAL` | Stripe annual price ID | - |
 | `VITE_POSTHOG_KEY` | PostHog analytics key | - |
 | `VITE_OWNER_EMAIL` | Owner email (grants admin automatically) | - |
+| `VITE_TURNSTILE_SITE_KEY` | Cloudflare Turnstile site key. Auth still works without it, but Supabase rejects captcha-gated calls once CAPTCHA is enabled there | - |
 
 ### Backend Environment Variables (Vercel)
 
 These should be set in Vercel project settings:
 
+None of these may be `VITE_`-prefixed — that would publish them to the browser.
+
 | Variable | Description |
 |----------|-------------|
+| `SUPABASE_URL` | Supabase project URL (server side) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key. Writes `app_metadata`, which is what entitlement is read from |
 | `STRIPE_SECRET_KEY` | Stripe secret key |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key |
 | `RESEND_API_KEY` | Resend API key for emails |
-| `RESEND_FROM_EMAIL` | Verified sender email domain (must end with @mail.auramind.app) |
+| `RESEND_FROM_EMAIL` | Verified sender domain (must end with @mail.auramind.app) |
+| `GROQ_API_KEY` | First AI provider in the chain |
+| `CEREBRAS_API_KEY` | Second — tried when Groq returns 429/5xx |
+| `GEMINI_API_KEY` | Third |
+| `OPENROUTER_API_KEY` | Fourth. Any one key is enough; the endpoint only 503s when all are unset |
+| `GOOGLE_SEARCH_API_KEY` | Programmable Search, for grounded answers |
+| `GOOGLE_SEARCH_ENGINE_ID` | Programmable Search engine id |
+| `UPSTASH_REDIS_REST_URL` | Distributed rate limiting. Without it the limiter falls back to per-instance memory, which does not hold across serverless invocations |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash token |
+| `CRON_SECRET` | Authenticates scheduled jobs (dunning). Unset means those endpoints reject every call |
+| `ADMIN_EMAIL` | Operational alerts |
+
+The Turnstile **secret** is not here — it belongs in Supabase under
+Authentication → Attack Protection, since Supabase verifies the token.
 
 ## 🏗️ Build & Deployment
 
@@ -194,6 +211,29 @@ npm run build:aab:release    # release AAB (requires signing env vars)
 ```
 
 The debug APK lands at `android/app/build/outputs/apk/debug/app-debug.apk`.
+
+### Releasing to Google Play
+
+Releases go through the `Mobile Android` workflow rather than a local build,
+so the signing key never leaves CI:
+
+```bash
+gh workflow run mobile-android.yml --ref main -f track=alpha -f status=draft
+```
+
+- **`track`** — `internal`, `alpha`, `beta` or `production`. `alpha` is closed
+  testing, and the only track that counts toward the 12-testers-for-14-days
+  requirement gating production for personal accounts created after
+  2023-11-13.
+- **`status`** — `draft` until one release has been published by hand from the
+  console. Play refuses anything else while an app is still a "draft app":
+  *"Only releases with status draft may be created on draft app."* After the
+  first publish, `completed` makes a dispatch go live on its track.
+
+`versionCode` comes from `github.run_number`, so it is monotonic and a rerun
+can never collide with a code Play has already consumed. Play burns a
+versionCode permanently on upload.
+
 See `scripts/README-MOBILE-PUBLISHING.md` for the full publishing flow.
 
 ### Vercel Deployment
