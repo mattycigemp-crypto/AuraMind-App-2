@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import './styles/platform-styles.css';
+import { Capacitor } from './lib/nativeShim';
 // Loads last so the editorial layer can override platform-styles' drifted
 // values by cascade order rather than !important.
 import './styles/editorial.css';
@@ -57,18 +58,71 @@ initSentry();
 const envResult = validateEnv();
 logEnvValidation(envResult);
 
-// Register PWA Service Worker
+/**
+ * Service worker: web only, and actively removed on native.
+ *
+ * THE PROBLEM IT CAUSED
+ *
+ * Capacitor serves the app from https://localhost -- a fixed origin that
+ * never changes between releases. Service worker registrations and Cache
+ * Storage are keyed to the origin and live in app_webview/Default/, which
+ * survives `install -r` and Play updates; only an uninstall or "clear data"
+ * removes them.
+ *
+ * The workbox precache covers index.html and every hashed asset. So after an
+ * app update the APK contains new assets, but the still-registered old worker
+ * answers the navigation from its own precache and boots the PREVIOUS
+ * release's JavaScript. registerType 'autoUpdate' does install the new worker
+ * and claim clients, but not before that first page load has already been
+ * served from the stale cache -- so every update runs old code for at least
+ * one launch, with no refresh button and no address bar for the user to
+ * escape with.
+ *
+ * This was not theoretical: a fix verified as working on device turned out to
+ * be running the previous bundle entirely (built index chunk and loaded index
+ * chunk had different hashes) until the worker was manually unregistered.
+ *
+ * WHY REMOVING IT COSTS ALMOST NOTHING HERE
+ *
+ * A service worker earns its keep on the web by making assets available
+ * offline. Inside the APK every asset is already local, so the precache is
+ * pure duplication -- it can only ever serve an older copy of a file that is
+ * already on disk. The one real loss is runtime caching of Supabase GETs
+ * (NetworkFirst, one hour); the app has its own offline layer for study data,
+ * and correctness after an update matters more than an hour of response
+ * reuse.
+ *
+ * Unregistering rather than merely skipping registration is deliberate: every
+ * install already in the wild has a worker that will otherwise keep serving
+ * stale assets forever.
+ */
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  import('virtual:pwa-register').then(({ registerSW }) => {
-    registerSW({
-      onNeedRefresh() {
-        console.warn('[PWA] New content available, need refresh');
-      },
-      onOfflineReady() {
-        console.warn('[PWA] Offline ready');
-      },
-    });
-  }).catch(err => console.error('[PWA] Registration failed', err));
+  if (Capacitor.isNativePlatform()) {
+    void navigator.serviceWorker
+      .getRegistrations()
+      .then(async (registrations) => {
+        if (registrations.length === 0) return;
+        await Promise.all(registrations.map((registration) => registration.unregister()));
+        // The precache outlives the registration, so clear it too.
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((key) => caches.delete(key)));
+        }
+        console.warn('[PWA] Removed service worker on native; assets ship in the APK');
+      })
+      .catch(() => undefined);
+  } else {
+    import('virtual:pwa-register').then(({ registerSW }) => {
+      registerSW({
+        onNeedRefresh() {
+          console.warn('[PWA] New content available, need refresh');
+        },
+        onOfflineReady() {
+          console.warn('[PWA] Offline ready');
+        },
+      });
+    }).catch(err => console.error('[PWA] Registration failed', err));
+  }
 }
 
 // Set up global error handlers
