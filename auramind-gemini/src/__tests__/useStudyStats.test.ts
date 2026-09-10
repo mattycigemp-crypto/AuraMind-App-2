@@ -60,8 +60,17 @@ beforeAll(async () => {
   const { data: d } = await admin.from('decks').insert({ user_id: userId, name: 'StatsTest' }).select().single();
   deckId = d!.id;
 
-  const { error: signinErr } = await requireSupabase().auth.signInWithPassword({ email, password: 'TestPass123!' });
-  if (signinErr) throw signinErr;
+  // CAPTCHA protection is enforced on the live project: signInWithPassword
+  // without a real Turnstile token is rejected headlessly. Mint the session
+  // through the admin API's magiclink OTP path instead — verification is not
+  // captcha-gated, and it produces the same RLS-scoped user session.
+  const { data: link, error: linkErr } = await admin.auth.admin.generateLink({ type: 'magiclink', email });
+  if (linkErr) throw linkErr;
+  const { error: verifyErr } = await requireSupabase().auth.verifyOtp({
+    token_hash: link!.properties.hashed_token,
+    type: 'magiclink',
+  });
+  if (verifyErr) throw verifyErr;
 });
 
 afterAll(async () => {

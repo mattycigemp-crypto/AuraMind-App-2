@@ -63,29 +63,6 @@ function LegacyStudyRedirect() {
   return <Navigate to={`/dashboard/study/${deckId || ""}`} replace />;
 }
 
-function _milestoneCopy(days: number): string {
-  switch (days) {
-    case 3:
-      return "Three days of momentum — your habit is forming.";
-    case 7:
-      return "One full week — the habit is locked.";
-    case 14:
-      return "Two weeks of daily review — recall is compounding.";
-    case 30:
-      return "A month in. Your future self thanks you.";
-    case 50:
-      return "Fifty days strong — you are in the top decile of learners.";
-    case 100:
-      return "One hundred days. Triple-digit mastery.";
-    case 200:
-      return "Two hundred days. This is who you are now.";
-    case 365:
-      return "A full year of streaks. Legendary.";
-    default:
-      return "Keep going.";
-  }
-}
-
 if (typeof window !== "undefined" && !window.requestIdleCallback) {
   window.requestIdleCallback = function (
     callback: IdleRequestCallback,

@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { applyMiddleware } from './_middleware.js';
 import { distributedLimiterConfigured } from './_rateLimit.js';
-import { handleChatStream } from './_chatHandler.js';
 import { handleAI, handleAITranscribe } from './_aiHandler.js';
 import { z } from 'zod';
 import { sendEmail as sendEmailViaResend } from './_lib/emails.js';
@@ -28,7 +27,6 @@ function isAdminUser(user: { email?: string | null; app_metadata?: Record<string
 // only for endpoints that just touch our own database.
 const RATE_LIMIT_BUCKETS: Record<string, 'default' | 'ai' | 'auth'> = {
   ai: 'ai',
-  chat: 'ai',
   search: 'ai',
   'fetch-url': 'ai',
   'fetch-youtube-transcript': 'ai',
@@ -307,8 +305,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return await handleCoupons(req, res, action);
       case 'subscription':
         return await handleSubscription(req, res, action);
-      case 'chat':
-        return await handleChat(req, res, action);
       case 'ai':
         if (action === 'transcribe') {
           return await handleAITranscribe(req, res);
@@ -912,19 +908,6 @@ async function handleSubscription(req: VercelRequest, res: VercelResponse, actio
     status: rawStatus,
     plan: metadata.plan || 'Starter'
   });
-}
-
-// Chat endpoints
-async function handleChat(req: VercelRequest, res: VercelResponse, action?: string) {
-  if (action === 'stream') {
-    await handleChatStream(
-      req,
-      res,
-      { message: req.query.message as string | undefined, token: req.query.token as string | undefined },
-    );
-    return;
-  }
-  return json(res, 400, { error: 'Invalid chat action' });
 }
 
 // Stripe endpoints

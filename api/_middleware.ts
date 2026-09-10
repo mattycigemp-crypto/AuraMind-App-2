@@ -118,23 +118,4 @@ export async function applyMiddleware(
   return true;
 }
 
-/**
- * Error handler wrapper for API routes
- */
-export function withErrorHandler(handler: (req: VercelRequest, res: VercelResponse) => Promise<void>) {
-  return async (req: VercelRequest, res: VercelResponse) => {
-    try {
-      await handler(req, res);
-    } catch (error: any) {
-      console.error(`[API Error] ${req.method} ${req.url}:`, error);
 
-      // Don't expose internal errors in production
-      const isDev = process.env.NODE_ENV === 'development';
-
-      res.status(error.status || 500).json({
-        error: error.message || 'Internal server error',
-        ...(isDev && { stack: error.stack }),
-      });
-    }
-  };
-}

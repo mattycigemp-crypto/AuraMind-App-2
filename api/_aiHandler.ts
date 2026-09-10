@@ -53,19 +53,6 @@ function getGroqKey(): string {
   return process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || '';
 }
 
-// Models the server will forward. The client may request any of these;
-// anything else silently resolves to the default so an outdated bundle
-// cannot pick a model Groq no longer serves (or one we haven't budgeted).
-const ALLOWED_MODELS = new Set([
-  'openai/gpt-oss-120b',
-  'openai/gpt-oss-20b',
-  'openai/gpt-oss-safeguard-20b',
-  'qwen/qwen3.6-27b',
-  'groq/compound',
-  'groq/compound-mini',
-]);
-const DEFAULT_MODEL = 'openai/gpt-oss-120b';
-
 const MAX_MESSAGES = 30;
 const MAX_MESSAGE_LENGTH = 8000;
 const MAX_TOKENS = 8192;

@@ -160,7 +160,7 @@ src/components/
 
 ### State management
 - React Contexts: `LayoutContext`, `DashboardWorkspaceContext`, `SourceDocumentsContext`, `AuraContext`
-- Zustand store in `auramind-lib/store.ts` (workspace app)
+- Zustand store in `src/lib/auramind/store.ts` (only `cmdOpen` powers the command palette)
 - Main app state in `App.tsx` via `useState` + Supabase auth listener
 
 ---

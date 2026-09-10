@@ -5,7 +5,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import handler from './index.js';
-import chatRouter from './routes/chat.js';
 import aiRouter from './routes/ai.js';
 import webhookHandler from './stripe-webhook.js';
 
@@ -34,9 +33,6 @@ app.use('/api/stripe-webhook', express.raw({ type: '*/*' }), webhookHandler);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Chat SSE streaming router — mounted before the Vercel proxy to avoid buffering
-app.use('/api/chat', chatRouter);
 
 // AI proxy router — also mounted before the Vercel catch-all so streaming
 // responses use the real Express response object (write/end/flushHeaders).

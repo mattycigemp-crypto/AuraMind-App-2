@@ -50,7 +50,7 @@ auramind-gemini/dist/
 # Database migrations (applied via Supabase CLI)
 supabase/
 
-# Shared library (bundled into frontend build)
+# Shared library (removed — dead prototype; kept for compat) 
 auramind-lib/
 
 # Generated training data and large assets

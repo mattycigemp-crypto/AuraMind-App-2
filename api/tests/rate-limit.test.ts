@@ -82,20 +82,20 @@ describe('API rate limiting', () => {
   });
 
   it('rate limits AI-spending endpoints harder than plain database ones', async () => {
-    // `chat` bills an outbound model call per request, so it belongs in the
-    // 30/min `ai` bucket rather than the 100/min `default` one.
+    // `fetch-url` bills an outbound model call per request, so it belongs in
+    // the 30/min `ai` bucket rather than the 100/min `default` one.
     const ip = '203.0.113.30';
     let refusedAt = -1;
 
     for (let i = 1; i <= 40; i++) {
-      const writes = await hit('chat', ip);
+      const writes = await hit('fetch-url', ip);
       if (writes.includes(429)) { refusedAt = i; break; }
     }
 
-    expect(refusedAt, 'chat was never rate limited').toBeGreaterThan(0);
+    expect(refusedAt, 'fetch-url was never rate limited').toBeGreaterThan(0);
     expect(
       refusedAt,
-      `chat should use the 30/min ai bucket, but survived ${refusedAt - 1} requests`,
+      `fetch-url should use the 30/min ai bucket, but survived ${refusedAt - 1} requests`,
     ).toBeLessThanOrEqual(31);
   });
 });
