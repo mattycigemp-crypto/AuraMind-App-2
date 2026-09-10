@@ -748,15 +748,27 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
     return () => clearTimeout(bail);
   }, [authChecked]);
 
-  if (!authChecked) {
-    // The cinematic boot moment is the ONLY loading screen web users see:
-    // it replaces the auth LoadingOverlay rather than stacking after it.
-    // Android keeps LoadingOverlay (invisible behind the native splash) and
-    // the welcome screen instead of replaying the video over them.
-    return Capacitor.isNativePlatform() ? <LoadingOverlay /> : <CinematicLoader />;
-  }
+  const isNativeShell = Capacitor.isNativePlatform();
 
   return (
+    <>
+      {/* The cinematic boot moment is the ONLY loading screen web users see:
+          it replaces the auth LoadingOverlay rather than stacking after it.
+          Android keeps LoadingOverlay (invisible behind the native splash)
+          and the welcome screen instead of replaying the video over them.
+
+          It sits here, at a stable position in the tree, rather than inside
+          the `!authChecked` branch. Rendering it there unmounted it the
+          instant auth resolved, so it could never show that loading had
+          finished — and the cut from a black screen straight to the app was
+          abrupt. Kept mounted, it completes for real and fades while the app
+          is already rendered and interactive underneath, so the fade costs
+          the user nothing. */}
+      {!isNativeShell && <CinematicLoader ready={authChecked} />}
+
+      {!authChecked ? (
+        isNativeShell ? <LoadingOverlay /> : null
+      ) : (
     <div className="min-h-screen bg-background text-foreground font-body selection:bg-primary selection:text-primary-foreground">
       <CustomCursor />
       <NativeRuntime />
@@ -1039,6 +1051,8 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
         <PuterQuotaBanner />
       </KeyboardAware>
     </div>
+      )}
+    </>
   );
 };
 

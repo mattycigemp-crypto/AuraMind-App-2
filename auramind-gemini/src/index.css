@@ -367,7 +367,15 @@ body::after {
   justify-content: center;
   transition: opacity 600ms ease, visibility 600ms ease;
 }
-.loader-mask.hidden { opacity: 0; visibility: hidden; }
+/* pointer-events: none matters. The app is rendered and interactive
+   underneath during the 600ms fade, so the overlay must stop swallowing
+   clicks the moment it starts leaving, not when it finishes. */
+.loader-mask.hidden,
+.loader-mask.is-ready {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
 .loader-wordmark {
   overflow: hidden;
   display: flex;
@@ -394,15 +402,60 @@ body::after {
   background: #2A2A3A;
   overflow: hidden;
 }
+/* Indeterminate by default.
+   The old rule filled to 100% over a fixed 1.4s regardless of what the app
+   was doing, so the bar reached "complete" while auth was often still in
+   flight. During boot the duration genuinely is not known, and a sweep says
+   that honestly where a filling bar claims knowledge it does not have. */
 .loader-bar::after {
   content: "";
   position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, #7C3AED, #8B5CF6, #3B82F6);
-  transform: translateX(-100%);
-  animation: loader-fill 1.4s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, #7C3AED, #8B5CF6, #3B82F6, transparent);
+  animation: loader-sweep 1.15s ease-in-out infinite;
 }
-@keyframes loader-fill { to { transform: translateX(0%); } }
+
+/* The one moment a full bar is true. */
+.loader-bar.is-complete::after {
+  animation: none;
+  width: 100%;
+  background: linear-gradient(90deg, #7C3AED, #8B5CF6, #3B82F6);
+  transform: none;
+}
+
+@keyframes loader-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(322%); }
+}
+
+/* A sweeping bar is motion for its own sake to anyone who has asked for
+   less of it. Hold it steady and let the status text carry the meaning. */
+@media (prefers-reduced-motion: reduce) {
+  .loader-bar::after {
+    animation: none;
+    width: 100%;
+    opacity: 0.5;
+    transform: none;
+  }
+}
+
+.loader-status {
+  position: absolute;
+  bottom: calc(30% - 28px);
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  min-height: 1em;
+  max-width: 80vw;
+  text-align: center;
+  color: #8290ad;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+  transition: opacity 300ms ease;
+}
 
 /* prefers-reduced-motion — hide video backgrounds */
 @media (prefers-reduced-motion: reduce) {
