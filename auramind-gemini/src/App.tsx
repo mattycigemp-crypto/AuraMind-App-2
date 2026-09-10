@@ -749,12 +749,15 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
   }, [authChecked]);
 
   if (!authChecked) {
-    return <LoadingOverlay />;
+    // The cinematic boot moment is the ONLY loading screen web users see:
+    // it replaces the auth LoadingOverlay rather than stacking after it.
+    // Android keeps LoadingOverlay (invisible behind the native splash) and
+    // the welcome screen instead of replaying the video over them.
+    return Capacitor.isNativePlatform() ? <LoadingOverlay /> : <CinematicLoader />;
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground font-body selection:bg-primary selection:text-primary-foreground">
-      <CinematicLoader />
       <CustomCursor />
       <NativeRuntime />
       <StreakBurstMount />
