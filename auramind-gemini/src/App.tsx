@@ -754,6 +754,11 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
   }, [authChecked]);
 
   const isNativeShell = Capacitor.isNativePlatform();
+  // /__e2e/* is a DEV-only harness that renders the Android shell in
+  // isolation for the visual-contract tests. The boot screen is not part of
+  // that contract, and letting it paint over the harness made every surface
+  // snapshot fail on a wordmark that has nothing to do with the shell.
+  const isVisualHarness = location.pathname.startsWith("/__e2e");
 
   return (
     <>
@@ -769,9 +774,12 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
           abrupt. Kept mounted, it completes for real and fades while the app
           is already rendered and interactive underneath, so the fade costs
           the user nothing. */}
-      {!isNativeShell && <CinematicLoader ready={authChecked} />}
+      {!isNativeShell && !isVisualHarness && <CinematicLoader ready={authChecked} />}
 
-      {!authChecked ? (
+      {/* The harness renders regardless of auth. It is a component contract
+          test for the Android shell, so gating it on a session check makes a
+          layout assertion depend on network timing for no reason. */}
+      {!authChecked && !isVisualHarness ? (
         isNativeShell ? <LoadingOverlay /> : null
       ) : (
     <div className="min-h-screen bg-background text-foreground font-body selection:bg-primary selection:text-primary-foreground">
