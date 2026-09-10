@@ -22,6 +22,31 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Share target. This is the capability the website cannot have:
+                 a browser tab is somewhere you go, whereas a share target is
+                 somewhere the OS can send things. Every other app on the
+                 phone becomes an input funnel for deck creation.
+
+                 text/plain covers a highlighted passage or a URL from a
+                 browser; the document and image types cover a PDF, a slide
+                 deck, or a photo of a textbook page. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/pdf" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+
         </activity>
 
         <provider

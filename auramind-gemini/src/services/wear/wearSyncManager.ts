@@ -22,13 +22,26 @@ export function initWearSync(opts: WearSyncSources) {
 
   const WearSync = wearPlugin();
   if (WearSync?.addListener) {
-    WearSync.addListener('onGradeResult', async (grade: GradeResult) => {
-      if (!sources) return;
-      const userId = sources.getUserId();
-      if (!userId) return;
-      await applyWatchGrade({ grade, cards: sources.getCards(), userId });
-      await pushNow();
-    }).catch(() => {});
+    // No .catch() on the result. Capacitor returns a PluginListenerHandle --
+    // a plain object with remove() -- not a promise, so chaining .catch onto
+    // it throws "addListener(...).catch is not a function" and takes the
+    // whole dashboard down with it.
+    //
+    // This sat here harmlessly for as long as WearSync was never registered
+    // (registerPlugin ran after super.onCreate, so the plugin did not exist
+    // and this guard simply skipped). Fixing the registration order made the
+    // guard pass for the first time and the latent crash fired immediately.
+    try {
+      WearSync.addListener('onGradeResult', async (grade: GradeResult) => {
+        if (!sources) return;
+        const userId = sources.getUserId();
+        if (!userId) return;
+        await applyWatchGrade({ grade, cards: sources.getCards(), userId });
+        await pushNow();
+      });
+    } catch {
+      // A watch listener is optional; never let it break the dashboard.
+    }
   }
 
   return { pushNow };

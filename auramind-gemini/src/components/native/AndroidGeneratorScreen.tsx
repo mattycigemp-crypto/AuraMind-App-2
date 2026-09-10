@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useDashboardWorkspace } from "../../contexts/DashboardWorkspaceContext";
+import { describeShare, takeStagedShare } from "../../lib/shareTarget";
 import { auraAiClient } from "../../services/api/auraAiService";
 import { extractStudyAssetText } from "../../services/import/documentImportService";
 import { transcribeAudio } from "../../services/api/groqService";
@@ -88,6 +89,49 @@ export default function AndroidGeneratorScreen() {
   const [sourceTitle, setSourceTitle] = useState("");
   const [count, setCount] = useState(10);
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
+
+  /**
+   * Pick up content shared in from another app.
+   *
+   * The root listener consumes the native share and parks it; this reads it
+   * once on mount. Runs before any user input, so nothing can be overwritten.
+   *
+   * The mapping matters. A shared URL is a source still to be fetched, so it
+   * goes in `topic` where the import flow reads it, and YouTube gets its own
+   * kind because the transcript endpoint differs. A shared passage is already
+   * the material, so it goes straight into `sourceText` — which grounds
+   * generation regardless of source kind and marks the form ready, meaning a
+   * highlighted paragraph becomes a deck without another tap.
+   */
+  useEffect(() => {
+    const share = takeStagedShare();
+    if (!share) return;
+    const { mode, value, title } = describeShare(share);
+
+    if (mode === 'url') {
+      const isVideo = /youtube\.com|youtu\.be/i.test(value);
+      setSource(isVideo ? 'youtube' : 'url');
+      setTopic(value);
+      if (title) setSourceTitle(title);
+      return;
+    }
+
+    if (mode === 'file') {
+      // A content:// grant lives only for this launch and cannot be read from
+      // JS, so the file is not silently imported. Naming it and switching to
+      // the file source tells the user what arrived and what to do next.
+      setSource('file');
+      setSourceTitle(title || 'Shared file');
+      return;
+    }
+
+    if (!value) return;
+    setSourceText(value);
+    setSourceTitle(title || 'Shared text');
+    // A deck still needs a name. The sender's title is the best one available;
+    // failing that, the opening words of the passage beat an empty field.
+    setTopic(title || value.slice(0, 60).replace(/\s+\S*$/, ''));
+  }, []);
   const [cardsPerGeneration] = useAppPreference("auramind_cardsPerGen", "20");
   const [includeExamples] = useAppPreference("auramind_includeExamples", true);
   const [defaultLanguage] = useAppPreference("auramind_defaultLanguage", "English");

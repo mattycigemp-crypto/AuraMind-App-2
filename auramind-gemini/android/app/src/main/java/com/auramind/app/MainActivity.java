@@ -8,8 +8,32 @@ import com.getcapacitor.BridgeActivity;
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        // Registration MUST precede super.onCreate(). Capacitor builds the
+        // bridge there and only picks up plugins registered beforehand;
+        // registering after leaves the JS proxy resolving to nothing and every
+        // call failing with "plugin is not implemented on android". Both of
+        // these were registered after until now, so WearSync was almost
+        // certainly never reachable either.
         registerPlugin(WearSyncPlugin.class);
+        registerPlugin(ShareTargetPlugin.class);
+        super.onCreate(savedInstanceState);
+        // A cold-start share is delivered here, long before the web layer has
+        // mounted. ShareTargetPlugin parks it so JS can pull it when ready.
+        ShareTargetPlugin.handleIntent(getIntent());
+    }
+
+    /**
+     * Shares that arrive while the app is already running.
+     *
+     * The activity is singleTask, so Android reuses this instance and routes
+     * the new intent here instead of calling onCreate again. Without this a
+     * second share would be silently dropped.
+     */
+    @Override
+    public void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        ShareTargetPlugin.handleIntent(intent);
     }
 
     /**

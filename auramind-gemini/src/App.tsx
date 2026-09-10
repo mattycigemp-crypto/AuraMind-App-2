@@ -50,6 +50,7 @@ import { KeyboardAware } from "./components/shared/KeyboardAware";
 import NativeRuntime from "./components/native/NativeRuntime";
 import { Capacitor, SplashScreen } from "./lib/nativeShim";
 import { useReminderSync } from "./hooks/useReminderSync";
+import { useShareTarget } from "./hooks/useShareTarget";
 import QuizGenerationNotifier from "./components/notifications/QuizGenerationNotifier";
 import { Toaster, toast } from "./components/ui/sonner";
 import { ThemeProvider } from "./hooks/useTheme";
@@ -724,6 +725,10 @@ const AppContent = ({ onUserRoleChange }: { onUserRoleChange: (role: UserRole) =
   // 'maintain' mode this never raises a permission dialog -- it only
   // reschedules when the user has already granted it. See useReminderSync.
   useReminderSync('maintain');
+
+  // Content shared into AuraMind from any other app. Gated on authChecked so
+  // a share cannot land on a route guard and bounce to /auth, losing itself.
+  useShareTarget(authChecked);
 
   /**
    * Hand off from the native splash exactly once, when the app can actually
