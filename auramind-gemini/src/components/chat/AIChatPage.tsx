@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Send,
-  Sparkles,
   ArrowLeft,
   Square,
   Mic,
@@ -17,6 +16,7 @@ import {
   Pencil,
   Flame,
   BarChart3,
+  EllipsisVertical,
 } from "@/components/icons";
 import { useDashboardWorkspace } from "../../contexts/DashboardWorkspaceContext";
 import {
@@ -39,7 +39,6 @@ import {
   PROF_AURA_PERSONALITY_OPTIONS,
 } from "../../lib/profAuraPersonality";
 import type { Deck, Card } from "../../types";
-import ContextStrip from "./ContextStrip";
 import ChatMessage from "./ChatMessage";
 import SuggestedPrompts from "./SuggestedPrompts";
 import ConversationHistory, { type ChatSession } from "./ConversationHistory";
@@ -200,9 +199,6 @@ export default function AIChatPage() {
   // Concept-level weakness model — aggregated across the current card set.
   const conceptWeaknesses = useMemo(() => buildConceptWeaknesses(cards, decks), [cards, decks]);
   const selectedDeck = decks.find((d) => d.id === selectedDeckId) || decks[0];
-  const dueCount = cards.filter(
-    (c) => c.deckId === selectedDeck?.id && (c.nextReview ?? 0) <= Date.now(),
-  ).length;
 
   useEffect(() => {
     if (workspace) return;
@@ -320,14 +316,14 @@ export default function AIChatPage() {
   // never lose the user's last utterance (per design review A).
   const sr = useSpeechRecognition();
   const [attachments, setAttachments] = useState<AttachmentDraft[]>([]);
-  const [showPersonalityPicker, setShowPersonalityPicker] = useState(false);
+  const [showOverflow, setShowOverflow] = useState(false);
   const tts = useTTS();
   const { isEnabled: ttsEnabled, speak: speakTts } = tts;
 
   const setPersonality = useCallback((p: ProfAuraPersonality) => {
     setPersonalityState(p);
     setStoredPersonality(p);
-    setShowPersonalityPicker(false);
+    setShowOverflow(false);
   }, []);
   const mood = useMoodForProfAura({
     streakCount: userMeta?.streakCount,
@@ -483,8 +479,6 @@ export default function AIChatPage() {
 
   const starterPrompts = getStarterPrompts(context);
   const hasMessages = chat.messages.length > 0;
-  const PersonalityIcon =
-    PROF_AURA_PERSONALITY_OPTIONS.find((o) => o.id === personality)?.icon ?? Sparkles;
 
   return (
     <PageShell>
@@ -557,49 +551,64 @@ export default function AIChatPage() {
               selector's right edge. The header clips rather than scrolls, so
               it showed as a shaved border instead of a scrollbar. */}
           <div className="flex items-center gap-2 min-w-0">
-            {/* Voice OUT toggle */}
-            <button
-              onClick={tts.toggle}
-              title={
-                tts.isEnabled
-                  ? "Voice OUT: ON — click to disable"
-                  : "Voice OUT: OFF — click to enable"
-              }
-              className={`w-9 h-9 shrink-0 rounded-lg flex items-center justify-center transition-all ${
-                tts.isEnabled
-                  ? "bg-[#7C3AED]/15 text-[#8B5CF6] border border-[#7C3AED]/30"
-                  : "bg-[#111118] text-[#7A7A96] border border-[#2A2A3A] hover:text-[#F0EFFE]"
-              }`}
-            >
-              {tts.isEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-            </button>
-
-            {/* Personality picker — button surface shows the current
-                personality's emoji so the affordance reads as a real
-                selector, not a generic settings cog. Claude/ChatGPT both
-                show a tiny avatar chip on the right rail for the same
-                psychological reason. */}
-            <div className="relative">
+            {/* Overflow menu — folds Voice OUT, the personality picker and
+                the on-device AI status into one control, so the header
+                reads calm on phones and Android where the native top bar
+                already owns the screen's chrome. */}
+            <div className="relative" data-testid="chat-overflow-menu">
               <button
-                onClick={() => setShowPersonalityPicker(!showPersonalityPicker)}
-                title="Change Prof. Aura's personality"
-                className="h-9 shrink-0 px-2.5 rounded-full bg-[#111118] border border-[#2A2A3A] flex items-center gap-1.5 text-[#7A7A96] hover:text-[#F0EFFE] hover:border-[#7C3AED]/40 transition-colors"
+                onClick={() => setShowOverflow(!showOverflow)}
+                title="More options"
+                aria-label="More options"
+                aria-expanded={showOverflow}
+                className="w-9 h-9 shrink-0 rounded-lg bg-[#111118] border border-[#2A2A3A] flex items-center justify-center text-[#8A8AA3] hover:text-[#F0EFFE] hover:border-[#3A3A4F] transition-all"
               >
-                <span className="text-sm leading-none">
-                  <PersonalityIcon size={16} className="text-[#A78BFA]" />
-                </span>
-                <span className="text-[10px] font-medium text-[#9090A8] hidden sm:inline">
-                  {PROF_AURA_PERSONALITY_OPTIONS.find((o) => o.id === personality)?.label ??
-                    "Personality"}
-                </span>
+                <EllipsisVertical size={14} />
               </button>
-              {showPersonalityPicker && (
+              {showOverflow && (
                 <>
                   <div
                     className="fixed inset-0 z-40"
-                    onClick={() => setShowPersonalityPicker(false)}
+                    onClick={() => setShowOverflow(false)}
                   />
                   <div className="absolute right-0 top-10 z-50 w-72 p-3 rounded-2xl bg-[#111118] border border-[#2A2A3A] shadow-2xl shadow-black/50">
+                    {/* Voice OUT */}
+                    <button
+                      onClick={() => {
+                        tts.toggle();
+                        setShowOverflow(false);
+                      }}
+                      className={`w-full flex items-center gap-2.5 p-2.5 rounded-xl text-left transition-all ${
+                        tts.isEnabled
+                          ? "bg-[#7C3AED]/10 border border-[#7C3AED]/30"
+                          : "border border-transparent hover:bg-[#1A1A24]"
+                      }`}
+                    >
+                      <span className="shrink-0 text-[#A78BFA]">
+                        {tts.isEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-xs font-medium text-[#F0EFFE]">
+                          Voice replies
+                        </span>
+                        <span className="block text-[10px] text-[#7A7A96]">
+                          Prof. Aura reads its answers aloud
+                        </span>
+                      </span>
+                      <span
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold ${
+                          tts.isEnabled
+                            ? "bg-[#7C3AED]/20 text-[#C4B5FD]"
+                            : "bg-[#1A1A24] text-[#7A7A96]"
+                        }`}
+                      >
+                        {tts.isEnabled ? "ON" : "OFF"}
+                      </span>
+                    </button>
+
+                    <div className="my-2 h-px bg-[#2A2A3A]" />
+
+                    {/* Personality */}
                     <p className="text-[9px] uppercase tracking-widest text-[#7A7A96] mb-2 px-1">
                       Prof. Aura's Personality
                     </p>
@@ -722,17 +731,6 @@ export default function AIChatPage() {
           </div>
         )}
 
-        {/* Context strip — hidden in companion mode (no deck to surface). */}
-        {selectedDeck && hasMessages && chat.mode !== "companion" && (
-          <div className="relative z-10 border-b border-[#2A2A3A]/30">
-            <ContextStrip
-              deckName={selectedDeck.title}
-              cardsDueToday={dueCount}
-              lastReviewed="just now"
-            />
-          </div>
-        )}
-
         {/* Messages area */}
         <div
           ref={chatContainerRef}
@@ -762,7 +760,6 @@ export default function AIChatPage() {
                       onClick: () => chat.sendMessage("Hey Prof. Aura — how am I doing today?"),
                     },
                   ]}
-                  badges={["No deck required", "Voice + text", "Lives in /dashboard/chat"]}
                 />
               </div>
             ) : chat.messages.length === 0 ? (
@@ -832,7 +829,7 @@ export default function AIChatPage() {
                       Prof. Aura
                     </span>
                   </h2>
-                  <p className="text-[#8A8AA3] text-sm sm:text-base max-w-lg leading-relaxed mb-2">
+                  <p className="text-[#8A8AA3] text-sm sm:text-base max-w-lg leading-relaxed mb-8">
                     Your AI study coach. I can see your{" "}
                     <strong className="text-[#F0EFFE]">
                       {decks.length} {decks.length === 1 ? "deck" : "decks"}
@@ -843,9 +840,6 @@ export default function AIChatPage() {
                     </strong>
                     , and your FSRS
                     schedule.
-                  </p>
-                  <p className="text-[#7A7A96] text-xs sm:text-sm mb-10">
-                    Ask me anything — I'll quiz you, explain concepts, or generate new cards.
                   </p>
                 </motion.div>
 
@@ -935,29 +929,6 @@ export default function AIChatPage() {
                       </motion.button>
                     );
                   })}
-                </motion.div>
-
-                {/* Quick actions */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="mt-8 flex flex-wrap items-center justify-center gap-3"
-                >
-                  <button
-                    onClick={() => workspace?.startQuickStudy()}
-                    disabled={!decks.length}
-                    className="px-4 py-2 rounded-xl bg-gradient-to-r from-[#7C3AED] to-[#EC4899] text-white text-xs font-medium hover:opacity-90 transition-opacity flex items-center gap-2 shadow-lg shadow-violet-500/20 disabled:opacity-30"
-                  >
-                    <Sparkles size={12} />
-                    Start a study session
-                  </button>
-                  <button
-                    onClick={() => navigate("/dashboard/generator")}
-                    className="px-4 py-2 rounded-xl bg-[#1A1A24] border border-[#2A2A3A] hover:border-[#7C3AED]/40 text-[#F0EFFE] text-xs font-medium transition-all"
-                  >
-                    Generate a deck
-                  </button>
                 </motion.div>
               </div>
             ) : (
@@ -1081,40 +1052,19 @@ export default function AIChatPage() {
                 )}
               </div>
 
-              {/* Hint text */}
-              <div className="flex items-center justify-between mt-2 px-1">
-                <div className="flex items-center gap-3">
-                  <span className="text-[9px] text-[#3A3A4F]">
-                    <kbd className="px-1 py-0.5 rounded border border-[#2A2A3A] bg-[#111118] font-mono text-[8px]">
-                      Enter
-                    </kbd>{" "}
-                    send ·{" "}
-                    <kbd className="px-1 py-0.5 rounded border border-[#2A2A3A] bg-[#111118] font-mono text-[8px]">
-                      Shift+Enter
-                    </kbd>{" "}
-                    newline
+              {/* On-device AI chip — the only thing the composer shows
+                  under itself now; the kbd hints / "Ready" filler are gone. */}
+              {usesLocalAI() && (
+                <div className="mt-2 px-1">
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-0.5 text-[9px] text-[#34D399]"
+                    title="AI runs on this device — no data leaves it, works offline"
+                  >
+                    <span className="w-1 h-1 rounded-full bg-[#34D399]" />
+                    On-device AI · Private
                   </span>
                 </div>
-                <span className="text-[9px] text-[#3A3A4F]">
-                  {chat.isStreaming ? (
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6] animate-pulse" />
-                      Prof. Aura is thinking...
-                    </span>
-                  ) : (
-                    "Ready"
-                  )}
-                  {usesLocalAI() && (
-                    <span
-                      className="ml-2 inline-flex items-center gap-1 rounded-full border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-0.5 text-[9px] text-[#34D399]"
-                      title="AI runs on this device — no data leaves it, works offline"
-                    >
-                      <span className="w-1 h-1 rounded-full bg-[#34D399]" />
-                      On-device AI · Private
-                    </span>
-                  )}
-                </span>
-              </div>
+              )}
             </div>
           </div>
         </div>
