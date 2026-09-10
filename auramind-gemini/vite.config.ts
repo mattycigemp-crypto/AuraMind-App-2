@@ -56,6 +56,11 @@ export default defineConfig(({ mode }) => {
     },
 
     build: {
+      // Skip injecting <link rel="modulepreload"> for wasm/hashed chunks. The
+      // workbox precache serves the same files, so Chrome both preloads them
+      // from HTML and fetches them from the service worker — a "cross-world"
+      // mismatch that floods the console with two unused-preload warnings.
+      modulePreload: false,
       rollupOptions: {
         plugins: [...(isProd && process.env.ANALYZE ? [visualizer({
           filename: 'dist/stats.html',
